@@ -5,6 +5,14 @@ more pythonic constructions.
 
 This repository is part of my working code, thus completely unstable `:)`
 
+## Installation
+
+To copy as a system-wide library, go to the top folder an ddo
+
+```
+sudo python setup.py install
+```
+
 ## Features
 
 The library includes some features useful for humanoid motion planning that are
