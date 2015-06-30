@@ -7,7 +7,7 @@ This repository is part of my working code, thus completely unstable `:)`
 
 ## Installation
 
-To copy as a system-wide library, go to the top folder an ddo
+From the top folder, run:
 
 ```
 sudo python setup.py install
