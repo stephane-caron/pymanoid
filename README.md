@@ -5,14 +5,6 @@ more pythonic constructions.
 
 This repository is part of my working code, thus completely unstable `:)`
 
-## Installation
-
-From the top folder, run:
-
-```
-sudo python setup.py install
-```
-
 ## Features
 
 The library includes some features useful for humanoid motion planning that are
@@ -22,3 +14,11 @@ not present in OpenRAVE, such as:
   angular momentum, as well as their jacobians and hessians
 - Numerical IK solver using [CVXOPT](http://cvxopt.org/index.html)
   allowing for task-based whole-body resolution (it doesn't require IKFast)
+
+## Installation
+
+From the top folder, run:
+
+```
+sudo python setup.py install
+```
