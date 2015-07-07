@@ -55,11 +55,13 @@ def face_of_span(S):
     V_cdd.rep_type = RepType.GENERATOR
     P = Polyhedron(V_cdd)
     H = array(P.get_inequalities())
-    b, A = H[:, 0], H[:, 1:]
+    b, A = H[:, 0], -H[:, 1:]
+    # H matrix is [b, -A]
+    # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
     for i in xrange(H.shape[0]):
         if b[i] != 0:
             raise NotConeSpan(S)
-    return -A
+    return A
 
 
 def span_of_face(F):
@@ -71,8 +73,9 @@ def span_of_face(F):
         {F x <= 0} if and only if {x = F^S z, z >= 0}.
 
     """
-    b, A = zeros((F.shape[0], 1)), -F
-    # H-representation: A x + b >= 0
+    b, A = zeros((F.shape[0], 1)), F
+    # H-representation: b - A x >= 0
+    # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
     F_cdd = Matrix(hstack([b, A]), number_type='float')
     F_cdd.rep_type = RepType.INEQUALITY
     P = Polyhedron(F_cdd)
