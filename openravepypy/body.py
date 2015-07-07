@@ -22,7 +22,7 @@
 import openravepy
 import uuid
 
-from rotation import rotation_matrix_from_rpy
+from rotation import rotation_matrix_from_rpy, rpy_from_quat
 from numpy import array, dot
 
 
@@ -69,6 +69,10 @@ class Body(object):
         return pose
 
     @property
+    def quat(self):
+        return self.pose[:4]
+
+    @property
     def T(self):
         """Transform matrix"""
         return self.rave.GetTransform()
@@ -88,6 +92,23 @@ class Body(object):
         """Normal vector"""
         return self.R[2, 0:3]
 
+    @property
+    def rpy(self):
+        """Roll-pitch-yaw angles"""
+        return rpy_from_quat(self.quat)
+
+    @property
+    def roll(self):
+        return self.rpy[0]
+
+    @property
+    def pitch(self):
+        return self.rpy[1]
+
+    @property
+    def yaw(self):
+        return self.rpy[2]
+
     def set_transform(self, T):
         self.rave.SetTransform(T)
 
@@ -100,6 +121,15 @@ class Body(object):
         T = self.T.copy()
         T[0:3, 0:3] = rotation_matrix_from_rpy(*rpy)
         self.set_transform(T)
+
+    def set_roll(self, roll):
+        return self.set_rpy([roll, self.pitch, self.yaw])
+
+    def set_pitch(self, pitch):
+        return self.set_rpy([self.roll, pitch, self.yaw])
+
+    def set_yaw(self, yaw):
+        return self.set_rpy([self.roll, self.pitch, yaw])
 
     def set_pose(self, pose):
         T = openravepy.matrixFromPose(pose)

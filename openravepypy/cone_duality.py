@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
-
 from cdd import Matrix, Polyhedron, RepType
 from numpy import array, hstack, zeros
 
