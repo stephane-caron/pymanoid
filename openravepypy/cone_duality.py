@@ -55,6 +55,8 @@ def face_of_span(S):
     V_cdd.rep_type = RepType.GENERATOR
     P = Polyhedron(V_cdd)
     H = array(P.get_inequalities())
+    if H.shape == (0,):  # H = []
+        return H
     b, A = H[:, 0], -H[:, 1:]
     # H matrix is [b, -A]
     # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
