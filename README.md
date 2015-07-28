@@ -1,11 +1,8 @@
 # openravepypy
 
 Python bindings for OpenRAVE. Actually, a wrapper to `openravepy` with some
-more pythonic constructions.
-
-This repository is part of my working code, thus completely unstable `:)`
-
-## Features
+more pythonic constructions. This repository is part of my working code, thus
+completely unstable `;)`
 
 The library includes some features useful for humanoid motion planning that are
 not present in OpenRAVE, such as:
