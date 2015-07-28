@@ -154,11 +154,3 @@ class Box(Body):
         rave_body.InitFromBoxes(array([array(aabb)]), True)
         super(Box, self).__init__(env, name, rave_body, color, pos=pos, rpy=rpy,
                                   pose=pose)
-
-    @property
-    def corners(self):
-        return [
-            dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3],
-            dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3],
-            dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3],
-            dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]]
