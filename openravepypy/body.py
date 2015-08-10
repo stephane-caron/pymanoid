@@ -23,7 +23,7 @@ import openravepy
 import uuid
 
 from rotation import rotation_matrix_from_rpy, rpy_from_quat
-from numpy import array, dot
+from numpy import array
 
 
 class Body(object):
@@ -45,11 +45,14 @@ class Body(object):
     def set_color(self, color):
         acolor = array([.2, .2, .2])
         dcolor = array([.2, .2, .2])
-        colors = ['r', 'g', 'b']
-        if color in colors:
-            cdim = colors.index(color)
+        rgb = ['r', 'g', 'b']
+        if color in rgb:
+            cdim = rgb.index(color)
             acolor[cdim] += .2
             dcolor[cdim] += .4
+        elif color == 'o':
+            acolor = array([1., 1., 1.])
+            dcolor = array([.65, .4, .2])
         for link in self.rave.GetLinks():
             for g in link.GetGeometries():
                 g.SetAmbientColor(acolor)

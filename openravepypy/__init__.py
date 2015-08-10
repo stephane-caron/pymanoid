@@ -27,6 +27,11 @@ from rotation import *
 from trajectory import *
 
 try:
+    from hrp2 import *
+except ImportError:
+    pass
+
+try:
     from hrp4 import *
 except ImportError:
     pass

@@ -19,14 +19,11 @@
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import cvxopt
-import cvxopt.solvers
 import time
 
 from numpy import minimum, maximum, zeros
-from numpy import dot, eye, ones, vstack, hstack, array
-
-cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
+from numpy import dot, eye, ones, vstack, hstack
+from toolbox import cvxopt_solve_qp
 
 
 class DiffIKSolver(object):
@@ -104,23 +101,17 @@ class DiffIKSolver(object):
             P0 += obj.weight * dot(J.T, J)
             q0 += obj.weight * dot(-v.T, J)
 
-        qp_P = cvxopt.matrix(P0)
-        qp_q = cvxopt.matrix(q0)
-        qp_G = cvxopt.matrix(vstack([+self.I, -self.I]))
-        qp_h = cvxopt.matrix(hstack([qd_max, -qd_min]))
+        G = vstack([+self.I, -self.I])
+        h = hstack([qd_max, -qd_min])
         if J_list:
-            qp_A = cvxopt.matrix(vstack(J_list))
-            qp_b = cvxopt.matrix(hstack(v_list))
-            qp_x = cvxopt.solvers.qp(qp_P, qp_q, qp_G, qp_h, qp_A, qp_b)['x']
+            A = vstack(J_list)
+            b = hstack(v_list)
+            qd = cvxopt_solve_qp(P0, q0, G, h, A, b)
         else:
-            qp_x = cvxopt.solvers.qp(qp_P, qp_q, qp_G, qp_h)['x']
-        qd = array(qp_x).reshape((self.n,))
+            qd = cvxopt_solve_qp(P0, q0, G, h)
         return qd
 
     def add_link_objective(self, link, target_pose, gain=1., weight=1.):
-        #quat_weight, pos_weight = 0.1, 1.
-        #K = array([quat_weight] * 4 + [pos_weight] * 3)
-
         def err(q):
             cur_pose = self.robot.compute_link_pose(link, q, self.active_dofs)
             return target_pose - cur_pose
@@ -195,5 +186,4 @@ class IKSolver(DiffIKSolver):
             self.robot.set_dof_values(q_next, self.active_dofs)
             if debug:
                 print "%2d:" % itnum, cur_obj
-                #for obj in self.objectives: print "\t", obj.err(self.q)
         return itnum, cur_obj
