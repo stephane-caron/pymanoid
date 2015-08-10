@@ -21,10 +21,11 @@
 
 import time
 
-from numpy import arange, array, cross, dot, eye
-from numpy import zeros, hstack, vstack, tensordot
+from numpy import arange, array, cross, dot, eye, ones, maximum
+from numpy import zeros, hstack, vstack, tensordot, minimum
 from openravepy import RaveCreateModule
 from rotation import crossmat
+from inverse_kinematics import DiffIKSolver
 
 
 # Notations and names
@@ -45,24 +46,24 @@ from rotation import crossmat
 
 class Robot(object):
 
-    dofs = []
-
-    def __init__(self, env, robot_name, active_dofs=None):
+    def __init__(self, env, robot_name, vel_lim=10.):
         env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
         rave = env.GetRobot(robot_name)
         q_min, q_max = rave.GetDOFLimits()
         rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
 
-        self.active_dofs = active_dofs
+        self.active_dofs = None
         self.env = env
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dof = rave.GetDOF()
         self.q_max = q_max
         self.q_min = q_min
+        self.qd_max = +vel_lim * ones(self.nb_dof)
+        self.qd_min = -vel_lim * ones(self.nb_dof)
         self.rave = rave
 
     #
-    # DOF
+    # Kinematics
     #
 
     def get_dof_values(self, dof_indices=None):
@@ -78,6 +79,9 @@ class Robot(object):
     def q_active(self):
         return self.get_dof_values(self.active_dofs)
 
+    def set_active_dof_values(self, q_active):
+        self.rave.SetDOFValues(q_active, self.active_dofs)
+
     def set_active_dofs(self, active_dofs):
         self.active_dofs = active_dofs
 
@@ -87,6 +91,69 @@ class Robot(object):
         print "len(q) =", len(q)
         assert len(q) == self.nb_dof
         return self.rave.SetDOFValues(q)
+
+    #
+    # Inverse Kinematics
+    #
+
+    def init_ik(self, active_dofs, K_doflim, reg_weight=1e-5,
+                dof_lim_scale=0.95):
+        self.set_active_dofs(active_dofs)
+        q_avg = .5 * (self.q_max + self.q_min)
+        q_dev = .5 * (self.q_max - self.q_min)
+        q_max = (q_avg + dof_lim_scale * q_dev)[active_dofs]
+        q_min = (q_avg - dof_lim_scale * q_dev)[active_dofs]
+        qd_max = self.qd_max[active_dofs]
+        qd_min = self.qd_min[active_dofs]
+        self.ik = DiffIKSolver(
+            (q_min, q_max), (qd_min, qd_max), K_doflim, reg_weight,
+            dof_lim_scale)
+
+    def add_com_objective(self, target, gain, weight):
+        def err(q):
+            cur_com = self.compute_com(q, self.active_dofs)
+            return target.p - cur_com
+
+        def J(q):
+            return self.compute_com_jacobian(q, self.active_dofs)
+
+        self.ik.add_objective(err, J, gain, weight)
+
+    def add_link_objective(self, link, target, gain, weight):
+        def err(q):
+            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
+            return target.pose - cur_pose
+
+        def J(q):
+            pose = self.compute_link_pose(link, q, self.active_dofs)
+            J = self.compute_link_pose_jacobian(link, q, self.active_dofs)
+            if pose[0] < 0:  # convention: cos(alpha) > 0
+                J[:4, :] *= -1
+            return J
+
+        self.ik.add_objective(err, J, gain, weight)
+
+    def step_tracker(self):
+        q = self.q
+        dq = self.ik.compute_delta(q)
+        self.set_active_dof_values(q + dq)
+
+    def solve_ik(self, dt=.1, max_it=100, conv_tol=1e-4, debug=True):
+        cur_obj = 1000
+        q = self.q_active
+        q_max = self.ik.q_max
+        q_min = self.ik.q_min
+        for itnum in xrange(max_it):
+            prev_obj = cur_obj
+            cur_obj = self.ik.compute_objective(q)
+            if abs(cur_obj - prev_obj) < conv_tol:
+                break
+            qd = self.ik.compute_delta(q)
+            q = minimum(maximum(q_min, q + qd * dt), q_max)
+            if debug:
+                print "%2d:" % itnum, cur_obj
+        self.set_active_dof_values(q)
+        return itnum, cur_obj
 
     #
     # Visualization
