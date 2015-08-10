@@ -55,14 +55,7 @@ class DiffIKSolver(object):
         def vel(self, q):
             return self.task.vel(q)
 
-    def __init__(self, q_lim, qd_lim, K_doflim, reg_weight, dof_lim_scale=0.95):
-        """
-
-        active_dofs -- list of active DOF indices
-        K_doflim -- gain for the first-order velocity controller (inequalities)
-        dol_lim_scale -- in [0., 1.], scales DOF limits to avoid hits
-
-        """
+    def __init__(self, q_lim, qd_lim, K_doflim, reg_weight):
         q_min, q_max = q_lim
         qd_min, qd_max = qd_lim
         n = len(q_min)
@@ -89,18 +82,21 @@ class DiffIKSolver(object):
 
     def compute_delta(self, q):
         P = self.reg_weight * self.I
-        q = zeros(len(q))
+        r = zeros(self.n)
         for obj in self.objectives:
             J = obj.jacobian(q)
-            v = obj.vel(q)
             P += obj.weight * dot(J.T, J)
-            q += obj.weight * dot(-v.T, J)
-        qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
-        qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
+            r += obj.weight * dot(-obj.vel(q).T, J)
+        if self.K_doflim is not None:
+            qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
+            qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
+        else:
+            qd_max = self.qd_max
+            qd_min = self.qd_min
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
         if self.constraints:
             A = vstack([c.jacobian(q) for c in self.constraints])
             b = hstack([c.vel(q) for c in self.constraints])
-            return cvxopt_solve_qp(P, q, G, h, A, b)
-        return cvxopt_solve_qp(P, q, G, h)
+            return cvxopt_solve_qp(P, r, G, h, A, b)
+        return cvxopt_solve_qp(P, r, G, h)

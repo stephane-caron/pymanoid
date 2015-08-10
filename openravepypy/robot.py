@@ -88,7 +88,6 @@ class Robot(object):
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
-        print "len(q) =", len(q)
         assert len(q) == self.nb_dof
         return self.rave.SetDOFValues(q)
 
@@ -96,7 +95,7 @@ class Robot(object):
     # Inverse Kinematics
     #
 
-    def init_ik(self, active_dofs, K_doflim, reg_weight=1e-5,
+    def init_ik(self, active_dofs, K_doflim, reg_weight=1e-10,
                 dof_lim_scale=0.95):
         self.set_active_dofs(active_dofs)
         q_avg = .5 * (self.q_max + self.q_min)
@@ -106,27 +105,26 @@ class Robot(object):
         qd_max = self.qd_max[active_dofs]
         qd_min = self.qd_min[active_dofs]
         self.ik = DiffIKSolver(
-            (q_min, q_max), (qd_min, qd_max), K_doflim, reg_weight,
-            dof_lim_scale)
+            (q_min, q_max), (qd_min, qd_max), K_doflim, reg_weight)
 
     def add_com_objective(self, target, gain, weight):
-        def err(q):
-            cur_com = self.compute_com(q, self.active_dofs)
+        def err(qa):
+            cur_com = self.compute_com(qa, self.active_dofs)
             return target.p - cur_com
 
-        def J(q):
-            return self.compute_com_jacobian(q, self.active_dofs)
+        def J(qa):
+            return self.compute_com_jacobian(qa, self.active_dofs)
 
         self.ik.add_objective(err, J, gain, weight)
 
     def add_link_objective(self, link, target, gain, weight):
-        def err(q):
-            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
+        def err(qa):
+            cur_pose = self.compute_link_pose(link, qa, self.active_dofs)
             return target.pose - cur_pose
 
-        def J(q):
-            pose = self.compute_link_pose(link, q, self.active_dofs)
-            J = self.compute_link_pose_jacobian(link, q, self.active_dofs)
+        def J(qa):
+            pose = self.compute_link_pose(link, qa, self.active_dofs)
+            J = self.compute_link_pose_jacobian(link, qa, self.active_dofs)
             if pose[0] < 0:  # convention: cos(alpha) > 0
                 J[:4, :] *= -1
             return J
@@ -134,25 +132,25 @@ class Robot(object):
         self.ik.add_objective(err, J, gain, weight)
 
     def step_tracker(self):
-        q = self.q
-        dq = self.ik.compute_delta(q)
-        self.set_active_dof_values(q + dq)
+        qa = self.q_active
+        dqa = self.ik.compute_delta(qa)
+        self.set_active_dof_values(qa + dqa)
 
-    def solve_ik(self, dt=.1, max_it=100, conv_tol=1e-4, debug=True):
-        cur_obj = 1000
-        q = self.q_active
-        q_max = self.ik.q_max
-        q_min = self.ik.q_min
+    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=True):
+        cur_obj = 1000.
+        qa = self.q_active
+        qa_max = self.ik.q_max
+        qa_min = self.ik.q_min
         for itnum in xrange(max_it):
             prev_obj = cur_obj
-            cur_obj = self.ik.compute_objective(q)
+            cur_obj = self.ik.compute_objective(qa)
+            if debug:
+                print "%2d: %.3f (%+.2e)" % (itnum, cur_obj, cur_obj - prev_obj)
             if abs(cur_obj - prev_obj) < conv_tol:
                 break
-            qd = self.ik.compute_delta(q)
-            q = minimum(maximum(q_min, q + qd * dt), q_max)
-            if debug:
-                print "%2d:" % itnum, cur_obj
-        self.set_active_dof_values(q)
+            dq = self.ik.compute_delta(qa)
+            qa = minimum(maximum(qa_min, qa + dq), qa_max)
+        self.set_active_dof_values(qa)
         return itnum, cur_obj
 
     #
@@ -171,12 +169,9 @@ class Robot(object):
             time.sleep(dt)
 
     def record_trajectory(self, traj, fname='output.mpg', codec=13,
-                          framerate=24, width=800, height=600, dt=3e-2,
-                          show_codecs=False):
+                          framerate=24, width=800, height=600, dt=3e-2):
         viewer = self.env.GetViewer()
         recorder = RaveCreateModule(self.env, 'viewerrecorder')
-        if show_codecs:  # linux only
-            print "Available codecs:", recorder.SendCommand('GetCodecs')
         self.env.AddModule(recorder, '')
         self.rave.SetDOFValues(traj.q(0))
         recorder.SendCommand('Start %d %d %d codec %d timing '
