@@ -20,3 +20,20 @@
 
 
 from cvxopt_wrapper import cvxopt_solve_qp
+from numpy import dot, sqrt
+
+
+def norm(v):
+    """
+    For some reason, pylab's one is slow. On my machine:
+
+        In [1]: from pylab import norm as pynorm
+
+        In [5]: %timeit pynorm(v)
+        100000 loops, best of 3: 10.3 µs per loop
+
+        In [11]: %timeit norm(v)
+        100000 loops, best of 3: 4.82 µs per loop
+
+    """
+    return sqrt(dot(v, v))
