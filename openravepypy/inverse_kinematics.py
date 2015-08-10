@@ -96,31 +96,10 @@ class DiffIKSolver(object):
         task = self.Task(err_fun, jacobian_fun, gain)
         self.objectives.append(self.Objective(task, weight))
 
-    def compute_instant_vel(self):
-        qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - self.q))
-        qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - self.q))
-        J_list = [c.jacobian(self.q) for c in self.constraints]
-        v_list = [c.vel(self.q) for c in self.constraints]
-        P = self.reg_weight * self.I
-        q = zeros(len(self.q))
-
-        for obj in self.objectives:
-            v, J = obj.vel(self.q), obj.jacobian(self.q)
-            P += obj.weight * dot(J.T, J)
-            q += obj.weight * dot(-v.T, J)
-
-        G = vstack([+self.I, -self.I])
-        h = hstack([qd_max, -qd_min])
-        if J_list:
-            A = vstack(J_list)
-            b = hstack(v_list)
-            return cvxopt_solve_qp(P, q, G, h, A, b)
-        return cvxopt_solve_qp(P, q, G, h)
-
-    def add_com_objective(self, target_com, gain, weight):
+    def add_com_objective(self, target, gain, weight):
         def err(q):
             cur_com = self.robot.compute_com(q, self.active_dofs)
-            return target_com - cur_com
+            return target.p - cur_com
 
         def J(q):
             return self.robot.compute_com_jacobian(
@@ -128,21 +107,10 @@ class DiffIKSolver(object):
 
         self.add_objective(err, J, gain=gain, weight=weight)
 
-    def add_dof_objective(self, dof_id, target_angle, gain, weight):
-        def err(q):
-            return target_angle - q[dof_id]
-
-        def J(q):
-            j = zeros((len(q),))
-            j[dof_id] = 1.
-            return j
-
-        self.add_objective(err, J, gain=gain, weight=weight)
-
-    def add_link_objective(self, link, target_pose, gain, weight):
+    def add_link_objective(self, link, target, gain, weight):
         def err(q):
             cur_pose = self.robot.compute_link_pose(link, q, self.active_dofs)
-            return target_pose - cur_pose
+            return target.pose - cur_pose
 
         def J(q):
             pose = self.robot.compute_link_pose(link, q, self.active_dofs)
@@ -152,6 +120,23 @@ class DiffIKSolver(object):
             return J
 
         self.add_objective(err, J, gain=gain, weight=weight)
+
+    def compute_instant_vel(self):
+        qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - self.q))
+        qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - self.q))
+        P = self.reg_weight * self.I
+        q = zeros(len(self.q))
+        for obj in self.objectives:
+            v, J = obj.vel(self.q), obj.jacobian(self.q)
+            P += obj.weight * dot(J.T, J)
+            q += obj.weight * dot(-v.T, J)
+        G = vstack([+self.I, -self.I])
+        h = hstack([qd_max, -qd_min])
+        if self.constraints:
+            A = vstack([c.jacobian(self.q) for c in self.constraints])
+            b = hstack([c.vel(self.q) for c in self.constraints])
+            return cvxopt_solve_qp(P, q, G, h, A, b)
+        return cvxopt_solve_qp(P, q, G, h)
 
 
 class IKTracker(DiffIKSolver):
