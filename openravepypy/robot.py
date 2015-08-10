@@ -61,9 +61,14 @@ class Robot(object):
         self.q_min = q_min
         self.rave = rave
 
-    @property
-    def com(self):
-        return self.compute_com(self.get_dof_values())
+    #
+    # DOF
+    #
+
+    def get_dof_values(self, dof_indices=None):
+        if dof_indices is not None:
+            return self.rave.GetDOFValues(dof_indices)
+        return self.rave.GetDOFValues()
 
     @property
     def q(self):
@@ -76,11 +81,6 @@ class Robot(object):
     def set_active_dofs(self, active_dofs):
         self.active_dofs = active_dofs
 
-    def get_dof_values(self, dof_indices=None):
-        if dof_indices is not None:
-            return self.rave.GetDOFValues(dof_indices)
-        return self.rave.GetDOFValues()
-
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
@@ -88,10 +88,9 @@ class Robot(object):
         assert len(q) == self.nb_dof
         return self.rave.SetDOFValues(q)
 
-    def set_transparency(self, transparency):
-        for link in self.rave.GetLinks():
-            for geom in link.GetGeometries():
-                geom.SetTransparency(transparency)
+    #
+    # Visualization
+    #
 
     def play_trajectory(self, traj, callback=None, dt=3e-2, dof_indices=None):
         trange = list(arange(0, traj.T, dt))
@@ -123,14 +122,18 @@ class Robot(object):
         recorder.SendCommand('Stop')
         self.env.Remove(recorder)
 
-    def self_collides(self, q):
-        assert len(q) in [self.nb_dof, self.nb_active_dof]
-        with self.rave:  # need to lock environment when calling robot methods
-            if len(q) == self.nb_dof:
-                self.rave.SetDOFValues(q)
-            else:  # len(q) == self.nb_active_dof
-                self.set_active_dof_values(q)
-            return self.rave.CheckSelfCollision()
+    def set_transparency(self, transparency):
+        for link in self.rave.GetLinks():
+            for geom in link.GetGeometries():
+                geom.SetTransparency(transparency)
+
+    #
+    # Inertial properties
+    #
+
+    @property
+    def com(self):
+        return self.compute_com(self.get_dof_values())
 
     def compute_inertia_matrix(self, q, external_torque=None):
         M = zeros((self.nb_dof, self.nb_dof))
