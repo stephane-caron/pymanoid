@@ -19,9 +19,8 @@
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
 
-from body import *
+from bodies import *
 from inverse_kinematics import *
-from link import *
 from robot import *
 from rotation import *
 from trajectory import *

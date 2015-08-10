@@ -115,7 +115,7 @@ quat_to_rot_tensor = array([[
 
 def rotation_matrix_from_quat(quat):
     """
-    For some reason, faster than OpenRAVE's. Sample:
+    For some reason, a bit faster than OpenRAVE's:
 
         In [13]: %timeit openravepy.rotationMatrixFromQuat([1, 0, 0, 0])
         100000 loops, best of 3: 6.67 µs per loop

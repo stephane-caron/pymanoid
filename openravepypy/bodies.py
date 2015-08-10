@@ -23,24 +23,24 @@ import openravepy
 import uuid
 
 from rotation import rotation_matrix_from_rpy, rpy_from_quat
-from numpy import array
+from numpy import array, dot
 
 
 class Body(object):
 
-    def __init__(self, env, name, rave_body, color=None, pos=None, rpy=None,
-                 pose=None):
+    def __init__(self, rave_body, name=None, color=None, pos=None,
+                 rpy=None, pose=None):
         self.rave = rave_body
-        self.rave.SetName(name)
-        env.Add(self.rave, True)
         if color is not None:
             self.set_color(color)
+        if name is not None:
+            self.rave.SetName(name)
         if pos is not None:
             self.set_pos(pos)
-        if rpy is not None:
-            self.set_rpy(rpy)
         if pose is not None:
             self.set_pose(pose)
+        if rpy is not None:
+            self.set_rpy(rpy)
 
     def set_color(self, color):
         acolor = array([.2, .2, .2])
@@ -139,21 +139,48 @@ class Body(object):
         self.set_transform(T)
 
 
+class BodyPoint(Body):
+
+    def __init__(self, rave_body, p_local, name=None, color=None, pos=None,
+                 rpy=None, pose=None):
+        super(BodyPoint, self).__init__(rave_body, name, color, pos, rpy, pose)
+        self.p_local = p_local
+
+    @property
+    def p(self):
+        p0 = self.T[0:3, 3]
+        return p0 + dot(self.R, self.p_local)
+
+    @property
+    def pos(self):
+        return self.p
+
+    @property
+    def pose(self):
+        pose = self.rave.GetTransformPose()
+        R = self.rave.GetTransform()[0:3, 0:3]
+        pose[4:] += dot(R, self.p_local)
+        if pose[0] < 0:  # convention: cos(alpha) > 0
+            # this convention enforces Slerp shortest path
+            pose[:4] *= -1
+        return pose
+
+
 class Box(Body):
 
-    def __init__(self, env, box_dim=None, X=None, Y=None, Z=None, color='r',
-                 name=None, pos=None, rpy=None, pose=None):
+    def __init__(self, env, box_dim=None, X=None, Y=None, Z=None,
+                 color='r', name=None, pos=None, rpy=None, pose=None):
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
         if box_dim is not None:
             X = box_dim
             Y = box_dim
             Z = box_dim
-        self.X = X
-        self.Y = Y
-        self.Z = Z
+        self.X = X  # half-length
+        self.Y = Y  # half-width
+        self.Z = Z  # half-height
         aabb = [0, 0, 0, X, Y, Z]
         rave_body = openravepy.RaveCreateKinBody(env, '')
         rave_body.InitFromBoxes(array([array(aabb)]), True)
-        super(Box, self).__init__(env, name, rave_body, color, pos=pos, rpy=rpy,
-                                  pose=pose)
+        super(Box, self).__init__(rave_body, name, color, pos, rpy, pose)
+        env.Add(rave_body, True)
