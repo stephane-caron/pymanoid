@@ -22,7 +22,7 @@
 import time
 
 from numpy import minimum, maximum, zeros
-from numpy import dot, eye, ones, vstack, hstack
+from numpy import dot, eye, vstack, hstack
 from toolbox import cvxopt_solve_qp
 
 
@@ -53,23 +53,31 @@ class DiffIKSolver(object):
         def vel(self, q):
             return self.task.vel(q)
 
-    def __init__(self, robot, active_dofs, K_doflim, reg_weight, vel_lim,
-                 conv_tol, dof_lim_scale=0.95):
+    def __init__(self, robot, active_dofs, K_doflim, reg_weight, conv_tol=None,
+                 dof_lim_scale=0.95):
+        """
+
+        robot -- Robot object
+        active_dofs -- list of active DOF indices
+        K_doflim -- gain for the first-order velocity controller (inequalities)
+        conv_tol -- (used by IKSolver only) convergence threshold
+        dol_lim_scale -- in [0., 1.], scales DOF limits to avoid hits
+
+        """
         n = len(active_dofs)
         q_avg = .5 * (robot.q_max + robot.q_min)
         q_dev = .5 * (robot.q_max - robot.q_min)
-
+        self.I = eye(n)
+        self.K_doflim = K_doflim
         self.active_dofs = active_dofs
         self.constraints = []
         self.conv_tol = conv_tol
-        self.I = eye(n)
-        self.K_doflim = K_doflim
         self.n = n
         self.objectives = []
         self.q_max = (q_avg + dof_lim_scale * q_dev)[active_dofs]
         self.q_min = (q_avg - dof_lim_scale * q_dev)[active_dofs]
-        self.qd_max = (+vel_lim * ones(robot.nb_dof))[active_dofs]
-        self.qd_min = (-vel_lim * ones(robot.nb_dof))[active_dofs]
+        self.qd_max = robot.qd_max[active_dofs]
+        self.qd_min = robot.qd_min[active_dofs]
         self.reg_weight = reg_weight
         self.robot = robot
 
@@ -109,7 +117,29 @@ class DiffIKSolver(object):
             return cvxopt_solve_qp(P, q, G, h, A, b)
         return cvxopt_solve_qp(P, q, G, h)
 
-    def add_link_objective(self, link, target_pose, gain=1., weight=1.):
+    def add_com_objective(self, target_com, gain, weight):
+        def err(q):
+            cur_com = self.robot.compute_com(q, self.active_dofs)
+            return target_com - cur_com
+
+        def J(q):
+            return self.robot.compute_com_jacobian(
+                q, dof_indices=self.active_dofs)
+
+        self.add_objective(err, J, gain=gain, weight=weight)
+
+    def add_dof_objective(self, dof_id, target_angle, gain, weight):
+        def err(q):
+            return target_angle - q[dof_id]
+
+        def J(q):
+            j = zeros((len(q),))
+            j[dof_id] = 1.
+            return j
+
+        self.add_objective(err, J, gain=gain, weight=weight)
+
+    def add_link_objective(self, link, target_pose, gain, weight):
         def err(q):
             cur_pose = self.robot.compute_link_pose(link, q, self.active_dofs)
             return target_pose - cur_pose
@@ -123,30 +153,21 @@ class DiffIKSolver(object):
 
         self.add_objective(err, J, gain=gain, weight=weight)
 
-    def add_com_objective(self, target_com, gain=0.5, weight=0.1):
-        def err(q):
-            cur_com = self.robot.compute_com(q, self.active_dofs)
-            return target_com - cur_com
-
-        def J(q):
-            return self.robot.compute_com_jacobian(
-                q, dof_indices=self.active_dofs)
-
-        self.add_objective(err, J, gain=gain, weight=weight)
-
-    def add_dof_objective(self, dof_id, target_angle, gain=.1, weight=0.0005):
-        def err(q):
-            return target_angle - q[dof_id]
-
-        def J(q):
-            j = zeros((len(q),))
-            j[dof_id] = 1.
-            return j
-
-        self.add_objective(err, J, gain=gain, weight=weight)
-
 
 class IKTracker(DiffIKSolver):
+
+    def __init__(self, robot, active_dofs, K_doflim, reg_weight=1e-5,
+                 dof_lim_scale=0.95):
+        """
+
+        robot -- Robot object
+        active_dofs -- list of active DOF indices
+        K_doflim -- gain for the first-order velocity controller (inequalities)
+        dol_lim_scale -- in [0., 1.], scales DOF limits to avoid hits
+
+        """
+        super(IKTracker, self).__init__(robot, active_dofs, K_doflim,
+                                        reg_weight, dof_lim_scale=dof_lim_scale)
 
     def track(self, dt, callback=None, duration=120.):
         t = 0.
@@ -166,6 +187,20 @@ class IKTracker(DiffIKSolver):
 
 
 class IKSolver(DiffIKSolver):
+
+    def __init__(self, robot, active_dofs, K_doflim, reg_weight=1e-5,
+                 conv_tol=1e-4, dof_lim_scale=0.95):
+        """
+
+        robot -- Robot object
+        active_dofs -- list of active DOF indices
+        K_doflim -- gain for the first-order velocity controller (inequalities)
+        conv_tol -- (used by IKSolver only) convergence threshold
+        dol_lim_scale -- in [0., 1.], scales DOF limits to avoid hits
+
+        """
+        super(IKSolver, self).__init__(robot, active_dofs, K_doflim, reg_weight,
+                                       conv_tol, dof_lim_scale=dof_lim_scale)
 
     def compute_objective(self):
         def sq(v): return dot(v, v)

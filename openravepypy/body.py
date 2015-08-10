@@ -64,6 +64,10 @@ class Body(object):
                 geom.SetTransparency(transparency)
 
     @property
+    def index(self):
+        return self.rave.GetIndex()
+
+    @property
     def pose(self):
         pose = self.rave.GetTransformPose()
         if pose[0] < 0:  # convention: cos(alpha) > 0
