@@ -93,23 +93,21 @@ class DiffIKSolver(object):
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - self.q))
         J_list = [c.jacobian(self.q) for c in self.constraints]
         v_list = [c.vel(self.q) for c in self.constraints]
-        P0 = self.reg_weight * self.I
-        q0 = zeros(len(self.q))
+        P = self.reg_weight * self.I
+        q = zeros(len(self.q))
 
         for obj in self.objectives:
             v, J = obj.vel(self.q), obj.jacobian(self.q)
-            P0 += obj.weight * dot(J.T, J)
-            q0 += obj.weight * dot(-v.T, J)
+            P += obj.weight * dot(J.T, J)
+            q += obj.weight * dot(-v.T, J)
 
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
         if J_list:
             A = vstack(J_list)
             b = hstack(v_list)
-            qd = cvxopt_solve_qp(P0, q0, G, h, A, b)
-        else:
-            qd = cvxopt_solve_qp(P0, q0, G, h)
-        return qd
+            return cvxopt_solve_qp(P, q, G, h, A, b)
+        return cvxopt_solve_qp(P, q, G, h)
 
     def add_link_objective(self, link, target_pose, gain=1., weight=1.):
         def err(q):

@@ -18,4 +18,5 @@
 # You should have received a copy of the GNU General Public License along with
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
+
 from cvxopt_wrapper import cvxopt_solve_qp
