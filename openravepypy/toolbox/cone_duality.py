@@ -41,6 +41,29 @@ class NotConeSpan(ConeException):
         return "Matrix is not a cone span"
 
 
+def span_of_face(F):
+    """
+
+    Compute the span matrix F^S of the face matrix F,
+    that is, a matrix such that
+
+        {F x <= 0} if and only if {x = F^S z, z >= 0}.
+
+    """
+    b, A = zeros((F.shape[0], 1)), F
+    # H-representation: b - A x >= 0
+    # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+    # the input to pycddlib is [b, -A]
+    F_cdd = Matrix(hstack([b, -A]), number_type='float')
+    F_cdd.rep_type = RepType.INEQUALITY
+    P = Polyhedron(F_cdd)
+    V = array(P.get_generators())
+    for i in xrange(V.shape[0]):
+        if V[i, 0] != 0:  # 1 = vertex, 0 = ray
+            raise NotConeFace(F)
+    return V[:, 1:].T
+
+
 def face_of_span(S):
     """
 
@@ -58,32 +81,8 @@ def face_of_span(S):
     H = array(P.get_inequalities())
     if H.shape == (0,):  # H = []
         return H
-    b, A = H[:, 0], -H[:, 1:]
-    # H matrix is [b, -A]
-    # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+    b, A = H[:, 0], -H[:, 1:]  # H matrix is [b, -A]  (see span_of_face)
     for i in xrange(H.shape[0]):
         if b[i] != 0:
             raise NotConeSpan(S)
     return A
-
-
-def span_of_face(F):
-    """
-
-    Compute the span matrix F^S of the face matrix F,
-    that is, a matrix such that
-
-        {F x <= 0} if and only if {x = F^S z, z >= 0}.
-
-    """
-    b, A = zeros((F.shape[0], 1)), F
-    # H-representation: b - A x >= 0
-    # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-    F_cdd = Matrix(hstack([b, A]), number_type='float')
-    F_cdd.rep_type = RepType.INEQUALITY
-    P = Polyhedron(F_cdd)
-    V = array(P.get_generators())
-    for i in xrange(V.shape[0]):
-        if V[i, 0] != 0:  # 1 = vertex, 0 = ray
-            raise NotConeFace(F)
-    return V[:, 1:].T
