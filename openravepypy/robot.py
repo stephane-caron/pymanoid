@@ -21,8 +21,8 @@
 
 import time
 
-from numpy import arange, array, cross, dot, eye, ones, maximum
-from numpy import zeros, hstack, vstack, tensordot, minimum
+from numpy import arange, array, cross, dot, eye, maximum, minimum
+from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
 from rotation import crossmat
 from inverse_kinematics import DiffIKSolver
@@ -46,7 +46,7 @@ from inverse_kinematics import DiffIKSolver
 
 class Robot(object):
 
-    def __init__(self, env, robot_name, vel_lim=10.):
+    def __init__(self, env, robot_name):
         env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
         rave = env.GetRobot(robot_name)
         q_min, q_max = rave.GetDOFLimits()
@@ -58,8 +58,6 @@ class Robot(object):
         self.nb_dof = rave.GetDOF()
         self.q_max = q_max
         self.q_min = q_min
-        self.qd_max = +vel_lim * ones(self.nb_dof)
-        self.qd_min = -vel_lim * ones(self.nb_dof)
         self.rave = rave
 
     #
@@ -95,22 +93,18 @@ class Robot(object):
     # Inverse Kinematics
     #
 
-    def init_ik(self, active_dofs, K_doflim, reg_weight=1e-10,
-                dof_lim_scale=0.95):
+    def init_ik(self, active_dofs, dq_lim, K_doflim, reg_weight,
+                doflim_scale=0.95):
         self.set_active_dofs(active_dofs)
         q_avg = .5 * (self.q_max + self.q_min)
         q_dev = .5 * (self.q_max - self.q_min)
-        q_max = (q_avg + dof_lim_scale * q_dev)[active_dofs]
-        q_min = (q_avg - dof_lim_scale * q_dev)[active_dofs]
-        qd_max = self.qd_max[active_dofs]
-        qd_min = self.qd_min[active_dofs]
-        self.ik = DiffIKSolver(
-            (q_min, q_max), (qd_min, qd_max), K_doflim, reg_weight)
+        q_max = (q_avg + doflim_scale * q_dev)[active_dofs]
+        q_min = (q_avg - doflim_scale * q_dev)[active_dofs]
+        self.ik = DiffIKSolver(q_max, q_min, dq_lim, K_doflim, reg_weight)
 
     def add_com_objective(self, target, gain, weight):
         def err(qa):
-            cur_com = self.compute_com(qa, self.active_dofs)
-            return target.p - cur_com
+            return target.p - self.compute_com(qa, self.active_dofs)
 
         def J(qa):
             return self.compute_com_jacobian(qa, self.active_dofs)
@@ -136,7 +130,7 @@ class Robot(object):
         dqa = self.ik.compute_delta(qa)
         self.set_active_dof_values(qa + dqa)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=True):
+    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=False):
         cur_obj = 1000.
         qa = self.q_active
         qa_max = self.ik.q_max

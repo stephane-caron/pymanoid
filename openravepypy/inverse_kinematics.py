@@ -19,8 +19,7 @@
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
 
-from numpy import minimum, maximum, zeros
-from numpy import dot, eye, vstack, hstack
+from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from toolbox import cvxopt_solve_qp
 
 
@@ -55,19 +54,17 @@ class DiffIKSolver(object):
         def vel(self, q):
             return self.task.vel(q)
 
-    def __init__(self, q_lim, qd_lim, K_doflim, reg_weight):
-        q_min, q_max = q_lim
-        qd_min, qd_max = qd_lim
+    def __init__(self, q_max, q_min, dq_lim, K_doflim, reg_weight):
         n = len(q_min)
         self.I = eye(n)
         self.K_doflim = K_doflim
         self.constraints = []
+        self.dq_max = +dq_lim * ones(n)
+        self.dq_min = -dq_lim * ones(n)
         self.n = n
         self.objectives = []
-        self.q_min = q_min
         self.q_max = q_max
-        self.qd_min = qd_min
-        self.qd_max = qd_max
+        self.q_min = q_min
         self.reg_weight = reg_weight
 
     def add_constraint(self, err_fun, jacobian_fun, gain):
@@ -88,13 +85,13 @@ class DiffIKSolver(object):
             P += obj.weight * dot(J.T, J)
             r += obj.weight * dot(-obj.vel(q).T, J)
         if self.K_doflim is not None:
-            qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
-            qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
+            dq_max = minimum(self.dq_max, self.K_doflim * (self.q_max - q))
+            dq_min = maximum(self.dq_min, self.K_doflim * (self.q_min - q))
         else:
-            qd_max = self.qd_max
-            qd_min = self.qd_min
+            dq_max = self.dq_max
+            dq_min = self.dq_min
         G = vstack([+self.I, -self.I])
-        h = hstack([qd_max, -qd_min])
+        h = hstack([dq_max, -dq_min])
         if self.constraints:
             A = vstack([c.jacobian(q) for c in self.constraints])
             b = hstack([c.vel(q) for c in self.constraints])
