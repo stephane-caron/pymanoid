@@ -178,6 +178,12 @@ class Robot(object):
         recorder.SendCommand('Stop')
         self.env.Remove(recorder)
 
+    def set_color(self, r, g, b):
+        for link in self.rave.GetLinks():
+            for geom in link.GetGeometries():
+                geom.SetAmbientColor([r, g, b])
+                geom.SetDiffuseColor([r, g, b])
+
     def set_transparency(self, transparency):
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():

@@ -63,6 +63,9 @@ class Body(object):
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
+    def set_visible(self, visibility):
+        self.rave.SetVisible(visibility)
+
     @property
     def index(self):
         return self.rave.GetIndex()
