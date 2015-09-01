@@ -57,11 +57,15 @@ def span_of_face(F):
     F_cdd = Matrix(hstack([b, -A]), number_type='float')
     F_cdd.rep_type = RepType.INEQUALITY
     P = Polyhedron(F_cdd)
-    V = array(P.get_generators())
+    g = P.get_generators()
+    V = array(g)
+    rays = []
     for i in xrange(V.shape[0]):
         if V[i, 0] != 0:  # 1 = vertex, 0 = ray
             raise NotConeFace(F)
-    return V[:, 1:].T
+        elif i not in g.lin_set:
+            rays.append(V[i, 1:])
+    return array(rays).T
 
 
 def face_of_span(S):
@@ -78,11 +82,15 @@ def face_of_span(S):
     V_cdd = Matrix(V, number_type='float')
     V_cdd.rep_type = RepType.GENERATOR
     P = Polyhedron(V_cdd)
-    H = array(P.get_inequalities())
+    ineq = P.get_inequalities()
+    H = array(ineq)
     if H.shape == (0,):  # H = []
         return H
-    b, A = H[:, 0], -H[:, 1:]  # H matrix is [b, -A]  (see span_of_face)
+    # b, A = H[:, 0], -H[:, 1:]  # H matrix is [b, -A]
+    A = []
     for i in xrange(H.shape[0]):
-        if b[i] != 0:
+        if H[i, 0] != 0:  # b should be zero
             raise NotConeSpan(S)
-    return A
+        elif i not in ineq.lin_set:
+            A.append(-H[i, 1:])
+    return array(A)
