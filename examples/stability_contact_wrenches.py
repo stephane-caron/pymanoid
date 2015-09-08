@@ -25,8 +25,9 @@ surfaces positionned anywhere in space. The stability condition is that the
 instantaneous gravito-inertial wrench belongs to the GIWC. See the paper at
 <https://scaron.info/research/rss-2015.html> for details.
 
-The calculation method here uses one contact wrench cone for each rectangular
-contact.
+The calculation method here uses one Contact Wrench Cone (CWC) for each
+rectangular contact. See <https://scaron.info/research/icra-2015.html> for the
+derivation of the CWC.
 
 """
 
