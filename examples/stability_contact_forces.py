@@ -21,10 +21,12 @@
 """
 
 Compute the Gravito-Inertial Wrench Cone (GIWC) for a set of rectangular contact
-surfaces positionned anywhere in space.
+surfaces positionned anywhere in space. The stability condition is that the
+instantaneous gravito-inertial wrench belongs to the GIWC. See the paper at
+<https://scaron.info/research/rss-2015.html> for details.
 
-See the paper at <https://scaron.info/research/rss-2015.html> for technical
-explanations.
+The calculation method here starts from friction cones located at the corners of
+each rectangular surface.
 
 """
 
