@@ -46,6 +46,8 @@ from inverse_kinematics import DiffIKSolver
 
 class Robot(object):
 
+    mass = None
+
     def __init__(self, env, robot_name):
         env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
         rave = env.GetRobot(robot_name)
@@ -54,7 +56,8 @@ class Robot(object):
 
         self.active_dofs = None
         self.env = env
-        self.mass = sum([link.GetMass() for link in rave.GetLinks()])
+        if self.mass is None:  # may not be True for children classes
+            self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dof = rave.GetDOF()
         self.q_max = q_max
         self.q_min = q_min

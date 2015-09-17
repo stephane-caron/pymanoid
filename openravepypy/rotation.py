@@ -19,8 +19,17 @@
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import atan2, asin, cos, sin
-from numpy import array, dot
+"""
+Most formulae in this module are adapted from the very useful document by James
+Diebel:
+
+"Representing Attitude: Euler Angles, Unit Quaternions, and Rotation Vectors"
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134
+"""
+
+
+from math import atan2, asin, cos, sin, acos
+from numpy import array, dot, sqrt
 from openravepy import quatFromRotationMatrix
 
 
@@ -133,3 +142,13 @@ def quat_from_rotation_matrix(R):
 
 def rotation_matrix_from_rpy(roll, pitch, yaw):
     return rotation_matrix_from_quat(quat_from_rpy(roll, pitch, yaw))
+
+
+def axis_angle_from_quat(quat):
+    angle = 2 * acos(quat[0])
+    axis = quat[1:] / sqrt(1. - quat[0] ** 2)
+    return (axis, angle)
+
+
+def axis_angle_from_rotation_matrix(R):
+    return axis_angle_from_quat(quat_from_rotation_matrix(R))
