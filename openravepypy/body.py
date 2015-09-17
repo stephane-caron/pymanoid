@@ -23,14 +23,19 @@ import openravepy
 import uuid
 
 from rotation import rotation_matrix_from_rpy, rpy_from_quat
-from numpy import array, dot
+from numpy import array
 
 
 class Body(object):
 
-    def __init__(self, rave_body, name=None, color=None, pos=None,
-                 rpy=None, pose=None):
-        self.rave = rave_body
+    """
+    Wrapper for a RAVE object with the GetTransform() and GetTransformPose()
+    methods, e.g. a Link or a Manipulator.
+    """
+
+    def __init__(self, rave_object, name=None, color=None, pos=None, rpy=None,
+                 pose=None):
+        self.rave = rave_object
         if color is not None:
             self.set_color(color)
         if name is not None:
@@ -68,6 +73,7 @@ class Body(object):
 
     @property
     def index(self):
+        """Notably used to compute jacobians and hessians."""
         return self.rave.GetIndex()
 
     @property
@@ -146,33 +152,6 @@ class Body(object):
         self.set_transform(T)
 
 
-class BodyPoint(Body):
-
-    def __init__(self, rave_body, p_local, name=None, color=None, pos=None,
-                 rpy=None, pose=None):
-        super(BodyPoint, self).__init__(rave_body, name, color, pos, rpy, pose)
-        self.p_local = p_local
-
-    @property
-    def p(self):
-        p0 = self.T[0:3, 3]
-        return p0 + dot(self.R, self.p_local)
-
-    @property
-    def pos(self):
-        return self.p
-
-    @property
-    def pose(self):
-        pose = self.rave.GetTransformPose()
-        R = self.rave.GetTransform()[0:3, 0:3]
-        pose[4:] += dot(R, self.p_local)
-        if pose[0] < 0:  # convention: cos(alpha) > 0
-            # this convention enforces Slerp shortest path
-            pose[:4] *= -1
-        return pose
-
-
 class Box(Body):
 
     def __init__(self, env, box_dim=None, X=None, Y=None, Z=None,
@@ -191,3 +170,29 @@ class Box(Body):
         rave_body.InitFromBoxes(array([array(aabb)]), True)
         super(Box, self).__init__(rave_body, name, color, pos, rpy, pose)
         env.Add(rave_body, True)
+
+
+class Link(Body):
+
+    pass
+
+
+class Manipulator(Link):
+
+    def __init__(self, rave_manipulator, name=None, color=None, pos=None,
+                 rpy=None, pose=None):
+        super(Manipulator, self).__init__(rave_manipulator, name, color, pos,
+                                          rpy, pose)
+        self.end_effector = rave_manipulator.GetEndEffector()
+        self.name = rave_manipulator.GetName()
+
+    def set_transparency(self, transparency):
+        print "Warning: manipulators ('%s' here) have no link" % self.name
+
+    def set_visible(self, visibility):
+        print "Warning: manipulators ('%s' here) have no visibility" % self.name
+
+    @property
+    def index(self):
+        """Notably used to compute jacobians and hessians."""
+        return self.end_effector.GetIndex()
