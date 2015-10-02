@@ -34,7 +34,7 @@ derivation of the CWC.
 import openravepy
 import openravepypy
 
-from openravepypy.toolbox.cone_duality import face_of_span, span_of_face
+from openravepypy.cone_duality import face_of_span, span_of_face
 from numpy import array, dot, zeros
 from scipy.linalg import block_diag
 

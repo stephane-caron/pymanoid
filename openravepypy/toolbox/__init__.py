@@ -19,7 +19,8 @@
 # openravepypy. If not, see <http://www.gnu.org/licenses/>.
 
 
-from cvxopt_wrapper import cvxopt_solve_qp
+from cvxopt_ import cvxopt_solve_qp
+from matplotlib_ import plot_polygon
 from numpy import dot, sqrt
 
 
