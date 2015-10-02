@@ -128,6 +128,15 @@ class Robot(object):
 
         self.ik.add_objective(err, J, gain, weight)
 
+    def add_zero_cam_objective(self, gain, weight):
+        def err(qa):
+            return zeros((3,))
+
+        def J(qa):
+            return self.compute_cam_jacobian(qa, self.active_dofs)
+
+        self.ik.add_objective(err, J, gain, weight)
+
     def step_tracker(self):
         qa = self.q_active
         dqa = self.ik.compute_delta(qa)
@@ -303,8 +312,8 @@ class Robot(object):
     #
 
     def compute_cam_rate(self, q, qd, qdd):
-        J = self.compute_cam_pseudo_jacobian(q)
-        H = self.compute_cam_pseudo_hessian(q)
+        J = self.compute_cam_jacobian(q)
+        H = self.compute_cam_hessian(q)
         return dot(J, qdd) + dot(qd, dot(H, qd))
 
     def compute_com_acceleration(self, q, qd, qdd):
@@ -345,11 +354,11 @@ class Robot(object):
     # Jacobians
     #
 
-    def compute_am_as_jacobian(self, q, p):
+    def compute_am_jacobian(self, q, p, dof_indices=None):
         """Compute a matrix J(p) such that the angular momentum with respect to
-        p is
+        the point p is
 
-            L(q, qd) = dot(J(q), qd).
+            L_p(q, qd) = dot(J(q), qd).
 
         q -- joint angle values
         qd -- joint-angle velocities
@@ -357,9 +366,12 @@ class Robot(object):
         in world coordinates
 
         """
-        J = zeros((3, len(q)))
+        J = zeros((3, self.nb_dof))
         with self.rave:
-            self.rave.SetDOFValues(q)
+            if dof_indices is not None:
+                self.rave.SetDOFValues(q, dof_indices)
+            else:
+                self.rave.SetDOFValues(q)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 i = link.GetIndex()
@@ -369,10 +381,22 @@ class Robot(object):
                 J_trans = self.rave.ComputeJacobianTranslation(i, c)
                 J_rot = self.rave.ComputeJacobianAxisAngle(i)
                 J += dot(crossmat(c - p), m * J_trans) + dot(I, J_rot)
-        return J
+            if dof_indices is not None:
+                return J[:, dof_indices]
+            return J
 
-    def compute_cam_as_jacobian(self, q):
-        return self.compute_am_pseudo_jacobian(q, self.compute_com(q))
+    def compute_cam_jacobian(self, q, dof_indices=None):
+        """Compute a matrix J(p) such that the angular momentum with respect to
+        the center of mass G is
+
+            L_G(q, qd) = dot(J(q), qd).
+
+        q -- joint angle values
+        qd -- joint-angle velocities
+
+        """
+        p_G = self.compute_com(q, dof_indices)
+        return self.compute_am_jacobian(q, p_G, dof_indices)
 
     def compute_com_jacobian(self, q, dof_indices=None):
         Jcom = zeros((3, self.nb_dof))
@@ -438,13 +462,13 @@ class Robot(object):
     # Hessians
     #
 
-    def compute_am_rate_as_hessian(self, q, p):
+    def compute_am_hessian(self, q, p):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to point p is
 
-            Ld(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
+            Ld_p(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
 
-        where J(q) is the result of self.compute_pseudo_jacobian(q, p).
+        where J(q) is the result of self.compute_am_jacobian(q, p).
 
         q -- joint angle values
         qd -- joint-angle velocities
@@ -489,8 +513,16 @@ class Robot(object):
                     - dot(crosstens(dot(I, J_rot)), J_rot)
         return H
 
-    def compute_cam_as_hessian(self, q):
-        return self.compute_amd_pseudo_hessian(q, self.compute_com(q))
+    def compute_cam_hessian(self, q):
+        """Returns a matrix H(q) such that the rate of change of the angular
+        momentum with respect to the center of mass G is
+
+            Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
+
+        q -- joint angle values
+
+        """
+        return self.compute_am_hessian(q, self.compute_com(q))
 
     def compute_com_hessian(self, q):
         Hcom = zeros((self.nb_dof, 3, self.nb_dof))
