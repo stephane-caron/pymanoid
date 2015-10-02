@@ -70,27 +70,56 @@ class Robot(object):
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:
             return self.rave.GetDOFValues(dof_indices)
+        elif self.active_dofs:
+            return self.rave.GetActiveDOFValues()
         return self.rave.GetDOFValues()
+
+    def get_dof_velocities(self, dof_indices=None):
+        if dof_indices is not None:
+            return self.rave.GetDOFVelocities(dof_indices)
+        elif self.active_dofs:
+            return self.rave.GetActiveDOFValues()
+        return self.rave.GetDOFVelocities()
 
     @property
     def q(self):
-        return self.get_dof_values()
+        return self.rave.GetDOFValues()
 
     @property
     def q_active(self):
-        return self.get_dof_values(self.active_dofs)
+        assert self.active_dofs
+        return self.rave.GetActiveDOFValues()
 
-    def set_active_dof_values(self, q_active):
-        self.rave.SetDOFValues(q_active, self.active_dofs)
+    @property
+    def qd(self):
+        return self.rave.GetDOFVelocities()
+
+    @property
+    def qd_active(self):
+        assert self.active_dofs
+        return self.rave.GetActiveDOFVelocities()
 
     def set_active_dofs(self, active_dofs):
         self.active_dofs = active_dofs
+        self.rave.SetActiveDOFs(active_dofs)
 
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
+        elif self.active_dofs and len(q) == len(self.active_dofs):
+            return self.rave.SetDOFValues(q, self.active_dofs)
         assert len(q) == self.nb_dof
         return self.rave.SetDOFValues(q)
+
+    def set_dof_velocities(self, qd, dof_indices=None):
+        check_dof_limits = 0  # CLA_Nothing
+        if dof_indices is not None:
+            return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
+        elif self.active_dofs and len(qd) == len(self.active_dofs):
+            return self.rave.SetDOFVelocities(qd, check_dof_limits,
+                                              self.active_dofs)
+        assert len(qd) == self.nb_dof
+        return self.rave.SetDOFVelocities(qd)
 
     #
     # Inverse Kinematics
@@ -128,19 +157,25 @@ class Robot(object):
 
         self.ik.add_objective(err, J, gain, weight)
 
-    def add_zero_cam_objective(self, gain, weight):
+    def add_constant_cam_objective(self, dt, gain, weight):
         def err(qa):
-            return zeros((3,))
+            qd = self.get_dof_velocities()
+            Jc = self.compute_cam_jacobian(qa, self.active_dofs)
+            return dot(Jc, qd) * dt
 
         def J(qa):
-            return self.compute_cam_jacobian(qa, self.active_dofs)
+            qd = self.get_dof_velocities()
+            Jc = self.compute_cam_jacobian(qa, self.active_dofs)
+            H = self.compute_cam_hessian(qa, self.active_dofs)
+            H_lin = tensordot(qd, H, axes=(0, 0))  # linearize quad. term here
+            return (Jc - H_lin)
 
         self.ik.add_objective(err, J, gain, weight)
 
     def step_tracker(self):
-        qa = self.q_active
-        dqa = self.ik.compute_delta(qa)
-        self.set_active_dof_values(qa + dqa)
+        dq_active = self.ik.compute_delta(self.q_active)
+        self.set_dof_values(self.q_active + dq_active)
+        return dq_active
 
     def solve_ik(self, max_it=100, conv_tol=1e-5, debug=False):
         cur_obj = 1000.
@@ -156,7 +191,7 @@ class Robot(object):
                 break
             dq = self.ik.compute_delta(qa)
             qa = minimum(maximum(qa_min, qa + dq), qa_max)
-        self.set_active_dof_values(qa)
+        self.set_dof_values(qa)
         return itnum, cur_obj
 
     #
@@ -179,7 +214,7 @@ class Robot(object):
         viewer = self.env.GetViewer()
         recorder = RaveCreateModule(self.env, 'viewerrecorder')
         self.env.AddModule(recorder, '')
-        self.rave.SetDOFValues(traj.q(0))
+        self.set_dof_values(traj.q(0))
         recorder.SendCommand('Start %d %d %d codec %d timing '
                              'simtime filename %s\n'
                              'viewer %s' % (width, height, framerate, codec,
@@ -209,9 +244,9 @@ class Robot(object):
     def com(self):
         return self.compute_com(self.get_dof_values())
 
-    def compute_inertia_matrix(self, q, external_torque=None):
+    def compute_inertia_matrix(self, q, dof_indices=None, external_torque=None):
         M = zeros((self.nb_dof, self.nb_dof))
-        self.rave.SetDOFValues(q)
+        self.set_dof_values(q, dof_indices)
         for (i, e_i) in enumerate(eye(self.nb_dof)):
             tm, _, _ = self.rave.ComputeInverseDynamics(
                 e_i, external_torque, returncomponents=True)
@@ -225,10 +260,7 @@ class Robot(object):
     def compute_com(self, q, dof_indices=None):
         total = zeros(3)
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 c = link.GetGlobalCOM()
@@ -237,10 +269,7 @@ class Robot(object):
 
     def compute_link_pos(self, link, q, link_coord=None, dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.rave.SetDOFValues(q, dof_indices)
             T = link.T
             if link_coord is None:
                 return T[:3, 3]
@@ -248,17 +277,14 @@ class Robot(object):
 
     def compute_link_pose(self, link, q, dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.rave.SetDOFValues(q, dof_indices)
             return link.pose  # first coefficient will be positive
 
     #
     # Velocities
     #
 
-    def compute_angular_momentum(self, q, qd, p):
+    def compute_angular_momentum(self, q, qd, p, dof_indices=None):
         """Compute the angular momentum with respect to point p.
 
         q -- joint angle values
@@ -269,8 +295,8 @@ class Robot(object):
         """
         momentum = zeros(3)
         with self.rave:
-            self.rave.SetDOFValues(q)
-            self.rave.SetDOFVelocities(qd)
+            self.set_dof_values(q, dof_indices)
+            self.set_dof_velocities(qd, dof_indices)
             for link in self.rave.GetLinks():
                 T = link.GetTransform()
                 R, r = T[0:3, 0:3], T[0:3, 3]
@@ -287,16 +313,19 @@ class Robot(object):
                     + dot(R, dot(I, dot(R.T, omega)))
         return momentum
 
-    def compute_cam(self, q, qd):
-        """Compute Centroidal Angular Momentum (CAM), i.e. angular momentum at
-        the instantaneous COM."""
-        return self.compute_angular_momentum(q, qd, self.compute_com(q))
+    def compute_cam(self, q, qd, dof_indices=None):
+        """
+        Compute the centroidal angular momentum (CAM), that is to say, the
+        angular momentum with respect to the COM.
+        """
+        p_G = self.compute_com(q, dof_indices)
+        return self.compute_angular_momentum(q, qd, p_G, dof_indices)
 
-    def compute_com_velocity(self, q, qd):
+    def compute_com_velocity(self, q, qd, dof_indices=None):
         total = zeros(3)
         with self.rave:
-            self.rave.SetDOFValues(q)
-            self.rave.SetDOFVelocities(qd)
+            self.set_dof_values(q, dof_indices)
+            self.set_dof_velocities(qd, dof_indices)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 R = link.GetTransform()[0:3, 0:3]
@@ -321,14 +350,14 @@ class Robot(object):
         H = self.compute_com_hessian(q)
         return dot(J, qdd) + dot(qd, dot(H, qdd))
 
-    def compute_zmp(self, q, qd, qdd):
+    def compute_zmp(self, q, qd, qdd, dof_indices=None):
         global pb_times, total_times, cum_ratio, avg_ratio
         g = array([0, 0, -9.81])
         f0 = self.mass * g[2]
         tau0 = zeros(3)
         with self.rave:
-            self.rave.SetDOFValues(q)
-            self.rave.SetDOFVelocities(qd)
+            self.set_dof_values(q, dof_indices)
+            self.set_dof_velocities(qd, dof_indices)
             link_velocities = self.rave.GetLinkVelocities()
             link_accelerations = self.rave.GetLinkAccelerations(qdd)
             for link in self.rave.GetLinks():
@@ -368,10 +397,7 @@ class Robot(object):
         """
         J = zeros((3, self.nb_dof))
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 i = link.GetIndex()
@@ -401,10 +427,7 @@ class Robot(object):
     def compute_com_jacobian(self, q, dof_indices=None):
         Jcom = zeros((3, self.nb_dof))
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
                 index = link.GetIndex()
                 com = link.GetGlobalCOM()
@@ -418,10 +441,7 @@ class Robot(object):
 
     def compute_link_jacobian(self, link, q, dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             J_trans = self.rave.ComputeJacobianTranslation(link.index, link.p)
             J_rot = self.rave.ComputeJacobianAxisAngle(link.index)
             J = vstack([J_rot, J_trans])
@@ -431,10 +451,7 @@ class Robot(object):
 
     def compute_link_pose_jacobian(self, link, q, dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             J_trans = self.rave.CalculateJacobian(link.index, link.p)
             or_quat = link.rave.GetTransformPose()[:4]  # don't use link.pose
             J_quat = self.rave.CalculateRotationJacobian(link.index, or_quat)
@@ -448,10 +465,7 @@ class Robot(object):
     def compute_link_translation_jacobian(self, link, q, link_coord=None,
                                           dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             p = self.compute_link_pos(link, q, link_coord, dof_indices)
             J = self.rave.ComputeJacobianTranslation(link.index, p)
             if dof_indices is not None:
@@ -462,7 +476,7 @@ class Robot(object):
     # Hessians
     #
 
-    def compute_am_hessian(self, q, p):
+    def compute_am_hessian(self, q, p, dof_indices=None):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to point p is
 
@@ -495,9 +509,9 @@ class Robot(object):
             """
             return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
 
-        H = zeros((len(q), 3, len(q)))
+        H = zeros((self.nb_dof, 3, self.nb_dof))
         with self.rave:
-            self.rave.SetDOFValues(q)
+            self.set_dof_values(q)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 i = link.GetIndex()
@@ -511,9 +525,13 @@ class Robot(object):
                 H += middot(crossmat(c - p), m * H_trans) \
                     + middot(I, H_rot) \
                     - dot(crosstens(dot(I, J_rot)), J_rot)
-        return H
+            if dof_indices:
+                return ((H[dof_indices, :, :])[:, :, dof_indices])
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+            return H
 
-    def compute_cam_hessian(self, q):
+    def compute_cam_hessian(self, q, dof_indices=None):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to the center of mass G is
 
@@ -522,26 +540,34 @@ class Robot(object):
         q -- joint angle values
 
         """
-        return self.compute_am_hessian(q, self.compute_com(q))
+        p_G = self.compute_com(q)
+        return self.compute_am_hessian(q, p_G, dof_indices)
 
-    def compute_com_hessian(self, q):
+    def compute_com_hessian(self, q, dof_indices=None):
         Hcom = zeros((self.nb_dof, 3, self.nb_dof))
         with self.rave:
-            self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
                 index = link.GetIndex()
                 com = link.GetGlobalCOM()
                 m = link.GetMass()
                 H = self.rave.ComputeHessianTranslation(index, com)
                 Hcom += m * H
-        return Hcom / self.mass
+            H = Hcom / self.mass
+            if dof_indices:
+                return ((H[dof_indices, :, :])[:, :, dof_indices])
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+            return H
 
     def compute_link_hessian(self, link, q, dof_indices=None):
         with self.rave:
-            if dof_indices is not None:
-                self.rave.SetDOFValues(q, dof_indices)
-            else:
-                self.rave.SetDOFValues(q)
+            self.set_dof_values(q, dof_indices)
             H_trans = self.rave.ComputeHessianTranslation(link.index, link.p)
             H_rot = self.rave.ComputeHessianAxisAngle(link.index)
-            return hstack([H_rot, H_trans])
+            H = hstack([H_rot, H_trans])
+            if dof_indices:
+                return ((H[dof_indices, :, :])[:, :, dof_indices])
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+            return H
