@@ -82,8 +82,8 @@ class DiffIKSolver(object):
         return sum(obj.weight * obj.sq_error(q, qd) for obj in self.objectives)
 
     def compute_velocity(self, q, qd):
-        P = self.reg_weight * self.I
-        r = zeros(self.n)
+        P = zeros(self.I.shape)
+        r = zeros(self.q_max.shape)
         for obj in self.objectives:
             J = obj.jacobian(q)
             P += obj.weight * dot(J.T, J)
