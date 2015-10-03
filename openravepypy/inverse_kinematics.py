@@ -27,13 +27,13 @@ class DiffIKSolver(object):
 
     class Task(object):
 
-        def __init__(self, err_fun, jacobian_fun, gain):
-            self.err = err_fun
+        def __init__(self, error_fun, jacobian_fun, gain):
+            self.error = error_fun
             self.gain = gain
             self.jacobian = jacobian_fun
 
-        def vel(self, q):
-            return self.gain * self.err(q)
+        def velocity(self, q, qd):
+            return self.gain * self.error(q, qd)
 
     class Objective(object):
 
@@ -41,59 +41,64 @@ class DiffIKSolver(object):
             self.task = task
             self.weight = weight
 
-        def err(self, q):
-            return self.task.err(q)
+        def error(self, q, qd):
+            return self.task.error(q, qd)
 
-        def sq_err(self, q):
-            e = self.err(q)
+        def sq_error(self, q, qd):
+            e = self.error(q, qd)
             return dot(e, e)
 
         def jacobian(self, q):
             return self.task.jacobian(q)
 
-        def vel(self, q):
-            return self.task.vel(q)
+        def velocity(self, q, qd):
+            return self.task.velocity(q, qd)
 
-    def __init__(self, q_max, q_min, dq_lim, K_doflim, reg_weight):
+    def __init__(self, robot, dt, qd_lim, K_doflim, reg_weight, doflim_scale):
+        q_avg = .5 * (robot.q_max + robot.q_min)
+        q_dev = .5 * (robot.q_max - robot.q_min)
+        q_max = (q_avg + doflim_scale * q_dev)
+        q_min = (q_avg - doflim_scale * q_dev)
         n = len(q_min)
         self.I = eye(n)
         self.K_doflim = K_doflim
         self.constraints = []
-        self.dq_max = +dq_lim * ones(n)
-        self.dq_min = -dq_lim * ones(n)
+        self.dt = dt
         self.n = n
         self.objectives = []
         self.q_max = q_max
         self.q_min = q_min
+        self.qd_max = +qd_lim * ones(n)
+        self.qd_min = -qd_lim * ones(n)
         self.reg_weight = reg_weight
 
-    def add_constraint(self, err_fun, jacobian_fun, gain):
-        self.constraints.append(self.Task(err_fun, jacobian_fun, gain))
+    def add_constraint(self, error_fun, jacobian_fun, gain):
+        self.constraints.append(self.Task(error_fun, jacobian_fun, gain))
 
-    def add_objective(self, err_fun, jacobian_fun, gain, weight):
-        task = self.Task(err_fun, jacobian_fun, gain)
+    def add_objective(self, error_fun, jacobian_fun, gain, weight):
+        task = self.Task(error_fun, jacobian_fun, gain)
         self.objectives.append(self.Objective(task, weight))
 
-    def compute_objective(self, q):
-        return sum(obj.weight * obj.sq_err(q) for obj in self.objectives)
+    def compute_objective(self, q, qd):
+        return sum(obj.weight * obj.sq_error(q, qd) for obj in self.objectives)
 
-    def compute_delta(self, q):
+    def compute_velocity(self, q, qd):
         P = self.reg_weight * self.I
         r = zeros(self.n)
         for obj in self.objectives:
             J = obj.jacobian(q)
             P += obj.weight * dot(J.T, J)
-            r += obj.weight * dot(-obj.vel(q).T, J)
+            r += obj.weight * dot(-obj.velocity(q, qd).T, J)
         if self.K_doflim is not None:
-            dq_max = minimum(self.dq_max, self.K_doflim * (self.q_max - q))
-            dq_min = maximum(self.dq_min, self.K_doflim * (self.q_min - q))
+            qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
+            qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         else:
-            dq_max = self.dq_max
-            dq_min = self.dq_min
+            qd_max = self.qd_max
+            qd_min = self.qd_min
         G = vstack([+self.I, -self.I])
-        h = hstack([dq_max, -dq_min])
+        h = hstack([qd_max, -qd_min])
         if self.constraints:
-            A = vstack([c.jacobian(q) for c in self.constraints])
-            b = hstack([c.vel(q) for c in self.constraints])
+            A = vstack([c.jacobian() for c in self.constraints])
+            b = hstack([c.velocity() for c in self.constraints])
             return cvxopt_solve_qp(P, r, G, h, A, b)
         return cvxopt_solve_qp(P, r, G, h)

@@ -121,77 +121,83 @@ class Robot(object):
         assert len(qd) == self.nb_dof
         return self.rave.SetDOFVelocities(qd)
 
+    @property
+    def q(self):
+        return self.get_dof_values()
+
+    @property
+    def q_full(self):
+        return self.rave.GetDOFValues()
+
+    @property
+    def qd(self):
+        return self.get_dof_velocities()
+
+    @property
+    def qd_full(self):
+        return self.rave.GetDOFVelocities()
+
+    @property
+    def q_max(self):
+        if not self.active_dofs:
+            return self.q_max_full
+        return self.q_max_full[self.active_dofs]
+
+    @property
+    def q_min(self):
+        if not self.active_dofs:
+            return self.q_min_full
+        return self.q_min_full[self.active_dofs]
+
     #
     # Inverse Kinematics
     #
 
-    def init_ik(self, active_dofs, dq_lim, K_doflim, reg_weight,
-                doflim_scale=0.95):
-        self.set_active_dofs(active_dofs)
-        q_avg = .5 * (self.q_max + self.q_min)
-        q_dev = .5 * (self.q_max - self.q_min)
-        q_max = (q_avg + doflim_scale * q_dev)[active_dofs]
-        q_min = (q_avg - doflim_scale * q_dev)[active_dofs]
-        self.ik = DiffIKSolver(q_max, q_min, dq_lim, K_doflim, reg_weight)
+    def init_ik(self, dt, qd_lim, K_doflim, reg_weight, doflim_scale=0.95):
+        self.ik = DiffIKSolver(self, dt, qd_lim, K_doflim, reg_weight,
+                               doflim_scale)
 
     def add_com_objective(self, target, gain, weight):
-        def err(qa):
-            return target.p - self.compute_com(qa, self.active_dofs)
-
-        def J(qa):
-            return self.compute_com_jacobian(qa, self.active_dofs)
-
-        self.ik.add_objective(err, J, gain, weight)
+        def error(q, qd):
+            return target.p - self.compute_com(q)
+        self.ik.add_objective(error, self.compute_com_jacobian, gain, weight)
 
     def add_link_objective(self, link, target, gain, weight):
-        def err(qa):
-            cur_pose = self.compute_link_pose(link, qa, self.active_dofs)
+        def error(q, qd):
+            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
             return target.pose - cur_pose
 
-        def J(qa):
-            pose = self.compute_link_pose(link, qa, self.active_dofs)
-            J = self.compute_link_pose_jacobian(link, qa, self.active_dofs)
-            if pose[0] < 0:  # convention: cos(alpha) > 0
-                J[:4, :] *= -1
-            return J
+        def jacobian(q):
+            return self.compute_link_pose_jacobian(link, q)
 
-        self.ik.add_objective(err, J, gain, weight)
+        self.ik.add_objective(error, jacobian, gain, weight)
 
-    def add_constant_cam_objective(self, dt, gain, weight):
-        def err(qa):
-            qd = self.get_dof_velocities()
-            Jc = self.compute_cam_jacobian(qa, self.active_dofs)
-            return dot(Jc, qd) * dt
-
-        def J(qa):
-            qd = self.get_dof_velocities()
-            Jc = self.compute_cam_jacobian(qa, self.active_dofs)
-            H = self.compute_cam_hessian(qa, self.active_dofs)
-            H_lin = tensordot(qd, H, axes=(0, 0))  # linearize quad. term here
-            return (Jc - H_lin)
-
-        self.ik.add_objective(err, J, gain, weight)
+    def add_constant_cam_objective(self, weight):
+        def error(q, qd):
+            J = self.compute_cam_jacobian(q)
+            H = self.compute_cam_hessian(q)
+            return dot(J, qd) + self.ik.dt * dot(qd, dot(H, qd))
+        self.ik.add_objective(error, self.compute_cam_jacobian, 1., weight)
 
     def step_tracker(self):
-        dq_active = self.ik.compute_delta(self.q_active)
-        self.set_dof_values(self.q_active + dq_active)
-        return dq_active
+        qd = self.ik.compute_velocity(self.q, self.qd)
+        self.set_dof_values(self.q + qd * self.ik.dt)
+        self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=False):
+    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=True):
         cur_obj = 1000.
-        qa = self.q_active
-        qa_max = self.ik.q_max
-        qa_min = self.ik.q_min
+        q = self.q
+        qd = zeros(len(self.q))
         for itnum in xrange(max_it):
             prev_obj = cur_obj
-            cur_obj = self.ik.compute_objective(qa)
+            cur_obj = self.ik.compute_objective(q, qd)
             if debug:
                 print "%2d: %.3f (%+.2e)" % (itnum, cur_obj, cur_obj - prev_obj)
             if abs(cur_obj - prev_obj) < conv_tol:
                 break
-            dq = self.ik.compute_delta(qa)
-            qa = minimum(maximum(qa_min, qa + dq), qa_max)
-        self.set_dof_values(qa)
+            qd = self.ik.compute_velocity(q, qd)
+            q = minimum(maximum(self.q_min, q + qd * self.ik.dt), self.q_max)
+        self.set_dof_values(q)
         return itnum, cur_obj
 
     #
