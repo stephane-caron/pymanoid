@@ -40,5 +40,7 @@ def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
         args.extend([M(G), M(h)])
         if A is not None:
             args.extend([M(A), M(b)])
-    x = cvxopt.solvers.qp(*args)['x']
-    return array(x).reshape((P.shape[1],))
+    sol = cvxopt.solvers.qp(*args)
+    if not ('optimal' in sol['status']):
+        raise Exception('CVXOPT: ' + sol['status'])
+    return array(sol['x']).reshape((P.shape[1],))
