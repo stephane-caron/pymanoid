@@ -169,6 +169,21 @@ class Robot(object):
             return dot(J, qd) + self.ik.dt * dot(qd, dot(H, qd))
         self.ik.add_objective(error, self.compute_cam_jacobian, 1., weight)
 
+    def add_ref_posture_objective(self, q_ref, gain, weight):
+        if len(q_ref) == self.nb_dofs:
+            q_ref = q_ref[self.active_dofs]
+        assert len(q_ref) == self.nb_active_dofs
+
+        def error(q, qd):
+            return (q_ref - q)
+
+        self.ik.add_objective(error, self.ik.identity, gain, weight)
+
+    def add_regularization_objective(self, weight):
+        def error(q, qd):
+            return qd
+        self.ik.add_objective(error, self.ik.identity, 1., weight)
+
     def step_tracker(self):
         qd = self.ik.compute_velocity(self.q, self.qd)
         self.set_dof_values(self.q + qd * self.ik.dt)
@@ -178,6 +193,8 @@ class Robot(object):
         cur_obj = 1000.
         q = self.q
         qd = zeros(len(self.q))
+        if debug:
+            print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
         for itnum in xrange(max_it):
             prev_obj = cur_obj
             cur_obj = self.ik.compute_objective(q, qd)
@@ -251,9 +268,9 @@ class Robot(object):
         return self.compute_com(self.q)
 
     def compute_inertia_matrix(self, q, dof_indices=None, external_torque=None):
-        M = zeros((self.nb_dof, self.nb_dof))
+        M = zeros((self.nb_dofs, self.nb_dofs))
         self.set_dof_values(q, dof_indices)
-        for (i, e_i) in enumerate(eye(self.nb_dof)):
+        for (i, e_i) in enumerate(eye(self.nb_dofs)):
             tm, _, _ = self.rave.ComputeInverseDynamics(
                 e_i, external_torque, returncomponents=True)
             M[:, i] = tm
