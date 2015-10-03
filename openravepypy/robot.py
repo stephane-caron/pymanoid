@@ -352,6 +352,10 @@ class Robot(object):
                 total += m * cd
         return total / self.mass
 
+    @property
+    def comd(self):
+        return self.compute_com_velocity(self.q, self.qd)
+
     #
     # Dynamic properties (acceleration level)
     #
@@ -411,7 +415,7 @@ class Robot(object):
         in world coordinates
 
         """
-        J = zeros((3, self.nb_dof))
+        J = zeros((3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
@@ -425,7 +429,7 @@ class Robot(object):
                 J += dot(crossmat(c - p), m * J_trans) + dot(I, J_rot)
             if dof_indices is not None:
                 return J[:, dof_indices]
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return J[:, self.active_dofs]
             return J
 
@@ -443,7 +447,7 @@ class Robot(object):
         return self.compute_am_jacobian(q, p_G, dof_indices)
 
     def compute_com_jacobian(self, q, dof_indices=None):
-        Jcom = zeros((3, self.nb_dof))
+        Jcom = zeros((3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
@@ -455,7 +459,7 @@ class Robot(object):
             J = Jcom / self.mass
             if dof_indices is not None:
                 return J[:, dof_indices]
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return J[:, self.active_dofs]
             return J
 
@@ -467,7 +471,7 @@ class Robot(object):
             J = vstack([J_rot, J_trans])
             if dof_indices is not None:
                 return J[:, dof_indices]
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return J[:, self.active_dofs]
             return J
 
@@ -482,7 +486,7 @@ class Robot(object):
             J = vstack([J_quat, J_trans])
             if dof_indices is not None:
                 return J[:, dof_indices]
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return J[:, self.active_dofs]
             return J
 
@@ -494,7 +498,7 @@ class Robot(object):
             J = self.rave.ComputeJacobianTranslation(link.index, p)
             if dof_indices is not None:
                 return J[:, dof_indices]
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return J[:, self.active_dofs]
             return J
 
@@ -535,7 +539,7 @@ class Robot(object):
             """
             return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
 
-        H = zeros((self.nb_dof, 3, self.nb_dof))
+        H = zeros((self.nb_dofs, 3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q)
             for link in self.rave.GetLinks():
@@ -553,7 +557,7 @@ class Robot(object):
                     - dot(crosstens(dot(I, J_rot)), J_rot)
             if dof_indices:
                 return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
             return H
 
@@ -570,7 +574,7 @@ class Robot(object):
         return self.compute_am_hessian(q, p_G, dof_indices)
 
     def compute_com_hessian(self, q, dof_indices=None):
-        Hcom = zeros((self.nb_dof, 3, self.nb_dof))
+        Hcom = zeros((self.nb_dofs, 3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q, dof_indices)
             for link in self.rave.GetLinks():
@@ -582,7 +586,7 @@ class Robot(object):
             H = Hcom / self.mass
             if dof_indices:
                 return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
             return H
 
@@ -594,6 +598,6 @@ class Robot(object):
             H = hstack([H_rot, H_trans])
             if dof_indices:
                 return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == len(self.active_dofs):
+            elif self.active_dofs and len(q) == self.nb_active_dofs:
                 return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
             return H
