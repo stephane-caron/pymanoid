@@ -55,22 +55,21 @@ class DiffIKSolver(object):
             return self.task.velocity(q, qd)
 
     def __init__(self, robot, dt, qd_lim, K_doflim, reg_weight, doflim_scale):
-        q_avg = .5 * (robot.q_max + robot.q_min)
-        q_dev = .5 * (robot.q_max - robot.q_min)
-        q_max = (q_avg + doflim_scale * q_dev)
-        q_min = (q_avg - doflim_scale * q_dev)
-        n = len(q_min)
+        n = len(robot.q)
         self.I = eye(n)
         self.K_doflim = K_doflim
         self.constraints = []
         self.dt = dt
-        self.n = n
         self.objectives = []
-        self.q_max = q_max
-        self.q_min = q_min
+        self.q_max = robot.q_max
+        self.q_min = robot.q_min
         self.qd_max = +qd_lim * ones(n)
         self.qd_min = -qd_lim * ones(n)
         self.reg_weight = reg_weight
+
+    def identity(self, q):
+        """Default jacobian for joint-angle objectives."""
+        return self.I
 
     def add_constraint(self, error_fun, jacobian_fun, gain):
         self.constraints.append(self.Task(error_fun, jacobian_fun, gain))
