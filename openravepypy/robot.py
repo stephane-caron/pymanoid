@@ -59,13 +59,17 @@ class Robot(object):
         if self.mass is None:  # may not be True for children classes
             self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dof = rave.GetDOF()
-        self.q_max = q_max
-        self.q_min = q_min
+        self.q_max_full = q_max
+        self.q_min_full = q_min
         self.rave = rave
 
     #
     # Kinematics
     #
+
+    def set_active_dofs(self, active_dofs):
+        self.active_dofs = active_dofs
+        self.rave.SetActiveDOFs(active_dofs)
 
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:
@@ -80,28 +84,6 @@ class Robot(object):
         elif self.active_dofs:
             return self.rave.GetActiveDOFValues()
         return self.rave.GetDOFVelocities()
-
-    @property
-    def q(self):
-        return self.rave.GetDOFValues()
-
-    @property
-    def q_active(self):
-        assert self.active_dofs
-        return self.rave.GetActiveDOFValues()
-
-    @property
-    def qd(self):
-        return self.rave.GetDOFVelocities()
-
-    @property
-    def qd_active(self):
-        assert self.active_dofs
-        return self.rave.GetActiveDOFVelocities()
-
-    def set_active_dofs(self, active_dofs):
-        self.active_dofs = active_dofs
-        self.rave.SetActiveDOFs(active_dofs)
 
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
@@ -243,24 +225,7 @@ class Robot(object):
                 geom.SetTransparency(transparency)
 
     #
-    # Inertial properties
-    #
-
-    @property
-    def com(self):
-        return self.compute_com(self.get_dof_values())
-
-    def compute_inertia_matrix(self, q, dof_indices=None, external_torque=None):
-        M = zeros((self.nb_dof, self.nb_dof))
-        self.set_dof_values(q, dof_indices)
-        for (i, e_i) in enumerate(eye(self.nb_dof)):
-            tm, _, _ = self.rave.ComputeInverseDynamics(
-                e_i, external_torque, returncomponents=True)
-            M[:, i] = tm
-        return M
-
-    #
-    # Positions
+    # Geometric properties (position level)
     #
 
     def compute_com(self, q, dof_indices=None):
@@ -273,6 +238,19 @@ class Robot(object):
                 total += m * c
         return total / self.mass
 
+    @property
+    def com(self):
+        return self.compute_com(self.q)
+
+    def compute_inertia_matrix(self, q, dof_indices=None, external_torque=None):
+        M = zeros((self.nb_dof, self.nb_dof))
+        self.set_dof_values(q, dof_indices)
+        for (i, e_i) in enumerate(eye(self.nb_dof)):
+            tm, _, _ = self.rave.ComputeInverseDynamics(
+                e_i, external_torque, returncomponents=True)
+            M[:, i] = tm
+        return M
+
     def compute_link_pos(self, link, q, link_coord=None, dof_indices=None):
         with self.rave:
             self.rave.SetDOFValues(q, dof_indices)
@@ -281,13 +259,16 @@ class Robot(object):
                 return T[:3, 3]
             return dot(T, hstack([link_coord, 1]))[:3]
 
-    def compute_link_pose(self, link, q, dof_indices=None):
+    def compute_link_pose(self, link, q=None, dof_indices=None):
+        if q is None:
+            return link.pose
         with self.rave:
+            self.set_dof_values(q, dof_indices)
             self.rave.SetDOFValues(q, dof_indices)
             return link.pose  # first coefficient will be positive
 
     #
-    # Velocities
+    # Kinematic properties (velocity level)
     #
 
     def compute_angular_momentum(self, q, qd, p, dof_indices=None):
@@ -327,6 +308,10 @@ class Robot(object):
         p_G = self.compute_com(q, dof_indices)
         return self.compute_angular_momentum(q, qd, p_G, dof_indices)
 
+    @property
+    def cam(self):
+        return self.compute_cam(self.q, self.qd)
+
     def compute_com_velocity(self, q, qd, dof_indices=None):
         total = zeros(3)
         with self.rave:
@@ -343,7 +328,7 @@ class Robot(object):
         return total / self.mass
 
     #
-    # Accelerations
+    # Dynamic properties (acceleration level)
     #
 
     def compute_cam_rate(self, q, qd, qdd):
@@ -415,6 +400,8 @@ class Robot(object):
                 J += dot(crossmat(c - p), m * J_trans) + dot(I, J_rot)
             if dof_indices is not None:
                 return J[:, dof_indices]
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return J[:, self.active_dofs]
             return J
 
     def compute_cam_jacobian(self, q, dof_indices=None):
@@ -443,6 +430,8 @@ class Robot(object):
             J = Jcom / self.mass
             if dof_indices is not None:
                 return J[:, dof_indices]
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return J[:, self.active_dofs]
             return J
 
     def compute_link_jacobian(self, link, q, dof_indices=None):
@@ -453,6 +442,8 @@ class Robot(object):
             J = vstack([J_rot, J_trans])
             if dof_indices is not None:
                 return J[:, dof_indices]
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return J[:, self.active_dofs]
             return J
 
     def compute_link_pose_jacobian(self, link, q, dof_indices=None):
@@ -466,6 +457,8 @@ class Robot(object):
             J = vstack([J_quat, J_trans])
             if dof_indices is not None:
                 return J[:, dof_indices]
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return J[:, self.active_dofs]
             return J
 
     def compute_link_translation_jacobian(self, link, q, link_coord=None,
@@ -476,6 +469,8 @@ class Robot(object):
             J = self.rave.ComputeJacobianTranslation(link.index, p)
             if dof_indices is not None:
                 return J[:, dof_indices]
+            elif self.active_dofs and len(q) == len(self.active_dofs):
+                return J[:, self.active_dofs]
             return J
 
     #
