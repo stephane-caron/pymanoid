@@ -163,14 +163,25 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
-    def add_constant_cam_objective(self, gain, weight):
+    def add_constant_cam_objective(self, weight):
         def error(q, qd):
             J = self.compute_cam_jacobian(q)
-            H = self.compute_cam_hessian(q)
-            return dot(J, qd) + self.ik.dt * dot(qd, dot(H, qd))
-        self.ik.add_objective(error, self.compute_cam_jacobian, gain, weight)
+            # Ld_G = J d(qd) / dt + qd * H * qd, regulated to 0
+            if False:
+                # i.e., J qd_new = J qd_prev - dt * qd_prev * H * qd_prev
+                H = self.compute_cam_hessian(q)
+                return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
+            else:
+                # neglecting the hessian term, this becomes
+                return dot(J, qd)
+        self.ik.add_objective(error, self.compute_cam_jacobian, 1., weight)
 
-    def add_ref_posture_objective(self, q_ref, gain, weight):
+    def add_zero_cam_objective(self, weight):
+        def error(q, qd):
+            return zeros((3,))
+        self.ik.add_objective(error, self.compute_cam_jacobian, 0., weight)
+
+    def add_posture_objective(self, q_ref, gain, weight):
         if len(q_ref) == self.nb_dofs:
             q_ref = q_ref[self.active_dofs]
         assert len(q_ref) == self.nb_active_dofs
@@ -179,6 +190,19 @@ class Robot(object):
             return (q_ref - q)
 
         self.ik.add_objective(error, self.ik.identity, gain, weight)
+
+    def add_dof_objective(self, dof_id, dof_ref, gain, weight):
+        active_dof_id = self.active_dofs.index(dof_id)
+        J = zeros(self.nb_active_dofs)
+        J[active_dof_id] = 1.
+
+        def error(q, qd):
+            return (dof_ref - q[active_dof_id])
+
+        def jacobian(q):
+            return J
+
+        self.ik.add_objective(error, jacobian, gain, weight)
 
     def add_velocity_regularization(self, weight):
         def error(q, qd):
