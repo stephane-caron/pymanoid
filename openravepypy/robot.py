@@ -163,12 +163,12 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
-    def add_constant_cam_objective(self, weight):
+    def add_constant_cam_objective(self, gain, weight):
         def error(q, qd):
             J = self.compute_cam_jacobian(q)
             H = self.compute_cam_hessian(q)
             return dot(J, qd) + self.ik.dt * dot(qd, dot(H, qd))
-        self.ik.add_objective(error, self.compute_cam_jacobian, 1., weight)
+        self.ik.add_objective(error, self.compute_cam_jacobian, gain, weight)
 
     def add_ref_posture_objective(self, q_ref, gain, weight):
         if len(q_ref) == self.nb_dofs:
