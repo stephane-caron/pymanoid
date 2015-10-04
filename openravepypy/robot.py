@@ -143,9 +143,8 @@ class Robot(object):
     # Inverse Kinematics
     #
 
-    def init_ik(self, dt, qd_lim, K_doflim, reg_weight, doflim_scale=0.95):
-        self.ik = DiffIKSolver(self, dt, qd_lim, K_doflim, reg_weight,
-                               doflim_scale)
+    def init_ik(self, dt, qd_lim, K_doflim, doflim_scale=0.95):
+        self.ik = DiffIKSolver(self, dt, qd_lim, K_doflim, doflim_scale)
 
     def add_com_objective(self, target, gain, weight):
         def error(q, qd):
@@ -179,7 +178,7 @@ class Robot(object):
 
         self.ik.add_objective(error, self.ik.identity, gain, weight)
 
-    def add_regularization_objective(self, weight):
+    def add_velocity_regularization(self, weight):
         def error(q, qd):
             return qd
         self.ik.add_objective(error, self.ik.identity, 1., weight)
