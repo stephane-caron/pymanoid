@@ -118,7 +118,7 @@ class Robot(object):
         if dof_indices is not None:
             return self.rave.GetDOFVelocities(dof_indices)
         elif self.active_dofs:
-            return self.rave.GetActiveDOFValues()
+            return self.rave.GetActiveDOFVelocities()
         return self.rave.GetDOFVelocities()
 
     def set_dof_velocities(self, qd, dof_indices=None):
