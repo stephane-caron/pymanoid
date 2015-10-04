@@ -27,6 +27,11 @@ from numpy import array
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
 
+class OptimalNotFound(Exception):
+
+    pass
+
+
 def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
     P_sym = .5 * (P + P.T)   # necessary for CVXOPT 1.1.7
     #
@@ -42,5 +47,5 @@ def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
             args.extend([M(A), M(b)])
     sol = cvxopt.solvers.qp(*args)
     if not ('optimal' in sol['status']):
-        raise Exception('CVXOPT: ' + sol['status'])
+        raise OptimalNotFound(sol['status'])
     return array(sol['x']).reshape((P.shape[1],))
