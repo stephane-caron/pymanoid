@@ -52,13 +52,15 @@ class Robot(object):
         env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
         rave = env.GetRobot(robot_name)
         q_min, q_max = rave.GetDOFLimits()
+        nb_dofs = rave.GetDOF()
         rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
+        rave.SetDOFVelocities([0] * nb_dofs)
 
         self.active_dofs = None
         self.env = env
         if self.mass is None:  # may not be True for children classes
             self.mass = sum([link.GetMass() for link in rave.GetLinks()])
-        self.nb_dofs = rave.GetDOF()
+        self.nb_dofs = nb_dofs
         self.nb_active_dofs = rave.GetDOF()
         self.q_max_full = q_max
         self.q_min_full = q_min
