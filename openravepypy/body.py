@@ -77,6 +77,11 @@ class Body(object):
         return self.rave.GetIndex()
 
     @property
+    def T(self):
+        """Transform matrix"""
+        return self.rave.GetTransform()
+
+    @property
     def pose(self):
         pose = self.rave.GetTransformPose()
         if pose[0] < 0:  # convention: cos(alpha) > 0
@@ -84,14 +89,9 @@ class Body(object):
             pose[:4] *= -1
         return pose
 
-    @property
-    def quat(self):
-        return self.pose[:4]
-
-    @property
-    def T(self):
-        """Transform matrix"""
-        return self.rave.GetTransform()
+    #
+    # All other properties are derived from self.pose and self.T
+    #
 
     @property
     def R(self):
@@ -106,7 +106,11 @@ class Body(object):
     @property
     def n(self):
         """Normal vector"""
-        return self.R[2, 0:3]
+        return self.T[0:3, 2]
+
+    @property
+    def quat(self):
+        return self.pose[:4]
 
     @property
     def rpy(self):
@@ -124,6 +128,10 @@ class Body(object):
     @property
     def yaw(self):
         return self.rpy[2]
+
+    #
+    # Setters
+    #
 
     def set_transform(self, T):
         self.rave.SetTransform(T)
