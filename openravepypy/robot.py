@@ -163,6 +163,20 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
+    def add_link_objective_2(self, link, target, alpha, gain, weight):
+        """
+        This one is quite specific to my needs. Here, alpha is a callable
+        returning a float between zero and one.
+        """
+        def error(q, qd):
+            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
+            return alpha() * (target.pose - cur_pose)
+
+        def jacobian(q):
+            return self.compute_link_pose_jacobian(link, q)
+
+        self.ik.add_objective(error, jacobian, gain, weight)
+
     def add_constant_cam_objective(self, weight):
         def error(q, qd):
             J = self.compute_cam_jacobian(q)
