@@ -3,20 +3,20 @@
 #
 # Copyright (C) 2015 Stephane Caron <caron@phare.normalesup.org>
 #
-# This file is part of openravepypy.
+# This file is part of pymanoid.
 #
-# openravepypy is free software: you can redistribute it and/or modify it under
+# pymanoid is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation, either version 3 of the License, or (at your option) any later
 # version.
 #
-# openravepypy is distributed in the hope that it will be useful, but WITHOUT
+# pymanoid is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
-# openravepypy. If not, see <http://www.gnu.org/licenses/>.
+# pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
 import openravepy
@@ -34,7 +34,7 @@ class Body(object):
     """
 
     def __init__(self, rave_object, name=None, color=None, pos=None, rpy=None,
-                 pose=None):
+                 pose=None, visible=True):
         self.rave = rave_object
         if color is not None:
             self.set_color(color)
@@ -46,6 +46,8 @@ class Body(object):
             self.set_pose(pose)
         if rpy is not None:
             self.set_rpy(rpy)
+        if not visible:
+            self.set_visible(False)
 
     def set_color(self, color):
         acolor = array([.2, .2, .2])
@@ -163,7 +165,8 @@ class Body(object):
 class Box(Body):
 
     def __init__(self, env, box_dim=None, X=None, Y=None, Z=None,
-                 color='r', name=None, pos=None, rpy=None, pose=None):
+                 color='r', name=None, pos=None, rpy=None, pose=None,
+                 visible=True):
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
         if box_dim is not None:
@@ -176,7 +179,8 @@ class Box(Body):
         aabb = [0, 0, 0, X, Y, Z]
         rave_body = openravepy.RaveCreateKinBody(env, '')
         rave_body.InitFromBoxes(array([array(aabb)]), True)
-        super(Box, self).__init__(rave_body, name, color, pos, rpy, pose)
+        super(Box, self).__init__(rave_body, name, color, pos, rpy, pose,
+                                  visible)
         env.Add(rave_body, True)
 
 
@@ -188,9 +192,9 @@ class Link(Body):
 class Manipulator(Link):
 
     def __init__(self, rave_manipulator, name=None, color=None, pos=None,
-                 rpy=None, pose=None):
+                 rpy=None, pose=None, visible=True):
         super(Manipulator, self).__init__(rave_manipulator, name, color, pos,
-                                          rpy, pose)
+                                          rpy, pose, visible)
         self.end_effector = rave_manipulator.GetEndEffector()
         self.name = rave_manipulator.GetName()
 

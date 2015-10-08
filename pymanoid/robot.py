@@ -3,20 +3,20 @@
 #
 # Copyright (C) 2015 Stephane Caron <caron@phare.normalesup.org>
 #
-# This file is part of openravepypy.
+# This file is part of pymanoid.
 #
-# openravepypy is free software: you can redistribute it and/or modify it under
+# pymanoid is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation, either version 3 of the License, or (at your option) any later
 # version.
 #
-# openravepypy is distributed in the hope that it will be useful, but WITHOUT
+# pymanoid is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with
-# openravepypy. If not, see <http://www.gnu.org/licenses/>.
+# pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
 import time
@@ -163,6 +163,15 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
+    def add_link_pos_objective(self, link, target, gain, weight):
+        def error(q, qd):
+            return target.p - link.p
+
+        def jacobian(q):
+            return self.compute_link_translation_jacobian(link, q)
+
+        self.ik.add_objective(error, jacobian, gain, weight)
+
     def add_link_objective_2(self, link, target, alpha, gain, weight):
         """
         This one is quite specific to my needs. Here, alpha is a callable
@@ -222,6 +231,11 @@ class Robot(object):
         def error(q, qd):
             return qd
         self.ik.add_objective(error, self.ik.identity, 1., weight)
+
+    def add_zero_velocity_objective(self, gain, weight):
+        def error(q, qd):
+            return -qd
+        self.ik.add_objective(error, self.ik.identity, gain, weight)
 
     def step_tracker(self):
         qd = self.ik.compute_velocity(self.q, self.qd)
@@ -317,7 +331,7 @@ class Robot(object):
 
     def compute_link_pos(self, link, q, link_coord=None, dof_indices=None):
         with self.rave:
-            self.rave.SetDOFValues(q, dof_indices)
+            self.set_dof_values(q, dof_indices)
             T = link.T
             if link_coord is None:
                 return T[:3, 3]

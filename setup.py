@@ -1,3 +1,3 @@
 from distutils.core import setup
 
-setup(name='openravepypy', version='0.4.2', packages=['openravepypy'])
+setup(name='pymanoid', version='0.4.2', packages=['pymanoid'])

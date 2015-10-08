@@ -1,18 +1,15 @@
-# openravepypy
+# pymanoid
 
-QP-based inverse kinematics, contact double-description and more for OpenRAVE.
+Python library for humanoid robotics in OpenRAVE.
 
-A wrapper to `openravepy` with some more pythonic constructions. The library
-includes some features useful for humanoid motion planning that are not present
-in OpenRAVE, such as:
+**Disclaimer:** this repository is part of my working code (means: "unstable").
+
+## Features
 
 - QP-based Inverse Kinematics using [CVXOPT](http://cvxopt.org/index.html)
   (allows for task-based whole-body optimization, does not require IKFast)
-- Contact double-description routines for whole-body multi-contact planning
-- Jacobians and hessians for the center of mass, zero-tilting moment point,
-  angular momentum, ...
-
-**Disclaimer:** this repository is part of my working code (means: "unstable").
+- Contact double-description method for whole-body multi-contact planning
+- Jacobians and hessians for the center of mass, ZMP, angular momentum, ...
 
 ## Installation
 
