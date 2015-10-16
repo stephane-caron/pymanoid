@@ -2,7 +2,7 @@
 
 Python library for humanoid robotics in OpenRAVE.
 
-**Disclaimer:** this repository is part of my working code (means: "unstable").
+Disclaimer: this repository is part of my working code (read: **unstable**).
 
 ## Features
 
@@ -18,8 +18,8 @@ Python library for humanoid robotics in OpenRAVE.
   - tested with version 1.1.7
 - [OpenRAVE](https://github.com/rdiankov/openrave)
   - used for forward kinematics and visualization
-  - branch: `latest\_stable`
-  - tested with commit: `f68553cb7a4532e87f14cf9db20b2becedcda624`
+  - tested with commit `f68553cb7a4532e87f14cf9db20b2becedcda624` in branch
+    `latest_stable`
   - you may need to [fix the Collision report issue](https://github.com/rdiankov/openrave/issues/333#issuecomment-72191884)
 - [NumPy](http://www.numpy.org/)
   - used for scientific computing
