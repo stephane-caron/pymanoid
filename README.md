@@ -18,13 +18,15 @@ Python library for humanoid robotics in OpenRAVE.
   - tested with version 1.1.7
 - [OpenRAVE](https://github.com/rdiankov/openrave)
   - used for forward kinematics and visualization
-  - branch: latest\_stable
-  - tested with commit: f68553cb7a4532e87f14cf9db20b2becedcda624
+  - branch: `latest\_stable`
+  - tested with commit: `f68553cb7a4532e87f14cf9db20b2becedcda624`
   - you may need to [fix the Collision report issue](https://github.com/rdiankov/openrave/issues/333#issuecomment-72191884)
 - [NumPy](http://www.numpy.org/)
+  - used for scientific computing
   - tested with version 1.8.2
 - [pycddlib](https://pycddlib.readthedocs.org/en/latest/)
   - used for multi-contact stability
+  - tested with version 1.0.5a1
   - installation: `pip install pycddlib`
 
 ## Installation
