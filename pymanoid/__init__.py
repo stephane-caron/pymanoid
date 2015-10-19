@@ -20,6 +20,7 @@
 
 
 from body import *
+from draw import *
 from inverse_kinematics import *
 from robot import *
 from rotation import *
