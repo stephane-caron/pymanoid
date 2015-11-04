@@ -1,12 +1,16 @@
 # pymanoid
 
-Python library for humanoid robotics in OpenRAVE. Features:
+Python library for humanoid robotics in OpenRAVE.
 
-- QP-based Inverse Kinematics solver
+Disclaimer: this repository is part of my working code (read: **unstable**).
+
+Features:
+- task-oriented numerical Inverse Kinematics solver [1]
 - Jacobians and hessians for the center of mass, the ZMP and the angular momentum
 - Double-description method for multi-contact stability
 
-Disclaimer: this repository is part of my working code (read: **unstable**).
+[1] compared with IKFast, this solver is slower but can deal with redundancy,
+competing objectives and high-DOF systems.
 
 ## Dependencies
 
