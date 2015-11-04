@@ -3,9 +3,9 @@
 Python library for humanoid robotics in OpenRAVE.
 
 Features:
-- Numerical Inverse Kinematics solver (compared with IKFast, this solver is
-  slower but can deal with redundancy, competing objectives and high-DOF
-  systems)
+- Numerical Inverse Kinematics solver (slower than IKFast, but deals with
+  redundancy, high-DOF systems and general objectives such as COM or angular
+  momentum)
 - Jacobians and hessians for the center of mass, the ZMP and the angular momentum
 - Double-description method for multi-contact stability
 
