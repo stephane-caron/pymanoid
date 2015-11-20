@@ -32,8 +32,8 @@ from scipy.linalg import block_diag
 
 
 foot_half_height = 0.01  # [m]
-foot_half_length = 0.2   # [m]
-foot_half_width = 0.1    # [m]
+foot_half_length = 0.11  # [m]
+foot_half_width = 0.07   # [m]
 
 init_left_foot_pos = [0.68546862, -0.20824458, 0.32014298]
 init_left_foot_rpy = [0.11566877, 0.26659006, -3.11573395]
