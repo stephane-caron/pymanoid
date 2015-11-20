@@ -75,10 +75,6 @@ def draw_polygon(env, points, n=None, color=None, plot_type=3, linewidth=1.,
     t1 /= norm(t1)
     t2 = cross(n, t1)
     points2d = [[dot(t1, x), dot(t2, x)] for x in points]
-    print "n", n
-    print "t1", t1
-    print "t2", t2
-    print points2d
     hull = ConvexHull(points2d)
     return draw_polyhedron(env, points, color, plot_type, hull, linewidth,
                            pointsize)
