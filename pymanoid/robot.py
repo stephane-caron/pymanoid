@@ -21,6 +21,7 @@
 
 import time
 
+from errors import RobotNotFound
 from numpy import arange, array, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
@@ -51,6 +52,8 @@ class Robot(object):
     def __init__(self, env, robot_name):
         env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
         rave = env.GetRobot(robot_name)
+        if not rave:
+            raise RobotNotFound(robot_name)
         q_min, q_max = rave.GetDOFLimits()
         nb_dofs = rave.GetDOF()
         rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
