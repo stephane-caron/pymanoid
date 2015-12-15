@@ -33,11 +33,3 @@ change at any time without notice.
 ## Installation
 
 From the top folder, run: `sudo python setup.py install`
-
-## License
-
-The source code is released under the GPLv3 license. In short, you can copy,
-distribute and modify the software, provided that you track your changes/dates
-in source files and distribute your modifications (along with their source code
-and references to the original work) under the same license. For details,
-please refer to the LICENSE file in the repository.
