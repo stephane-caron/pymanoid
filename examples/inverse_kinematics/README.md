@@ -1,4 +1,4 @@
-# IK example
+# Whole-body inverse kinematics example
 
 This is a small example on how to use the IK for whole-body motions. To get it
 running, you will need to copy the robot model
