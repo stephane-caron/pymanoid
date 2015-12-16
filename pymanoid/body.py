@@ -188,17 +188,20 @@ class Box(Body):
 
 class Link(Body):
 
-    pass
+    def __init__(self, rave_object, color=None, pos=None, rpy=None,
+                 pose=None, visible=True):
+        super(Link, self).__init__(rave_object, color=color, pos=pos, rpy=rpy,
+                                   pose=pose, visible=visible)
+        self.name = rave_object.GetName()
 
 
 class Manipulator(Link):
 
-    def __init__(self, rave_manipulator, name=None, color=None, pos=None,
+    def __init__(self, rave_object, color=None, pos=None,
                  rpy=None, pose=None, visible=True):
-        super(Manipulator, self).__init__(rave_manipulator, name, color, pos,
-                                          rpy, pose, visible)
-        self.end_effector = rave_manipulator.GetEndEffector()
-        self.name = rave_manipulator.GetName()
+        super(Manipulator, self).__init__(rave_object, color, pos, rpy, pose,
+                                          visible)
+        self.end_effector = rave_object.GetEndEffector()
 
     def set_transparency(self, transparency):
         print "Warning: manipulators ('%s' here) have no link" % self.name
