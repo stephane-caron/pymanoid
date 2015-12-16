@@ -148,8 +148,8 @@ class Robot(object):
     # Inverse Kinematics
     #
 
-    def init_ik(self, dt, qd_lim, K_doflim, doflim_scale=0.95):
-        self.ik = DiffIKSolver(self, dt, qd_lim, K_doflim, doflim_scale)
+    def init_ik(self, qd_lim, K_doflim=None):
+        self.ik = DiffIKSolver(self, qd_lim, K_doflim=K_doflim)
 
     def add_com_objective(self, target, gain, weight):
         def error(q, qd):
@@ -240,17 +240,32 @@ class Robot(object):
             return -qd
         self.ik.add_objective(error, self.ik.identity, gain, weight)
 
-    def step_tracker(self):
+    def step_tracker(self, dt):
         qd = self.ik.compute_velocity(self.q, self.qd)
-        self.set_dof_values(self.q + qd * self.ik.dt)
+        q = minimum(maximum(self.q_min, self.q + qd * dt), self.q_max)
+        self.set_dof_values(q)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=True):
+    def solve_ik(self, dt, max_it=100, conv_tol=1e-5, debug=True):
+        """Compute joint-angles q satisfying all constraints at best.
+
+        dt -- time step for the differential IK. Good values depend on the gains
+              and weights of the IK objectives and constraints. Small values
+              make convergence slower, while big values will render them
+              unstable.
+        max_it -- maximum number of differential IK iterations
+        conv_tol -- if the objective dwindles by less than this threshold after
+                    a differential IK step, we assume the solver has converged
+                    to the best solution it can find
+        debug -- print extra debug info
+
+        """
         cur_obj = 1000.
         q = self.q
         qd = zeros(len(self.q))
         if debug:
-            print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
+            print "solve_ik(dt=%e, max_it=%d, conv_tol=%e)" % (
+                dt, max_it, conv_tol)
         for itnum in xrange(max_it):
             prev_obj = cur_obj
             cur_obj = self.ik.compute_objective(q, qd)
@@ -259,7 +274,7 @@ class Robot(object):
             if abs(cur_obj - prev_obj) < conv_tol:
                 break
             qd = self.ik.compute_velocity(q, qd)
-            q = minimum(maximum(self.q_min, q + qd * self.ik.dt), self.q_max)
+            q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
         self.set_dof_values(q)
         return itnum, cur_obj
 

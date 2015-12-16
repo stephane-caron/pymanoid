@@ -54,12 +54,11 @@ class DiffIKSolver(object):
         def velocity(self, q, qd):
             return self.task.velocity(q, qd)
 
-    def __init__(self, robot, dt, qd_lim, K_doflim, doflim_scale):
+    def __init__(self, robot, qd_lim, K_doflim=None):
         n = len(robot.q)
         self.I = eye(n)
         self.K_doflim = K_doflim
         self.constraints = []
-        self.dt = dt
         self.objectives = []
         self.q_max = robot.q_max
         self.q_min = robot.q_min
