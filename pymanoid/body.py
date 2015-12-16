@@ -169,6 +169,8 @@ class Box(Body):
                  visible=True):
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
+        if box_dim is None and X is None and Y is None and Z is None:
+            box_dim = 0.05
         if box_dim is not None:
             X = box_dim
             Y = box_dim
