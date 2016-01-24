@@ -48,6 +48,7 @@ class Body(object):
             self.set_rpy(rpy)
         if not visible:
             self.set_visible(False)
+        self.visibility = visible
 
     def set_color(self, color):
         acolor = array([.2, .2, .2])
@@ -71,7 +72,12 @@ class Body(object):
                 geom.SetTransparency(transparency)
 
     def set_visible(self, visibility):
+        self.visibility = visibility
         self.rave.SetVisible(visibility)
+
+    def toggle_visibility(self):
+        self.visibility = not self.visibility
+        self.rave.SetVisible(self.visibility)
 
     @property
     def index(self):
@@ -104,6 +110,18 @@ class Body(object):
     def p(self):
         """Position"""
         return self.T[0:3, 3]
+
+    @property
+    def x(self):
+        return self.p[0]
+
+    @property
+    def y(self):
+        return self.p[1]
+
+    @property
+    def z(self):
+        return self.p[2]
 
     @property
     def n(self):

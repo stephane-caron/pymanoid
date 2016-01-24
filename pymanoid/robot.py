@@ -246,7 +246,7 @@ class Robot(object):
         self.set_dof_values(q)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, dt, max_it=100, conv_tol=1e-5, debug=True):
+    def solve_ik(self, dt, max_it=100, conv_tol=1e-5, debug=False):
         """Compute joint-angles q satisfying all constraints at best.
 
         dt -- time step for the differential IK. Good values depend on the gains
