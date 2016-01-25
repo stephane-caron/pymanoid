@@ -48,7 +48,7 @@ class Body(object):
             self.set_rpy(rpy)
         if not visible:
             self.set_visible(False)
-        self.visibility = visible
+        self.is_visible = visible
 
     def set_color(self, color):
         acolor = array([.2, .2, .2])
@@ -72,13 +72,14 @@ class Body(object):
                 geom.SetTransparency(transparency)
 
     def set_visible(self, visibility):
-        self.visibility = visibility
+        self.is_visible = visibility
         self.rave.SetVisible(visibility)
 
     def toggle_visibility(self):
-        self.visibility = not self.visibility
-        self.rave.SetVisible(self.visibility)
+        self.is_visible = not self.is_visible
+        self.rave.SetVisible(self.is_visible)
 
+    @property
     @property
     def index(self):
         """Notably used to compute jacobians and hessians."""
