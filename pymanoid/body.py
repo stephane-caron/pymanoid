@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -22,8 +22,8 @@
 import openravepy
 import uuid
 
-from rotation import rotation_matrix_from_rpy, rpy_from_quat
 from numpy import array
+from rotation import rotation_matrix_from_rpy, rpy_from_quat
 
 
 class Body(object):
@@ -33,8 +33,19 @@ class Body(object):
     methods, e.g. a Link or a Manipulator.
     """
 
-    def __init__(self, rave_object, name=None, color=None, pos=None, rpy=None,
+    def __init__(self, rave_object, pos=None, rpy=None, color=None, name=None,
                  pose=None, visible=True):
+        """
+        Create body from an OpenRAVE KinBody.
+
+        rave_object -- object to wrap
+        pos -- initial position in inertial frame
+        rpy -- initial orientation in inertial frame
+        color -- color applied to all links (if any) in the object
+        name -- object's name (optional)
+        pose -- initial pose (supersedes pos and rpy)
+        visible -- initial visibility
+        """
         self.rave = rave_object
         if color is not None:
             self.set_color(color)
@@ -42,10 +53,10 @@ class Body(object):
             self.rave.SetName(name)
         if pos is not None:
             self.set_pos(pos)
-        if pose is not None:
-            self.set_pose(pose)
         if rpy is not None:
             self.set_rpy(rpy)
+        if pose is not None:
+            self.set_pose(pose)
         if not visible:
             self.set_visible(False)
         self.is_visible = visible
@@ -87,11 +98,12 @@ class Body(object):
 
     @property
     def T(self):
-        """Transform matrix"""
+        """Transformation matrix."""
         return self.rave.GetTransform()
 
     @property
     def pose(self):
+        """Pose (in OpenRAVE convention)."""
         pose = self.rave.GetTransformPose()
         if pose[0] < 0:  # convention: cos(alpha) > 0
             # this convention enforces Slerp shortest path
@@ -183,50 +195,83 @@ class Body(object):
 
 class Box(Body):
 
-    def __init__(self, env, box_dim=None, X=None, Y=None, Z=None,
-                 color='r', name=None, pos=None, rpy=None, pose=None,
-                 visible=True):
+    def __init__(self, env, X, Y, Z, pos=None, rpy=None, color='r', name=None,
+                 pose=None, visible=True):
+        """
+        Create a new box.
+
+        env -- OpenRAVE environment
+        X -- box half-length
+        Y -- box half-width
+        Z -- box half-height
+        pos -- initial position in inertial frame
+        rpy -- initial orientation in inertial frame
+        color -- color letter in ['r', 'g', 'b']
+        name -- object's name (optional)
+        pose -- initial pose (supersedes pos and rpy)
+        visible -- initial box visibility
+        """
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
-        if box_dim is None and X is None and Y is None and Z is None:
-            box_dim = 0.05
-        if box_dim is not None:
-            X = box_dim
-            Y = box_dim
-            Z = box_dim
-        self.X = X  # half-length
-        self.Y = Y  # half-width
-        self.Z = Z  # half-height
+        self.X = X
+        self.Y = Y
+        self.Z = Z
         aabb = [0, 0, 0, X, Y, Z]
-        rave_body = openravepy.RaveCreateKinBody(env, '')
-        rave_body.InitFromBoxes(array([array(aabb)]), True)
-        super(Box, self).__init__(rave_body, name, color, pos, rpy, pose,
-                                  visible)
-        env.Add(rave_body, True)
+        box = openravepy.RaveCreateKinBody(env, '')
+        box.InitFromBoxes(array([array(aabb)]), True)
+        super(Box, self).__init__(
+            box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
+            visible=visible)
+        env.Add(box, True)
+
+
+class Cube(Box):
+
+    def __init__(self, env, halflen, pos=None, rpy=None, color='r', name=None,
+                 pose=None, visible=True):
+        """
+        Create a new box.
+
+        env -- OpenRAVE environment
+        halflen -- box half-length
+        pos -- initial position in inertial frame
+        rpy -- initial orientation in inertial frame
+        color -- color letter in ['r', 'g', 'b']
+        name -- object's name (optional)
+        pose -- initial pose (supersedes pos and rpy)
+        visible -- initial box visibility
+        """
+        super(Cube, self).__init__(
+            env, halflen, halflen, halflen, pos=pos, rpy=rpy, color=color,
+            name=name, pose=pose, visible=visible)
 
 
 class Link(Body):
 
-    def __init__(self, rave_object, color=None, pos=None, rpy=None,
+    def __init__(self, rave_link, color=None, pos=None, rpy=None,
                  pose=None, visible=True):
-        super(Link, self).__init__(rave_object, color=color, pos=pos, rpy=rpy,
-                                   pose=pose, visible=visible)
-        self.name = rave_object.GetName()
+        super(Link, self).__init__(
+            rave_link, color=color, pos=pos, rpy=rpy, pose=pose,
+            visible=visible)
+        self.name = rave_link.GetName()
 
 
 class Manipulator(Link):
 
-    def __init__(self, rave_object, color=None, pos=None,
+    def __init__(self, rave_manipulator, color=None, pos=None,
                  rpy=None, pose=None, visible=True):
-        super(Manipulator, self).__init__(rave_object, color, pos, rpy, pose,
-                                          visible)
-        self.end_effector = rave_object.GetEndEffector()
+        super(Manipulator, self).__init__(
+            rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
+            visible=visible)
+        self.end_effector = rave_manipulator.GetEndEffector()
 
     def set_transparency(self, transparency):
-        print "Warning: manipulators ('%s' here) have no link" % self.name
+        print "Warning:", \
+            "manipulators have no link (called from %s) " % self.name
 
     def set_visible(self, visibility):
-        print "Warning: manipulators ('%s' here) have no visibility" % self.name
+        print "Warning:", \
+            "manipulators have no visibility (called from %s)" % self.name
 
     @property
     def index(self):
