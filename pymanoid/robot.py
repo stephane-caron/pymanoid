@@ -360,7 +360,6 @@ class Robot(object):
             return link.pose
         with self.rave:
             self.set_dof_values(q, dof_indices)
-            self.rave.SetDOFValues(q, dof_indices)
             return link.pose  # first coefficient will be positive
 
     #
