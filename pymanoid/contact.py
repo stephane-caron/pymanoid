@@ -146,13 +146,45 @@ class RectangularContact(Box):
 class RectangularContactSet(object):
 
     def __init__(self, contacts):
-        """Create new contact set."""
-        self.contacts = contacts
+        """
+        Create new contact set.
+
+        contacts -- list or dictionary of RectangularContact objects
+        """
+        self._contact_dict = {}
+        self._contact_list = []
+        if type(contacts) is dict:
+            self._contact_dict = contacts
+        else:
+            self._contact_list = contacts
+        self.nb_contacts = len(contacts)
+
+    def __contains__(self, name):
+        """When using dictionaries, check whether a named contact is present."""
+        return name in self._contact_dict
+
+    def __getitem__(self, name):
+        """When using dictionaries, get named contact directly."""
+        return self._contact_dict[name]
+
+    def append(self, contact):
+        """Append a new contact to the set."""
+        self._contact_list.append(contact)
+        self.nb_contacts += 1
+
+    def update(self, name, contact):
+        """Update a named contact in the set."""
+        if name not in self._contact_dict:
+            self.nb_contacts += 1
+        self._contact_dict[name] = contact
 
     @property
-    def nb_contacts(self):
-        """Number of contacts in set."""
-        return len(self.contacts)
+    def contacts(self):
+        """Iterate contacts in the set."""
+        for contact in self._contact_dict.itervalues():
+            yield contact
+        for contact in self._contact_list:
+            yield contact
 
     def compute_grasp_matrix_from_forces(self):
         """
