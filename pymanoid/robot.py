@@ -440,11 +440,27 @@ class Robot(object):
         H = self.compute_com_hessian(q)
         return dot(J, qdd) + dot(qd, dot(H, qdd))
 
-    def compute_zmp(self, q, qd, qdd, dof_indices=None):
-        global pb_times, total_times, cum_ratio, avg_ratio
+    def compute_gravito_inertial_wrench(self, q, qd, qdd, p, dof_indices=None):
+        """
+        Compute the gravito-inertial wrench
+
+            w^gi = [ f^gi     ] = [ m (g - pdd_G)                     ]
+                   [ tau^gi_p ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
+
+        with m the robot mass, g the gravity vector, G the COM, pdd_G the
+        acceleration of the COM, and Ld_GG the rate of change of the angular
+        momentum (taken at the COM).
+
+        q -- array of DOF values
+        qd -- array of DOF velocities
+        qdd -- array of DOF accelerations
+        p -- reference point at which the wrench is taken
+        dof_indices -- indices of (q, qd, qdd) arrays
+
+        """
         g = array([0, 0, -9.81])
-        f0 = self.mass * g[2]
-        tau0 = zeros(3)
+        f_gi = self.mass * g
+        tau_gi = zeros(3)
         with self.rave:
             self.set_dof_values(q, dof_indices)
             self.set_dof_velocities(qd, dof_indices)
@@ -456,18 +472,36 @@ class Robot(object):
                 I_ci = link.GetLocalInertia()
                 Ri = link.GetTransform()[0:3, 0:3]
                 ri = dot(Ri, link.GetLocalCOM())
-                # linvel = link_velocities[link.GetIndex()][:3]
                 angvel = link_velocities[link.GetIndex()][3:]
                 linacc = link_accelerations[link.GetIndex()][:3]
                 angacc = link_accelerations[link.GetIndex()][3:]
-                # ci_dot = linvel + cross(angvel, ri)
                 ci_ddot = linacc \
                     + cross(angvel, cross(angvel, ri)) \
                     + cross(angacc, ri)
                 angmmt = dot(I_ci, angacc) - cross(dot(I_ci, angvel), angvel)
-                f0 -= mi * ci_ddot[2]
-                tau0 += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
-        return cross(array([0, 0, 1]), tau0) * 1. / f0
+                f_gi -= mi * ci_ddot[2]
+                tau_gi += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
+        return f_gi, tau_gi
+
+    def compute_zmp(self, q, qd, qdd, dof_indices=None):
+        """
+        Compute the Zero-tilting moment point. For details, see:
+
+            P. Sardain and G. Bessonnet, “Forces acting on a biped robot. center
+            of pressure-zero moment point,” Systems, Man and Cybernetics, Part
+            A: Systems and Humans, IEEE Transactions on, vol. 34, no. 5, pp.
+            630– 637, 2004.
+
+        q -- array of DOF values
+        qd -- array of DOF velocities
+        qdd -- array of DOF accelerations
+        dof_indices -- indices of (q, qd, qdd) arrays
+
+        """
+        O, n = zeros(3), array([0, 0, 1])
+        f_gi, tau_gi = self.compute_gravito_inertial_wrench(
+            q, qd, qdd, O, dof_indices=dof_indices)
+        return cross(n, tau_gi) * 1. / dot(n, f_gi)
 
     #
     # Jacobians
