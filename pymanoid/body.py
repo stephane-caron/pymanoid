@@ -64,6 +64,9 @@ class Body(object):
             self.set_transparency(transparency)
         self.is_visible = visible
 
+    def __str__(self):
+        return "pymanoid.Body('%s')" % self.name
+
     def set_color(self, color):
         acolor = array([.2, .2, .2])
         dcolor = array([.2, .2, .2])
