@@ -110,10 +110,14 @@ class Body(object):
         self.rave.SetVisible(self.is_visible)
 
     @property
-    @property
     def index(self):
         """Notably used to compute jacobians and hessians."""
         return self.rave.GetIndex()
+
+    @property
+    def name(self):
+        """Get name from OpenRAVE object."""
+        return self.rave.GetName()
 
     @property
     def T(self):
@@ -140,7 +144,12 @@ class Body(object):
 
     @property
     def p(self):
-        """Position"""
+        """Position in world frame"""
+        return self.T[0:3, 3]
+
+    @property
+    def pos(self):
+        """Position in world frame"""
         return self.T[0:3, 3]
 
     @property
@@ -211,11 +220,25 @@ class Body(object):
         T = openravepy.matrixFromPose(pose)
         self.set_transform(T)
 
+    #
+    # Others
+    #
+
+    def remove(self):
+        """Remove body from OpenRAVE environment."""
+        env = self.rave.GetEnv()
+        with env:
+            env.Remove(self.rave)
+
+    def __del__(self):
+        """Add body removal to garbage collection step (effective)."""
+        self.remove()
+
 
 class Box(Body):
 
     def __init__(self, env, X, Y, Z, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True):
+                 pose=None, visible=True, transparency=None):
         """
         Create a new box.
 
