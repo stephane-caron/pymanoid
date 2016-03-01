@@ -19,6 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+import numpy
 import time
 
 from errors import RobotNotFound
@@ -152,8 +153,28 @@ class Robot(object):
         self.ik = DiffIKSolver(self, qd_lim, K_doflim=K_doflim)
 
     def add_com_objective(self, target, gain, weight):
-        def error(q, qd):
-            return target.p - self.compute_com(q)
+        if type(target) is numpy.ndarray:
+            def error(q, qd):
+                return target - self.compute_com(q)
+        else:
+            try:
+                has_pos = (target.pos is not None)
+            except AttributeError:
+                has_pos = False
+            if has_pos:
+                def error(q, qd):
+                    return target.pos - self.compute_com(q)
+            else:
+                try:
+                    has_p = (target.p is not None)
+                except AttributeError:
+                    has_p = False
+                if has_p:
+                    def error(q, qd):
+                        return target.p - self.compute_com(q)
+                else:
+                    assert False, \
+                        "Type unfit for COM obj.: %s" % str(type(target))
         self.ik.add_objective(error, self.compute_com_jacobian, gain, weight)
 
     def add_link_objective(self, link, target, gain, weight):
