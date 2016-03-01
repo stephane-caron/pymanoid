@@ -27,17 +27,18 @@ from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
 
 
-class RectangularContact(Box):
+class Contact(Box):
 
-    def __init__(self, env, X, Y, pos, rpy, friction, Z=0.01, color='r',
-                 name=None, pose=None, visible=False):
+    def __init__(self, env, X, Y, pos=None, rpy=None, friction=None, Z=0.01,
+                 color='g', name=None, pose=None, visible=False):
         """
-        Create a new rectangular contact
+        Create a new rectangular contact.
 
         X -- half-length of the contact surface
         Y -- half-width of the contact surface
         pos -- initial position of the contact frame w.r.t the world frame
         rpy -- initial orientation of the contact frame w.r.t the world frame
+        friction -- friction coefficient
         Z -- half-height of the surface display box
         color -- color letter in ['r', 'g', 'b']
         name -- object's name (optional)
@@ -47,14 +48,14 @@ class RectangularContact(Box):
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
         self.friction = friction
-        super(RectangularContact, self).__init__(
-            env, X, Y, Z, pos=pos, rpy=rpy, color='r', name=name, pose=pose,
+        super(Contact, self).__init__(
+            env, X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
             visible=visible)
 
     @property
     def T(self):
         """Transformation matrix."""
-        T = super(RectangularContact, self).T
+        T = super(Contact, self).T
         n = T[0:3, 2]
         T[0:3, 3] += self.Z * n
         return T
@@ -62,7 +63,7 @@ class RectangularContact(Box):
     @property
     def pose(self):
         """Pose (in OpenRAVE convention)."""
-        pose = super(RectangularContact, self).pose
+        pose = super(Contact, self).pose
         pose[4:] += self.Z * self.n   # self.n calls self.T
         return pose
 
@@ -143,21 +144,23 @@ class RectangularContact(Box):
         return dot(self.gaw_face_local, block_diag(self.R.T, self.R.T))
 
 
-class RectangularContactSet(object):
+class ContactSet(object):
 
-    def __init__(self, contacts):
+    def __init__(self, contacts=None):
         """
         Create new contact set.
 
-        contacts -- list or dictionary of RectangularContact objects
+        contacts -- list or dictionary of Contact objects
         """
         self._contact_dict = {}
         self._contact_list = []
+        self.nb_contacts = 0
         if type(contacts) is dict:
             self._contact_dict = contacts
-        else:
+            self.nb_contacts = len(contacts)
+        elif type(contacts) is list:
             self._contact_list = contacts
-        self.nb_contacts = len(contacts)
+            self.nb_contacts = len(contacts)
 
     def __contains__(self, name):
         """When using dictionaries, check whether a named contact is present."""

@@ -252,6 +252,7 @@ class Box(Body):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
+        transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
@@ -263,14 +264,14 @@ class Box(Body):
         box.InitFromBoxes(array([array(aabb)]), True)
         super(Box, self).__init__(
             box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
-            visible=visible)
+            visible=visible, transparency=transparency)
         env.Add(box, True)
 
 
 class Cube(Box):
 
     def __init__(self, env, halflen, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True):
+                 pose=None, visible=True, transparency=None):
         """
         Create a new box.
 
@@ -282,10 +283,11 @@ class Cube(Box):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
+        transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
         super(Cube, self).__init__(
             env, halflen, halflen, halflen, pos=pos, rpy=rpy, color=color,
-            name=name, pose=pose, visible=visible)
+            name=name, pose=pose, visible=visible, transparency=transparency)
 
 
 class Link(Body):
@@ -295,7 +297,6 @@ class Link(Body):
         super(Link, self).__init__(
             rave_link, color=color, pos=pos, rpy=rpy, pose=pose,
             visible=visible)
-        self.name = rave_link.GetName()
 
 
 class Manipulator(Link):
