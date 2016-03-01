@@ -34,7 +34,7 @@ class Body(object):
     """
 
     def __init__(self, rave_object, pos=None, rpy=None, color=None, name=None,
-                 pose=None, visible=True):
+                 pose=None, visible=True, transparency=None):
         """
         Create body from an OpenRAVE KinBody.
 
@@ -45,6 +45,7 @@ class Body(object):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial visibility
+        transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
         self.rave = rave_object
         if color is not None:
@@ -59,6 +60,8 @@ class Body(object):
             self.set_pose(pose)
         if not visible:
             self.set_visible(False)
+        if transparency is not None:
+            self.set_transparency(transparency)
         self.is_visible = visible
 
     def set_color(self, color):
