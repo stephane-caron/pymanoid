@@ -68,16 +68,29 @@ class Body(object):
         return "pymanoid.Body('%s')" % self.name
 
     def set_color(self, color):
-        acolor = array([.2, .2, .2])
-        dcolor = array([.2, .2, .2])
-        rgb = ['r', 'g', 'b']
-        if color in rgb:
-            cdim = rgb.index(color)
-            acolor[cdim] += .2
-            dcolor[cdim] += .4
-        elif color == 'o':
+        """
+        Set the color of all bodies in the OpenRAVE KinBody object.
+
+        color -- color code in Matplotlib convention
+                 c.f. http://matplotlib.org/api/colors_api.html
+        """
+        if color == 'w':
             acolor = array([1., 1., 1.])
-            dcolor = array([.65, .4, .2])
+            dcolor = array([1., 1., 1.])
+        else:  # add other colors above black
+            acolor = array([.2, .2, .2])
+            dcolor = array([.2, .2, .2])
+            rgb, cmy = ['r', 'g', 'b'], ['c', 'm', 'y']
+            if color in rgb:
+                cdim = rgb.index(color)
+                acolor[cdim] += .2
+                dcolor[cdim] += .4
+            elif color in cmy:
+                cdim = cmy.index(color)
+                acolor[(cdim + 1) % 3] += .2
+                acolor[(cdim + 2) % 3] += .2
+                dcolor[(cdim + 1) % 3] += .4
+                dcolor[(cdim + 2) % 3] += .4
         for link in self.rave.GetLinks():
             for g in link.GetGeometries():
                 g.SetAmbientColor(acolor)
