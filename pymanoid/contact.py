@@ -170,6 +170,12 @@ class ContactSet(object):
         """When using dictionaries, get named contact directly."""
         return self._contact_dict[name]
 
+    def __iter__(self):
+        for contact in self._contact_dict.itervalues():
+            yield contact
+        for contact in self._contact_list:
+            yield contact
+
     def append(self, contact):
         """Append a new contact to the set."""
         self._contact_list.append(contact)
@@ -238,6 +244,21 @@ class ContactSet(object):
                 [-y, x, 0, 0, 0, 1]])
             G[:, (6 * i):(6 * (i + 1))] = Gi
         return G
+
+    def compute_gaw_friction_matrix(self):
+        """
+        Compute the friction constraints on all ground-applied wrenches.
+
+        The friction matrix A is defined so that friction constraints on all
+        contact wrenches are written:
+
+            dot(A, w_all) <= 0
+
+        where w_all si the vector of ground-applied wrenches (locomotion: from
+        the robot onto the environment; grasping: from the object onto the
+        hand).
+        """
+        return block_diag(*[c.gaw_face_world for c in self.contacts])
 
     def compute_contact_forces(self, com, mass, comdd, camd, w_xy=.1, w_z=10.):
         """
