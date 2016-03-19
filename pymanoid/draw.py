@@ -25,6 +25,15 @@ from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
 from pymanoid.toolbox import norm
 
+BIG_DIST = 1000.  # [m]
+
+
+def draw_line(env, point1, point2, color=None, linewidth=1., lw=None):
+    linewidth = linewidth if lw is None else lw
+    color = color if color is not None else (0., 0.5, 0.)
+    return env.drawlinelist(
+        array([point1, point2]), linewidth=linewidth, colors=color),
+
 
 def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
                     linewidth=1., pointsize=0.02):
@@ -95,11 +104,11 @@ def draw_polygon(env, points, n=None, color=None, plot_type=3, linewidth=1.,
                            pointsize)
 
 
-class ConeCoversFullPlane(Exception):
+class ConeCoversWholePlane(Exception):
     pass
 
 
-def __pick_extreme_rays(rays):
+def pick_2d_extreme_rays(rays):
     if len(rays) <= 2:
         return rays
     u_high, u_low = None, rays.pop()
@@ -120,14 +129,22 @@ def __pick_extreme_rays(rays):
         elif c1 > 0 and c2 > 0:
             u_high = u
         elif c1 < 0 and c2 > 0:
-            raise ConeCoversFullPlane
+            raise ConeCoversWholePlane
     return u_low, u_high
 
 
-def __convert_cone2d_to_vertices(vertices, rays, BIG_DIST=1000):
+def _convert_cone2d_to_vertices(vertices, rays):
     if not rays:
         return vertices
-    r0, r1 = __pick_extreme_rays([r[:2] for r in rays])
+    try:
+        r0, r1 = pick_2d_extreme_rays([r[:2] for r in rays])
+    except ConeCoversWholePlane:
+        vertices = [
+            BIG_DIST * array([-1, -1]),
+            BIG_DIST * array([-1, +1]),
+            BIG_DIST * array([+1, -1]),
+            BIG_DIST * array([+1, +1])]
+        return vertices, []
     r0 = array([r0[0], r0[1], 0.])
     r1 = array([r1[0], r1[1], 0.])
     r0 = r0 / norm(r0)
@@ -154,6 +171,6 @@ def draw_cone2d(env, vertices, rays, n, color, plot_type):
     if not rays:
         return draw_polygon(
             env, vertices, n, color=color, plot_type=plot_type)
-    plot_vertices = __convert_cone2d_to_vertices(vertices, rays)
+    plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
     return draw_polygon(
         env, plot_vertices, n, color=color, plot_type=plot_type)
