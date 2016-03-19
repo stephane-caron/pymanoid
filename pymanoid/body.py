@@ -198,6 +198,21 @@ class Body(object):
         T[:3, 3] = pos
         self.set_transform(T)
 
+    def set_x(self, x):
+        T = self.T.copy()
+        T[0, 3] = x
+        self.set_transform(T)
+
+    def set_y(self, y):
+        T = self.T.copy()
+        T[1, 3] = y
+        self.set_transform(T)
+
+    def set_z(self, z):
+        T = self.T.copy()
+        T[2, 3] = z
+        self.set_transform(T)
+
     def set_rpy(self, rpy):
         T = self.T.copy()
         T[0:3, 0:3] = rotation_matrix_from_rpy(*rpy)
