@@ -198,10 +198,17 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
-    def add_link_objective_2(self, link, target, alpha, gain, weight):
+    def add_link_var_gain_objective(self, link, target, gain, weight, alpha):
         """
-        This one is quite specific to my needs. Here, alpha is a callable
-        returning a float between zero and one.
+        Adds a link objective with "variable gain", i.e. where the gain is
+        multiplied by a factor alpha() between zero and one. This is a bad
+        solution to implement
+
+        link -- a pymanoid.Link object
+        target -- a pymanoid.Body, or any object with a ``pose`` field
+        gain -- positional gain between zero and one
+        weight -- multiplier of the task squared error in IK cost function
+        alpha -- callable function returning a gain multiplier (float)
         """
         def error(q, qd):
             cur_pose = self.compute_link_pose(link, q, self.active_dofs)
@@ -298,6 +305,8 @@ class Robot(object):
                 break
             qd = self.ik.compute_velocity(q, qd)
             q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
+            if debug:
+                self.set_dof_values(q)
         self.set_dof_values(q)
         return itnum, cur_obj
 
