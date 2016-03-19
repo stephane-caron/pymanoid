@@ -101,13 +101,9 @@ class Body(object):
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
-    def set_visible(self, visibility):
-        self.is_visible = visibility
-        self.rave.SetVisible(visibility)
-
-    def toggle_visibility(self):
-        self.is_visible = not self.is_visible
-        self.rave.SetVisible(self.is_visible)
+    def set_visible(self, visible):
+        self.is_visible = visible
+        self.rave.SetVisible(visible)
 
     @property
     def index(self):
@@ -312,7 +308,7 @@ class Manipulator(Link):
         print "Warning:", \
             "manipulators have no link (called from %s) " % self.name
 
-    def set_visible(self, visibility):
+    def set_visible(self, visible):
         print "Warning:", \
             "manipulators have no visibility (called from %s)" % self.name
 

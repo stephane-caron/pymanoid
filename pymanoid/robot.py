@@ -69,6 +69,8 @@ class Robot(object):
         self.q_max_full = q_max
         self.q_min_full = q_min
         self.rave = rave
+        self.transparency = 0.  # initially opaque
+        self.is_visible = True  # initially visible
 
     #
     # Kinematics
@@ -337,9 +339,14 @@ class Robot(object):
                 geom.SetDiffuseColor([r, g, b])
 
     def set_transparency(self, transparency):
+        self.transparency = transparency
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
+
+    def set_visible(self, visible):
+        self.is_visible = visible
+        self.rave.SetVisible(visible)
 
     #
     # Geometric properties (position level)
