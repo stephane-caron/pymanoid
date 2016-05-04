@@ -50,6 +50,7 @@ class Contact(Box):
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
         self.friction = friction
+        self.robot_link = robot_link
         super(Contact, self).__init__(
             env, X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
             visible=visible)
