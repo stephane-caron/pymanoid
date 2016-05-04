@@ -56,7 +56,18 @@ class Contact(Box):
             visible=visible)
 
     @property
-    def T(self):
+    def effector_pose(self):
+        """Target pose for the robot end-effector.
+
+        Caution: don't use the contact pose, which corresponds to the OpenRAVE
+        KinBody's pose and would result in a frame inside the contact box.
+        """
+        pose = super(Contact, self).pose
+        pose[4:] += self.Z * self.n   # self.n calls self.T
+        return pose
+
+    @property
+    def effector_transform(self):
         """Transformation matrix."""
         T = super(Contact, self).T
         n = T[0:3, 2]
@@ -64,19 +75,13 @@ class Contact(Box):
         return T
 
     @property
-    def pose(self):
-        """Pose (in OpenRAVE convention)."""
-        pose = super(Contact, self).pose
-        pose[4:] += self.Z * self.n   # self.n calls self.T
-        return pose
-
-    @property
     def contact_points(self):
         """List of vertices of the contact area."""
-        c1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
-        c2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
-        c3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
-        c4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
+        T = self.effector_transform
+        c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
+        c2 = dot(T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
+        c3 = dot(T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
+        c4 = dot(T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         return [c1, c2, c3, c4]
 
     @property
