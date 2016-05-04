@@ -101,6 +101,12 @@ class Body(object):
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
+    def show(self):
+        self.rave.SetVisible(True)
+
+    def hide(self):
+        self.rave.SetVisible(False)
+
     def set_visible(self, visible):
         self.is_visible = visible
         self.rave.SetVisible(visible)
