@@ -23,14 +23,29 @@ import itertools
 
 from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
-from pymanoid.toolbox import norm
+from toolbox import norm
 
 BIG_DIST = 1000.  # [m]
+
+
+def _matplotlib_to_rgb(color):
+    acolor = [0., 0., 0.]
+    if color == 'k':
+        return acolor
+    if color in ['r', 'm', 'y']:
+        acolor[0] += 0.5
+    if color in ['g', 'y', 'c']:
+        acolor[1] += 0.5
+    if color in ['b', 'c', 'm']:
+        acolor[2] += 0.5
+    return acolor
 
 
 def draw_line(env, point1, point2, color=None, linewidth=1., lw=None):
     linewidth = linewidth if lw is None else lw
     color = color if color is not None else (0., 0.5, 0.)
+    if type(color) is str:
+        color = _matplotlib_to_rgb(color)
     return env.drawlinelist(
         array([point1, point2]), linewidth=linewidth, colors=color),
 
