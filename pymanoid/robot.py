@@ -207,16 +207,6 @@ class Robot(object):
                         "Type unfit for COM obj.: %s" % str(type(target))
         self.ik.add_objective(error, self.compute_com_jacobian, gain, weight)
 
-    def add_link_objective(self, link, target, gain, weight):
-        def error(q, qd):
-            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
-            return target.pose - cur_pose
-
-        def jacobian(q):
-            return self.compute_link_pose_jacobian(link, q)
-
-        self.ik.add_objective(error, jacobian, gain, weight)
-
     def add_link_pos_objective(self, link, target, gain, weight):
         def error(q, qd):
             return target.p - link.p
@@ -226,7 +216,19 @@ class Robot(object):
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
-    def add_link_var_gain_objective(self, link, target, gain, weight, alpha):
+    def add_contact_objective(self, link, contact, gain, weight):
+        contact.robot_link = link.index  # dirty
+
+        def error(q, qd):
+            cur_pose = self.compute_link_pose(link, q)
+            return contact.effector_pose - cur_pose
+
+        def jacobian(q):
+            return self.compute_link_active_pose_jacobian(link, q)
+
+        self.ik.add_objective(error, jacobian, gain, weight)
+
+    def add_contact_vargain_objective(self, link, contact, gain, weight, alpha):
         """
         Adds a link objective with "variable gain", i.e. where the gain is
         multiplied by a factor alpha() between zero and one. This is a bad
@@ -239,11 +241,11 @@ class Robot(object):
         alpha -- callable function returning a gain multiplier (float)
         """
         def error(q, qd):
-            cur_pose = self.compute_link_pose(link, q, self.active_dofs)
-            return alpha() * (target.pose - cur_pose)
+            cur_pose = self.compute_link_pose(link, q)
+            return alpha() * (contact.effector_pose - cur_pose)
 
         def jacobian(q):
-            return self.compute_link_pose_jacobian(link, q)
+            return self.compute_link_active_pose_jacobian(link, q)
 
         self.ik.add_objective(error, jacobian, gain, weight)
 
@@ -342,13 +344,13 @@ class Robot(object):
     # Visualization
     #
 
-    def play_trajectory(self, traj, callback=None, dt=3e-2, dof_indices=None):
+    def play_trajectory(self, traj, callback=None, dt=3e-2):
         trange = list(arange(0, traj.T, dt))
         for t in trange:
             q = traj.q(t)
             qd = traj.qd(t)
             qdd = traj.qdd(t)
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             if callback:
                 callback(t, q, qd, qdd)
             time.sleep(dt)
@@ -381,57 +383,50 @@ class Robot(object):
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
+    def show(self):
+        self.rave.SetVisible(True)
+
+    def hide(self):
+        self.rave.SetVisible(False)
+
     def set_visible(self, visible):
         self.is_visible = visible
         self.rave.SetVisible(visible)
 
-    #
-    # Geometric properties (position level)
-    #
-
-    def compute_com(self, q, dof_indices=None):
+    def compute_com(self, q):
         total = zeros(3)
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 c = link.GetGlobalCOM()
                 total += m * c
         return total / self.mass
 
-    @property
-    def com(self):
-        return self.compute_com(self.q)
+    #
+    # Positions
+    #
 
-    def compute_inertia_matrix(self, q, dof_indices=None, external_torque=None):
-        M = zeros((self.nb_dofs, self.nb_dofs))
-        self.set_dof_values(q, dof_indices)
-        for (i, e_i) in enumerate(eye(self.nb_dofs)):
-            tm, _, _ = self.rave.ComputeInverseDynamics(
-                e_i, external_torque, returncomponents=True)
-            M[:, i] = tm
-        return M
-
-    def compute_link_pos(self, link, q, link_coord=None, dof_indices=None):
+    def compute_link_pos(self, link, q, link_coord=None):
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             T = link.T
             if link_coord is None:
                 return T[:3, 3]
             return dot(T, hstack([link_coord, 1]))[:3]
 
-    def compute_link_pose(self, link, q=None, dof_indices=None):
+    def compute_link_pose(self, link, q=None):
         if q is None:
             return link.pose
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             return link.pose  # first coefficient will be positive
 
     #
-    # Kinematic properties (velocity level)
+    # Velocities
     #
 
-    def compute_angular_momentum(self, q, qd, p, dof_indices=None):
+    def compute_angular_momentum(self, q, qd, p):
         """Compute the angular momentum with respect to point p.
 
         q -- joint angle values
@@ -442,8 +437,8 @@ class Robot(object):
         """
         momentum = zeros(3)
         with self.rave:
-            self.set_dof_values(q, dof_indices)
-            self.set_dof_velocities(qd, dof_indices)
+            self.set_dof_values(q)
+            self.set_dof_velocities(qd)
             for link in self.rave.GetLinks():
                 T = link.GetTransform()
                 R, r = T[0:3, 0:3], T[0:3, 3]
@@ -460,23 +455,23 @@ class Robot(object):
                     + dot(R, dot(I, dot(R.T, omega)))
         return momentum
 
-    def compute_cam(self, q, qd, dof_indices=None):
+    def compute_cam(self, q, qd):
         """
         Compute the centroidal angular momentum (CAM), that is to say, the
         angular momentum with respect to the COM.
         """
-        p_G = self.compute_com(q, dof_indices)
-        return self.compute_angular_momentum(q, qd, p_G, dof_indices)
+        p_G = self.compute_com(q)
+        return self.compute_angular_momentum(q, qd, p_G)
 
     @property
     def cam(self):
         return self.compute_cam(self.q, self.qd)
 
-    def compute_com_velocity(self, q, qd, dof_indices=None):
+    def compute_com_velocity(self, q, qd):
         total = zeros(3)
         with self.rave:
-            self.set_dof_values(q, dof_indices)
-            self.set_dof_velocities(qd, dof_indices)
+            self.set_dof_values(q)
+            self.set_dof_velocities(qd)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 R = link.GetTransform()[0:3, 0:3]
@@ -492,7 +487,7 @@ class Robot(object):
         return self.compute_com_velocity(self.q, self.qd)
 
     #
-    # Dynamic properties (acceleration level)
+    # Accelerations
     #
 
     def compute_cam_rate(self, q, qd, qdd):
@@ -505,7 +500,7 @@ class Robot(object):
         H = self.compute_com_hessian(q)
         return dot(J, qdd) + dot(qd, dot(H, qdd))
 
-    def compute_gravito_inertial_wrench(self, q, qd, qdd, p, dof_indices=None):
+    def compute_gravito_inertial_wrench(self, q, qd, qdd, p):
         """
         Compute the gravito-inertial wrench
 
@@ -520,15 +515,14 @@ class Robot(object):
         qd -- array of DOF velocities
         qdd -- array of DOF accelerations
         p -- reference point at which the wrench is taken
-        dof_indices -- indices of (q, qd, qdd) arrays
 
         """
         g = array([0, 0, -9.81])
         f_gi = self.mass * g
         tau_gi = zeros(3)
         with self.rave:
-            self.set_dof_values(q, dof_indices)
-            self.set_dof_velocities(qd, dof_indices)
+            self.set_dof_values(q)
+            self.set_dof_velocities(qd)
             link_velocities = self.rave.GetLinkVelocities()
             link_accelerations = self.rave.GetLinkAccelerations(qdd)
             for link in self.rave.GetLinks():
@@ -548,7 +542,7 @@ class Robot(object):
                 tau_gi += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
         return f_gi, tau_gi
 
-    def compute_zmp(self, q, qd, qdd, dof_indices=None):
+    def compute_zmp(self, q, qd, qdd):
         """
         Compute the Zero-tilting moment point. For details, see:
 
@@ -560,23 +554,22 @@ class Robot(object):
         q -- array of DOF values
         qd -- array of DOF velocities
         qdd -- array of DOF accelerations
-        dof_indices -- indices of (q, qd, qdd) arrays
 
         """
         O, n = zeros(3), array([0, 0, 1])
-        f_gi, tau_gi = self.compute_gravito_inertial_wrench(
-            q, qd, qdd, O, dof_indices=dof_indices)
+        f_gi, tau_gi = self.compute_gravito_inertial_wrench(q, qd, qdd, O)
         return cross(n, tau_gi) * 1. / dot(n, f_gi)
 
     #
     # Jacobians
     #
 
-    def compute_am_jacobian(self, q, p, dof_indices=None):
-        """Compute a matrix J(p) such that the angular momentum with respect to
-        the point p is
+    def compute_am_jacobian(self, q, p):
+        """
+        Compute the jacobian matrix J(q) such that the angular momentum of the
+        robot at p is given by:
 
-            L_p(q, qd) = dot(J(q), qd).
+            L_p(q, qd) = J(q) * qd
 
         q -- joint angle values
         qd -- joint-angle velocities
@@ -586,7 +579,7 @@ class Robot(object):
         """
         J = zeros((3, self.nb_dofs))
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             for link in self.rave.GetLinks():
                 m = link.GetMass()
                 i = link.GetIndex()
@@ -596,29 +589,41 @@ class Robot(object):
                 J_trans = self.rave.ComputeJacobianTranslation(i, c)
                 J_rot = self.rave.ComputeJacobianAxisAngle(i)
                 J += dot(crossmat(c - p), m * J_trans) + dot(I, J_rot)
-            if dof_indices is not None:
-                return J[:, dof_indices]
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return J[:, self.active_dofs]
-            return J
+        if self.active_dofs and len(q) == self.nb_active_dofs:
+            return J[:, self.active_dofs]
+        return J
 
-    def compute_cam_jacobian(self, q, dof_indices=None):
-        """Compute a matrix J(p) such that the angular momentum with respect to
-        the center of mass G is
+    def compute_cam_jacobian(self, q):
+        """
+        Compute the jacobian matrix J(q) such that the centroidal angular
+        momentum (i.e. the angular momentum of the robot at its center of mass
+        G) is given by:
 
-            L_G(q, qd) = dot(J(q), qd).
+            L_G(q, qd) = J(q) * qd
 
-        q -- joint angle values
-        qd -- joint-angle velocities
+        q -- vector of joint angles
+        qd -- vector of joint velocities
+        L_G -- angular momentum at the center of mass G
 
         """
-        p_G = self.compute_com(q, dof_indices)
-        return self.compute_am_jacobian(q, p_G, dof_indices)
+        p_G = self.compute_com(q)
+        return self.compute_am_jacobian(q, p_G)
 
-    def compute_com_jacobian(self, q, dof_indices=None):
+    def compute_com_jacobian(self, q):
+        """
+        Compute the jacobian matrix J(q) of the position of the center of mass G
+        of the robot, i.e. the velocity of the G is given by:
+
+                pd_G(q, qd) = J(q) * qd
+
+        q -- vector of joint angles
+        qd -- vector of joint velocities
+        pd_G -- velocity of the center of mass G
+
+        """
         Jcom = zeros((3, self.nb_dofs))
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             for link in self.rave.GetLinks():
                 index = link.GetIndex()
                 com = link.GetGlobalCOM()
@@ -626,56 +631,83 @@ class Robot(object):
                 J = self.rave.ComputeJacobianTranslation(index, com)
                 Jcom += m * J
             J = Jcom / self.mass
-            if dof_indices is not None:
-                return J[:, dof_indices]
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return J[:, self.active_dofs]
-            return J
+        if self.active_dofs and len(q) == self.nb_active_dofs:
+            return J[:, self.active_dofs]
+        return J
 
-    def compute_link_jacobian(self, link, q, dof_indices=None):
-        with self.rave:
-            self.set_dof_values(q, dof_indices)
-            J_trans = self.rave.ComputeJacobianTranslation(link.index, link.p)
-            J_rot = self.rave.ComputeJacobianAxisAngle(link.index)
-            J = vstack([J_rot, J_trans])
-            if dof_indices is not None:
-                return J[:, dof_indices]
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return J[:, self.active_dofs]
-            return J
+    def compute_link_frame_jacobian(self, link, p=None, q=None):
+        """
+        Compute the jacobian J(q) of the reference frame of the link, i.e. the
+        velocity of the link frame is given by:
 
-    def compute_link_pose_jacobian(self, link, q, dof_indices=None):
+            [v omega] = J(q) * qd
+
+        where v and omega are the linear and angular velocities of the link
+        frame, respectively.
+
+        link -- link index or pymanoid.Link object
+        p -- link frame origin (optional: if None, link.p is used)
+        q -- vector of joint angles (optional: if None, robot.q is used)
+
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            if q is not None:
+                self.set_dof_values(q)
+            J_lin = self.rave.ComputeJacobianTranslation(link_index, p)
+            J_ang = self.rave.ComputeJacobianAxisAngle(link_index)
+            J = vstack([J_lin, J_ang])
+        return J
+
+    def compute_link_active_frame_jacobian(self, link, q):
+        J = self.compute_link_frame_jacobian(link, q)
+        return J[:, self.active_dofs]
+
+    def compute_link_pose_jacobian(self, link, q=None):
+        with self.rave:
+            self.set_dof_values(q)
             J_trans = self.rave.CalculateJacobian(link.index, link.p)
             or_quat = link.rave.GetTransformPose()[:4]  # don't use link.pose
             J_quat = self.rave.CalculateRotationJacobian(link.index, or_quat)
             if or_quat[0] < 0:  # we enforce positive first coefficients
                 J_quat *= -1.
             J = vstack([J_quat, J_trans])
-            if dof_indices is not None:
-                return J[:, dof_indices]
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return J[:, self.active_dofs]
-            return J
+        return J
 
-    def compute_link_translation_jacobian(self, link, q, link_coord=None,
-                                          dof_indices=None):
+    def compute_link_active_pose_jacobian(self, link, q=None):
+        J = self.compute_link_pose_jacobian(link, q)
+        return J[:, self.active_dofs]
+
+    def compute_link_position_jacobian(self, link, p=None, q=None):
+        """
+        Compute the position Jacobian of a point p on a given robot link.
+
+        link -- link index or pymanoid.Link object
+        p -- point coordinates in world frame (optional)
+        q -- DOF values to compute the jacobian at (optional)
+
+        When p is None, the origin of the link reference frame is taken.
+        When q is None, the current robot's DOF values are used.
+
+        """
+        link_index = link if type(link) is int else link.index
         with self.rave:
-            self.set_dof_values(q, dof_indices)
-            p = self.compute_link_pos(link, q, link_coord, dof_indices)
-            J = self.rave.ComputeJacobianTranslation(link.index, p)
-            if dof_indices is not None:
-                return J[:, dof_indices]
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return J[:, self.active_dofs]
-            return J
+            if q is not None:
+                self.set_dof_values(q)
+            p = link.p if p is None else p
+            J = self.rave.ComputeJacobianTranslation(link_index, p)
+        return J
+
+    def compute_link_active_position_jacobian(self, link, p=None, q=None):
+        J = self.compute_link_position_jacobian(link, p, q)
+        return J[:, self.active_dofs]
 
     #
     # Hessians
     #
 
-    def compute_am_hessian(self, q, p, dof_indices=None):
+    def compute_am_hessian(self, q, p):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to point p is
 
@@ -724,13 +756,11 @@ class Robot(object):
                 H += middot(crossmat(c - p), m * H_trans) \
                     + middot(I, H_rot) \
                     - dot(crosstens(dot(I, J_rot)), J_rot)
-            if dof_indices:
-                return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
-            return H
+        if self.active_dofs and len(q) == self.nb_active_dofs:
+            return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+        return H
 
-    def compute_cam_hessian(self, q, dof_indices=None):
+    def compute_cam_hessian(self, q):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to the center of mass G is
 
@@ -740,12 +770,12 @@ class Robot(object):
 
         """
         p_G = self.compute_com(q)
-        return self.compute_am_hessian(q, p_G, dof_indices)
+        return self.compute_am_hessian(q, p_G)
 
-    def compute_com_hessian(self, q, dof_indices=None):
+    def compute_com_hessian(self, q):
         Hcom = zeros((self.nb_dofs, 3, self.nb_dofs))
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             for link in self.rave.GetLinks():
                 index = link.GetIndex()
                 com = link.GetGlobalCOM()
