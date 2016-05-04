@@ -29,8 +29,9 @@ from toolbox import cvxopt_solve_qp
 
 class Contact(Box):
 
-    def __init__(self, env, X, Y, pos=None, rpy=None, friction=None, Z=0.01,
-                 color='g', name=None, pose=None, visible=False):
+    def __init__(self, env, X, Y, pos=None, rpy=None, friction=None,
+                 robot_link=-1, Z=0.01, color='g', name=None, pose=None,
+                 visible=False):
         """
         Create a new rectangular contact.
 
@@ -39,6 +40,7 @@ class Contact(Box):
         pos -- initial position of the contact frame w.r.t the world frame
         rpy -- initial orientation of the contact frame w.r.t the world frame
         friction -- friction coefficient
+        robot_link -- saves link index of robot link in contact
         Z -- half-height of the surface display box
         color -- color letter in ['r', 'g', 'b']
         name -- object's name (optional)
