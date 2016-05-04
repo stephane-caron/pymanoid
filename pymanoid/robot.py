@@ -68,9 +68,53 @@ class Robot(object):
         self.nb_active_dofs = rave.GetDOF()
         self.q_max_full = q_max
         self.q_min_full = q_min
+        self.tau_max_full = None  # set by hand in child robot class
         self.rave = rave
         self.transparency = 0.  # initially opaque
         self.is_visible = True  # initially visible
+
+    #
+    # Accessors
+    #
+
+    @property
+    def com(self):
+        return self.compute_com(self.q)
+
+    @property
+    def q(self):
+        return self.get_dof_values()
+
+    @property
+    def q_full(self):
+        return self.rave.GetDOFValues()
+
+    @property
+    def q_max(self):
+        if not self.active_dofs:
+            return self.q_max_full
+        return self.q_max_full[self.active_dofs]
+
+    @property
+    def q_min(self):
+        if not self.active_dofs:
+            return self.q_min_full
+        return self.q_min_full[self.active_dofs]
+
+    @property
+    def qd(self):
+        return self.get_dof_velocities()
+
+    @property
+    def qd_full(self):
+        return self.rave.GetDOFVelocities()
+
+    @property
+    def tau_max(self):
+        assert self.tau_max_full is not None, "Torque limits unset"
+        if not self.active_dofs:
+            return self.tau_max_full
+        return self.tau_max_full[self.active_dofs]
 
     #
     # Kinematics
@@ -88,6 +132,9 @@ class Robot(object):
             return self.rave.GetActiveDOFValues()
         return self.rave.GetDOFValues()
 
+    def get_dof_value(self, dof_index):
+        return self.get_dof_values([dof_index])[0]
+
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
@@ -96,13 +143,8 @@ class Robot(object):
         assert len(q) == self.nb_dofs
         return self.rave.SetDOFValues(q)
 
-    @property
-    def q(self):
-        return self.get_dof_values()
-
-    @property
-    def q_full(self):
-        return self.rave.GetDOFValues()
+    def set_dof_value(self, dof_value, dof_index):
+        return self.set_dof_values([dof_value], [dof_index])
 
     def scale_dof_limits(self, scale=1.):
         q_avg = .5 * (self.q_max_full + self.q_min_full)
@@ -110,24 +152,15 @@ class Robot(object):
         self.q_max_full = (q_avg + scale * q_dev)
         self.q_min_full = (q_avg - scale * q_dev)
 
-    @property
-    def q_max(self):
-        if not self.active_dofs:
-            return self.q_max_full
-        return self.q_max_full[self.active_dofs]
-
-    @property
-    def q_min(self):
-        if not self.active_dofs:
-            return self.q_min_full
-        return self.q_min_full[self.active_dofs]
-
     def get_dof_velocities(self, dof_indices=None):
         if dof_indices is not None:
             return self.rave.GetDOFVelocities(dof_indices)
         elif self.active_dofs:
             return self.rave.GetActiveDOFVelocities()
         return self.rave.GetDOFVelocities()
+
+    def get_dof_velocity(self, dof_index):
+        return self.get_dof_velocities([dof_index])[0]
 
     def set_dof_velocities(self, qd, dof_indices=None):
         check_dof_limits = 0  # CLA_Nothing
@@ -139,13 +172,8 @@ class Robot(object):
         assert len(qd) == self.nb_dofs
         return self.rave.SetDOFVelocities(qd)
 
-    @property
-    def qd(self):
-        return self.get_dof_velocities()
-
-    @property
-    def qd_full(self):
-        return self.rave.GetDOFVelocities()
+    def set_dof_velocity(self, dof_velocity, dof_index):
+        return self.set_dof_velocities([dof_velocity], [dof_index])
 
     #
     # Inverse Kinematics
@@ -725,20 +753,94 @@ class Robot(object):
                 H = self.rave.ComputeHessianTranslation(index, com)
                 Hcom += m * H
             H = Hcom / self.mass
-            if dof_indices:
-                return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
-            return H
+        if self.active_dofs and len(q) == self.nb_active_dofs:
+            return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+        return H
 
-    def compute_link_hessian(self, link, q, dof_indices=None):
+    def compute_link_hessian(self, link, q):
         with self.rave:
-            self.set_dof_values(q, dof_indices)
+            self.set_dof_values(q)
             H_trans = self.rave.ComputeHessianTranslation(link.index, link.p)
             H_rot = self.rave.ComputeHessianAxisAngle(link.index)
             H = hstack([H_rot, H_trans])
-            if dof_indices:
-                return ((H[dof_indices, :, :])[:, :, dof_indices])
-            elif self.active_dofs and len(q) == self.nb_active_dofs:
-                return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
-            return H
+        if self.active_dofs and len(q) == self.nb_active_dofs:
+            return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
+        return H
+
+    #
+    # Dynamics
+    #
+
+    def compute_inertia_matrix(self, q=None, external_torque=None):
+        """
+        Compute the inertia matrix of the robot, that is, the matrix M(q) such
+        that the equations of motion are:
+
+            M(q) * qdd + qd.T * C(q) * qd + g(q) = F + external_torque
+
+        with:
+
+        q -- vector of joint angles (DOF values)
+        qd -- vector of joint velocities
+        qdd -- vector of joint accelerations
+        C(q) -- Coriolis tensor (derivative of M(q) w.r.t. q)
+        g(q) -- gravity vector
+        F -- vector of generalized forces (joint torques, contact wrenches, ...)
+        external_torque -- additional torque vector (optional)
+
+        This function applies the unit-vector method described by Walker & Orin
+        <https://dx.doi.org/10.1115/1.3139699>.
+        """
+        M = zeros((self.nb_dofs, self.nb_dofs))
+        with self.rave:
+            if q is not None:
+                self.set_dof_values(q)
+            for (i, e_i) in enumerate(eye(self.nb_dofs)):
+                tm, _, _ = self.rave.ComputeInverseDynamics(
+                    e_i, external_torque, returncomponents=True)
+                M[:, i] = tm
+        return M
+
+    def compute_inverse_dynamics(self, q=None, qd=None, qdd=None,
+                                 external_torque=None):
+        """
+        Wrapper around OpenRAVE's ComputeInverseDynamics function, which
+        implements the Recursive Newton-Euler algorithm by Walker & Orin
+        <https://dx.doi.org/10.1115/1.3139699>.
+
+        The function returns three terms tm, tc and tg such that
+
+            tm = M(q) * qdd
+            tc = qd.T * C(q) * qd
+            tg = g(q)
+
+        and the equations of motion are written:
+
+            tm + tc + tg = F + external_torque
+
+        with:
+
+        q -- vector of joint angles (DOF values)
+        qd -- vector of joint velocities
+        qdd -- vector of joint accelerations
+        M(q) -- inertia matrix
+        C(q) -- Coriolis tensor (derivative of M(q) w.r.t. q)
+        g(q) -- gravity vector
+        F -- vector of generalized forces (joint torques, contact wrenches, ...)
+        external_torque -- additional torque vector (optional)
+
+        If q or qd are not given, the robot's current DOF values/velocities are
+        used. If qdd is not given, the return value for tm will be None.
+        """
+        with self.rave:
+            if q is not None:
+                self.set_dof_values(q)
+            if qd is not None:
+                self.set_dof_velocities(qd)
+            if qdd is None:
+                _, tc, tg = self.rave.ComputeInverseDynamics(
+                    zeros(len(self.q)), external_torque, returncomponents=True)
+                return None, tc, tg
+            tm, tc, tg = self.rave.ComputeInverseDynamics(
+                qdd, external_torque, returncomponents=True)
+            return tm, tc, tg
