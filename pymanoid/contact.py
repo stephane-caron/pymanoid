@@ -109,32 +109,50 @@ class Contact(Box):
         return [f1, f2, f3, f4]
 
     @property
-    def gaf_face_local(self):
+    def gaf_face(self):
         """
-        H-representation of the ground-applied force cone in contact frame.
+        H-representation of the ground-applied force cone in world frame.
         """
         mu = self.friction
         l1 = [-1, 0, mu]
         l2 = [+1, 0, mu]
         l3 = [0, -1, mu]
         l4 = [0, +1, mu]
-        return array([l1, l2, l3, l4])
+        gaf_face_local = array([l1, l2, l3, l4])
+        return dot(gaf_face_local, self.R.T)
 
     @property
-    def gaf_face_world(self):
+    def grasp_matrix(self):
         """
-        H-representation of the ground-applied force cone in world frame.
+        Get the grasp matrix of the contact, i.e. the matrix G such that the the
+        wrench generated at the origin of the world frame is given by:
+
+            w_O = G * w
+
+        where w is the contact wrench.
         """
-        return dot(self.gaf_face_local, self.R.T)
+        x, y, z = self.p
+        return array([
+            [1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0],
+            [0, -z, y, 1, 0, 0],
+            [z, 0, -x, 0, 1, 0],
+            [-y, x, 0, 0, 0, 1]])
 
     @property
-    def gaw_face_local(self):
+    def friction_matrix(self):
         """
-        H-representation of the ground-applied wrench cone in contact frame.
+        Compute the friction matrix F.
+
+        This matrix describes the linearized Coulomb friction model by:
+
+            F * w <= 0
+
+        where w is the contact wrench, taken in the world frame.
         """
-        X, Y = self.X, self.Y
-        mu = self.friction
-        grw_face = array([  # Ground Reaction Wrench Cone
+        mu, X, Y = self.friction, self.X, self.Y
+        friction_matrix_local = array([
             # fx  fy              fz  taux tauy tauz
             [-1,   0,            -mu,    0,   0,   0],
             [+1,   0,            -mu,    0,   0,   0],
@@ -152,9 +170,9 @@ class Contact(Box):
             [+Y,  -X,  -(X + Y) * mu,  +mu,  -mu,  +1],
             [-Y,  +X,  -(X + Y) * mu,  -mu,  +mu,  +1],
             [-Y,  -X,  -(X + Y) * mu,  -mu,  -mu,  +1]])
-        gaw_face = grw_face
-        gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
-        return gaw_face
+        # gaw_face = F
+        # gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
+        return dot(friction_matrix_local, block_diag(self.R.T, self.R.T))
 
     @property
     def friction_span(self):
@@ -284,20 +302,33 @@ class ContactSet(object):
             G[:, (6 * i):(6 * (i + 1))] = Gi
         return G
 
-    def compute_gaw_friction_matrix(self):
+    def compute_friction_matrix(self):
         """
-        Compute the friction constraints on all ground-applied wrenches.
+        Compute the friction constraints on all contact wrenches.
 
-        The friction matrix A is defined so that friction constraints on all
+        The friction matrix F is defined so that friction constraints on all
         contact wrenches are written:
 
-            dot(A, w_all) <= 0
+            dot(F, w_all) <= 0
 
-        where w_all si the vector of ground-applied wrenches (locomotion: from
-        the robot onto the environment; grasping: from the object onto the
-        hand).
+        where w_all is the stacked vector of contact wrenches (locomotion:
+        exerted by the environment on the robot; grasping: exerted by the
+        hand on the object).
         """
-        return block_diag(*[c.gaw_face_world for c in self.contacts])
+        return block_diag(*[c.friction_matrix for c in self.contacts])
+
+    def compute_friction_span(self):
+        """
+        Compute the span matrix of the contact wrench cone in world frame.
+
+        This matrix is such that all valid contact wrenches can be written as:
+
+            w = S * lambda,     lambda >= 0
+
+        where S is the friction span and lambda is a vector with positive
+        coordinates.
+        """
+        return block_diag(*[c.friction_span for c in self.contacts])
 
     def compute_contact_forces(self, com, mass, comdd, camd, w_xy=.1, w_z=10.):
         """
