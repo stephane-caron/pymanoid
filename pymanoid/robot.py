@@ -23,7 +23,7 @@ import numpy
 import time
 
 from errors import RobotNotFound
-from numpy import arange, array, cross, dot, eye, maximum, minimum
+from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
 from rotation import crossmat
@@ -56,16 +56,13 @@ class Robot(object):
         if not rave:
             raise RobotNotFound(robot_name)
         q_min, q_max = rave.GetDOFLimits()
-        nb_dofs = rave.GetDOF()
         rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
-        rave.SetDOFVelocities([0] * nb_dofs)
+        rave.SetDOFVelocities([0] * rave.GetDOF())
 
         self.active_dofs = None
         self.env = env
         if self.mass is None:  # may not be True for children classes
             self.mass = sum([link.GetMass() for link in rave.GetLinks()])
-        self.nb_dofs = nb_dofs
-        self.nb_active_dofs = rave.GetDOF()
         self.q_max_full = q_max
         self.q_min_full = q_min
         self.tau_max_full = None  # set by hand in child robot class
@@ -80,6 +77,14 @@ class Robot(object):
     @property
     def com(self):
         return self.compute_com(self.q)
+
+    @property
+    def nb_active_dofs(self):
+        return self.rave.GetActiveDOF()
+
+    @property
+    def nb_dofs(self):
+        return self.rave.GetDOF()
 
     @property
     def q(self):
@@ -122,7 +127,6 @@ class Robot(object):
 
     def set_active_dofs(self, active_dofs):
         self.active_dofs = active_dofs
-        self.nb_active_dofs = len(active_dofs)
         self.rave.SetActiveDOFs(active_dofs)
 
     def get_dof_values(self, dof_indices=None):
@@ -132,19 +136,13 @@ class Robot(object):
             return self.rave.GetActiveDOFValues()
         return self.rave.GetDOFValues()
 
-    def get_dof_value(self, dof_index):
-        return self.get_dof_values([dof_index])[0]
-
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
         elif self.active_dofs and len(q) == self.nb_active_dofs:
-            return self.rave.SetDOFValues(q, self.active_dofs)
-        assert len(q) == self.nb_dofs
+            return self.rave.SetActiveDOFValues(q)
+        assert len(q) == self.nb_dofs, "Invalid DOF vector"
         return self.rave.SetDOFValues(q)
-
-    def set_dof_value(self, dof_value, dof_index):
-        return self.set_dof_values([dof_value], [dof_index])
 
     def scale_dof_limits(self, scale=1.):
         q_avg = .5 * (self.q_max_full + self.q_min_full)
@@ -159,21 +157,14 @@ class Robot(object):
             return self.rave.GetActiveDOFVelocities()
         return self.rave.GetDOFVelocities()
 
-    def get_dof_velocity(self, dof_index):
-        return self.get_dof_velocities([dof_index])[0]
-
     def set_dof_velocities(self, qd, dof_indices=None):
         check_dof_limits = 0  # CLA_Nothing
         if dof_indices is not None:
             return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
         elif self.active_dofs and len(qd) == self.nb_active_dofs:
-            return self.rave.SetDOFVelocities(qd, check_dof_limits,
-                                              self.active_dofs)
-        assert len(qd) == self.nb_dofs
-        return self.rave.SetDOFVelocities(qd)
-
-    def set_dof_velocity(self, dof_velocity, dof_index):
-        return self.set_dof_velocities([dof_velocity], [dof_index])
+            return self.rave.SetActiveDOFVelocities(qd, check_dof_limits)
+        assert len(qd) == self.nb_dof, "Invalid DOF velocity vector"
+        return self.rave.SetDOFVelocities(qd, check_dof_limits)
 
     #
     # Inverse Kinematics
@@ -300,7 +291,7 @@ class Robot(object):
             return -qd
         self.ik.add_objective(error, self.ik.identity, gain, weight)
 
-    def step_tracker(self, dt):
+    def step_ik(self, dt):
         qd = self.ik.compute_velocity(self.q, self.qd)
         q = minimum(maximum(self.q_min, self.q + qd * dt), self.q_max)
         self.set_dof_values(q)
@@ -869,7 +860,7 @@ class Robot(object):
                 self.set_dof_velocities(qd)
             if qdd is None:
                 _, tc, tg = self.rave.ComputeInverseDynamics(
-                    zeros(len(self.q)), external_torque, returncomponents=True)
+                    zeros(self.nb_dofs), external_torque, returncomponents=True)
                 return None, tc, tg
             tm, tc, tg = self.rave.ComputeInverseDynamics(
                 qdd, external_torque, returncomponents=True)
