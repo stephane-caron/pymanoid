@@ -698,6 +698,35 @@ class Robot(object):
     # Hessians
     #
 
+    def compute_link_frame_hessian(self, link, p=None, q=None):
+        """
+        Compute the hessian H(q) of the reference frame of the link, i.e. the
+        acceleration of the link frame is given by:
+
+            [a omegad] = J(q) * qdd + qd.T * H(q) * qd
+
+        where a and omegad are the linear and angular accelerations of the
+        frame, and J(q) is the frame jacobian.
+
+        link -- link index or pymanoid.Link object
+        p -- link frame origin (optional: if None, link.p is used)
+        q -- vector of joint angles (optional: if None, robot.q is used)
+
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
+        with self.rave:
+            if q is not None:
+                self.set_dof_values(q)
+            H_lin = self.rave.ComputeHessianTranslation(link_index, p)
+            H_ang = self.rave.ComputeHessianAxisAngle(link_index)
+            H = concatenate([H_lin, H_ang], axis=1)
+        return H
+
+    def compute_link_active_frame_hessian(self, link, q):
+        H = self.compute_link_frame_hessian(link, q)
+        return H[:, self.active_dofs]
+
     def compute_am_hessian(self, q, p):
         """Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to point p is
