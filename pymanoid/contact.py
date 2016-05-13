@@ -85,9 +85,21 @@ class Contact(Box):
         return [c1, c2, c3, c4]
 
     @property
-    def gaf_span_world(self):
+    def contact_span(self):
         """
-        V-representation of the ground-applied force cone in world frame.
+        Span of the friction cone for the contact force in world frame.
+        """
+        mu = self.friction
+        f1 = dot(self.R, [+mu, +mu, +1])
+        f2 = dot(self.R, [+mu, -mu, +1])
+        f3 = dot(self.R, [-mu, +mu, +1])
+        f4 = dot(self.R, [-mu, -mu, +1])
+        return [f1, f2, f3, f4]
+
+    @property
+    def gaf_span(self):
+        """
+        Span of the friction cone for the ground-applied force in world frame.
         """
         mu = self.friction
         f1 = dot(self.R, [+mu, +mu, -1])
@@ -145,11 +157,30 @@ class Contact(Box):
         return gaw_face
 
     @property
-    def gaw_face_world(self):
+    def friction_span(self):
         """
-        H-representation of the ground-applied wrench cone in world frame.
+        Compute the span matrix of the contact wrench cone in world frame.
+
+        This matrix is such that all valid contact wrenches can be written as:
+
+            w = S * lambda,     lambda >= 0
+
+        where S is the friction span and lambda is a vector with positive
+        coordinates.
         """
-        return dot(self.gaw_face_local, block_diag(self.R.T, self.R.T))
+        S = zeros((6, 4))
+        for (i, c) in enumerate(self.contact_points):
+            x, y, z = c - self.p
+            Gc = array([
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1],
+                [0, -z, y],
+                [z, 0, -x],
+                [-y, x, 0]])
+            for (j, f) in enumerate(self.contact_span):
+                S[:, i] += dot(Gc, f)
+        return S
 
 
 class ContactSet(object):
