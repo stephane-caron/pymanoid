@@ -20,6 +20,7 @@
 
 
 from body import *
+from cone_duality import *
 from contact import *
 from draw import *
 from inverse_kinematics import *
