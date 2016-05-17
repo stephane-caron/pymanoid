@@ -310,18 +310,31 @@ class ContactSet(object):
         """
         return block_diag(*[c.friction_matrix for c in self.contacts])
 
-    def compute_friction_span(self):
+    def compute_friction_span(self, p):
         """
         Compute the span matrix of the contact wrench cone in world frame.
 
         This matrix is such that all valid contact wrenches can be written as:
 
-            w = S * lambda,     lambda >= 0
+            w_p = S(p) * lambda,     lambda >= 0
 
-        where S is the friction span and lambda is a vector with positive
-        coordinates.
+        where w_p is the contact wrench at p, S(p) is the friction span and
+        lambda is a vector with positive coordinates.
         """
-        return block_diag(*[c.friction_span for c in self.contacts])
+        span_blocks = []
+        for (i, contact) in enumerate(self.contacts):
+            x, y, z = contact.p - p
+            Gi = array([
+                [1, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0],
+                [0, -z, y, 1, 0, 0],
+                [z, 0, -x, 0, 1, 0],
+                [-y, x, 0, 0, 0, 1]])
+            span_blocks.append(dot(Gi, contact.friction_span))
+        S = hstack([c.friction_span for c in self.contacts])
+        assert S.shape == (6, 16 * self.nb_contacts)
+        return S
 
     def compute_contact_forces(self, com, mass, comdd, camd, w_xy=.1, w_z=10.):
         """
