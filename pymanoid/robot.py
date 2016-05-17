@@ -64,7 +64,9 @@ class Robot(object):
         if self.mass is None:  # may not be True for children classes
             self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.q_max_full = q_max
+        self.q_max_full.flags.writeable = False
         self.q_min_full = q_min
+        self.q_min_full.flags.writeable = False
         self.tau_max_full = None  # set by hand in child robot class
         self.rave = rave
         self.transparency = 0.  # initially opaque
@@ -144,11 +146,25 @@ class Robot(object):
         assert len(q) == self.nb_dofs, "Invalid DOF vector"
         return self.rave.SetDOFValues(q)
 
+    def update_dof_limits(self, dof_index, q_min=None, q_max=None):
+        if q_min is not None:
+            self.q_min_full.flags.writeable = True
+            self.q_min_full[dof_index] = q_min
+            self.q_min_full.flags.writeable = False
+        if q_max is not None:
+            self.q_max_full.flags.writeable = True
+            self.q_max_full[dof_index] = q_max
+            self.q_max_full.flags.writeable = False
+
     def scale_dof_limits(self, scale=1.):
         q_avg = .5 * (self.q_max_full + self.q_min_full)
         q_dev = .5 * (self.q_max_full - self.q_min_full)
+        self.q_max_full.flags.writeable = True
+        self.q_min_full.flags.writeable = True
         self.q_max_full = (q_avg + scale * q_dev)
         self.q_min_full = (q_avg - scale * q_dev)
+        self.q_max_full.flags.writeable = False
+        self.q_min_full.flags.writeable = False
 
     def get_dof_velocities(self, dof_indices=None):
         if dof_indices is not None:
@@ -163,8 +179,8 @@ class Robot(object):
             return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
         elif self.active_dofs and len(qd) == self.nb_active_dofs:
             return self.rave.SetActiveDOFVelocities(qd, check_dof_limits)
-        assert len(qd) == self.nb_dof, "Invalid DOF velocity vector"
-        return self.rave.SetDOFVelocities(qd, check_dof_limits)
+        assert len(qd) == self.nb_dofs, "Invalid DOF velocity vector"
+        return self.rave.SetDOFVelocities(qd)
 
     #
     # Inverse Kinematics
