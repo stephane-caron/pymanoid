@@ -85,7 +85,7 @@ class Contact(Box):
         return [c1, c2, c3, c4]
 
     @property
-    def contact_span(self):
+    def force_cone_span(self):
         """
         Span of the friction cone for the contact force in world frame.
         """
@@ -177,7 +177,7 @@ class Contact(Box):
     @property
     def friction_span(self):
         """
-        Compute the span matrix of the contact wrench cone in world frame.
+        Compute a span matrix of the contact wrench cone in world frame.
 
         This matrix is such that all valid contact wrenches can be written as:
 
@@ -186,18 +186,20 @@ class Contact(Box):
         where S is the friction span and lambda is a vector with positive
         coordinates.
         """
-        S = zeros((6, 4))
+        point_span = array(self.force_cone_span).T
+        span_blocks = []
         for (i, c) in enumerate(self.contact_points):
             x, y, z = c - self.p
-            Gc = array([
+            Gi = array([
                 [1, 0, 0],
                 [0, 1, 0],
                 [0, 0, 1],
                 [0, -z, y],
                 [z, 0, -x],
                 [-y, x, 0]])
-            for (j, f) in enumerate(self.contact_span):
-                S[:, i] += dot(Gc, f)
+            span_blocks.append(dot(Gi, point_span))
+        S = hstack(span_blocks)
+        assert S.shape == (6, 16)
         return S
 
 
