@@ -632,15 +632,16 @@ class Robot(object):
         with self.rave:
             self.set_dof_values(q)
             for link in self.rave.GetLinks():
-                index = link.GetIndex()
-                com = link.GetGlobalCOM()
                 m = link.GetMass()
-                J = self.rave.ComputeJacobianTranslation(index, com)
-                Jcom += m * J
-            J = Jcom / self.mass
+                if m < 1e-4:
+                    continue
+                index = link.GetIndex()
+                c = link.GetGlobalCOM()
+                Jcom += m * self.rave.ComputeJacobianTranslation(index, c)
+            Jcom /= self.mass
         if self.active_dofs and len(q) == self.nb_active_dofs:
-            return J[:, self.active_dofs]
-        return J
+            return Jcom[:, self.active_dofs]
+        return Jcom
 
     def compute_link_frame_jacobian(self, link, p=None, q=None):
         """
