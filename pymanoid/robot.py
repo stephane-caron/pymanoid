@@ -628,7 +628,7 @@ class Robot(object):
         pd_G -- velocity of the center of mass G
 
         """
-        Jcom = zeros((3, self.nb_dofs))
+        J_com = zeros((3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q)
             for link in self.rave.GetLinks():
@@ -637,13 +637,13 @@ class Robot(object):
                     continue
                 index = link.GetIndex()
                 c = link.GetGlobalCOM()
-                Jcom += m * self.rave.ComputeJacobianTranslation(index, c)
-            Jcom /= self.mass
+                J_com += m * self.rave.ComputeJacobianTranslation(index, c)
+            J_com /= self.mass
         if self.active_dofs and len(q) == self.nb_active_dofs:
-            return Jcom[:, self.active_dofs]
-        return Jcom
+            return J_com[:, self.active_dofs]
+        return J_com
 
-    def compute_link_frame_jacobian(self, link, p=None, q=None):
+    def compute_link_jacobian(self, link, p=None, q=None):
         """
         Compute the jacobian J(q) of the reference frame of the link, i.e. the
         velocity of the link frame is given by:
@@ -668,8 +668,8 @@ class Robot(object):
             J = vstack([J_lin, J_ang])
         return J
 
-    def compute_link_active_frame_jacobian(self, link, q):
-        J = self.compute_link_frame_jacobian(link, q)
+    def compute_link_active_jacobian(self, link, q):
+        J = self.compute_link_jacobian(link, q)
         return J[:, self.active_dofs]
 
     def compute_link_pose_jacobian(self, link, q=None):
@@ -715,7 +715,7 @@ class Robot(object):
     # Hessians
     #
 
-    def compute_link_frame_hessian(self, link, p=None, q=None):
+    def compute_link_hessian(self, link, p=None, q=None):
         """
         Compute the hessian H(q) of the reference frame of the link, i.e. the
         acceleration of the link frame is given by:
@@ -741,7 +741,7 @@ class Robot(object):
         return H
 
     def compute_link_active_frame_hessian(self, link, q):
-        H = self.compute_link_frame_hessian(link, q)
+        H = self.compute_link_hessian(link, q)
         return H[:, self.active_dofs]
 
     def compute_am_hessian(self, q, p):
@@ -810,7 +810,7 @@ class Robot(object):
         return self.compute_am_hessian(q, p_G)
 
     def compute_com_hessian(self, q):
-        Hcom = zeros((self.nb_dofs, 3, self.nb_dofs))
+        H_com = zeros((self.nb_dofs, 3, self.nb_dofs))
         with self.rave:
             self.set_dof_values(q)
             for link in self.rave.GetLinks():
@@ -818,18 +818,8 @@ class Robot(object):
                 com = link.GetGlobalCOM()
                 m = link.GetMass()
                 H = self.rave.ComputeHessianTranslation(index, com)
-                Hcom += m * H
-            H = Hcom / self.mass
-        if self.active_dofs and len(q) == self.nb_active_dofs:
-            return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
-        return H
-
-    def compute_link_hessian(self, link, q):
-        with self.rave:
-            self.set_dof_values(q)
-            H_trans = self.rave.ComputeHessianTranslation(link.index, link.p)
-            H_rot = self.rave.ComputeHessianAxisAngle(link.index)
-            H = hstack([H_rot, H_trans])
+                H_com += m * H
+            H = H_com / self.mass
         if self.active_dofs and len(q) == self.nb_active_dofs:
             return ((H[self.active_dofs, :, :])[:, :, self.active_dofs])
         return H
