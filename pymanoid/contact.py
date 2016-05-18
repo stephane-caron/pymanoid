@@ -277,16 +277,26 @@ class ContactSet(object):
         w_xy -- weight given in the optimization to minimizing f_{xy}
         w_z -- weight given in the optimization to minimizing f_z
         """
-        g = array([0., 0., -9.81])
-        f_gi = mass * (g - comdd)
+        gravity = array([0., 0., -9.81])
+        f_gi = mass * (gravity - comdd)
         tau_gi = cross(com, f_gi) - camd
         n = 12 * self.nb_contacts
         nb_forces = n / 3
-        Pxy = block_diag(*[array([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
-                           for _ in xrange(nb_forces)])
-        Pz = block_diag(*[array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
-                          for _ in xrange(nb_forces)])
-        oz = hstack([[0, 0, 1. / n] for _ in xrange(nb_forces)])
+        Pxy = block_diag(*[
+            array([
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 0]])
+            for _ in xrange(nb_forces)])
+        Pz = block_diag(*[
+            array([
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 1]])
+            for _ in xrange(nb_forces)])
+        oz = hstack([
+            [0, 0, 1. / n]
+            for _ in xrange(nb_forces)])
         Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
         P = w_xy * Pxy + w_z * Pz
         RT = block_diag(*[contact.R.T for contact in
@@ -296,7 +306,7 @@ class ContactSet(object):
         G = block_diag(*[contact.gaf_face for contact in self.contacts
                          for _ in xrange(4)])
         h = zeros((G.shape[0],))
-        A = self.compute_grasp_matrix_from_forces()
+        A = self._compute_grasp_matrix_from_forces()
         b = hstack([f_gi, tau_gi])
         F = cvxopt_solve_qp(P, q, G, h, A, b)
         return -F
@@ -310,9 +320,8 @@ class ContactSet(object):
 
             dot(F, w_all) <= 0
 
-        where w_all is the stacked vector of contact wrenches (locomotion:
-        exerted by the environment on the robot; grasping: exerted by the
-        hand on the object).
+        where w_all is the stacked vector of contact wrenches, each taken at its
+        corresponding contact point in the world frame.
         """
         return block_diag(*[c.friction_matrix for c in self.contacts])
 
@@ -355,3 +364,28 @@ class ContactSet(object):
         environment onto the robot; grasping: from the hand onto the object).
         """
         return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
+
+    def _compute_grasp_matrix_from_forces(self):
+        """
+        Compute the grasp matrix from all contact points in the set.
+
+        The grasp matrix G is such that
+
+            w = dot(G, f_all),
+
+        with w the contact wrench, and f_all the vector of contact *forces*
+        (locomotion: from the environment onto the robot; grasping: from the
+        hand onto the object).
+        """
+        G = zeros((6, 3 * 4 * self.nb_contacts))
+        for i, contact in enumerate(self.contacts):
+            for j, (x, y, z) in enumerate(contact.contact_points):
+                Gi = array([
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1],
+                    [0, -z, y],
+                    [z, 0, -x],
+                    [-y, x, 0]])
+                G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
+                return G
