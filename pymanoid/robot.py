@@ -314,18 +314,17 @@ class Robot(object):
         self.set_dof_velocities(qd)
 
     def solve_ik(self, dt, max_it=100, conv_tol=1e-5, debug=False):
-        """Compute joint-angles q satisfying all constraints at best.
+        """
+        Compute joint-angles q satisfying all constraints at best.
 
-        dt -- time step for the differential IK. Good values depend on the gains
-              and weights of the IK objectives and constraints. Small values
-              make convergence slower, while big values will render them
-              unstable.
+        dt -- time step for the differential IK
         max_it -- maximum number of differential IK iterations
-        conv_tol -- if the objective dwindles by less than this threshold after
-                    a differential IK step, we assume the solver has converged
-                    to the best solution it can find
+        conv_tol -- stop when objective improvement is less than this threshold
         debug -- print extra debug info
 
+        Good values of dt depend on the gains and weights of the IK objectives
+        and constraints. Small values make convergence slower, while big values
+        will render them unstable.
         """
         cur_obj = 1000.
         q = self.q
@@ -434,13 +433,12 @@ class Robot(object):
     #
 
     def compute_angular_momentum(self, q, qd, p):
-        """Compute the angular momentum with respect to point p.
+        """
+        Compute the angular momentum with respect to point p.
 
         q -- joint angle values
         qd -- joint-angle velocities
-        p -- application point, either a fixed point or the instantaneous COM,
-        in world coordinates
-
+        p -- application point in world coordinates
         """
         momentum = zeros(3)
         with self.rave:
@@ -511,8 +509,8 @@ class Robot(object):
         """
         Compute the gravito-inertial wrench
 
-            w^gi = [ f^gi     ] = [ m (g - pdd_G)                     ]
-                   [ tau^gi_p ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
+            w = [ f   ] = [ m (g - pdd_G)                    ]
+                [ tau ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
 
         with m the robot mass, g the gravity vector, G the COM, pdd_G the
         acceleration of the COM, and Ld_GG the rate of change of the angular
@@ -522,7 +520,6 @@ class Robot(object):
         qd -- array of DOF velocities
         qdd -- array of DOF accelerations
         p -- reference point at which the wrench is taken
-
         """
         g = array([0, 0, -9.81])
         f_gi = self.mass * g
@@ -561,7 +558,6 @@ class Robot(object):
         q -- array of DOF values
         qd -- array of DOF velocities
         qdd -- array of DOF accelerations
-
         """
         O, n = zeros(3), array([0, 0, 1])
         f_gi, tau_gi = self.compute_gravito_inertial_wrench(q, qd, qdd, O)
@@ -580,9 +576,7 @@ class Robot(object):
 
         q -- joint angle values
         qd -- joint-angle velocities
-        p -- application point, either a fixed point or the instantaneous COM,
-        in world coordinates
-
+        p -- application point in world coordinates
         """
         J = zeros((3, self.nb_dofs))
         with self.rave:
@@ -611,7 +605,6 @@ class Robot(object):
         q -- vector of joint angles
         qd -- vector of joint velocities
         L_G -- angular momentum at the center of mass G
-
         """
         p_G = self.compute_com(q)
         return self.compute_am_jacobian(q, p_G)
@@ -626,7 +619,6 @@ class Robot(object):
         q -- vector of joint angles
         qd -- vector of joint velocities
         pd_G -- velocity of the center of mass G
-
         """
         J_com = zeros((3, self.nb_dofs))
         with self.rave:
@@ -656,7 +648,6 @@ class Robot(object):
         link -- link index or pymanoid.Link object
         p -- link frame origin (optional: if None, link.p is used)
         q -- vector of joint angles (optional: if None, robot.q is used)
-
         """
         link_index = link if type(link) is int else link.index
         p = p if type(link) is int else link.p
@@ -697,7 +688,6 @@ class Robot(object):
 
         When p is None, the origin of the link reference frame is taken.
         When q is None, the current robot's DOF values are used.
-
         """
         link_index = link if type(link) is int else link.index
         with self.rave:
@@ -728,7 +718,6 @@ class Robot(object):
         link -- link index or pymanoid.Link object
         p -- link frame origin (optional: if None, link.p is used)
         q -- vector of joint angles (optional: if None, robot.q is used)
-
         """
         link_index = link if type(link) is int else link.index
         p = p if type(link) is int else link.p
@@ -745,7 +734,8 @@ class Robot(object):
         return H[:, self.active_dofs]
 
     def compute_am_hessian(self, q, p):
-        """Returns a matrix H(q) such that the rate of change of the angular
+        """
+        Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to point p is
 
             Ld_p(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
@@ -754,9 +744,7 @@ class Robot(object):
 
         q -- joint angle values
         qd -- joint-angle velocities
-        p -- application point, either a fixed point or the instantaneous COM,
-        in world coordinates
-
+        p -- application point in world coordinates
         """
         def crosstens(M):
             assert M.shape[0] == 3
@@ -767,13 +755,13 @@ class Robot(object):
             return T.transpose([2, 0, 1])  # T.shape == (M.shape[1], 3, 3)
 
         def middot(M, T):
-            """Dot product of a matrix with the mid-coordinate of a 3D tensor.
+            """
+            Dot product of a matrix with the mid-coordinate of a 3D tensor.
 
             M -- matrix with shape (n, m)
             T -- tensor with shape (a, m, b)
 
             Outputs a tensor of shape (a, n, b).
-
             """
             return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
 
@@ -798,13 +786,13 @@ class Robot(object):
         return H
 
     def compute_cam_hessian(self, q):
-        """Returns a matrix H(q) such that the rate of change of the angular
+        """
+        Returns a matrix H(q) such that the rate of change of the angular
         momentum with respect to the center of mass G is
 
             Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
 
         q -- joint angle values
-
         """
         p_G = self.compute_com(q)
         return self.compute_am_hessian(q, p_G)
