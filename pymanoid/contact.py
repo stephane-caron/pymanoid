@@ -258,44 +258,48 @@ class ContactSet(object):
         for contact in self._contact_list:
             yield contact
 
-    def compute_grasp_matrix_from_forces(self):
+    def compute_forces(self, com, mass, comdd, camd, w_xy=.1, w_z=10.):
         """
-        Compute the grasp matrix from all contact points in the set.
+        Compute a set of contact forces supporting a centroidal acceleration.
 
-        The grasp matrix G is such that
+        If the centroidal acceleration (comdd, camd) can be supported by forces
+        in the contact set, the solution that minimizes the cost
 
-            w = dot(G, f_all),
+            sum_{contact i}  w_xy * |f_{i,xy}|^2 + w_z * |f_{i,z}|^2
 
-        with w the contact wrench, and f_all the vector of contact *forces*
-        (locomotion: from the environment onto the robot; grasping: from the
-        hand onto the object).
+        is selected, where |f_{i,xy}| is the norm of the x-y components (in
+        local frame) of the i^th contact force.
+
+        com -- position of the center of mass (COM)
+        mass -- total mass of the system
+        comdd -- acceleration of the COM
+        camd -- rate of change of the angular momentum, taken at the COM
+        w_xy -- weight given in the optimization to minimizing f_{xy}
+        w_z -- weight given in the optimization to minimizing f_z
         """
-        G = zeros((6, 3 * 4 * self.nb_contacts))
-        for i, contact in enumerate(self.contacts):
-            for j, (x, y, z) in enumerate(contact.contact_points):
-                Gi = array([
-                    [1, 0, 0],
-                    [0, 1, 0],
-                    [0, 0, 1],
-                    [0, -z, y],
-                    [z, 0, -x],
-                    [-y, x, 0]])
-                G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
-        return G
-
-    def compute_grasp_matrix(self, p):
-        """
-        Compute the grasp matrix of all contact wrenches at point p.
-
-        The grasp matrix G_p gives the resultant contact wrench w_p of all
-        wrenches in the contact set by:
-
-            w_p = dot(G_p, w_all),
-
-        with w_all the stacked vector of contact wrenches (locomotion: from the
-        environment onto the robot; grasping: from the hand onto the object).
-        """
-        return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
+        g = array([0., 0., -9.81])
+        f_gi = mass * (g - comdd)
+        tau_gi = cross(com, f_gi) - camd
+        n = 12 * self.nb_contacts
+        nb_forces = n / 3
+        Pxy = block_diag(*[array([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
+                           for _ in xrange(nb_forces)])
+        Pz = block_diag(*[array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
+                          for _ in xrange(nb_forces)])
+        oz = hstack([[0, 0, 1. / n] for _ in xrange(nb_forces)])
+        Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
+        P = w_xy * Pxy + w_z * Pz
+        RT = block_diag(*[contact.R.T for contact in
+                          self.contacts for _ in xrange(4)])
+        P = dot(RT.T, dot(P, RT))
+        q = zeros((n,))
+        G = block_diag(*[contact.gaf_face for contact in self.contacts
+                         for _ in xrange(4)])
+        h = zeros((G.shape[0],))
+        A = self.compute_grasp_matrix_from_forces()
+        b = hstack([f_gi, tau_gi])
+        F = cvxopt_solve_qp(P, q, G, h, A, b)
+        return -F
 
     def compute_friction_matrix(self):
         """
@@ -338,45 +342,16 @@ class ContactSet(object):
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
 
-    def compute_contact_forces(self, com, mass, comdd, camd, w_xy=.1, w_z=10.):
+    def compute_grasp_matrix(self, p):
         """
-        Compute a set of contact forces supporting a centroidal acceleration.
+        Compute the grasp matrix of all contact wrenches at point p.
 
-        If the centroidal acceleration (comdd, camd) can be supported by forces
-        in the contact set, the solution that minimizes the cost
+        The grasp matrix G_p gives the resultant contact wrench w_p of all
+        wrenches in the contact set by:
 
-            sum_{contact i}  w_xy * |f_{i,xy}|^2 + w_z * |f_{i,z}|^2
+            w_p = dot(G_p, w_all),
 
-        is selected, where |f_{i,xy}| is the norm of the x-y components (in
-        local frame) of the i^th contact force.
-
-        com -- position of the center of mass (COM)
-        mass -- total mass of the system
-        comdd -- acceleration of the COM
-        camd -- rate of change of the angular momentum, taken at the COM
-        w_xy -- weight given in the optimization to minimizing f_{xy}
-        w_z -- weight given in the optimization to minimizing f_z
+        with w_all the stacked vector of contact wrenches (locomotion: from the
+        environment onto the robot; grasping: from the hand onto the object).
         """
-        g = array([0., 0., -9.81])
-        f_gi = mass * (g - comdd)
-        tau_gi = cross(com, f_gi) - camd
-        n = 12 * self.nb_contacts
-        nb_forces = n / 3
-        Pxy = block_diag(*[array([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
-                           for _ in xrange(nb_forces)])
-        Pz = block_diag(*[array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
-                          for _ in xrange(nb_forces)])
-        oz = hstack([[0, 0, 1. / n] for _ in xrange(nb_forces)])
-        Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
-        P = w_xy * Pxy + w_z * Pz
-        RT = block_diag(*[contact.R.T for contact in
-                          self.contacts for _ in xrange(4)])
-        P = dot(RT.T, dot(P, RT))
-        q = zeros((n,))
-        G = block_diag(*[contact.gaf_face for contact in self.contacts
-                         for _ in xrange(4)])
-        h = zeros((G.shape[0],))
-        A = self.compute_grasp_matrix_from_forces()
-        b = hstack([f_gi, tau_gi])
-        F = cvxopt_solve_qp(P, q, G, h, A, b)
-        return -F
+        return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
