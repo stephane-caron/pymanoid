@@ -135,12 +135,13 @@ class Contact(Box):
         """
         x, y, z = self.p - p
         return array([
-            [1, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0],
-            [0, -z, y, 1, 0, 0],
-            [z, 0, -x, 0, 1, 0],
-            [-y, x, 0, 0, 0, 1]])
+            # fx fy  fz taux tauy tauz
+            [1,   0,  0,   0,   0,   0],
+            [0,   1,  0,   0,   0,   0],
+            [0,   0,  1,   0,   0,   0],
+            [0,  -z,  y,   1,   0,   0],
+            [z,   0, -x,   0,   1,   0],
+            [-y,  x,  0,   0,   0,   1]])
 
     @property
     def friction_matrix(self):
@@ -156,23 +157,23 @@ class Contact(Box):
         """
         mu, X, Y = self.friction, self.X, self.Y
         friction_matrix_local = array([
-            # fx  fy              fz  taux tauy tauz
-            [-1,   0,            -mu,    0,   0,   0],
-            [+1,   0,            -mu,    0,   0,   0],
-            [0,   -1,            -mu,    0,   0,   0],
-            [0,   +1,            -mu,    0,   0,   0],
-            [0,    0,             -Y,   -1,   0,   0],
-            [0,    0,             -Y,   +1,   0,   0],
-            [0,    0,             -X,    0,  -1,   0],
-            [0,    0,             -X,    0,  +1,   0],
-            [-Y,  -X,  -(X + Y) * mu,  +mu,  +mu,  -1],
-            [-Y,  +X,  -(X + Y) * mu,  +mu,  -mu,  -1],
-            [+Y,  -X,  -(X + Y) * mu,  -mu,  +mu,  -1],
-            [+Y,  +X,  -(X + Y) * mu,  -mu,  -mu,  -1],
-            [+Y,  +X,  -(X + Y) * mu,  +mu,  +mu,  +1],
-            [+Y,  -X,  -(X + Y) * mu,  +mu,  -mu,  +1],
-            [-Y,  +X,  -(X + Y) * mu,  -mu,  +mu,  +1],
-            [-Y,  -X,  -(X + Y) * mu,  -mu,  -mu,  +1]])
+            # fx fy             fz taux tauy tauz
+            [-1,  0,           -mu,   0,   0,   0],
+            [+1,  0,           -mu,   0,   0,   0],
+            [0,  -1,           -mu,   0,   0,   0],
+            [0,  +1,           -mu,   0,   0,   0],
+            [0,   0,            -Y,  -1,   0,   0],
+            [0,   0,            -Y,  +1,   0,   0],
+            [0,   0,            -X,   0,  -1,   0],
+            [0,   0,            -X,   0,  +1,   0],
+            [-Y, -X, -(X + Y) * mu, +mu, +mu,  -1],
+            [-Y, +X, -(X + Y) * mu, +mu, -mu,  -1],
+            [+Y, -X, -(X + Y) * mu, -mu, +mu,  -1],
+            [+Y, +X, -(X + Y) * mu, -mu, -mu,  -1],
+            [+Y, +X, -(X + Y) * mu, +mu, +mu,  +1],
+            [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
+            [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
+            [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         # gaw_face = F
         # gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
         return dot(friction_matrix_local, block_diag(self.R.T, self.R.T))
@@ -299,12 +300,14 @@ class ContactSet(object):
             for _ in xrange(nb_forces)])
         Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
         P = w_xy * Pxy + w_z * Pz
-        RT = block_diag(*[contact.R.T for contact in
-                          self.contacts for _ in xrange(4)])
+        RT = block_diag(*[
+            contact.R.T
+            for contact in self.contacts for _ in xrange(4)])
         P = dot(RT.T, dot(P, RT))
         q = zeros((n,))
-        G = block_diag(*[contact.gaf_face for contact in self.contacts
-                         for _ in xrange(4)])
+        G = block_diag(*[
+            contact.gaf_face
+            for contact in self.contacts for _ in xrange(4)])
         h = zeros((G.shape[0],))
         A = self._compute_grasp_matrix_from_forces()
         b = hstack([f_gi, tau_gi])
