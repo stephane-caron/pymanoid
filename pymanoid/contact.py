@@ -121,17 +121,19 @@ class Contact(Box):
         gaf_face_local = array([l1, l2, l3, l4])
         return dot(gaf_face_local, self.R.T)
 
-    @property
-    def grasp_matrix(self):
+    def compute_grasp_matrix(self, p):
         """
-        Get the grasp matrix of the contact, i.e. the matrix G such that the the
-        wrench generated at the origin of the world frame is given by:
+        Compute the grasp matrix at point p in the world frame.
 
-            w_O = G * w
+        The grasp matrix G_p of the contact is the matrix converting the local
+        contact wrench w (taken at the contact point self.p in the world frame)
+        to the contact wrench w_p at another point p:
 
-        where w is the contact wrench.
+            w_p = G_p * w
+
+        p -- point where the grasp matrix is taken at
         """
-        x, y, z = self.p
+        x, y, z = self.p - p
         return array([
             [1, 0, 0, 0, 0, 0],
             [0, 1, 0, 0, 0, 0],
@@ -149,7 +151,8 @@ class Contact(Box):
 
             F * w <= 0
 
-        where w is the contact wrench, taken in the world frame.
+        where w is the contact wrench taken at the contact point (self.p) in
+        the world frame.
         """
         mu, X, Y = self.friction, self.X, self.Y
         friction_matrix_local = array([
@@ -280,21 +283,19 @@ class ContactSet(object):
                 G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
         return G
 
-    def compute_grasp_matrix(self):
+    def compute_grasp_matrix(self, p):
         """
-        Compute the grasp matrix from all contact frames in the set.
+        Compute the grasp matrix of all contact wrenches at point p.
 
-        The grasp matrix G gives the resultant contact wrench w by:
+        The grasp matrix G_p gives the resultant contact wrench w_p of all
+        wrenches in the contact set by:
 
-            w = dot(G, w_all),
+            w_p = dot(G_p, w_all),
 
         with w_all the stacked vector of contact wrenches (locomotion: from the
         environment onto the robot; grasping: from the hand onto the object).
         """
-        G = zeros((6, 6 * self.nb_contacts))
-        for i, contact in enumerate(self.contacts):
-            G[:, (6 * i):(6 * (i + 1))] = contact.grasp_matrix
-        return G
+        return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
 
     def compute_friction_matrix(self):
         """
