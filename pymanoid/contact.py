@@ -184,7 +184,8 @@ class Contact(Box):
             w = S * lambda,     lambda >= 0
 
         where S is the friction span and lambda is a vector with positive
-        coordinates.
+        coordinates. Note that the contact wrench w is taken at the contact
+        point (self.p).
         """
         point_span = array(self.force_cone_span).T
         span_blocks = []
@@ -325,14 +326,14 @@ class ContactSet(object):
         for (i, contact) in enumerate(self.contacts):
             x, y, z = contact.p - p
             Gi = array([
-                [1, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0],
+                [1, 0,  0, 0, 0, 0],
+                [0, 1,  0, 0, 0, 0],
+                [0, 0,  1, 0, 0, 0],
                 [0, -z, y, 1, 0, 0],
                 [z, 0, -x, 0, 1, 0],
                 [-y, x, 0, 0, 0, 1]])
             span_blocks.append(dot(Gi, contact.friction_span))
-        S = hstack([c.friction_span for c in self.contacts])
+        S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
 
