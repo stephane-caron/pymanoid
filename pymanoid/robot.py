@@ -126,6 +126,13 @@ class Robot(object):
         return self.rave.GetDOFVelocities()
 
     @property
+    def qdd_max(self):
+        assert self.qdd_max_full is not None, "Acceleration limits unset"
+        if not self.active_dofs:
+            return self.qdd_max_full
+        return self.qdd_max_full[self.active_dofs]
+
+    @property
     def tau_max(self):
         assert self.tau_max_full is not None, "Torque limits unset"
         if not self.active_dofs:
