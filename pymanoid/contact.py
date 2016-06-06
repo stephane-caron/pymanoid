@@ -22,7 +22,7 @@
 import uuid
 
 from body import Box
-from numpy import array, cross, dot, hstack, zeros
+from numpy import array, cross, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
 
@@ -30,8 +30,8 @@ from toolbox import cvxopt_solve_qp
 class Contact(Box):
 
     def __init__(self, env, X, Y, pos=None, rpy=None, friction=None,
-                 robot_link=-1, Z=0.01, color='g', name=None, pose=None,
-                 visible=False):
+                 max_pressure=None, robot_link=-1, Z=0.01, color='g', name=None,
+                 pose=None, visible=False):
         """
         Create a new rectangular contact.
 
@@ -40,6 +40,7 @@ class Contact(Box):
         pos -- initial position of the contact frame w.r.t the world frame
         rpy -- initial orientation of the contact frame w.r.t the world frame
         friction -- friction coefficient
+        max_pressure -- maximum pressure sustainable by the contact
         robot_link -- saves link index of robot link in contact
         Z -- half-height of the surface display box
         color -- color letter in ['r', 'g', 'b']
@@ -49,6 +50,7 @@ class Contact(Box):
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
+        self.max_pressure = max_pressure
         self.friction = friction
         self.robot_link = robot_link
         super(Contact, self).__init__(
@@ -114,11 +116,11 @@ class Contact(Box):
         H-representation of the ground-applied force cone in world frame.
         """
         mu = self.friction
-        l1 = [-1, 0, mu]
-        l2 = [+1, 0, mu]
-        l3 = [0, -1, mu]
-        l4 = [0, +1, mu]
-        gaf_face_local = array([l1, l2, l3, l4])
+        gaf_face_local = array([
+            [-1, 0, +mu],
+            [+1, 0, +mu],
+            [0, -1, +mu],
+            [0, +1, +mu]])
         return dot(gaf_face_local, self.R.T)
 
     def compute_grasp_matrix(self, p):
@@ -146,7 +148,7 @@ class Contact(Box):
     @property
     def friction_matrix(self):
         """
-        Compute the friction matrix F.
+        Compute the matrix F of friction-cone inequalities.
 
         This matrix describes the linearized Coulomb friction model by:
 
@@ -177,6 +179,30 @@ class Contact(Box):
         # gaw_face = F
         # gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
         return dot(friction_matrix_local, block_diag(self.R.T, self.R.T))
+
+    @property
+    def friction_polytope(self):
+        """
+        Compute the matrix-vector (F, b) of friction-polytope inequalities.
+
+        These two describe the linearized Coulomb friction model with maximum
+        contact pressure by:
+
+            F * w <= b
+
+        where w is the contact wrench taken at the contact point (self.p) in the
+        world frame.
+        """
+        if not self.max_pressure:
+            F = self.friction_matrix
+            return (F, zeros((F.shape[0],)))
+        F_local = array([0, 0, 1, 0, 0, 0])
+        F = vstack([
+            self.friction_matrix,
+            dot(F_local, block_diag(self.R.T, self.R.T))])
+        b = zeros((F.shape[0],))
+        b[-1] = self.max_pressure
+        return (F, b)
 
     @property
     def friction_span(self):
@@ -321,12 +347,31 @@ class ContactSet(object):
         The friction matrix F is defined so that friction constraints on all
         contact wrenches are written:
 
-            dot(F, w_all) <= 0
+            F * w_all <= 0
 
         where w_all is the stacked vector of contact wrenches, each taken at its
         corresponding contact point in the world frame.
         """
         return block_diag(*[c.friction_matrix for c in self.contacts])
+
+    def compute_friction_polytope(self):
+        """
+        Compute the friction polytope on all contact wrenches.
+
+        The polytope is describe by a matrix-vector (F, b) so that friction
+        constraints (Coulomb dry friction + maximum pressure at each contact) on
+        all contact wrenches are written:
+
+            F * w_all <= b
+
+        where w_all is the stacked vector of contact wrenches, each taken at its
+        corresponding contact point in the world frame.
+        """
+        polytopes = [c.friction_polytope for c in self.contacts]
+        F_list, b_list = zip(*polytopes)
+        F = block_diag(*F_list)
+        b = hstack(b_list)
+        return F, b
 
     def compute_friction_span(self, p):
         """

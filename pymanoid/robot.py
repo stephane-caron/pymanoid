@@ -67,6 +67,7 @@ class Robot(object):
         self.q_max_full.flags.writeable = False
         self.q_min_full = q_min
         self.q_min_full.flags.writeable = False
+        self.qdd_max_full = None  # set by hand in child robot class
         self.tau_max_full = None  # set by hand in child robot class
         self.rave = rave
         self.transparency = 0.  # initially opaque
