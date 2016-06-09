@@ -19,9 +19,11 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+import cdd
 import uuid
 
 from body import Box
+from cone_duality import face_of_span
 from numpy import array, cross, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
@@ -79,7 +81,7 @@ class Contact(Box):
 
     @property
     def contact_points(self):
-        """List of vertices of the contact area."""
+        """Vertices of the contact area."""
         T = self.effector_transform
         c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
         c2 = dot(T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
@@ -88,9 +90,10 @@ class Contact(Box):
         return [c1, c2, c3, c4]
 
     @property
-    def force_cone_span(self):
+    def contact_force_span(self):
         """
-        Span of the friction cone for the contact force in world frame.
+        Span (V-representation) of the friction cone for the contact force in
+        the world frame.
         """
         mu = self.friction
         f1 = dot(self.R, [+mu, +mu, +1])
@@ -102,7 +105,8 @@ class Contact(Box):
     @property
     def gaf_span(self):
         """
-        Span of the friction cone for the ground-applied force in world frame.
+        Span (V-representation) of the friction cone for the ground-applied
+        force in the world frame.
         """
         mu = self.friction
         f1 = dot(self.R, [+mu, +mu, -1])
@@ -114,7 +118,8 @@ class Contact(Box):
     @property
     def gaf_face(self):
         """
-        H-representation of the ground-applied force cone in world frame.
+        Face (H-representation) of the friction cone for the ground-applied
+        force in the world frame.
         """
         mu = self.friction
         gaf_face_local = array([
@@ -128,11 +133,11 @@ class Contact(Box):
         """
         Compute the grasp matrix at point p in the world frame.
 
-        The grasp matrix G_p of the contact is the matrix converting the local
+        The grasp matrix G(p) of the contact is the matrix converting the local
         contact wrench w (taken at the contact point self.p in the world frame)
-        to the contact wrench w_p at another point p:
+        to the contact wrench w(p) at another point p:
 
-            w_p = G_p * w
+            w(p) = G(p) * w
 
         p -- point where the grasp matrix is taken at
         """
@@ -147,19 +152,19 @@ class Contact(Box):
             [-y,  x,  0,   0,   0,   1]])
 
     @property
-    def friction_matrix(self):
+    def friction_cone(self):
         """
-        Compute the matrix F of friction-cone inequalities.
+        Compute the matrix F of friction inequalities.
 
         This matrix describes the linearized Coulomb friction model by:
 
             F * w <= 0
 
-        where w is the contact wrench taken at the contact point (self.p) in
-        the world frame.
+        where w is the contact wrench taken at the contact point (self.p) in the
+        world frame.
         """
         mu, X, Y = self.friction, self.X, self.Y
-        friction_matrix_local = array([
+        local_friction_cone = array([
             # fx fy             fz taux tauy tauz
             [-1,  0,           -mu,   0,   0,   0],
             [+1,  0,           -mu,   0,   0,   0],
@@ -179,7 +184,7 @@ class Contact(Box):
             [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         # gaw_face = F
         # gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
-        return dot(friction_matrix_local, block_diag(self.R.T, self.R.T))
+        return dot(local_friction_cone, block_diag(self.R.T, self.R.T))
 
     @property
     def friction_polytope(self):
@@ -195,11 +200,11 @@ class Contact(Box):
         world frame.
         """
         if not self.max_pressure:
-            F = self.friction_matrix
+            F = self.friction_cone
             return (F, zeros((F.shape[0],)))
         F_local = array([0, 0, 1, 0, 0, 0])
         F = vstack([
-            self.friction_matrix,
+            self.friction_cone,
             dot(F_local, block_diag(self.R.T, self.R.T))])
         b = zeros((F.shape[0],))
         b[-1] = self.max_pressure
@@ -218,7 +223,7 @@ class Contact(Box):
         coordinates. Note that the contact wrench w is taken at the contact
         point (self.p).
         """
-        point_span = array(self.force_cone_span).T
+        point_span = array(self.contact_force_span).T
         span_blocks = []
         for (i, c) in enumerate(self.contact_points):
             x, y, z = c - self.p
@@ -237,7 +242,7 @@ class Contact(Box):
     def draw_force_lines(self, length=2):
         env = self.rave.GetEnv()
         self.gui_handles = []
-        for f in self.force_cone_span:
+        for f in self.contact_force_span:
             for c in self.contact_points:
                 self.gui_handles.append(env.drawlinelist(
                     array([c, c + length * f]),
@@ -345,12 +350,12 @@ class ContactSet(object):
             contact.gaf_face
             for contact in self.contacts for _ in xrange(4)])
         h = zeros((G.shape[0],))
-        A = self._compute_grasp_matrix_from_forces()
+        A = self.compute_grasp_matrix_from_forces()
         b = hstack([f_gi, tau_gi])
         F = cvxopt_solve_qp(P, q, G, h, A, b)
         return -F
 
-    def compute_friction_matrix(self):
+    def compute_stacked_friction_cones(self):
         """
         Compute the friction constraints on all contact wrenches.
 
@@ -362,9 +367,9 @@ class ContactSet(object):
         where w_all is the stacked vector of contact wrenches, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.friction_matrix for c in self.contacts])
+        return block_diag(*[c.friction_cone for c in self.contacts])
 
-    def compute_friction_polytope(self):
+    def compute_stacked_friction_polytopes(self):
         """
         Compute the friction polytope on all contact wrenches.
 
@@ -383,16 +388,18 @@ class ContactSet(object):
         b = hstack(b_list)
         return F, b
 
-    def compute_friction_span(self, p):
+    def compute_wrench_span(self, p):
         """
         Compute the span matrix of the contact wrench cone in world frame.
 
         This matrix is such that all valid contact wrenches can be written as:
 
-            w_p = S(p) * lambda,     lambda >= 0
+            w(p) = S(p) * lambda,     lambda >= 0
 
-        where w_p is the contact wrench at p, S(p) is the friction span and
-        lambda is a vector with positive coordinates.
+        where w(p) is the contact wrench with respect to point p, S(p) is the
+        friction span and lambda is a vector with positive coordinates.
+
+        p -- point where the resultant wrench is taken at
         """
         span_blocks = []
         for (i, contact) in enumerate(self.contacts):
@@ -409,31 +416,44 @@ class ContactSet(object):
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
 
+    def compute_wrench_cone(self, p):
+        """
+        Compute the face matrix of the contact wrench cone in the world frame.
+
+        This matrix F(p) is such that all valid contact wrenches satisfy:
+
+            F(p) * w(p) <= 0,
+
+        where w(p) is the resultant contact wrench at p.
+        """
+        S = self.compute_wrench_span(p)
+        return face_of_span(S)
+
     def compute_grasp_matrix(self, p):
         """
         Compute the grasp matrix of all contact wrenches at point p.
 
-        The grasp matrix G_p gives the resultant contact wrench w_p of all
+        The grasp matrix G(p) gives the resultant contact wrench w(p) of all
         wrenches in the contact set by:
 
-            w_p = dot(G_p, w_all),
+            w(p) = G(p) * w_all,
 
         with w_all the stacked vector of contact wrenches (locomotion: from the
         environment onto the robot; grasping: from the hand onto the object).
         """
         return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
 
-    def _compute_grasp_matrix_from_forces(self):
+    def compute_grasp_matrix_from_forces(self):
         """
         Compute the grasp matrix from all contact points in the set.
 
-        The grasp matrix G is such that
+        The grasp matrix G(O) at the world origin O is such that
 
-            w = dot(G, f_all),
+            w(O) = dot(G(O), f_all),
 
-        with w the contact wrench, and f_all the vector of contact *forces*
-        (locomotion: from the environment onto the robot; grasping: from the
-        hand onto the object).
+        where w(O) is the contact wrench and f_all is the stacked vector of
+        contact forces (locomotion: from the environment onto the robot;
+        grasping: from the hand onto the object).
         """
         G = zeros((6, 3 * 4 * self.nb_contacts))
         for i, contact in enumerate(self.contacts):
