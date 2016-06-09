@@ -68,7 +68,7 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
     hull = precomp_hull if precomp_hull is not None else ConvexHull(points)
     vertices = array([points[i] for i in hull.vertices])
     points = array(points)
-    color = array(color if color is not None else (0., 0.5, 0., 1.))
+    color = array(color if color is not None else (0.0, 0.5, 0.0, 0.5))
     handles = []
     if plot_type & 2:  # include edges
         edge_color = color * 0.7
@@ -94,7 +94,7 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
     return handles
 
 
-def draw_polygon(env, points, n=None, color=None, plot_type=3, linewidth=1.,
+def draw_polygon(env, points, n=None, color=None, plot_type=6, linewidth=1.,
                  pointsize=0.02):
     """
     Draw a polygon defined as the convex hull of a set of points. The normal
@@ -104,7 +104,7 @@ def draw_polygon(env, points, n=None, color=None, plot_type=3, linewidth=1.,
     points -- list of 3D points
     n -- plane normal vector
     color -- RGBA vector
-    plot_type -- bitmask with 1 for edges, 2 for surfaces and 4 for summits
+    plot_type -- bitmask with 1 for vertices, 2 for edges and 4 for surface
     linewidth -- openravepy format
     pointsize -- openravepy format
 
