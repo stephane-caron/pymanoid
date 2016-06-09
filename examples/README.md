@@ -1,7 +1,13 @@
-# Whole-body inverse kinematics example
+# Examples
+
+## inverse\_kinematics.py
 
 This is a small example on how to use the IK for whole-body motions. To get it
-running, you will need to copy the robot model
-[JVRC-1.dae](https://raw.githubusercontent.com/stephane-caron/jvrc_models/openrave/JVRC-1/JVRC-1.dae)
-from [jvrc_models](https://github.com/stephane-caron/jvrc_models/tree/openrave)
-into this folder. Then, run ``./generate_motion.py``.
+running, you will need a copy or symbolic link of the
+[openrave\_models](https://github.com/stephane-caron/openrave_models)
+repository in the local folder. Alternatively, you can clone the repository
+anywhere and set the correct path in the ``env_file`` variable of the script.
+
+## static\_stability\_polygon.py
+
+...
