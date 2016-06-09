@@ -24,7 +24,7 @@ import uuid
 
 from body import Box
 from cone_duality import face_of_span
-from numpy import array, cross, dot, hstack, vstack, zeros
+from numpy import array, cross, dot, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
 
@@ -95,7 +95,7 @@ class Contact(Box):
         Span (V-representation) of the friction cone for the contact force in
         the world frame.
         """
-        mu = self.friction
+        mu = self.friction / sqrt(2)  # inner linearization
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
@@ -108,7 +108,7 @@ class Contact(Box):
         Span (V-representation) of the friction cone for the ground-applied
         force in the world frame.
         """
-        mu = self.friction
+        mu = self.friction / sqrt(2)  # inner linearization
         f1 = dot(self.R, [+mu, +mu, -1])
         f2 = dot(self.R, [+mu, -mu, -1])
         f3 = dot(self.R, [-mu, +mu, -1])
