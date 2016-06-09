@@ -19,8 +19,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from cdd import Matrix, Polyhedron, RepType
-from numpy import array, hstack, zeros
+import cdd
+import numpy
 
 
 class ConeException(Exception):
@@ -50,22 +50,22 @@ def span_of_face(F):
         {F x <= 0} if and only if {x = F^S z, z >= 0}.
 
     """
-    b, A = zeros((F.shape[0], 1)), F
+    b, A = numpy.zeros((F.shape[0], 1)), F
     # H-representation: b - A x >= 0
     # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
     # the input to pycddlib is [b, -A]
-    F_cdd = Matrix(hstack([b, -A]), number_type='float')
-    F_cdd.rep_type = RepType.INEQUALITY
-    P = Polyhedron(F_cdd)
+    F_cdd = cdd.Matrix(numpy.hstack([b, -A]), number_type='float')
+    F_cdd.rep_type = cdd.RepType.INEQUALITY
+    P = cdd.Polyhedron(F_cdd)
     g = P.get_generators()
-    V = array(g)
+    V = numpy.array(g)
     rays = []
     for i in xrange(V.shape[0]):
         if V[i, 0] != 0:  # 1 = vertex, 0 = ray
             raise NotConeFace(F)
         elif i not in g.lin_set:
             rays.append(V[i, 1:])
-    return array(rays).T
+    return numpy.array(rays).T
 
 
 def face_of_span(S):
@@ -77,13 +77,13 @@ def face_of_span(S):
         {x = S z, z >= 0} if and only if {S^F x <= 0}.
 
     """
-    V = hstack([zeros((S.shape[1], 1)), S.T])
+    V = numpy.hstack([numpy.zeros((S.shape[1], 1)), S.T])
     # V-representation: first column is 0 for rays
-    V_cdd = Matrix(V, number_type='float')
-    V_cdd.rep_type = RepType.GENERATOR
-    P = Polyhedron(V_cdd)
+    V_cdd = cdd.Matrix(V, number_type='float')
+    V_cdd.rep_type = cdd.RepType.GENERATOR
+    P = cdd.Polyhedron(V_cdd)
     ineq = P.get_inequalities()
-    H = array(ineq)
+    H = numpy.array(ineq)
     if H.shape == (0,):  # H = []
         return H
     # b, A = H[:, 0], -H[:, 1:]  # H matrix is [b, -A]
@@ -93,4 +93,4 @@ def face_of_span(S):
             raise NotConeSpan(S)
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
-    return array(A)
+    return numpy.array(A)
