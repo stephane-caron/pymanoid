@@ -1,25 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import numpy
 import openravepy
-import pylab
+import os.path
 import pymanoid
 import time
 
-from pymanoid.robots import JVRC1
-from numpy import arange, array, sin
 
+env_file = './openrave_models/JVRC-1/env.xml'
 
 dt = 1e-2  # [s]
 
-# gains
+# IK gains
 G_com = 100.
-G_link = 100.
+G_contact = 100.
 G_dof = 0.5
 G_ref = 0.5
 qd_lim = 1.  # [rad/s]
 
-# weights in objective function
+# IK weights
 w_lnk = 100.
 w_com = 001.
 w_reg = 001.
@@ -28,19 +28,29 @@ w_ref = 000.1
 
 
 if __name__ == '__main__':
-    pylab.ion()
+    if not os.path.isfile(env_file):
+        print "Error opening file %s" % env_file
+        print "                                                                "
+        print "For this example, you need to clone the models repository:      "
+        print "                                                                "
+        print "    git clone https://github.com/stephane-caron/openrave_models "
+        print "                                                                "
+        print "and link it in this folder (or update `env_file` in the script)."
+        print "                                                                "
+        exit(-1)
+
     env = openravepy.Environment()
-    env.Load('JVRC-1.xml')
+    env.Load(env_file)
     env.SetViewer('qtcoin')
-    robot = JVRC1(env)
+    robot = pymanoid.robots.JVRC1(env)
 
     viewer = env.GetViewer()
     viewer.SetBkgndColor([.7, .7, .9])
-    viewer.SetCamera(array([
+    viewer.SetCamera([
         [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
         [0.95680251,  0.10095043, -0.2726499,  0.86080128],
         [-0.02267371, -0.90901857, -0.41613837,  2.06654644],
-        [0.,  0.,  0.,  1.]]))
+        [0.,  0.,  0.,  1.]])
 
     # Initial robot pose
     robot.set_transparency(0.4)
@@ -62,19 +72,29 @@ if __name__ == '__main__':
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
-    com = pymanoid.Box(env, box_dim=0.05, pos=robot.com, color='g')
+    com = pymanoid.Cube(env, halflen=0.05, pos=robot.com, color='g')
     init_com = com.p.copy()
-    left_foot_target = pymanoid.Box(
-        env, X=0.224 / 2, Y=0.130 / 2, Z=0.01, pos=[0, 0.3, 0])
-    right_foot_target = pymanoid.Box(
-        env, X=0.224 / 2, Y=0.130 / 2, Z=0.01, pos=[0, -0.3, 0])
+    left_foot_target = pymanoid.Contact(
+        env,
+        X=0.224 / 2,
+        Y=0.130 / 2,
+        Z=0.01,
+        pos=[0, 0.3, 0],
+        visible=True)
+    right_foot_target = pymanoid.Contact(
+        env,
+        X=0.224 / 2,
+        Y=0.130 / 2,
+        Z=0.01,
+        pos=[0, -0.3, 0],
+        visible=True)
 
     # Initialize the IK
     robot.init_ik(qd_lim)
-    robot.add_link_objective(
-        robot.left_foot, left_foot_target, G_link, w_lnk)
-    robot.add_link_objective(
-        robot.right_foot, right_foot_target, G_link, w_lnk)
+    robot.add_contact_objective(
+        robot.left_foot, left_foot_target, G_contact, w_lnk)
+    robot.add_contact_objective(
+        robot.right_foot, right_foot_target, G_contact, w_lnk)
     robot.add_com_objective(com, G_com, w_com)
     robot.add_posture_objective(robot.q, G_ref, w_ref)
     for (dof_id, dof_ref) in dof_objectives:
@@ -91,15 +111,15 @@ if __name__ == '__main__':
 
     print ""
     print "Now, we will move the target COM (green box) back and forth, and"
-    print "have the robot follow it using the step_tracker() function."
+    print "have the robot follow it using the step_ik() function."
     print ""
     raw_input("Ready to go for 10 seconds? ")
 
-    for t in arange(0, 10, 1e-2):
+    for t in numpy.arange(0, 10, 1e-2):
         loop_start = time.time()
-        com_var = sin(t) * array([.2, 0, 0])
-        com.set_pos(init_com + array([-0.2, 0., 0.]) + com_var)
-        robot.step_tracker(dt)
+        com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
+        com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
+        robot.step_ik(dt)
         rem_time = dt - (time.time() - loop_start)
         if rem_time > 0:
             time.sleep(rem_time)
