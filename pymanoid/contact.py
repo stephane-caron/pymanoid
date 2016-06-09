@@ -467,3 +467,45 @@ class ContactSet(object):
                     [-y, x, 0]])
                 G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
                 return G
+
+    def compute_static_equilibrium_area(self, mass):
+        """
+        Compute the static-equilibrium area of the center of mass.
+
+        mass -- total mass of the robot
+
+        See http://dx.doi.org/10.1109/TRO.2008.2001360 for details. The
+        implementation here uses the double-description method (cdd) rather than
+        the equality-set projection algorithm, as described in
+        http://arxiv.org/abs/1510.03232.
+        """
+        G = self.compute_grasp_matrix([0, 0, 0])
+        F = -self.compute_stacked_friction_cones()  # using ground-applied ones
+        b = zeros((F.shape[0], 1))
+        # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
+        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+        M = cdd.Matrix(hstack([b, -F]), number_type='float')
+        M.rep_type = cdd.RepType.INEQUALITY
+
+        # Equalities:  C [GAW_1 GAW_2 ...] + d == 0
+        C = G[(0, 1, 2, 5), :]
+        d = -array([0, 0, mass * 9.81, 0])
+        # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
+        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+        M.extend(hstack([d.reshape((4, 1)), -C]), linear=True)
+
+        # Convert from H- to V-representation
+        # M.canonicalize()
+        P = cdd.Polyhedron(M)
+        V = array(P.get_generators())
+        if V.shape[0] < 1:
+            return [], []
+
+        # COM position from GAW:  [pGx, pGy] = D * [GAW_1 GAW_2 ...]
+        D = 1. / (-mass * 9.81) * vstack([-G[4, :], +G[3, :]])
+        vertices = []
+        for i in xrange(V.shape[0]):
+            # assert V[i, 0] == 1, "There should be no ray in this polygon"
+            p = dot(D, V[i, 1:])
+            vertices.append([p[0], p[1]])
+        return vertices
