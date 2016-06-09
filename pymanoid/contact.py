@@ -50,6 +50,7 @@ class Contact(Box):
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
+        self.gui_handles = []
         self.max_pressure = max_pressure
         self.friction = friction
         self.robot_link = robot_link
@@ -232,6 +233,15 @@ class Contact(Box):
         S = hstack(span_blocks)
         assert S.shape == (6, 16)
         return S
+
+    def draw_force_lines(self, length=2):
+        env = self.rave.GetEnv()
+        self.gui_handles = []
+        for f in self.force_cone_span:
+            for c in self.contact_points:
+                self.gui_handles.append(env.drawlinelist(
+                    array([c, c + length * f]),
+                    linewidth=1, colors=(0.3, 0.3, 0.3)))
 
 
 class ContactSet(object):

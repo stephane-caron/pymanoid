@@ -27,3 +27,5 @@ from inverse_kinematics import *
 from robot import *
 from rotation import *
 from trajectory import *
+
+import robots
