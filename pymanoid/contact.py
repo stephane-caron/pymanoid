@@ -25,7 +25,7 @@ import uuid
 
 from body import Box
 from cone_duality import face_of_span
-from numpy import array, cross, dot, hstack, vstack, zeros
+from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
 
@@ -300,36 +300,47 @@ class ContactSet(object):
         for contact in self._contact_list:
             yield contact
 
-    def compute_supporting_forces(self, com, mass, comdd, camd, w_xy=.1,
-                                  w_z=10.):
+    def find_supporting_forces(self, wrench, point, friction_weight=.1,
+                               pressure_weight=10.):
         """
-        Compute a set of contact forces supporting a centroidal acceleration.
+        Find a set of contact forces supporting a given wrench.
 
-        If the centroidal acceleration (comdd, camd) can be supported by forces
-        in the contact set, the solution that minimizes the cost
+        If the resultant wrench ``wrench`` (expressed at ``point``) can be
+        supported by the contact set, output a set of supporting contact
+        forces that minimizes the cost
 
-            sum_{contact i}  w_xy * |f_{i,xy}|^2 + w_z * |f_{i,z}|^2
+            sum_{contact i}  w_t * |f_{i,t}|^2 + w_z * |f_{i,z}|^2
 
-        is selected, where |f_{i,xy}| is the norm of the x-y components (in
-        local frame) of the i^th contact force.
+        where |f_{i,t}| (resp. f_{i,z}) is the norm of the i-th friction (resp.
+        pressure) force.
 
         INPUT:
 
-        - ``com`` -- position of the center of mass (COM)
-        - ``mass`` -- total mass of the system
-        - ``comdd`` -- acceleration of the COM
-        - ``camd`` -- rate of change of the angular momentum, taken at the COM
-        - ``w_xy`` -- weight given in the optimization to minimizing f_{xy}
-        - ``w_z`` -- weight given in the optimization to minimizing f_z
+        - ``wrench`` -- the resultant wrench to be realized
+        - ``point`` -- point where the wrench is expressed
+        - ``friction_weight`` -- weight for friction term in optim. objective
+        - ``pressure_weight`` -- weight for pressure term in optim. objective
 
         OUTPUT:
 
         A list of couples (contact point, contact force) expressed in the world
         frame.
+
+        .. NOTE::
+
+            Physically, contact results in continuous distributions of friction
+            and pressure forces. However, one can model them without loss of
+            generality (in terms of the resultant wrench) by considering only
+            point contact forces applied at the vertices of the contact area.
+            See [CPN]_ for details.
+
+        REFERENCES:
+
+        .. [CPN] Caron, Pham, Nakamura, "Stability of surface contacts for
+           humanoid robots: Closed-form formulae of the contact wrench cone for
+           rectangular support areas." 2015 IEEE International Conference on
+           Robotics and Automation (ICRA).
         """
-        gravity = array([0., 0., -9.81])
-        resultant_force = mass * (comdd - gravity)
-        resultant_moment = camd - cross(com, resultant_force)
         n = 12 * self.nb_contacts
         nb_forces = n / 3
         Pxy = block_diag(*[
@@ -348,6 +359,7 @@ class ContactSet(object):
             [0, 0, 1. / n]
             for _ in xrange(nb_forces)])
         Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
+        w_xy = w_z = 0.
         P = w_xy * Pxy + w_z * Pz
         RT_diag = block_diag(*[
             contact.R.T
@@ -357,7 +369,7 @@ class ContactSet(object):
         G = self.compute_stacked_force_cones()
         h = zeros((G.shape[0],))  # for cvxopt:  G * x <= h
         A = self.compute_grasp_matrix_from_forces([0, 0, 0])
-        b = hstack([resultant_force, resultant_moment])
+        b = wrench
         f_all = cvxopt_solve_qp(P, q, G, h, A, b)
         output, next_index = [], 0
         for i, contact in enumerate(self.contacts):
@@ -365,6 +377,30 @@ class ContactSet(object):
                 output.append((p, f_all[next_index:next_index + 3]))
                 next_index += 3
         return output
+
+    def find_static_supporting_forces(self, com, mass):
+        """
+        Find a set of contact forces supporting the robot in static equilibrium
+        when its center of mass is located at ``com``.
+
+        INPUT:
+
+        - ``com`` -- position of the center of mass
+        - ``mass`` -- total mass of the robot
+
+        OUTPUT:
+
+        A list of couples (contact point, contact force) expressed in the world
+        frame.
+
+        .. SEEALSO::
+
+            :meth:`pymanoid.contact.ContactSet.compute_supporting_forces`,
+        """
+        f = numpy.array([0., 0., mass * 9.81])
+        tau = numpy.cross(com, f)
+        wrench = numpy.hstack([f, tau])
+        return self.find_supporting_forces(wrench, com)
 
     def compute_stacked_force_cones(self):
         """
