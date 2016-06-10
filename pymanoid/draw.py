@@ -170,7 +170,7 @@ def _convert_cone2d_to_vertices(vertices, rays):
     return conv_vertices
 
 
-def draw_cone2d(env, vertices, rays, n, color, plot_type):
+def draw_2d_cone(env, vertices, rays, n, color, plot_type):
     """
     Draw a 2D cone defined from its rays and vertices. The normal vector n of
     the plane containing the cone must also be supplied.

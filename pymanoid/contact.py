@@ -24,7 +24,7 @@ import uuid
 
 from body import Box
 from cone_duality import face_of_span
-from numpy import array, cross, dot, hstack, sqrt, vstack, zeros
+from numpy import array, cross, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
 
@@ -62,7 +62,8 @@ class Contact(Box):
 
     @property
     def effector_pose(self):
-        """Target pose for the robot end-effector.
+        """
+        Target pose for the robot end-effector.
 
         Caution: don't use the contact pose, which corresponds to the OpenRAVE
         KinBody's pose and would result in a frame inside the contact box.
@@ -221,9 +222,9 @@ class Contact(Box):
 
         where S is the friction span and lambda is a vector with positive
         coordinates. Note that the contact wrench w is taken at the contact
-        point (self.p).
+        point (self.p) and in the world frame.
         """
-        point_span = array(self.contact_force_span).T
+        force_span = array(self.contact_force_span).T
         span_blocks = []
         for (i, c) in enumerate(self.contact_points):
             x, y, z = c - self.p
@@ -234,7 +235,7 @@ class Contact(Box):
                 [0, -z, y],
                 [z, 0, -x],
                 [-y, x, 0]])
-            span_blocks.append(dot(Gi, point_span))
+            span_blocks.append(dot(Gi, force_span))
         S = hstack(span_blocks)
         assert S.shape == (6, 16)
         return S
@@ -402,7 +403,7 @@ class ContactSet(object):
         p -- point where the resultant wrench is taken at
         """
         span_blocks = []
-        for (i, contact) in enumerate(self.contacts):
+        for contact in self.contacts:
             x, y, z = contact.p - p
             Gi = array([
                 [1, 0,  0, 0, 0, 0],
@@ -438,8 +439,8 @@ class ContactSet(object):
 
             w(p) = G(p) * w_all,
 
-        with w_all the stacked vector of contact wrenches (locomotion: from the
-        environment onto the robot; grasping: from the hand onto the object).
+        with w_all the stacked vector of contact wrenches, each wrench being
+        taken at its respective contact point and in the world frame.
         """
         return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
 
@@ -480,7 +481,7 @@ class ContactSet(object):
         http://arxiv.org/abs/1510.03232.
         """
         G = self.compute_grasp_matrix([0, 0, 0])
-        F = -self.compute_stacked_friction_cones()  # using ground-applied ones
+        F = self.compute_stacked_friction_cones()
         b = zeros((F.shape[0], 1))
         # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
@@ -489,7 +490,7 @@ class ContactSet(object):
 
         # Equalities:  C [GAW_1 GAW_2 ...] + d == 0
         C = G[(0, 1, 2, 5), :]
-        d = -array([0, 0, mass * 9.81, 0])
+        d = array([0, 0, mass * 9.81, 0])
         # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
         M.extend(hstack([d.reshape((4, 1)), -C]), linear=True)
@@ -502,7 +503,7 @@ class ContactSet(object):
             return [], []
 
         # COM position from GAW:  [pGx, pGy] = D * [GAW_1 GAW_2 ...]
-        D = 1. / (-mass * 9.81) * vstack([-G[4, :], +G[3, :]])
+        D = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
         vertices = []
         for i in xrange(V.shape[0]):
             # assert V[i, 0] == 1, "There should be no ray in this polygon"

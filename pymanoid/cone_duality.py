@@ -43,11 +43,9 @@ class NotConeSpan(ConeException):
 
 def span_of_face(F):
     """
+    Compute the span matrix S of the face matrix F, which is such that
 
-    Compute the span matrix F^S of the face matrix F,
-    that is, a matrix such that
-
-        {F x <= 0} if and only if {x = F^S z, z >= 0}.
+        {F x <= 0}  if and only if  {x = F^S z, z >= 0}
 
     """
     b, A = numpy.zeros((F.shape[0], 1)), F
@@ -70,11 +68,9 @@ def span_of_face(F):
 
 def face_of_span(S):
     """
+    Compute the face matrix F of the span matrix S, which is such that
 
-    Returns the face matrix S^F of the span matrix S,
-    that is, a matrix such that
-
-        {x = S z, z >= 0} if and only if {S^F x <= 0}.
+        {x = S z, z >= 0}  if and only if  {F x <= 0}.
 
     """
     V = numpy.hstack([numpy.zeros((S.shape[1], 1)), S.T])
@@ -86,8 +82,8 @@ def face_of_span(S):
     H = numpy.array(ineq)
     if H.shape == (0,):  # H = []
         return H
-    # b, A = H[:, 0], -H[:, 1:]  # H matrix is [b, -A]
     A = []
+    # H matrix is [b, -A] for A * x <= b
     for i in xrange(H.shape[0]):
         if H[i, 0] != 0:  # b should be zero
             raise NotConeSpan(S)

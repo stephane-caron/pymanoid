@@ -26,7 +26,7 @@ from errors import RobotNotFound
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
-from rotation import crossmat
+from rotations import crossmat
 from inverse_kinematics import DiffIKSolver
 
 

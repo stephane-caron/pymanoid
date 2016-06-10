@@ -23,7 +23,8 @@ import openravepy
 import uuid
 
 from numpy import array
-from rotation import rotation_matrix_from_rpy, rpy_from_quat
+from rotations import rotation_matrix_from_rpy
+from rotations import rpy_from_quat
 
 
 class Body(object):
