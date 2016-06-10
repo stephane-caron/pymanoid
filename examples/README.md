@@ -10,9 +10,9 @@ running, you will need a copy or symbolic link of the
 repository in the local folder. Alternatively, you can clone the repository
 anywhere and set the correct path in the ``env_file`` variable of the script.
 
-<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" width="250" />
-
 ## static\_equilibrium\_polygon.py
+
+<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" width="250" />
 
 In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
