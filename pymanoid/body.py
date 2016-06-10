@@ -34,12 +34,12 @@ class Body(object):
     methods, e.g. a Link or a Manipulator.
     """
 
-    def __init__(self, rave_object, pos=None, rpy=None, color=None, name=None,
+    def __init__(self, rave_body, pos=None, rpy=None, color=None, name=None,
                  pose=None, visible=True, transparency=None):
         """
         Create body from an OpenRAVE KinBody.
 
-        rave_object -- object to wrap
+        rave_body -- object to wrap
         pos -- initial position in inertial frame
         rpy -- initial orientation in inertial frame
         color -- color applied to all links (if any) in the object
@@ -48,7 +48,7 @@ class Body(object):
         visible -- initial visibility
         transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
-        self.rave = rave_object
+        self.rave = rave_body
         if color is not None:
             self.set_color(color)
         if name is not None:
@@ -258,7 +258,7 @@ class Box(Body):
     def __init__(self, env, X, Y, Z, pos=None, rpy=None, color='r', name=None,
                  pose=None, visible=True, transparency=None):
         """
-        Create a new box.
+        Create a new rectangular box.
 
         env -- OpenRAVE environment
         X -- box half-length
@@ -288,23 +288,23 @@ class Box(Body):
 
 class Cube(Box):
 
-    def __init__(self, env, halflen, pos=None, rpy=None, color='r', name=None,
+    def __init__(self, env, size, pos=None, rpy=None, color='r', name=None,
                  pose=None, visible=True, transparency=None):
         """
-        Create a new box.
+        Create a new cube.
 
         env -- OpenRAVE environment
-        halflen -- box half-length
+        size -- half-length of a side of the cube
         pos -- initial position in inertial frame
         rpy -- initial orientation in inertial frame
-        color -- color letter in ['r', 'g', 'b']
+        color -- color letter in matplotlib format ('r', 'g', 'b', 'm', etc.)
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
         transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
         super(Cube, self).__init__(
-            env, halflen, halflen, halflen, pos=pos, rpy=rpy, color=color,
+            env, size, size, size, pos=pos, rpy=rpy, color=color,
             name=name, pose=pose, visible=visible, transparency=transparency)
 
 

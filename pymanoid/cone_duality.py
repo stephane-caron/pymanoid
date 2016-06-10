@@ -22,6 +22,8 @@
 import cdd
 import numpy
 
+from toolbox import norm
+
 
 class ConeException(Exception):
 

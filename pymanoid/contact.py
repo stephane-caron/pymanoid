@@ -20,6 +20,7 @@
 
 
 import cdd
+import numpy
 import uuid
 
 from body import Box
@@ -81,7 +82,7 @@ class Contact(Box):
         return T
 
     @property
-    def contact_points(self):
+    def vertices(self):
         """Vertices of the contact area."""
         T = self.effector_transform
         c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
