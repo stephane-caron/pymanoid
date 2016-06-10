@@ -17,9 +17,7 @@ You can move contacts by selecting them in the OpenRAVE GUI. The robot IK is
 servoed to their positions. Type ``recompute_polygon()`` to recompute the COM
 polygon after moving contacts.
 
-<div style="float: right; margin-left: 1em">
-<img src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" height="300" />
-</div>
+<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" height="300" />
 
 To illustrate the validity of this polygon, contact forces are computed that
 support the equilibrium position represented by the blue box (which acts like a
