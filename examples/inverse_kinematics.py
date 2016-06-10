@@ -86,8 +86,8 @@ if __name__ == '__main__':
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
 
     # set active DOFs for the IK
-    active_dofs = robot.get_dofs(
-        'chest', 'free', 'left_arm', 'right_arm', 'left_leg', 'right_leg')
+    active_dofs = robot.chest_dofs + robot.free_dofs + robot.left_arm_dofs + \
+        robot.right_arm_dofs + robot.left_leg_dofs + robot.right_leg_dofs
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
