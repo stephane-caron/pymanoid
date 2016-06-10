@@ -27,6 +27,7 @@ from body import Manipulator
 from contact import Contact
 from contact import ContactSet
 from draw import draw_2d_cone
+from draw import draw_force
 from draw import draw_line
 from draw import draw_polygon
 from draw import draw_polyhedron
@@ -49,6 +50,7 @@ __all__ = [
     'Robot',
     'Trajectory',
     'draw_2d_cone',
+    'draw_force',
     'draw_line',
     'draw_polygon',
     'draw_polyhedron',

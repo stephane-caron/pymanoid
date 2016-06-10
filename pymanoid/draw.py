@@ -41,13 +41,53 @@ def _matplotlib_to_rgb(color):
     return acolor
 
 
-def draw_line(env, point1, point2, color=None, linewidth=1., lw=None):
+def draw_line(env, p1, p2, color='g', linewidth=1., lw=None):
+    """
+    Draw a line between points p1 and p2.
+
+    INPUT
+
+    - ``p1`` -- one end of the line
+    - ``p2`` -- other end of the line
+    - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
+    - ``linewidth`` or ``lw`` -- thickness of drawn line
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
     linewidth = linewidth if lw is None else lw
-    color = color if color is not None else (0., 0.5, 0.)
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
     return env.drawlinelist(
-        array([point1, point2]), linewidth=linewidth, colors=color),
+        array([p1, p2]), linewidth=linewidth, colors=color),
+
+
+def draw_force(env, p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
+    """
+    Draw a force acting at a given point.
+
+    INPUT
+
+    - ``p`` -- point where the force is acting
+    - ``f`` -- force vector
+    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
+    - ``scale`` -- scaling factor between Euclidean and Force spaces
+    - ``linewidth`` or ``lw`` -- thickness of force vector
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
+    linewidth = linewidth if lw is None else lw
+    if type(color) is str:
+        color = _matplotlib_to_rgb(color)
+    if dot(f, f) < 1e-10:
+        return []
+    return env.drawarrow(
+        p, p + scale * f, linewidth=linewidth, color=color)
 
 
 def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
