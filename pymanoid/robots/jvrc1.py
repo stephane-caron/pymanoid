@@ -84,46 +84,32 @@ class JVRC1(Robot):
     ROT_P = 48
     ROT_Y = 49
 
+    chest_dofs = [WAIST_Y, WAIST_P, WAIST_R]
+
+    neck_dofs = [NECK_Y, NECK_R, NECK_P]
+
+    left_leg_dofs = [L_HIP_P, L_HIP_R, L_HIP_Y, L_KNEE, L_ANKLE_R, L_ANKLE_P]
+
+    right_leg_dofs = [R_HIP_R, R_HIP_Y, R_KNEE, R_ANKLE_R, R_ANKLE_P]
+
+    left_arm_dofs = [L_SHOULDER_P, L_SHOULDER_R, L_SHOULDER_Y, L_ELBOW_P,
+                     L_ELBOW_Y, L_WRIST_R, L_WRIST_Y]
+
+    right_arm_dofs = [R_SHOULDER_P, R_SHOULDER_R, R_SHOULDER_Y, R_ELBOW_P,
+                      R_ELBOW_Y, R_WRIST_R, R_WRIST_Y]
+
+    left_hand_dofs = [L_UTHUMB, L_LTHUMB, L_UINDEX, L_LINDEX, L_ULITTLE,
+                      L_LLITTLE]
+
+    right_hand_dofs = [R_UTHUMB, R_LTHUMB, R_UINDEX, R_LINDEX, R_ULITTLE,
+                       R_LLITTLE]
+
+    free_dofs = [TRANS_X, TRANS_Y, TRANS_Z, ROT_R, ROT_P, ROT_Y]
+
     def __init__(self, env, robot_name='JVRC-1'):
         super(JVRC1, self).__init__(env, robot_name)
         rave = self.rave
         self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
-
-    def get_dofs(self, *chains):
-        l = []
-        if 'right_leg' in chains:
-            l.extend([
-                self.R_HIP_R, self.R_HIP_Y, self.R_KNEE, self.R_ANKLE_R,
-                self.R_ANKLE_P])
-        if 'left_leg' in chains:
-            l.extend([
-                self.L_HIP_P, self.L_HIP_R, self.L_HIP_Y, self.L_KNEE,
-                self.L_ANKLE_R, self.L_ANKLE_P])
-        if 'chest' in chains:
-            l.extend([
-                self.WAIST_Y, self.WAIST_P, self.WAIST_R])
-        if 'neck' in chains:
-            l.extend([
-                self.NECK_Y, self.NECK_R, self.NECK_P])
-        if 'right_arm' in chains:
-            l.extend([
-                self.R_SHOULDER_P, self.R_SHOULDER_R, self.R_SHOULDER_Y,
-                self.R_ELBOW_P, self.R_ELBOW_Y, self.R_WRIST_R, self.R_WRIST_Y])
-        if 'right_hand' in chains:
-            l.extend([
-                self.R_UTHUMB, self.R_LTHUMB, self.R_UINDEX, self.R_LINDEX,
-                self.R_ULITTLE, self.R_LLITTLE])
-        if 'left_arm' in chains:
-            l.extend([
-                self.L_SHOULDER_P, self.L_SHOULDER_R, self.L_SHOULDER_Y,
-                self.L_ELBOW_P, self.L_ELBOW_Y, self.L_WRIST_R, self.L_WRIST_Y])
-        if 'left_hand' in chains:
-            l.extend([
-                self.L_UTHUMB, self.L_LTHUMB, self.L_UINDEX, self.L_LINDEX,
-                self.L_ULITTLE, self.L_LLITTLE])
-        if 'free' in chains:
-            l.extend([
-                self.TRANS_X, self.TRANS_Y, self.TRANS_Z,
-                self.ROT_R, self.ROT_P, self.ROT_Y])
-        return l
+        self.left_hand = Manipulator(rave.GetManipulator("left_hand_palm"))
+        self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
