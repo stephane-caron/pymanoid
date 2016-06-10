@@ -2,7 +2,7 @@
 
 ## inverse\_kinematics.py
 
-<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/inverse_kinematics.png" width="300" />
+<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/inverse_kinematics.png" width="250" />
 
 This is a small example on how to use the IK for whole-body motions. To get it
 running, you will need a copy or symbolic link of the
@@ -12,7 +12,7 @@ anywhere and set the correct path in the ``env_file`` variable of the script.
 
 ## static\_equilibrium\_polygon.py
 
-<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" width="300" />
+<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" width="250" />
 
 In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
