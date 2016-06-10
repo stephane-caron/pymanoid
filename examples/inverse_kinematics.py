@@ -1,6 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+#
+# This file is part of pymanoid.
+#
+# pymanoid is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# pymanoid is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+
+import IPython
 import numpy
 import openravepy
 import os.path
@@ -72,7 +91,7 @@ if __name__ == '__main__':
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
-    com = pymanoid.Cube(env, halflen=0.05, pos=robot.com, color='g')
+    com = pymanoid.Cube(env, 0.05, pos=robot.com, color='g')
     init_com = com.p.copy()
     left_foot_target = pymanoid.Contact(
         env,
@@ -128,5 +147,4 @@ if __name__ == '__main__':
     print "This example is over. You can now play with the"
     print "`robot` object in the following Python shell."
     print ""
-    import IPython
     IPython.embed()
