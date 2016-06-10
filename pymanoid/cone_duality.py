@@ -75,7 +75,9 @@ def face_of_span(S):
         {x = S z, z >= 0}  if and only if  {F x <= 0}.
 
     """
-    V = numpy.hstack([numpy.zeros((S.shape[1], 1)), S.T])
+    V = numpy.vstack([
+        numpy.hstack([numpy.zeros((S.shape[1], 1)), S.T]),
+        numpy.hstack([1, numpy.zeros(S.shape[0])])])
     # V-representation: first column is 0 for rays
     V_cdd = cdd.Matrix(V, number_type='float')
     V_cdd.rep_type = cdd.RepType.GENERATOR
@@ -87,7 +89,8 @@ def face_of_span(S):
     A = []
     # H matrix is [b, -A] for A * x <= b
     for i in xrange(H.shape[0]):
-        if H[i, 0] != 0:  # b should be zero
+        if H[i, 0] != 0 and norm(H[i, 1:]) > 1e-10:  # b should be zero
+            print H[i]
             raise NotConeSpan(S)
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
