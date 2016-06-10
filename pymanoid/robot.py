@@ -206,6 +206,8 @@ class Robot(object):
         self.ik = DiffIKSolver(self, qd_lim, K_doflim=K_doflim)
 
     def add_com_objective(self, target, gain, weight):
+        if type(target) is list:
+            target = numpy.array(target)
         if type(target) is numpy.ndarray:
             def error(q, qd):
                 return target - self.compute_com(q)
