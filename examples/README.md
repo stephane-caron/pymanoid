@@ -10,14 +10,14 @@ anywhere and set the correct path in the ``env_file`` variable of the script.
 
 ## static\_equilibrium\_polygon.py
 
+<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" height="300" />
+
 In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
     
 You can move contacts by selecting them in the OpenRAVE GUI. The robot IK is
 servoed to their positions. Type ``recompute_polygon()`` to recompute the COM
 polygon after moving contacts.
-
-<img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" height="300" />
 
 To illustrate the validity of this polygon, contact forces are computed that
 support the equilibrium position represented by the blue box (which acts like a
