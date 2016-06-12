@@ -1,8 +1,8 @@
 # pymanoid
 
-Python library for humanoid robotics in OpenRAVE.
+<img src="https://scaron.info/images/ijhr-2016.png" width="400" align="right" />
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="300" align="right" />
+Python library for humanoid robotics in OpenRAVE.
 
 Features:
 - Numerical Inverse Kinematics solver (slower than IKFast, but deals with
