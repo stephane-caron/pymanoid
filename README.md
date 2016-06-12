@@ -5,29 +5,26 @@
 Python library for humanoid robotics in OpenRAVE.
 
 Features:
-- Numerical Inverse Kinematics solver (slower than IKFast, but deals with
-  redundancy, high-DOF systems and general objectives such as center-of-mass or
-  angular momentum)
-- Jacobians and hessians for the center-of-mass, ZMP and angular momentum
-- Double-description method for multi-contact stability
+- A custom Inverse Kinematics (IK) solver, slower than IKFast but taking into
+  account redundancy, any number of degrees of freedom, and general objectives
+  such as center-of-mass position or angular-momentum tracking
+- Jacobians and hessians for the center-of-mass, ZMP or angular momentum
+- Cone duality functions for multi-contact stability
 
-This repository is part of my working code. Classes and function prototypes may
-change at any time without notice.
+This repository is part of my working code, so the API is not so stable.
 
 ## Dependencies
 
 - [CVXOPT](http://cvxopt.org/) used for its QP and LP solvers
-- [OpenRAVE](https://github.com/rdiankov/openrave) used for forward kinematics and visualization. See e.g. the following [installation instructions](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
-- [pycddlib](https://pycddlib.readthedocs.org/en/latest/) used for cone duality
-  calculations.
+- [OpenRAVE](https://github.com/rdiankov/openrave) used for forward kinematics and visualization ([installation instructions](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html))
+- [pycddlib](https://pycddlib.readthedocs.org/en/latest/) used for cone duality calculations
 
 ## Installation
 
-First, install dependencies from your package manager. On Ubuntu 14.04:
+On Ubuntu 14.04, run the following from the top-level directory:
 
 ```
 sudo apt-get install cython python python-dev python-pip python-scipy
 sudo pip install cvxopt pycddlib
+sudo python setup.py install
 ```
-
-Then, from the top folder, run: `sudo python setup.py install`.
