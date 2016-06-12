@@ -5,10 +5,10 @@
 Python library for humanoid robotics in OpenRAVE.
 
 Features:
-- A custom inverse kinematics (IK) solver, slower than IKFast but taking into
+- A custom inverse kinematics solver, slower than IKFast but taking into
   account redundancy, any number of degrees of freedom, and general objectives
-  such as center-of-mass (COM) position or angular-momentum tracking
-- Jacobians and hessians for the COM, ZMP and angular momentum
+  such as center-of-mass position or angular-momentum tracking
+- Jacobians and hessians for the center of mass, ZMP and angular momentum
 - Cone duality functions for multi-contact stability
 
 ## Dependencies
