@@ -11,8 +11,6 @@ Features:
 - Jacobians and hessians for the center-of-mass, ZMP or angular momentum
 - Cone duality functions for multi-contact stability
 
-This repository is part of my working code, so the API is not so stable.
-
 ## Dependencies
 
 - [CVXOPT](http://cvxopt.org/) used for its QP and LP solvers
