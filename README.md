@@ -16,22 +16,18 @@ change at any time without notice.
 
 ## Dependencies
 
-- [CVXOPT](http://cvxopt.org/)
-  - used for Quadratic Programming
-  - tested with version 1.1.7
-- [OpenRAVE](https://github.com/rdiankov/openrave)
-  - used for forward kinematics and visualization
-  - tested with commit `f68553cb7a4532e87f14cf9db20b2becedcda624` in branch
-    `latest_stable`
-  - you may need to [fix the Collision report issue](https://github.com/rdiankov/openrave/issues/333#issuecomment-72191884)
-- [NumPy](http://www.numpy.org/)
-  - used for scientific computing
-  - tested with version 1.8.2
-- [pycddlib](https://pycddlib.readthedocs.org/en/latest/)
-  - used for multi-contact stability
-  - tested with version 1.0.5a1
-  - installation: `pip install pycddlib`
+- [CVXOPT](http://cvxopt.org/) used for its QP and LP solvers
+- [OpenRAVE](https://github.com/rdiankov/openrave) used for forward kinematics and visualization. See e.g. the following [installation instructions](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
+- [pycddlib](https://pycddlib.readthedocs.org/en/latest/) used for cone duality
+  calculations.
 
 ## Installation
 
-From the top folder, run: `sudo python setup.py install`
+First, install dependencies from your package manager. On Ubuntu 14.04:
+
+```
+sudo apt-get install cython python python-dev python-pip python-scipy
+sudo pip install cvxopt pycddlib
+```
+
+Then, from the top folder, run: `sudo python setup.py install`.
