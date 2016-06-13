@@ -1,10 +1,10 @@
+<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+
 # pymanoid
 
 Python library for humanoid robotics in OpenRAVE.
 
 ## Features
-
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
 - Custom inverse kinematics (IK) solver, slower than IKFast but taking into
   account redundancy, any number of degrees of freedom, and general objectives
