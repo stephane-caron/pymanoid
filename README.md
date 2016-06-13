@@ -1,6 +1,6 @@
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
-
 # pymanoid
+
+<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
 Python library for humanoid robotics in OpenRAVE.
 
