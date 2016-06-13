@@ -368,7 +368,7 @@ class ContactSet(object):
         q = zeros((n,))
         G = self.compute_stacked_force_cones()
         h = zeros((G.shape[0],))  # for cvxopt:  G * x <= h
-        A = self.compute_grasp_matrix_from_forces([0, 0, 0])
+        A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
         f_all = cvxopt_solve_qp(P, q, G, h, A, b)
         output, next_index = [], 0
@@ -398,7 +398,7 @@ class ContactSet(object):
             :meth:`pymanoid.contact.ContactSet.compute_supporting_forces`,
         """
         f = numpy.array([0., 0., mass * 9.81])
-        tau = numpy.cross(com, f)
+        tau = zeros(3)
         wrench = numpy.hstack([f, tau])
         return self.find_supporting_forces(wrench, com)
 
