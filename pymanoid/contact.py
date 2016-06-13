@@ -124,12 +124,11 @@ class Contact(Box):
         Span (V-representation) of the friction cone for the contact force in
         the world frame.
         """
-        # mu = self.friction / sqrt(2)  # inner linearization
         mu = self.friction
-        f1 = dot(self.R, [+mu, 0, +1])
-        f2 = dot(self.R, [-mu, 0, +1])
-        f3 = dot(self.R, [0, +mu, +1])
-        f4 = dot(self.R, [0, -mu, +1])
+        f1 = dot(self.R, [+mu, +mu, +1])
+        f2 = dot(self.R, [+mu, -mu, +1])
+        f3 = dot(self.R, [-mu, +mu, +1])
+        f4 = dot(self.R, [-mu, -mu, +1])
         return [f1, f2, f3, f4]
 
     @property
