@@ -1,16 +1,17 @@
 # pymanoid
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
-
 Python library for humanoid robotics in OpenRAVE.
 
 ## Features
 
+<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+
 - Custom inverse kinematics (IK) solver, slower than IKFast but taking into
-  account redundancy, any number of degrees of freedom, and general objectives
-  such as center-of-mass position or angular-momentum tracking
+  account redundancy, high-DOF systems and general objectives such as
+  center-of-mass position or angular-momentum tracking
 - Jacobians and hessians for the center of mass, ZMP and angular momentum
-- Cone duality functions for multi-contact stability
+- Calculation of contact-stability criteria: contact wrench cones, stability
+  polygons, etc. 
 
 ## Dependencies
 
