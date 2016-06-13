@@ -2,9 +2,9 @@
 
 Python library for humanoid robotics in OpenRAVE.
 
-## Features
-
 <img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+
+## Features
 
 - Custom inverse kinematics (IK) solver, slower than IKFast but taking into
   account redundancy, high-DOF systems and general objectives such as
