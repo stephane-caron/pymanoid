@@ -138,12 +138,12 @@ class Contact(Box):
         force in the world frame.
         """
         mu = self.friction
-        gaf_face_local = array([
+        local_cone = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
             [0, -1, -mu],
             [0, +1, -mu]])
-        return dot(gaf_face_local, self.R.T)
+        return dot(local_cone, self.R.T)
 
     @property
     def wrench_cone(self):
