@@ -16,7 +16,13 @@ Python library for humanoid robotics in OpenRAVE.
 ## Installation
 
 - First, [install OpenRAVE](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
-- Make sure you have all Python dependencies: ```sudo apt-get install cython python python-dev python-pip python-scipy```
-- Install [CVXOPT](http://cvxopt.org/) and [pycddlib](https://pycddlib.readthedocs.org/en/latest/): ```sudo pip install cvxopt pycddlib```
+- Make sure you have all Python dependencies:
+```
+sudo apt-get install cython python python-dev python-pip python-scipy
+```
+- Install [CVXOPT](http://cvxopt.org/) and [pycddlib](https://pycddlib.readthedocs.org/en/latest/):
+```
+sudo pip install cvxopt pycddlib
+```
 - To use in a single directory, make a symbolic link to the ``pymanoid`` sub-folder of the cloned repository
 - To install the library system-wide: ``sudo python setup.py install``
