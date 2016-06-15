@@ -13,18 +13,26 @@ Python library for humanoid robotics in OpenRAVE.
 - Calculation of contact-stability criteria: contact wrench cones, stability
   polygons, etc. 
 
-## Dependencies
-
-- [CVXOPT](http://cvxopt.org/) used for its QP and LP solvers
-- [OpenRAVE](https://github.com/rdiankov/openrave) used for forward kinematics and visualization ([installation instructions](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html))
-- [pycddlib](https://pycddlib.readthedocs.org/en/latest/) used for cone duality calculations
-
 ## Installation
 
-On Ubuntu 14.04, run the following from the top-level directory:
+- First, [install OpenRAVE](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
+- Make sure you have all Python dependencies:
 
 ```
 sudo apt-get install cython python python-dev python-pip python-scipy
+```
+
+- Install [CVXOPT](http://cvxopt.org/) and [pycddlib](https://pycddlib.readthedocs.org/en/latest/):
+
+```
 sudo pip install cvxopt pycddlib
+```
+
+- To use in a single directory, make a symbolic link to the ``pymanoid``
+  sub-folder of the cloned repository
+
+- To install the library system-wide:
+
+```
 sudo python setup.py install
 ```
