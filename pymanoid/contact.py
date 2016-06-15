@@ -287,6 +287,10 @@ class ContactSet(object):
         self._contact_list.append(contact)
         self.nb_contacts += 1
 
+    def subset(self, names):
+        """Get a subset of contacts, identified by their names."""
+        return ContactSet({k: self._contact_dict[k] for k in names})
+
     def update(self, name, contact):
         """Update a named contact in the set."""
         if name not in self._contact_dict:
