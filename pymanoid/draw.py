@@ -68,7 +68,7 @@ def draw_force(env, p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
     """
     Draw a force acting at a given point.
 
-    INPUT
+    INPUT:
 
     - ``p`` -- point where the force is acting
     - ``f`` -- force vector
@@ -95,14 +95,21 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
-    env -- openravepy environment
-    points -- list of 3D points
-    color -- RGBA vector
-    plot_type -- bitmask with 1 for vertices, 2 for edges and 4 for surface
-    precomp_hull -- used in the 2D case where the hull has zero volume
-    linewidth -- openravepy format
-    pointsize -- openravepy format
+    INPUT:
 
+    - ``env`` -- openravepy environment
+    - ``points`` -- list of 3D points
+    - ``color`` -- RGBA vector
+    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
+      surfaces (default: 6 = 2 + 4, i.e., draw edges and surfaces)
+    - ``precomp_hull`` -- used in the 2D case where the hull has zero volume
+    - ``linewidth`` -- openravepy format
+    - ``pointsize`` -- openravepy format
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
     """
     is_2d = precomp_hull is not None
     hull = precomp_hull if precomp_hull is not None else ConvexHull(points)
@@ -134,21 +141,29 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
     return handles
 
 
-def draw_polygon(env, points, n=None, color=None, plot_type=6, linewidth=1.,
-                 pointsize=0.02):
+def draw_polygon(env, points, normal=None, color=None, plot_type=6,
+                 linewidth=1., pointsize=0.02, n=None):
     """
     Draw a polygon defined as the convex hull of a set of points. The normal
     vector n of the plane containing the polygon must also be supplied.
 
-    env -- openravepy environment
-    points -- list of 3D points
-    n -- plane normal vector
-    color -- RGBA vector
-    plot_type -- bitmask with 1 for vertices, 2 for edges and 4 for surface
-    linewidth -- openravepy format
-    pointsize -- openravepy format
+    INPUT:
 
+    - ``env`` -- openravepy environment
+    - ``points`` -- list of 3D points
+    - ``normal`` (or ``n``) -- unit vector normal to the drawing plane
+    - ``color`` -- RGBA vector
+    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
+                       surface
+    - ``linewidth`` -- (default: 1.) thickness of drawn line
+    - ``pointsize`` -- (default: 0.02) vertex size
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
     """
+    n = n if n is not None else normal
     assert n is not None, "Please provide the plane normal as well"
     t1 = array([n[2] - n[1], n[0] - n[2], n[1] - n[0]], dtype=float)
     t1 /= norm(t1)
@@ -215,13 +230,20 @@ def draw_2d_cone(env, vertices, rays, n, color, plot_type):
     Draw a 2D cone defined from its rays and vertices. The normal vector n of
     the plane containing the cone must also be supplied.
 
-    env -- openravepy environment
-    vertices -- list of 3D points
-    rays -- list of 3D vectors
-    n -- plane normal vector
-    color -- RGBA vector
-    plot_type -- bitmask with 1 for edges, 2 for surfaces and 4 for summits
+    INPUT:
 
+    - ``env`` -- openravepy environment
+    - ``vertices`` -- list of 3D points
+    - ``rays`` -- list of 3D vectors
+    - ``n`` -- plane normal vector
+    - ``color`` -- RGBA vector
+    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
+      surfaces
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
     """
     if not rays:
         return draw_polygon(

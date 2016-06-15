@@ -254,7 +254,9 @@ class ContactSet(object):
         """
         Create new contact set.
 
-        contacts -- list or dictionary of Contact objects
+        INPUT:
+
+        - ``contacts`` -- list or dictionary of Contact objects
         """
         self._contact_dict = {}
         self._contact_list = []
@@ -453,14 +455,19 @@ class ContactSet(object):
         """
         Compute the span matrix of the contact wrench cone in world frame.
 
-        This matrix is such that all valid contact wrenches can be written as:
+        INPUT:
+
+        - ``p`` -- point where the resultant wrench is taken at
+
+        OUTPUT:
+
+        The span matrix S(p) such that all valid contact wrenches can be written
+        as:
 
             w(p) = S(p) * lambda,     lambda >= 0
 
-        where w(p) is the contact wrench with respect to point p, S(p) is the
-        friction span and lambda is a vector with positive coordinates.
-
-        p -- point where the resultant wrench is taken at
+        where w(p) is the contact wrench with respect to point p, lambda is a
+        vector with positive coordinates.
         """
         span_blocks = []
         for contact in self.contacts:
@@ -481,7 +488,13 @@ class ContactSet(object):
         """
         Compute the face matrix of the contact wrench cone in the world frame.
 
-        This matrix F(p) is such that all valid contact wrenches satisfy:
+        INPUT:
+
+        - ``p`` -- point where the resultant wrench is taken at
+
+        OUTPUT:
+
+        The friction matrix F(p) such that all valid contact wrenches satisfy:
 
             F(p) * w(p) <= 0,
 
@@ -551,12 +564,16 @@ class ContactSet(object):
         """
         Compute the static-equilibrium area of the center of mass.
 
-        mass -- total mass of the robot
+        INPUT:
 
-        See http://dx.doi.org/10.1109/TRO.2008.2001360 for details. The
-        implementation here uses the double-description method (cdd) rather than
-        the equality-set projection algorithm, as described in
-        http://arxiv.org/abs/1510.03232.
+        - ``mass`` -- total mass of the robot
+
+        .. NOTE::
+
+            See http://dx.doi.org/10.1109/TRO.2008.2001360 for details. The
+            implementation here uses the double-description method (cdd) rather
+            than the equality-set projection algorithm, as described in
+            http://arxiv.org/abs/1510.03232.
         """
         G = self.compute_grasp_matrix([0, 0, 0])
         F = self.compute_stacked_wrench_cones()
