@@ -30,7 +30,6 @@ sudo pip install cvxopt pycddlib
 
 - To use in a single directory, make a symbolic link to the ``pymanoid``
   sub-folder of the cloned repository
-
 - To install the library system-wide:
 
 ```
