@@ -19,6 +19,9 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+from toolbox.exceptions import OptimalNotFound
+
+
 class NaC(Exception):
 
     """Not A Cone exception"""
@@ -39,3 +42,11 @@ class RobotNotFound(Exception):
 
     def __init__(self, robot_name):
         super(RobotNotFound, self).__init__("Robot '%s' not found" % robot_name)
+
+
+__all__ = [
+    'NaC',
+    'OptimalNotFound',
+    'UnboundedPolyhedron',
+    'RobotNotFound'
+]

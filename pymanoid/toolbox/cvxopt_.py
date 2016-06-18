@@ -22,14 +22,22 @@
 import cvxopt
 import cvxopt.solvers
 
+from exceptions import OptimalNotFound
 from numpy import array
 
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
 
-class OptimalNotFound(Exception):
-
-    pass
+def cvxopt_solve_lp(c, G=None, h=None, A=None, b=None):
+    args = [cvxopt.matrix(c)]
+    if G is not None:
+        args.extend([cvxopt.matrix(G), cvxopt.matrix(h)])
+        if A is not None:
+            args.extend([cvxopt.matrix(A), cvxopt.matrix(b)])
+    sol = cvxopt.solvers.lp(*args)
+    if not ('optimal' in sol['status']):
+        raise OptimalNotFound(sol['status'])
+    return array(sol['x']).reshape((c.shape[0],))
 
 
 def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
@@ -39,12 +47,11 @@ def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
     # so we need to project on the symmetric part beforehand,
     # otherwise a wrong cost function will be used
     #
-    M = cvxopt.matrix
-    args = [M(P_sym), M(q)]
+    args = [cvxopt.matrix(P_sym), cvxopt.matrix(q)]
     if G is not None:
-        args.extend([M(G), M(h)])
+        args.extend([cvxopt.matrix(G), cvxopt.matrix(h)])
         if A is not None:
-            args.extend([M(A), M(b)])
+            args.extend([cvxopt.matrix(A), cvxopt.matrix(b)])
     sol = cvxopt.solvers.qp(*args)
     if not ('optimal' in sol['status']):
         raise OptimalNotFound(sol['status'])

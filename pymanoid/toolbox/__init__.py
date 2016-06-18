@@ -19,9 +19,10 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from cvxopt_ import cvxopt_solve_qp, OptimalNotFound
+import numpy
+
+from cvxopt_ import cvxopt_solve_lp, cvxopt_solve_qp
 from matplotlib_ import plot_polygon
-from numpy import dot, sqrt
 
 
 def norm(v):
@@ -37,4 +38,12 @@ def norm(v):
         100000 loops, best of 3: 4.82 µs per loop
 
     """
-    return sqrt(dot(v, v))
+    return numpy.sqrt(numpy.dot(v, v))
+
+
+__all__ = [
+    'cvxopt_solve_lp',
+    'cvxopt_solve_qp',
+    'norm',
+    'plot_polygon'
+]

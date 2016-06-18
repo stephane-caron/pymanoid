@@ -22,8 +22,8 @@
 import cdd
 import numpy
 
-from exceptions import NaC
-from toolbox import norm
+from exceptions import NaC, OptimalNotFound
+from toolbox import cvxopt_solve_qp, norm
 
 
 def span_of_face(F):
@@ -79,3 +79,47 @@ def face_of_span(S):
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
     return numpy.array(A)
+
+
+def is_positive_combination(b, A):
+    """
+    Check if b can be written as a positive combination of lines from A.
+
+    INPUT:
+
+    - ``b`` -- test vector
+    - ``A`` -- matrix of line vectors to combine
+
+    OUTPUT:
+
+    True if and only if b = A.T * x for some x >= 0.
+    """
+    m = A.shape[0]
+    P, q = numpy.eye(m), numpy.zeros(m)
+    #
+    # NB: one could try solving a QP minimizing |A * x - b|^2 (and no equality
+    # constraint), however the precision of the output is quite low (~1e-1).
+    #
+    G, h = -numpy.eye(m), numpy.zeros(m)
+    try:
+        x = cvxopt_solve_qp(P, q, G, h, A.T, b)
+        return norm(numpy.dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
+    except OptimalNotFound:
+        return False
+    return False
+
+
+def is_redundant(F):
+    """
+    Check if a matrix of line vectors (typically a face representation) is
+    redundant.
+
+    .. NOTE::
+
+        May print out a significant number of messages "Terminated (singular KKT
+        matrix)." in the terminal.
+
+    """
+    all_lines = set(range(F.shape[0]))
+    return any([is_positive_combination(
+        F[i], F[list(all_lines - set([i]))]) for i in all_lines])

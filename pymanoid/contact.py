@@ -24,7 +24,7 @@ import numpy
 import uuid
 
 from body import Box
-from cone_duality import face_of_span
+from cones import face_of_span
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag

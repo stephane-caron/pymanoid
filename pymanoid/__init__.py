@@ -38,7 +38,7 @@ from robot import Robot
 from trajectory import Trajectory
 from viewer import set_camera_vertical
 
-import cone_duality
+import cones
 import robots
 import rotations
 
@@ -53,7 +53,7 @@ __all__ = [
     'Manipulator',
     'Robot',
     'Trajectory',
-    'cone_duality',
+    'cones',
     'draw_2d_cone',
     'draw_force',
     'draw_line',
