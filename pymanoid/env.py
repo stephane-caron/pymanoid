@@ -55,7 +55,7 @@ def init(env_file=None):
     env.SetViewer('qtcoin')
     viewer = env.GetViewer()
     viewer.SetBkgndColor([.6, .6, .8])
-    viewer.SetCamera([  # default camera in frontal plane
+    viewer.SetCamera([  # default view from behind
         [0.,  0., 1., -3.],
         [-1., 0., 0.,  0.],
         [0., -1., 0.,  0.7],
