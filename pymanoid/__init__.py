@@ -38,7 +38,8 @@ from env import init
 from env import register_env
 from robot import Robot
 from trajectory import Trajectory
-from viewer import set_camera_vertical
+from viewer import set_camera_above
+from viewer import set_camera_behind
 
 import cones
 import robots
@@ -68,5 +69,6 @@ __all__ = [
     'register_env',
     'robots',
     'rotations',
-    'set_camera_vertical',
+    'set_camera_above',
+    'set_camera_behind',
 ]
