@@ -33,6 +33,7 @@ from draw import draw_polygon
 from draw import draw_polyhedron
 from env import get_env
 from env import get_gravity
+from env import get_viewer
 from env import init
 from env import register_env
 from robot import Robot
@@ -62,6 +63,7 @@ __all__ = [
     'draw_polyhedron',
     'get_env',
     'get_gravity',
+    'get_viewer',
     'init',
     'register_env',
     'robots',

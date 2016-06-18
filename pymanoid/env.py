@@ -37,6 +37,10 @@ def get_gravity():
     return __gravity__
 
 
+def get_viewer():
+    return __env__.GetViewer()
+
+
 def register_env(env):
     global __env__
     __env__ = env

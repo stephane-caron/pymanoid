@@ -19,8 +19,11 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-def set_camera_vertical(env, x=0.0, y=0.0, z=2.0):
-    env.GetViewer().SetCamera([
+from env import get_viewer
+
+
+def set_camera_vertical(x=0.0, y=0.0, z=2.0):
+    get_viewer().SetCamera([
         [0, -1,  0, x],
         [-1, 0,  0, y],
         [0,  0, -1, z],
