@@ -25,22 +25,25 @@ import numpy
 from toolbox import norm
 
 
-class ConeException(Exception):
+class NotConeFace(Exception):
 
-    def __init__(self, M):
-        self.M = M
-
-
-class NotConeFace(ConeException):
+    def __init__(self, F, V):
+        self.F = F
+        self.V = V
 
     def __str__(self):
-        return "Matrix is not a cone face"
+        return "Matrix F is not a cone face"
 
 
-class NotConeSpan(ConeException):
+class NotConeSpan(Exception):
+
+    def __init__(self, S, H, i):
+        self.S = S
+        self.H = H
+        self.i = i
 
     def __str__(self):
-        return "Matrix is not a cone span"
+        return "Matrix S is not a cone span"
 
 
 def span_of_face(F):
@@ -62,7 +65,7 @@ def span_of_face(F):
     rays = []
     for i in xrange(V.shape[0]):
         if V[i, 0] != 0:  # 1 = vertex, 0 = ray
-            raise NotConeFace(F)
+            raise NotConeFace(F, V)
         elif i not in g.lin_set:
             rays.append(V[i, 1:])
     return numpy.array(rays).T
@@ -87,11 +90,12 @@ def face_of_span(S):
     if H.shape == (0,):  # H = []
         return H
     A = []
-    # H matrix is [b, -A] for A * x <= b
     for i in xrange(H.shape[0]):
-        if H[i, 0] != 0 and norm(H[i, 1:]) > 1e-10:  # b should be zero
-            print H[i]
-            raise NotConeSpan(S)
+        # H matrix is [b, -A] for A * x <= b
+        if norm(H[i, 1:]) < 1e-10:
+            continue
+        elif abs(H[i, 0]) > 1e-10:  # b should be zero for a cone
+            raise NotConeSpan(S, H, i)
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
     return numpy.array(A)
