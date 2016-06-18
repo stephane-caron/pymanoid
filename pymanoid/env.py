@@ -26,7 +26,7 @@ import openravepy
 __env__ = None
 
 
-__gravity__ = numpy.array([0, 0, -9.80665])
+__gravity__ = numpy.array([0, 0, -9.80665])  # ISO 80000-3
 
 
 def get_env():

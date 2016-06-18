@@ -43,7 +43,7 @@ def _matplotlib_to_rgb(color):
     return acolor
 
 
-def draw_line(p1, p2, color='g', linewidth=1., lw=None):
+def draw_line(p1, p2, color='g', linewidth=1.):
     """
     Draw a line between points p1 and p2.
 
@@ -52,21 +52,20 @@ def draw_line(p1, p2, color='g', linewidth=1., lw=None):
     - ``p1`` -- one end of the line
     - ``p2`` -- other end of the line
     - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
-    - ``linewidth`` or ``lw`` -- thickness of drawn line
+    - ``linewidth`` -- thickness of drawn line
 
     OUTPUT:
 
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    linewidth = linewidth if lw is None else lw
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
     return get_env().drawlinelist(
         array([p1, p2]), linewidth=linewidth, colors=color),
 
 
-def draw_force(p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
+def draw_force(p, f, color='r', scale=0.005, linewidth=0.02):
     """
     Draw a force acting at a given point.
 
@@ -76,14 +75,13 @@ def draw_force(p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
     - ``f`` -- force vector
     - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
     - ``scale`` -- scaling factor between Euclidean and Force spaces
-    - ``linewidth`` or ``lw`` -- thickness of force vector
+    - ``linewidth`` -- thickness of force vector
 
     OUTPUT:
 
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    linewidth = linewidth if lw is None else lw
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
     if dot(f, f) < 1e-10:
@@ -93,7 +91,7 @@ def draw_force(p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
 
 
 def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
-                    linewidth=1., pointsize=0.02):
+                    linewidth=1., pointsize=0.01):
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
@@ -104,8 +102,8 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
     - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
       surfaces (default: 6 = 2 + 4, i.e., draw edges and surfaces)
     - ``precomp_hull`` -- used in the 2D case where the hull has zero volume
-    - ``linewidth`` -- openravepy format
-    - ``pointsize`` -- openravepy format
+    - ``linewidth`` -- line thickness in meters
+    - ``pointsize`` -- point size in meters
 
     OUTPUT:
 
@@ -137,6 +135,7 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
             indices = array(hull.simplices, int64)
             handles.append(env.drawtrimesh(points, indices, colors=color))
     if plot_type & 1:  # vertices
+        color[:3] *= 0.75
         color[3] = 1.
         handles.append(env.plot3(
             vertices, pointsize=pointsize, drawstyle=1, colors=color))
