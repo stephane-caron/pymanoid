@@ -21,7 +21,6 @@
 
 import IPython
 import numpy
-import openravepy
 import os.path
 import pymanoid
 import thread
@@ -60,7 +59,7 @@ def run_forces_thread():
         try:
             support = contacts.find_static_supporting_forces(
                 outbox.p, robot.mass)
-            handles = [pymanoid.draw_force(env, c, fc) for (c, fc) in support]
+            handles = [pymanoid.draw_force(c, fc) for (c, fc) in support]
         except Exception as e:
             print "Force computation failed:", e
             print "Did you move the target COM (blue box) out of the polygon?\n"
@@ -73,7 +72,7 @@ def recompute_polygon():
     global polygon_handle
     vertices = contacts.compute_static_equilibrium_area(robot.mass)
     polygon_handle = pymanoid.draw_polygon(
-        env, [(x[0], x[1], outbox.z) for x in vertices],
+        [(x[0], x[1], outbox.z) for x in vertices],
         n=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))
 
 
@@ -91,7 +90,7 @@ def generate_posture(robot, contacts, com_target):
         robot.add_contact_objective(
             robot.left_hand, contacts['left_hand'], G_contact, w_link)
     robot.add_velocity_regularization(w_reg)
-    robot.solve_ik(dt, conv_tol=1e-4, max_it=200, debug=False)
+    robot.solve_ik(dt, conv_tol=1e-4, max_it=200, debug=True)
 
 
 if __name__ == "__main__":
@@ -106,22 +105,18 @@ if __name__ == "__main__":
         print "                                                                "
         exit(-1)
 
-    env = openravepy.Environment()
-    env.Load(env_file)
-    env.SetViewer('qtcoin')
-    viewer = env.GetViewer()
-    viewer.SetBkgndColor([.6, .6, .8])
+    pymanoid.init(env_file)
+    viewer = pymanoid.get_env().GetViewer()
     viewer.SetCamera(numpy.array([
         [0.60587192, -0.36596244,  0.70639274, -2.4904027],
         [-0.79126787, -0.36933163,  0.48732874, -1.6965636],
         [0.08254916, -0.85420468, -0.51334199,  2.79584694],
         [0.,  0.,  0.,  1.]]))
-    robot = pymanoid.robots.JVRC1(env)
+    robot = pymanoid.robots.JVRC1()
     robot.set_transparency(0.25)
 
     contacts = pymanoid.ContactSet({
         'left_foot': pymanoid.Contact(
-            env,
             X=0.2,
             Y=0.1,
             pos=[0.20, 0.15, 0.1],
@@ -129,7 +124,6 @@ if __name__ == "__main__":
             friction=0.5,
             visible=True),
         'right_foot': pymanoid.Contact(
-            env,
             X=0.2,
             Y=0.1,
             pos=[-0.2, -0.195, 0.],
@@ -137,7 +131,6 @@ if __name__ == "__main__":
             friction=0.5,
             visible=True),
         'left_hand': pymanoid.Contact(
-            env,
             X=0.2,
             Y=0.1,
             pos=[0.45, 0.46, 0.96],
@@ -146,7 +139,7 @@ if __name__ == "__main__":
             visible=True)
     })
 
-    outbox = pymanoid.Cube(env, 0.02, [0, 0, z_polygon], color='b')
+    outbox = pymanoid.Cube(0.02, [0, 0, z_polygon], color='b')
     generate_posture(robot, contacts, com_target=[0.05,  0.04,  0.90])
     recompute_polygon()
 

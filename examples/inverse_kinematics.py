@@ -21,7 +21,6 @@
 
 import IPython
 import numpy
-import openravepy
 import os.path
 import pymanoid
 import time
@@ -58,13 +57,10 @@ if __name__ == '__main__':
         print "                                                                "
         exit(-1)
 
-    env = openravepy.Environment()
-    env.Load(env_file)
-    env.SetViewer('qtcoin')
-    robot = pymanoid.robots.JVRC1(env)
+    pymanoid.init(env_file)
+    robot = pymanoid.robots.JVRC1()
 
-    viewer = env.GetViewer()
-    viewer.SetBkgndColor([.7, .7, .9])
+    viewer = pymanoid.get_env().GetViewer()
     viewer.SetCamera([
         [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
         [0.95680251,  0.10095043, -0.2726499,  0.86080128],
@@ -91,17 +87,15 @@ if __name__ == '__main__':
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
-    com = pymanoid.Cube(env, 0.05, pos=robot.com, color='g')
+    com = pymanoid.Cube(0.05, pos=robot.com, color='g')
     init_com = com.p.copy()
     left_foot_target = pymanoid.Contact(
-        env,
         X=0.224 / 2,
         Y=0.130 / 2,
         Z=0.01,
         pos=[0, 0.3, 0],
         visible=True)
     right_foot_target = pymanoid.Contact(
-        env,
         X=0.224 / 2,
         Y=0.130 / 2,
         Z=0.01,

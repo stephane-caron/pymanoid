@@ -19,13 +19,22 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+import numpy
 import openravepy
+
 
 __env__ = None
 
 
+__gravity__ = numpy.array([0, 0, -9.80665])
+
+
 def get_env():
     return __env__
+
+
+def get_gravity():
+    return __gravity__
 
 
 def register_env(env):
@@ -38,7 +47,7 @@ def init(env_file=None):
     if env_file:
         env.Load(env_file)
     register_env(env)
-    env.GetPhysicsEngine().SetGravity([0, 0, -9.81])
+    env.GetPhysicsEngine().SetGravity(__gravity__)
     env.SetViewer('qtcoin')
     viewer = env.GetViewer()
     viewer.SetBkgndColor([.6, .6, .8])
