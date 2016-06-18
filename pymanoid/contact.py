@@ -25,6 +25,7 @@ import uuid
 
 from body import Box
 from cone_duality import face_of_span
+from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from toolbox import cvxopt_solve_qp
@@ -32,7 +33,7 @@ from toolbox import cvxopt_solve_qp
 
 class Contact(Box):
 
-    def __init__(self, env, X, Y, pos=None, rpy=None, friction=None,
+    def __init__(self, X, Y, pos=None, rpy=None, friction=None,
                  max_pressure=None, robot_link=-1, Z=0.01, color='g', name=None,
                  pose=None, visible=False):
         """
@@ -58,7 +59,7 @@ class Contact(Box):
         self.friction = friction
         self.robot_link = robot_link
         super(Contact, self).__init__(
-            env, X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
+            X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
             visible=visible)
 
     @property
@@ -234,7 +235,7 @@ class Contact(Box):
         return S
 
     def draw_force_lines(self, length=0.25):
-        env = self.rave.GetEnv()
+        env = get_env()
         self.gui_handles = []
         for c in self.vertices:
             color = [0.1, 0.1, 0.1]

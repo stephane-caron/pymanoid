@@ -23,6 +23,7 @@ import openravepy
 import uuid
 
 from numpy import array
+from env import get_env
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
 
@@ -244,7 +245,7 @@ class Body(object):
 
     def remove(self):
         """Remove body from OpenRAVE environment."""
-        env = self.rave.GetEnv()
+        env = get_env()
         with env:
             env.Remove(self.rave)
 
@@ -255,12 +256,11 @@ class Body(object):
 
 class Box(Body):
 
-    def __init__(self, env, X, Y, Z, pos=None, rpy=None, color='r', name=None,
+    def __init__(self, X, Y, Z, pos=None, rpy=None, color='r', name=None,
                  pose=None, visible=True, transparency=None):
         """
         Create a new rectangular box.
 
-        env -- OpenRAVE environment
         X -- box half-length
         Y -- box half-width
         Z -- box half-height
@@ -278,6 +278,7 @@ class Box(Body):
         self.Y = Y
         self.Z = Z
         aabb = [0, 0, 0, X, Y, Z]
+        env = get_env()
         box = openravepy.RaveCreateKinBody(env, '')
         box.InitFromBoxes(array([array(aabb)]), True)
         super(Box, self).__init__(
@@ -288,12 +289,11 @@ class Box(Body):
 
 class Cube(Box):
 
-    def __init__(self, env, size, pos=None, rpy=None, color='r', name=None,
+    def __init__(self, size, pos=None, rpy=None, color='r', name=None,
                  pose=None, visible=True, transparency=None):
         """
         Create a new cube.
 
-        env -- OpenRAVE environment
         size -- half-length of a side of the cube
         pos -- initial position in inertial frame
         rpy -- initial orientation in inertial frame
@@ -304,7 +304,7 @@ class Cube(Box):
         transparency -- initial transparency (0 is opaque and 1 is transparent)
         """
         super(Cube, self).__init__(
-            env, size, size, size, pos=pos, rpy=rpy, color=color,
+            size, size, size, pos=pos, rpy=rpy, color=color,
             name=name, pose=pose, visible=visible, transparency=transparency)
 
 

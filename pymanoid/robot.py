@@ -22,7 +22,8 @@
 import numpy
 import time
 
-from errors import RobotNotFound
+from env import get_env
+from exceptions import RobotNotFound
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
@@ -50,26 +51,26 @@ class Robot(object):
 
     mass = None
 
-    def __init__(self, env, robot_name):
-        env.GetPhysicsEngine().SetGravity(array([0, 0, -9.81]))
-        rave = env.GetRobot(robot_name)
-        if not rave:
+    def __init__(self, robot_name, env=None):
+        env = env if env else get_env()
+        robot = env.GetRobot(robot_name)
+        if not robot:
             raise RobotNotFound(robot_name)
-        q_min, q_max = rave.GetDOFLimits()
-        rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
-        rave.SetDOFVelocities([0] * rave.GetDOF())
+        q_min, q_max = robot.GetDOFLimits()
+        robot.SetDOFVelocityLimits(1000 * robot.GetDOFVelocityLimits())
+        robot.SetDOFVelocities([0] * robot.GetDOF())
 
         self.active_dofs = None
         self.env = env
         if self.mass is None:  # may not be True for children classes
-            self.mass = sum([link.GetMass() for link in rave.GetLinks()])
+            self.mass = sum([link.GetMass() for link in robot.GetLinks()])
         self.q_max_full = q_max
         self.q_max_full.flags.writeable = False
         self.q_min_full = q_min
         self.q_min_full.flags.writeable = False
         self.qdd_max_full = None  # set by hand in child robot class
         self.tau_max_full = None  # set by hand in child robot class
-        self.rave = rave
+        self.rave = robot
         self.transparency = 0.  # initially opaque
         self.is_visible = True  # initially visible
 

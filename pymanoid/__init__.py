@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -31,13 +31,17 @@ from draw import draw_force
 from draw import draw_line
 from draw import draw_polygon
 from draw import draw_polyhedron
+from env import get_env
+from env import init
+from env import register_env
 from robot import Robot
 from trajectory import Trajectory
 from viewer import set_camera_vertical
 
 import cone_duality
-import rotations
 import robots
+import rotations
+
 
 __all__ = [
     'Body',
@@ -49,13 +53,16 @@ __all__ = [
     'Manipulator',
     'Robot',
     'Trajectory',
+    'cone_duality',
     'draw_2d_cone',
     'draw_force',
     'draw_line',
     'draw_polygon',
     'draw_polyhedron',
-    'set_camera_vertical',
-    'cone_duality',
+    'get_env',
+    'init',
+    'register_env',
+    'robots',
     'rotations',
-    'robots'
+    'set_camera_vertical',
 ]

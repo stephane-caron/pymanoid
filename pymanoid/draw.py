@@ -21,6 +21,8 @@
 
 import itertools
 
+from env import get_env
+from exceptions import UnboundedPolyhedron
 from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
 from toolbox import norm
@@ -41,7 +43,7 @@ def _matplotlib_to_rgb(color):
     return acolor
 
 
-def draw_line(env, p1, p2, color='g', linewidth=1., lw=None):
+def draw_line(p1, p2, color='g', linewidth=1., lw=None):
     """
     Draw a line between points p1 and p2.
 
@@ -60,11 +62,11 @@ def draw_line(env, p1, p2, color='g', linewidth=1., lw=None):
     linewidth = linewidth if lw is None else lw
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
-    return env.drawlinelist(
+    return get_env().drawlinelist(
         array([p1, p2]), linewidth=linewidth, colors=color),
 
 
-def draw_force(env, p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
+def draw_force(p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
     """
     Draw a force acting at a given point.
 
@@ -86,18 +88,17 @@ def draw_force(env, p, f, color='r', scale=0.005, linewidth=0.02, lw=None):
         color = _matplotlib_to_rgb(color)
     if dot(f, f) < 1e-10:
         return []
-    return env.drawarrow(
+    return get_env().drawarrow(
         p, p + scale * f, linewidth=linewidth, color=color)
 
 
-def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
+def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
                     linewidth=1., pointsize=0.02):
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
     INPUT:
 
-    - ``env`` -- openravepy environment
     - ``points`` -- list of 3D points
     - ``color`` -- RGBA vector
     - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
@@ -117,6 +118,7 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
     points = array(points)
     color = array(color if color is not None else (0.0, 0.5, 0.0, 0.5))
     handles = []
+    env = get_env()
     if plot_type & 2:  # include edges
         edge_color = color * 0.7
         edge_color[3] = 1.
@@ -124,8 +126,8 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
                         for s in hull.simplices
                         for (i, j) in itertools.combinations(s, 2)])
         edges = array(edges)
-        handles.append(env.drawlinelist(edges, linewidth=linewidth,
-                                        colors=edge_color))
+        handles.append(env.drawlinelist(
+            edges, linewidth=linewidth, colors=edge_color))
     if plot_type & 4:  # include surface
         if is_2d:
             nv = len(vertices)
@@ -136,12 +138,12 @@ def draw_polyhedron(env, points, color=None, plot_type=6, precomp_hull=None,
             handles.append(env.drawtrimesh(points, indices, colors=color))
     if plot_type & 1:  # vertices
         color[3] = 1.
-        handles.append(env.plot3(vertices, pointsize=pointsize, drawstyle=1,
-                                 colors=color))
+        handles.append(env.plot3(
+            vertices, pointsize=pointsize, drawstyle=1, colors=color))
     return handles
 
 
-def draw_polygon(env, points, normal=None, color=None, plot_type=6,
+def draw_polygon(points, normal=None, color=None, plot_type=6,
                  linewidth=1., pointsize=0.02, n=None):
     """
     Draw a polygon defined as the convex hull of a set of points. The normal
@@ -149,7 +151,6 @@ def draw_polygon(env, points, normal=None, color=None, plot_type=6,
 
     INPUT:
 
-    - ``env`` -- openravepy environment
     - ``points`` -- list of 3D points
     - ``normal`` (or ``n``) -- unit vector normal to the drawing plane
     - ``color`` -- RGBA vector
@@ -170,12 +171,7 @@ def draw_polygon(env, points, normal=None, color=None, plot_type=6,
     t2 = cross(n, t1)
     points2d = [[dot(t1, x), dot(t2, x)] for x in points]
     hull = ConvexHull(points2d)
-    return draw_polyhedron(env, points, color, plot_type, hull, linewidth,
-                           pointsize)
-
-
-class ConeCoversWholePlane(Exception):
-    pass
+    return draw_polyhedron(points, color, plot_type, hull, linewidth, pointsize)
 
 
 def pick_2d_extreme_rays(rays):
@@ -199,7 +195,7 @@ def pick_2d_extreme_rays(rays):
         elif c1 > 0 and c2 > 0:
             u_high = u
         elif c1 < 0 and c2 > 0:
-            raise ConeCoversWholePlane
+            raise UnboundedPolyhedron
     return u_low, u_high
 
 
@@ -208,7 +204,7 @@ def _convert_cone2d_to_vertices(vertices, rays):
         return vertices
     try:
         r0, r1 = pick_2d_extreme_rays([r[:2] for r in rays])
-    except ConeCoversWholePlane:
+    except UnboundedPolyhedron:
         vertices = [
             BIG_DIST * array([-1, -1]),
             BIG_DIST * array([-1, +1]),
@@ -225,14 +221,13 @@ def _convert_cone2d_to_vertices(vertices, rays):
     return conv_vertices
 
 
-def draw_2d_cone(env, vertices, rays, n, color, plot_type):
+def draw_2d_cone(vertices, rays, n, color, plot_type):
     """
     Draw a 2D cone defined from its rays and vertices. The normal vector n of
     the plane containing the cone must also be supplied.
 
     INPUT:
 
-    - ``env`` -- openravepy environment
     - ``vertices`` -- list of 3D points
     - ``rays`` -- list of 3D vectors
     - ``n`` -- plane normal vector
@@ -246,8 +241,6 @@ def draw_2d_cone(env, vertices, rays, n, color, plot_type):
     object will vanish instantly.
     """
     if not rays:
-        return draw_polygon(
-            env, vertices, n, color=color, plot_type=plot_type)
+        return draw_polygon(vertices, n, color=color, plot_type=plot_type)
     plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
-    return draw_polygon(
-        env, plot_vertices, n, color=color, plot_type=plot_type)
+    return draw_polygon(plot_vertices, n, color=color, plot_type=plot_type)

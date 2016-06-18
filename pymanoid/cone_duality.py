@@ -22,28 +22,8 @@
 import cdd
 import numpy
 
+from exceptions import NaC
 from toolbox import norm
-
-
-class NotConeFace(Exception):
-
-    def __init__(self, F, V):
-        self.F = F
-        self.V = V
-
-    def __str__(self):
-        return "Matrix F is not a cone face"
-
-
-class NotConeSpan(Exception):
-
-    def __init__(self, S, H, i):
-        self.S = S
-        self.H = H
-        self.i = i
-
-    def __str__(self):
-        return "Matrix S is not a cone span"
 
 
 def span_of_face(F):
@@ -65,7 +45,7 @@ def span_of_face(F):
     rays = []
     for i in xrange(V.shape[0]):
         if V[i, 0] != 0:  # 1 = vertex, 0 = ray
-            raise NotConeFace(F, V)
+            raise NaC(F)
         elif i not in g.lin_set:
             rays.append(V[i, 1:])
     return numpy.array(rays).T
@@ -95,7 +75,7 @@ def face_of_span(S):
         if norm(H[i, 1:]) < 1e-10:
             continue
         elif abs(H[i, 0]) > 1e-10:  # b should be zero for a cone
-            raise NotConeSpan(S, H, i)
+            raise NaC(S)
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
     return numpy.array(A)

@@ -106,8 +106,8 @@ class JVRC1(Robot):
 
     free_dofs = [TRANS_X, TRANS_Y, TRANS_Z, ROT_R, ROT_P, ROT_Y]
 
-    def __init__(self, env, robot_name='JVRC-1'):
-        super(JVRC1, self).__init__(env, robot_name)
+    def __init__(self, robot_name='JVRC-1', env=None):
+        super(JVRC1, self).__init__(env, robot_name, env)
         rave = self.rave
         self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
