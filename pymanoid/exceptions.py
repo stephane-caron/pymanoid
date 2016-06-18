@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -17,6 +17,22 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
+
+
+class NaC(Exception):
+
+    """Not A Cone exception"""
+
+    def __init__(self, M):
+        self.M = M
+
+    def __str__(self):
+        return "Matrix does not describe a polyhedral cone"
+
+
+class UnboundedPolyhedron(Exception):
+
+    pass
 
 
 class RobotNotFound(Exception):
