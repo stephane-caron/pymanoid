@@ -65,6 +65,27 @@ def draw_line(p1, p2, color='g', linewidth=1.):
         array([p1, p2]), linewidth=linewidth, colors=color),
 
 
+def draw_arrow(p1, p2, color='r', linewidth=0.02):
+    """
+    Draw an arrow between two points.
+
+    INPUT:
+
+    - ``p1`` -- 3D coordinates of the origin of the arrow
+    - ``p2`` -- 3D coordinates of the end of the arrow
+    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
+    - ``linewidth`` -- thickness of force vector
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
+    if type(color) is str:
+        color = _matplotlib_to_rgb(color)
+    return get_env().drawarrow(p1, p2, linewidth=linewidth, color=color)
+
+
 def draw_force(p, f, color='r', scale=0.005, linewidth=0.02):
     """
     Draw a force acting at a given point.

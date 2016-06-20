@@ -27,6 +27,7 @@ from body import Manipulator
 from contact import Contact
 from contact import ContactSet
 from draw import draw_2d_cone
+from draw import draw_arrow
 from draw import draw_force
 from draw import draw_line
 from draw import draw_polygon
@@ -58,6 +59,7 @@ __all__ = [
     'Trajectory',
     'cones',
     'draw_2d_cone',
+    'draw_arrow',
     'draw_force',
     'draw_line',
     'draw_polygon',
