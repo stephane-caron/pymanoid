@@ -21,6 +21,7 @@
 
 import cdd
 import numpy
+import simplejson
 import uuid
 
 from body import Box
@@ -61,6 +62,26 @@ class Contact(Box):
         super(Contact, self).__init__(
             X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
             visible=visible)
+
+    @property
+    def dict_repr(self):
+        d = {
+            'X': self.X,
+            'Y': self.Y,
+            'Z': self.Z,
+            'pos': list(self.pos),
+            'rpy': list(self.rpy),
+            'friction': self.friction,
+        }
+        if self.max_pressure:
+            d['max_pressure'] = self.max_pressure
+        if self.robot_link >= 0:
+            d['robot_link'] = self.robot_link
+        if not self.name.startswith('Contact-'):
+            d['name'] = self.name
+        if self.is_visible:
+            d['visible'] = True
+        return d
 
     @property
     def effector_pose(self):
@@ -251,59 +272,56 @@ class Contact(Box):
 
 class ContactSet(object):
 
-    def __init__(self, contacts=None):
+    def __init__(self, contact_dict=None):
         """
         Create new contact set.
 
         INPUT:
 
-        - ``contacts`` -- list or dictionary of Contact objects
+        - ``contact_dict`` -- dictionary of Contact objects
         """
-        self._contact_dict = {}
-        self._contact_list = []
-        self.nb_contacts = 0
-        if type(contacts) is dict:
-            self._contact_dict = contacts
-            self.nb_contacts = len(contacts)
-        elif type(contacts) is list:
-            self._contact_list = contacts
-            self.nb_contacts = len(contacts)
+        assert type(contact_dict) is dict
+        self.contact_dict = contact_dict
+
+    @property
+    def nb_contacts(self):
+        return len(self.contact_dict)
+
+    @staticmethod
+    def from_json(path):
+        with open(path, 'r') as fp:
+            d = simplejson.load(fp)
+        contact_dict = {
+            contact_name: Contact(**contact_dict)
+            for (contact_name, contact_dict) in d.iteritems()}
+        return ContactSet(contact_dict)
+
+    def save_json(self, path):
+        d = {contact_name: contact.dict_repr
+             for (contact_name, contact) in self.contact_dict.iteritems()}
+        with open(path, 'w') as fp:
+            simplejson.dump(d, fp, indent=4, sort_keys=True)
 
     def __contains__(self, name):
         """When using dictionaries, check whether a named contact is present."""
-        return name in self._contact_dict
+        return name in self.contact_dict
 
     def __getitem__(self, name):
         """When using dictionaries, get named contact directly."""
-        return self._contact_dict[name]
+        return self.contact_dict[name]
 
     def __iter__(self):
-        for contact in self._contact_dict.itervalues():
+        for contact in self.contact_dict.itervalues():
             yield contact
-        for contact in self._contact_list:
-            yield contact
-
-    def append(self, contact):
-        """Append a new contact to the set."""
-        self._contact_list.append(contact)
-        self.nb_contacts += 1
 
     def subset(self, names):
         """Get a subset of contacts, identified by their names."""
-        return ContactSet({k: self._contact_dict[k] for k in names})
-
-    def update(self, name, contact):
-        """Update a named contact in the set."""
-        if name not in self._contact_dict:
-            self.nb_contacts += 1
-        self._contact_dict[name] = contact
+        return ContactSet({k: self.contact_dict[k] for k in names})
 
     @property
     def contacts(self):
         """Iterate contacts in the set."""
-        for contact in self._contact_dict.itervalues():
-            yield contact
-        for contact in self._contact_list:
+        for contact in self.contact_dict.itervalues():
             yield contact
 
     def find_supporting_forces(self, wrench, point, friction_weight=.1,
