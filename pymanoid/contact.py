@@ -35,7 +35,7 @@ from toolbox import cvxopt_solve_qp
 class Contact(Box):
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 max_pressure=None, robot_link=-1, Z=0.01, color='g', name=None,
+                 max_pressure=None, robot_link=-1, Z=0.01, color='r', name=None,
                  pose=None, visible=False):
         """
         Create a new rectangular contact.
