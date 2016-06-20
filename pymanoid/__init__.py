@@ -41,6 +41,10 @@ from robot import Robot
 from trajectory import Trajectory
 from viewer import set_camera_above
 from viewer import set_camera_behind
+from viewer import set_camera_below
+from viewer import set_camera_front
+from viewer import set_camera_left
+from viewer import set_camera_right
 
 import cones
 import robots
@@ -73,4 +77,8 @@ __all__ = [
     'rotations',
     'set_camera_above',
     'set_camera_behind',
+    'set_camera_below',
+    'set_camera_front',
+    'set_camera_left',
+    'set_camera_right',
 ]

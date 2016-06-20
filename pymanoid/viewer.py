@@ -22,17 +22,49 @@
 from env import get_viewer
 
 
-def set_camera_above(x=0., y=0., z=2.):
+def set_camera_above(x=0, y=0, z=3):
     get_viewer().SetCamera([
         [0, -1,  0, x],
         [-1, 0,  0, y],
         [0,  0, -1, z],
-        [0,  0,  0, 1]])
+        [0,  0,  0, 1.]])
 
 
-def set_camera_behind(x=-3., y=0., z=0.7):
+def set_camera_behind(x=-3, y=0, z=0.7):
     get_viewer().SetCamera([
-        [0.,  0., 1., x],
-        [-1., 0., 0., y],
-        [0., -1., 0., z],
-        [0.,  0., 0., 1.]])
+        [0,  0, 1, x],
+        [-1, 0, 0, y],
+        [0, -1, 0, z],
+        [0,  0, 0, 1.]])
+
+
+def set_camera_below(x=0, y=0, z=-2):
+    get_viewer().SetCamera([
+        [0, -1, 0, x],
+        [1,  0, 0, y],
+        [0,  0, 1, z],
+        [0,  0, 0, 1]])
+
+
+def set_camera_front(x=+3, y=0, z=0.7):
+    get_viewer().SetCamera([
+        [0,  0, -1, x],
+        [1,  0,  0, y],
+        [0, -1,  0, z],
+        [0,  0,  0, 1.]])
+
+
+def set_camera_left(x=0, y=+3, z=0.7):
+    get_viewer().SetCamera([
+        [-1, 0,  0, x],
+        [0,  0, -1, y],
+        [0, -1,  0, z],
+        [0,  0,  0, 1.]])
+
+
+def set_camera_right(x=0, y=-3, z=0.7):
+    get_viewer().SetCamera([
+        [1,  0,  0, x],
+        [0,  0, 1, y],
+        [0, -1, 0, z],
+        [0,  0, 0, 1.]])
