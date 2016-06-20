@@ -19,6 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+import math
 import numpy
 
 from cvxopt_ import cvxopt_solve_lp, cvxopt_solve_qp
@@ -38,7 +39,7 @@ def norm(v):
         100000 loops, best of 3: 4.82 µs per loop
 
     """
-    return numpy.sqrt(numpy.dot(v, v))
+    return math.sqrt(numpy.dot(v, v))
 
 
 __all__ = [
