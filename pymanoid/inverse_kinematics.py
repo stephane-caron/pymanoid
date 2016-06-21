@@ -27,32 +27,21 @@ class DiffIKSolver(object):
 
     class Task(object):
 
-        def __init__(self, error_fun, jacobian_fun, gain):
-            self.error = error_fun
+        def __init__(self, error, jacobian, gain, weight=None):
+            self.error = error
             self.gain = gain
-            self.jacobian = jacobian_fun
-
-        def velocity(self, q, qd):
-            return self.gain * self.error(q, qd)
-
-    class Objective(object):
-
-        def __init__(self, task, weight):
-            self.task = task
+            self.jacobian = jacobian
             self.weight = weight
-
-        def error(self, q, qd):
-            return self.task.error(q, qd)
-
-        def sq_error(self, q, qd):
-            e = self.error(q, qd)
-            return dot(e, e)
 
         def jacobian(self, q):
             return self.task.jacobian(q)
 
+        def value(self, q, qd):
+            e = self.error(q, qd)
+            return self.weight * dot(e, e)
+
         def velocity(self, q, qd):
-            return self.task.velocity(q, qd)
+            return self.gain * self.error(q, qd)
 
     def __init__(self, robot, qd_lim, K_doflim=None):
         n = len(robot.q)
@@ -65,15 +54,14 @@ class DiffIKSolver(object):
         self.qd_max = +qd_lim * ones(n)
         self.qd_min = -qd_lim * ones(n)
 
-    def add_constraint(self, error_fun, jacobian_fun, gain):
-        self.constraints.append(self.Task(error_fun, jacobian_fun, gain))
+    def add_constraint(self, error, jacobian, gain):
+        self.constraints.append(self.Task(error, jacobian, gain))
 
-    def add_objective(self, error_fun, jacobian_fun, gain, weight):
-        task = self.Task(error_fun, jacobian_fun, gain)
-        self.objectives.append(self.Objective(task, weight))
+    def add_objective(self, error, jacobian, gain, weight):
+        self.objectives.append(self.Task(error, jacobian, gain, weight))
 
     def compute_objective(self, q, qd):
-        return sum(obj.weight * obj.sq_error(q, qd) for obj in self.objectives)
+        return sum(obj.value(q, qd) for obj in self.objectives)
 
     def compute_velocity(self, q, qd):
         P = zeros(self.I.shape)
