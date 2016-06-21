@@ -310,7 +310,8 @@ class Robot(object):
         self.ik.remove_objective(link.name)
 
     def add_posture_objective(self, q_ref, gain, weight):
-        q_ref = q_ref[self.active_dofs]
+        if len(q_ref) == self.nb_dofs:
+            q_ref = q_ref[self.active_dofs]
         identity = eye(self.nb_active_dofs)
 
         def error(q, qd):
