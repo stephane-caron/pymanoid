@@ -272,16 +272,21 @@ class Contact(Box):
 
 class ContactSet(object):
 
-    def __init__(self, contact_dict=None):
+    def __init__(self, contacts=None):
         """
         Create new contact set.
 
         INPUT:
 
-        - ``contact_dict`` -- dictionary of Contact objects
+        - ``contacts`` -- list or dictionary of Contact objects
         """
-        assert type(contact_dict) is dict
-        self.contact_dict = contact_dict
+        if type(contacts) is list:
+            self.contact_dict = {c.name: c for c in contacts}
+        elif type(contacts) is dict:
+            self.contact_dict = contacts
+        else:  # contacts is None
+            assert contacts is None
+            self.contact_dict = {}
 
     @property
     def nb_contacts(self):
@@ -291,10 +296,10 @@ class ContactSet(object):
     def from_json(path):
         with open(path, 'r') as fp:
             d = simplejson.load(fp)
-        contact_dict = {
-            contact_name: Contact(**contact_dict)
+        contacts = {
+            contact_name: Contact(name=contact_name, **contact_dict)
             for (contact_name, contact_dict) in d.iteritems()}
-        return ContactSet(contact_dict)
+        return ContactSet(contacts)
 
     def save_json(self, path):
         d = {contact_name: contact.dict_repr
@@ -313,6 +318,10 @@ class ContactSet(object):
     def __iter__(self):
         for contact in self.contact_dict.itervalues():
             yield contact
+
+    def append(self, contact):
+        """Append a new contact to the set."""
+        self.contact_dict[contact.name] = contact
 
     def subset(self, names):
         """Get a subset of contacts, identified by their names."""

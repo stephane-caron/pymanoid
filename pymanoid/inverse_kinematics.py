@@ -65,10 +65,6 @@ class DiffIKSolver(object):
         self.qd_max = +qd_lim * ones(n)
         self.qd_min = -qd_lim * ones(n)
 
-    def identity(self, q):
-        """Default jacobian for joint-angle objectives."""
-        return self.I
-
     def add_constraint(self, error_fun, jacobian_fun, gain):
         self.constraints.append(self.Task(error_fun, jacobian_fun, gain))
 

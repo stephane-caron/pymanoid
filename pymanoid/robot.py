@@ -204,6 +204,7 @@ class Robot(object):
     #
 
     def init_ik(self, qd_lim, K_doflim=None):
+        assert self.active_dofs, "Initialize active DOFs before using the IK"
         self.ik = DiffIKSolver(self, qd_lim, K_doflim=K_doflim)
 
     def add_com_objective(self, target, gain, weight):
@@ -294,14 +295,16 @@ class Robot(object):
         self.ik.add_objective(error, self.compute_cam_jacobian, 0., weight)
 
     def add_posture_objective(self, q_ref, gain, weight):
-        if len(q_ref) == self.nb_dofs:
-            q_ref = q_ref[self.active_dofs]
-        assert len(q_ref) == self.nb_active_dofs
+        q_ref = q_ref[self.active_dofs]
+        identity = eye(self.nb_active_dofs)
 
         def error(q, qd):
             return (q_ref - q)
 
-        self.ik.add_objective(error, self.ik.identity, gain, weight)
+        def jacobian(q):
+            return identity
+
+        self.ik.add_objective(error, jacobian, gain, weight)
 
     def add_dof_objective(self, dof_id, dof_ref, gain, weight):
         active_dof_id = self.active_dofs.index(dof_id)
@@ -317,14 +320,26 @@ class Robot(object):
         self.ik.add_objective(error, jacobian, gain, weight)
 
     def add_velocity_regularization(self, weight):
+        identity = eye(self.nb_active_dofs)
+
         def error(q, qd):
             return qd
-        self.ik.add_objective(error, self.ik.identity, 1., weight)
+
+        def jacobian(q):
+            return identity
+
+        self.ik.add_objective(error, jacobian, 1., weight)
 
     def add_zero_velocity_objective(self, gain, weight):
+        identity = eye(self.nb_active_dofs)
+
         def error(q, qd):
             return -qd
-        self.ik.add_objective(error, self.ik.identity, gain, weight)
+
+        def jacobian(q):
+            return identity
+
+        self.ik.add_objective(error, identity, gain, weight)
 
     def step_ik(self, dt):
         qd = self.ik.compute_velocity(self.q, self.qd)
