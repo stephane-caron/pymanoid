@@ -232,16 +232,11 @@ class Robot(object):
                 else:
                     assert False, \
                         "Type unfit for COM obj.: %s" % str(type(target))
-        self.ik.add_objective(error, self.compute_com_jacobian, gain, weight)
+        self.ik.add_objective(
+            error, self.compute_com_jacobian, gain, weight, name='COM')
 
-    def add_link_pos_objective(self, link, target, gain, weight):
-        def error(q, qd):
-            return target.p - link.p
-
-        def jacobian(q):
-            return self.compute_link_translation_jacobian(link, q)
-
-        self.ik.add_objective(error, jacobian, gain, weight)
+    def remove_com_objective(self):
+        self.ik.remove_objective('COM')
 
     def add_contact_objective(self, link, contact, gain, weight):
         contact.robot_link = link.index  # dirty
@@ -253,7 +248,7 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_objective(error, jacobian, gain, weight)
+        self.ik.add_objective(error, jacobian, gain, weight, name=contact.name)
 
     def add_contact_vargain_objective(self, link, contact, gain, weight, alpha):
         """
@@ -274,7 +269,11 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_objective(error, jacobian, gain, weight)
+        self.ik.add_objective(
+            error, jacobian, gain, weight, name='contact.name')
+
+    def remove_contact_objective(self, contact):
+        self.ik.remove_objective(contact.name)
 
     def add_constant_cam_objective(self, weight):
         def error(q, qd):
@@ -287,12 +286,28 @@ class Robot(object):
             else:
                 # neglecting the hessian term, this becomes
                 return dot(J, qd)
-        self.ik.add_objective(error, self.compute_cam_jacobian, 1., weight)
+        self.ik.add_objective(
+            error, self.compute_cam_jacobian, 1., weight, name='CAM')
 
     def add_zero_cam_objective(self, weight):
         def error(q, qd):
             return zeros((3,))
         self.ik.add_objective(error, self.compute_cam_jacobian, 0., weight)
+
+    def remove_cam_objective(self, contact):
+        self.ik.remove_objective('CAM')
+
+    def add_link_pos_objective(self, link, target, gain, weight):
+        def error(q, qd):
+            return target.p - link.p
+
+        def jacobian(q):
+            return self.compute_link_translation_jacobian(link, q)
+
+        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
+
+    def remove_link_pos_objective(self, link):
+        self.ik.remove_objective(link.name)
 
     def add_posture_objective(self, q_ref, gain, weight):
         q_ref = q_ref[self.active_dofs]
@@ -304,7 +319,10 @@ class Robot(object):
         def jacobian(q):
             return identity
 
-        self.ik.add_objective(error, jacobian, gain, weight)
+        self.ik.add_objective(error, jacobian, gain, weight, name='Posture')
+
+    def remove_posture_objective(self):
+        self.ik.remove_objective('Posture')
 
     def add_dof_objective(self, dof_id, dof_ref, gain, weight):
         active_dof_id = self.active_dofs.index(dof_id)
@@ -317,7 +335,11 @@ class Robot(object):
         def jacobian(q):
             return J
 
-        self.ik.add_objective(error, jacobian, gain, weight)
+        name = 'DOF-%d' % dof_id
+        self.ik.add_objective(error, jacobian, gain, weight, name)
+
+    def remove_dof_objective(self, dof_id):
+        self.ik.remove_objective('DOF-%d' % dof_id)
 
     def add_velocity_regularization(self, weight):
         identity = eye(self.nb_active_dofs)

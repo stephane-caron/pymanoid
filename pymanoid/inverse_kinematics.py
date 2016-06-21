@@ -20,7 +20,9 @@
 
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
+from threading import Lock
 from toolbox import cvxopt_solve_qp
+from uuid import uuid1
 
 
 class DiffIKSolver(object):
@@ -48,25 +50,36 @@ class DiffIKSolver(object):
         self.I = eye(n)
         self.K_doflim = K_doflim
         self.constraints = []
-        self.objectives = []
+        self.lock = Lock()
+        self.objectives = {}
         self.q_max = robot.q_max
         self.q_min = robot.q_min
         self.qd_max = +qd_lim * ones(n)
         self.qd_min = -qd_lim * ones(n)
 
     def add_constraint(self, error, jacobian, gain):
+        self.lock.acquire()
         self.constraints.append(self.Task(error, jacobian, gain))
+        self.lock.release()
 
-    def add_objective(self, error, jacobian, gain, weight):
-        self.objectives.append(self.Task(error, jacobian, gain, weight))
+    def add_objective(self, error, jacobian, gain, weight, name=None):
+        if not name:
+            name = "Objective-%s" % str(uuid1())[0:3]
+        self.lock.acquire()
+        self.objectives[name] = self.Task(error, jacobian, gain, weight)
+        self.lock.release()
+
+    def remove_objective(self, name):
+        del self.objectives[name]
 
     def compute_objective(self, q, qd):
-        return sum(obj.value(q, qd) for obj in self.objectives)
+        return sum(obj.value(q, qd) for obj in self.objectives.itervalues())
 
     def compute_velocity(self, q, qd):
+        self.lock.acquire()
         P = zeros(self.I.shape)
         r = zeros(self.q_max.shape)
-        for obj in self.objectives:
+        for obj in self.objectives.itervalues():
             J = obj.jacobian(q)
             P += obj.weight * dot(J.T, J)
             r += obj.weight * dot(-obj.velocity(q, qd).T, J)
@@ -81,5 +94,7 @@ class DiffIKSolver(object):
         if self.constraints:
             A = vstack([c.jacobian() for c in self.constraints])
             b = hstack([c.velocity() for c in self.constraints])
+            self.lock.release()
             return cvxopt_solve_qp(P, r, G, h, A, b)
+        self.lock.release()
         return cvxopt_solve_qp(P, r, G, h)
