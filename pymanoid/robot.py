@@ -302,7 +302,7 @@ class Robot(object):
             return target.p - link.p
 
         def jacobian(q):
-            return self.compute_link_translation_jacobian(link, q)
+            return self.compute_link_active_position_jacobian(link, q)
 
         self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
 
