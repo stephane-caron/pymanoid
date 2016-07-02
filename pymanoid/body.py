@@ -169,6 +169,16 @@ class Body(object):
         return self.p[2]
 
     @property
+    def t(self):
+        """Tangent vector"""
+        return self.T[0:3, 0]
+
+    @property
+    def b(self):
+        """Binormal vector"""
+        return self.T[0:3, 1]
+
+    @property
     def n(self):
         """Normal vector"""
         return self.T[0:3, 2]

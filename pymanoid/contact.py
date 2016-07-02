@@ -88,8 +88,10 @@ class Contact(Box):
         """
         Target pose for the robot end-effector.
 
-        Caution: don't use the contact pose, which corresponds to the OpenRAVE
-        KinBody's pose and would result in a frame inside the contact box.
+        .. NOTE::
+
+            Don't use self.pose, which corresponds to the KinBody pose and
+            would result in a frame inside the contact box.
         """
         pose = super(Contact, self).pose
         pose[4:] += self.Z * self.n   # self.n calls self.T
