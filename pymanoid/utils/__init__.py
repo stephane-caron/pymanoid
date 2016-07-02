@@ -22,29 +22,38 @@
 import math
 import numpy
 
-from cvxopt_ import cvxopt_solve_lp, cvxopt_solve_qp
+from cvxopt_ import cvxopt_solve_lp
+from cvxopt_ import cvxopt_solve_qp
 from matplotlib_ import plot_polygon
 
 
 def norm(v):
     """
-    For some reason, pylab's one is slow. On my machine:
+    For some reason, numpy's one is slow. On my machine:
 
-        In [1]: from pylab import norm as pynorm
+        In [1]: %timeit numpy.linalg.norm(v)
+        100000 loops, best of 3: 3.9 µs per loop
 
-        In [5]: %timeit pynorm(v)
-        100000 loops, best of 3: 10.3 µs per loop
-
-        In [11]: %timeit norm(v)
-        100000 loops, best of 3: 4.82 µs per loop
+        In [2]: %timeit pymanoid.utils.norm(v)
+        1000000 loops, best of 3: 727 ns per loop
 
     """
     return math.sqrt(numpy.dot(v, v))
 
+
+def normalize(v):
+    """Return a unit vector u such that v = norm(v) * u."""
+    return v / norm(v)
+
+
+solve_lp = cvxopt_solve_lp
+solve_qp = cvxopt_solve_qp
 
 __all__ = [
     'cvxopt_solve_lp',
     'cvxopt_solve_qp',
     'norm',
     'plot_polygon'
+    'solve_lp',
+    'solve_qp',
 ]

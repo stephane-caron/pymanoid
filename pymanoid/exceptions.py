@@ -19,18 +19,30 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from toolbox.exceptions import OptimalNotFound
+from utils.exceptions import OptimalNotFound
 
 
 class NaC(Exception):
 
-    """Not A Cone exception"""
+    """Not A Cone"""
 
     def __init__(self, M):
         self.M = M
 
     def __str__(self):
         return "Matrix does not describe a polyhedral cone"
+
+
+class NaP(Exception):
+
+    """Not A Polytope"""
+
+    def __init__(self, A, b):
+        self.A = A
+        self.b = b
+
+    def __str__(self):
+        return "(A * x <= b) does not describe a polytope"
 
 
 class UnboundedPolyhedron(Exception):

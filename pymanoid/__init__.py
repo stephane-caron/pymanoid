@@ -47,6 +47,7 @@ from viewer import set_camera_left
 from viewer import set_camera_right
 
 import cones
+import polytopes
 import robots
 import rotations
 
@@ -72,6 +73,7 @@ __all__ = [
     'get_gravity',
     'get_viewer',
     'init',
+    'polytopes',
     'register_env',
     'robots',
     'rotations',

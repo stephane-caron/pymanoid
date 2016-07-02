@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -20,10 +20,10 @@
 
 
 import cdd
-import numpy
 
 from exceptions import NaC, OptimalNotFound
-from toolbox import cvxopt_solve_qp, norm
+from numpy import array, dot, eye, hstack, vstack, zeros
+from utils import cvxopt_solve_qp, norm
 
 
 def span_of_face(F):
@@ -33,22 +33,22 @@ def span_of_face(F):
         {F x <= 0}  if and only if  {x = F^S z, z >= 0}
 
     """
-    b, A = numpy.zeros((F.shape[0], 1)), F
+    b, A = zeros((F.shape[0], 1)), F
     # H-representation: b - A x >= 0
     # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
     # the input to pycddlib is [b, -A]
-    F_cdd = cdd.Matrix(numpy.hstack([b, -A]), number_type='float')
-    F_cdd.rep_type = cdd.RepType.INEQUALITY
-    P = cdd.Polyhedron(F_cdd)
+    mat = cdd.Matrix(hstack([b, -A]), number_type='float')
+    mat.rep_type = cdd.RepType.INEQUALITY
+    P = cdd.Polyhedron(mat)
     g = P.get_generators()
-    V = numpy.array(g)
+    V = array(g)
     rays = []
     for i in xrange(V.shape[0]):
         if V[i, 0] != 0:  # 1 = vertex, 0 = ray
             raise NaC(F)
         elif i not in g.lin_set:
             rays.append(V[i, 1:])
-    return numpy.array(rays).T
+    return array(rays).T
 
 
 def face_of_span(S):
@@ -58,16 +58,16 @@ def face_of_span(S):
         {x = S z, z >= 0}  if and only if  {F x <= 0}.
 
     """
-    V = numpy.vstack([
-        numpy.hstack([numpy.zeros((S.shape[1], 1)), S.T]),
-        numpy.hstack([1, numpy.zeros(S.shape[0])])])
+    V = vstack([
+        hstack([zeros((S.shape[1], 1)), S.T]),
+        hstack([1, zeros(S.shape[0])])])
     # V-representation: first column is 0 for rays
-    V_cdd = cdd.Matrix(V, number_type='float')
-    V_cdd.rep_type = cdd.RepType.GENERATOR
-    P = cdd.Polyhedron(V_cdd)
+    mat = cdd.Matrix(V, number_type='float')
+    mat.rep_type = cdd.RepType.GENERATOR
+    P = cdd.Polyhedron(mat)
     ineq = P.get_inequalities()
-    H = numpy.array(ineq)
-    if H.shape == (0,):  # H = []
+    H = array(ineq)
+    if H.shape == (0,):  # H == []
         return H
     A = []
     for i in xrange(H.shape[0]):
@@ -78,7 +78,7 @@ def face_of_span(S):
             raise NaC(S)
         elif i not in ineq.lin_set:
             A.append(-H[i, 1:])
-    return numpy.array(A)
+    return array(A)
 
 
 def is_positive_combination(b, A):
@@ -95,15 +95,15 @@ def is_positive_combination(b, A):
     True if and only if b = A.T * x for some x >= 0.
     """
     m = A.shape[0]
-    P, q = numpy.eye(m), numpy.zeros(m)
+    P, q = eye(m), zeros(m)
     #
     # NB: one could try solving a QP minimizing |A * x - b|^2 (and no equality
     # constraint), however the precision of the output is quite low (~1e-1).
     #
-    G, h = -numpy.eye(m), numpy.zeros(m)
+    G, h = -eye(m), zeros(m)
     try:
         x = cvxopt_solve_qp(P, q, G, h, A.T, b)
-        return norm(numpy.dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
+        return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
     except OptimalNotFound:
         return False
     return False
@@ -111,13 +111,13 @@ def is_positive_combination(b, A):
 
 def is_redundant(F):
     """
-    Check if a matrix of line vectors (typically a face representation) is
-    redundant.
+    Check if a matrix of line vectors (typically the face representation of a
+    polyhedral cone) is redundant.
 
     .. NOTE::
 
-        May print out a significant number of messages "Terminated (singular KKT
-        matrix)." in the terminal.
+        When using cvxopt, this function may print out a significant number of
+        messages "Terminated (singular KKT matrix)." in the terminal.
 
     """
     all_lines = set(range(F.shape[0]))

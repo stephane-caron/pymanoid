@@ -21,7 +21,7 @@
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
-from toolbox import cvxopt_solve_qp
+from utils import cvxopt_solve_qp
 from uuid import uuid1
 
 

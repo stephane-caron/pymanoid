@@ -25,7 +25,7 @@ from env import get_env
 from exceptions import UnboundedPolyhedron
 from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
-from toolbox import norm
+from utils import norm
 
 BIG_DIST = 1000.  # [m]
 
