@@ -25,7 +25,7 @@ import simplejson
 import uuid
 
 from body import Box
-from cones import face_of_span
+from polyhedra import Cone
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
@@ -533,12 +533,11 @@ class ContactSet(object):
         where w(p) is the resultant contact wrench at p.
         """
         # F = self.compute_stacked_wrench_cones()
-        # from cone_duality import span_of_face
         # G = self.compute_grasp_matrix(p)
-        # S0 = span_of_face(F)
+        # S0 = Cone.span_of_face(F)
         # S = dot(-G, S0)
         S = self.compute_wrench_span(p)
-        return face_of_span(S)
+        return Cone.face_of_span(S)
 
     def compute_grasp_matrix(self, p):
         """
