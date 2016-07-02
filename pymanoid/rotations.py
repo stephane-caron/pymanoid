@@ -32,12 +32,12 @@ http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134
 from math import asin, atan2, cos, sin
 from numpy import array
 from openravepy import \
+    InterpolateQuatSlerp as quat_slerp, \
     axisAngleFromQuat as axis_angle_from_quat, \
     axisAngleFromRotationMatrix as axis_angle_from_rotation_matrix, \
     quatFromRotationMatrix as quat_from_rotation_matrix, \
     quatInverse as quat_inverse, \
     quatMultiply as quat_multiply, \
-    quatSlerp as quat_slerp, \
     rotationMatrixFromQuat as rotation_matrix_from_quat
 
 
