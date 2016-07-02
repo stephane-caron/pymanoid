@@ -20,17 +20,25 @@
 
 
 """
-Most formulae in this module are adapted from the very useful document by James
+This module mostly imports top-level rotation functions from OpenRAVE in order
+to make them visible in pymanoid. Conversions to and from roll-pitch-yaw (in
+humanoid-robotics convention) were adapted from a useful document by James
 Diebel:
 
 "Representing Attitude: Euler Angles, Unit Quaternions, and Rotation Vectors"
 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134
 """
 
-
-from math import atan2, asin, cos, sin, acos
-from numpy import array, dot, sqrt
-from openravepy import quatFromRotationMatrix
+from math import asin, atan2, cos, sin
+from numpy import array
+from openravepy import \
+    axisAngleFromQuat as axis_angle_from_quat, \
+    axisAngleFromRotationMatrix as axis_angle_from_rotation_matrix, \
+    quatFromRotationMatrix as quat_from_rotation_matrix, \
+    quatInverse as quat_inverse, \
+    quatMultiply as quat_multiply, \
+    quatSlerp as quat_slerp, \
+    rotationMatrixFromQuat as rotation_matrix_from_quat
 
 
 def crossmat(x):
@@ -69,11 +77,21 @@ def rotation_matrix_from_rpy(roll, pitch, yaw):
     return rotation_matrix_from_quat(quat_from_rpy(roll, pitch, yaw))
 
 
-def axis_angle_from_quat(quat):
-    angle = 2 * acos(quat[0])
-    axis = quat[1:] / sqrt(1. - quat[0] ** 2)
-    return (axis, angle)
+def rpy_from_rotation_matrix(R):
+    return rpy_from_quat(quat_from_rotation_matrix(R))
 
 
-def axis_angle_from_rotation_matrix(R):
-    return axis_angle_from_quat(quat_from_rotation_matrix(R))
+__all__ = [
+    'axis_angle_from_quat',
+    'axis_angle_from_rotation_matrix',
+    'crossmat',
+    'quat_from_rotation_matrix',
+    'quat_from_rpy',
+    'quat_inverse',
+    'quat_multiply',
+    'quat_slerp',
+    'rpy_from_quat',
+    'rpy_from_rotation_matrix',
+    'rotation_matrix_from_quat',
+    'rotation_matrix_from_rpy',
+]
