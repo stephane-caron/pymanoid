@@ -56,6 +56,17 @@ class RobotNotFound(Exception):
         super(RobotNotFound, self).__init__("Robot '%s' not found" % robot_name)
 
 
+class MissingAttribute(Exception):
+
+    def __init__(self, obj, attr):
+        self.obj_type = type(obj)
+        self.attr = attr
+
+    def __str__(self):
+        return "Cannot find attribute '%s' in object of type %s" \
+            % (self.attr, str(self.obj_type))
+
+
 __all__ = [
     'NaC',
     'OptimalNotFound',

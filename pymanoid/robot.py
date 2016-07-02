@@ -22,8 +22,9 @@
 import numpy
 import time
 
+from contact import Contact
 from env import get_env
-from exceptions import RobotNotFound
+from exceptions import MissingAttribute, RobotNotFound
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
@@ -213,42 +214,19 @@ class Robot(object):
         if type(target) is numpy.ndarray:
             def error(q, qd):
                 return target - self.compute_com(q)
-        else:
-            try:
-                has_pos = (target.pos is not None)
-            except AttributeError:
-                has_pos = False
-            if has_pos:
-                def error(q, qd):
-                    return target.pos - self.compute_com(q)
-            else:
-                try:
-                    has_p = (target.p is not None)
-                except AttributeError:
-                    has_p = False
-                if has_p:
-                    def error(q, qd):
-                        return target.p - self.compute_com(q)
-                else:
-                    assert False, \
-                        "Type unfit for COM obj.: %s" % str(type(target))
+        elif hasattr(target, 'pos'):
+            def error(q, qd):
+                return target.pos - self.compute_com(q)
+        elif hasattr(target, 'p'):
+            def error(q, qd):
+                return target.p - self.compute_com(q)
+        else:  # COM target should be a position
+            raise MissingAttribute(target, 'pos')
         self.ik.add_objective(
             error, self.compute_com_jacobian, gain, weight, name='COM')
 
     def remove_com_objective(self):
         self.ik.remove_objective('COM')
-
-    def add_contact_objective(self, link, contact, gain, weight):
-        contact.robot_link = link.index  # dirty
-
-        def error(q, qd):
-            cur_pose = self.compute_link_pose(link, q)
-            return contact.effector_pose - cur_pose
-
-        def jacobian(q):
-            return self.compute_link_active_pose_jacobian(link, q)
-
-        self.ik.add_objective(error, jacobian, gain, weight, name=contact.name)
 
     def add_contact_vargain_objective(self, link, contact, gain, weight, alpha):
         """
@@ -269,11 +247,7 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_objective(
-            error, jacobian, gain, weight, name='contact.name')
-
-    def remove_contact_objective(self, contact):
-        self.ik.remove_objective(contact.name)
+        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
 
     def add_constant_cam_objective(self, weight):
         def error(q, qd):
@@ -294,19 +268,58 @@ class Robot(object):
             return zeros((3,))
         self.ik.add_objective(error, self.compute_cam_jacobian, 0., weight)
 
-    def remove_cam_objective(self, contact):
+    def remove_cam_objective(self):
         self.ik.remove_objective('CAM')
 
+    def add_link_pose_objective(self, link, target, gain, weight):
+        if type(target) is Contact:  # used for ROS communications
+            target.robot_link = link.index  # dirty
+        if type(target) is list:
+            target = numpy.array(target)
+        if hasattr(target, 'effector_pose'):  # needs to come before 'pose'
+            def error(q, qd):
+                return target.effector_pose - self.compute_link_pose(link, q)
+        elif hasattr(target, 'pose'):
+            def error(q, qd):
+                return target.pose - self.compute_link_pose(link, q)
+        elif type(target) is numpy.ndarray:
+            def error(q, qd):
+                return target - self.compute_link_pose(link, q)
+        else:  # link frame target should be a pose
+            raise MissingAttribute(target, 'pose')
+
+        def jacobian(q):
+            return self.compute_link_active_pose_jacobian(link, q)
+
+        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
+
     def add_link_pos_objective(self, link, target, gain, weight):
-        def error(q, qd):
-            return target.p - link.p
+        if type(target) is list:
+            target = numpy.array(target)
+        if hasattr(target, 'pos'):
+            def error(q, qd):
+                return target.pos - link.p
+        elif hasattr(target, 'p'):
+            def error(q, qd):
+                return target.p - link.p
+        elif type(target) is numpy.ndarray:
+            def error(q, qd):
+                return target - self.compute_link_pose(link, q)
+        else:  # this is an aesthetic comment
+            raise MissingAttribute(target, 'pos')
 
         def jacobian(q):
             return self.compute_link_active_position_jacobian(link, q)
 
         self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
 
-    def remove_link_pos_objective(self, link):
+    def add_contact_objective(self, link, target, gain, weight):
+        return self.add_link_pose_objective(link, target, gain, weight)
+
+    def remove_contact_objective(self, link):
+        self.ik.remove_objective(link.name)
+
+    def remove_link_objective(self, link):
         self.ik.remove_objective(link.name)
 
     def add_posture_objective(self, q_ref, gain, weight):

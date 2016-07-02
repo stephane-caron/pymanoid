@@ -22,8 +22,8 @@
 """
 This module mostly imports top-level rotation functions from OpenRAVE in order
 to make them visible in pymanoid. Conversions to and from roll-pitch-yaw (in
-humanoid-robotics convention) were adapted from a useful document by James
-Diebel:
+humanoid-robotics convention: with an upward yaw axis) were adapted from a
+useful document by James Diebel:
 
 "Representing Attitude: Euler Angles, Unit Quaternions, and Rotation Vectors"
 http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134
