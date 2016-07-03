@@ -30,6 +30,8 @@ from draw import draw_2d_cone
 from draw import draw_arrow
 from draw import draw_force
 from draw import draw_line
+from draw import draw_point
+from draw import draw_points
 from draw import draw_polygon
 from draw import draw_polyhedron
 from env import get_env
@@ -65,6 +67,8 @@ __all__ = [
     'draw_arrow',
     'draw_force',
     'draw_line',
+    'draw_point',
+    'draw_points',
     'draw_polygon',
     'draw_polyhedron',
     'get_env',

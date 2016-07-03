@@ -115,6 +115,18 @@ def draw_force(p, f, scale=0.005, color='r', linewidth=0.02):
         p, p + scale * f, linewidth=linewidth, color=color)
 
 
+def draw_point(p, color='g', pointsize=0.05):
+    return draw_points([p], color, pointsize)
+
+
+def draw_points(points, color='g', pointsize=0.05):
+    if type(color) is str:
+        color = _matplotlib_to_rgba(color, alpha=1.)
+    return get_env().plot3(
+        array(points), pointsize=pointsize, drawstyle=1,
+        colors=color)
+
+
 def draw_polyhedron(points, combined='g-#', color=None, faces=None,
                     linewidth=1., pointsize=0.01, hull=None):
     """
