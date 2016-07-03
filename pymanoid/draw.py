@@ -43,6 +43,10 @@ def _matplotlib_to_rgb(color):
     return acolor
 
 
+def _matplotlib_to_rgba(color, alpha=0.5):
+    return _matplotlib_to_rgb(color) + [alpha]
+
+
 def draw_line(p1, p2, color='g', linewidth=1.):
     """
     Draw a line between points p1 and p2.
@@ -111,18 +115,20 @@ def draw_force(p, f, color='r', scale=0.005, linewidth=0.02):
         p, p + scale * f, linewidth=linewidth, color=color)
 
 
-def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
-                    linewidth=1., pointsize=0.01):
+def draw_polyhedron(points, combined='g-#', color=None, faces=None,
+                    linewidth=1., pointsize=0.01, hull=None):
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
     INPUT:
 
     - ``points`` -- list of 3D points
-    - ``color`` -- RGBA vector
-    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
-      surfaces (default: 6 = 2 + 4, i.e., draw edges and surfaces)
-    - ``precomp_hull`` -- used in the 2D case where the hull has zero volume
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
+      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``color`` -- color letter or RGBA tuple
+    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
+      draw: use '.' for vertices, '-' for edges and '#' for facets
+    - ``hull`` -- used in the 2D case where the hull has zero volume
     - ``linewidth`` -- line thickness in meters
     - ``pointsize`` -- point size in meters
 
@@ -131,14 +137,21 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    is_2d = precomp_hull is not None
-    hull = precomp_hull if precomp_hull is not None else ConvexHull(points)
+    is_2d = hull is not None
+    if color is None:
+        color = combined[0]
+    if faces is None:
+        faces = combined[1:]
+    if type(color) is str:
+        color = _matplotlib_to_rgba(color)
+    if hull is None:
+        hull = ConvexHull(points)
     vertices = array([points[i] for i in hull.vertices])
     points = array(points)
     color = array(color if color is not None else (0.0, 0.5, 0.0, 0.5))
     handles = []
     env = get_env()
-    if plot_type & 2:  # include edges
+    if '-' in faces:  # edges
         edge_color = color * 0.7
         edge_color[3] = 1.
         edges = vstack([[points[i], points[j]]
@@ -147,7 +160,7 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
         edges = array(edges)
         handles.append(env.drawlinelist(
             edges, linewidth=linewidth, colors=edge_color))
-    if plot_type & 4:  # include surface
+    if '#' in faces:  # facets
         if is_2d:
             nv = len(vertices)
             indices = array([(0, i, i + 1) for i in xrange(nv - 1)], int64)
@@ -155,7 +168,7 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
         else:
             indices = array(hull.simplices, int64)
             handles.append(env.drawtrimesh(points, indices, colors=color))
-    if plot_type & 1:  # vertices
+    if '.' in faces:  # vertices
         color[:3] *= 0.75
         color[3] = 1.
         handles.append(env.plot3(
@@ -163,8 +176,8 @@ def draw_polyhedron(points, color=None, plot_type=6, precomp_hull=None,
     return handles
 
 
-def draw_polygon(points, normal=None, color=None, plot_type=6,
-                 linewidth=1., pointsize=0.02, n=None):
+def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
+                 linewidth=1., pointsize=0.02):
     """
     Draw a polygon defined as the convex hull of a set of points. The normal
     vector n of the plane containing the polygon must also be supplied.
@@ -172,10 +185,12 @@ def draw_polygon(points, normal=None, color=None, plot_type=6,
     INPUT:
 
     - ``points`` -- list of 3D points
-    - ``normal`` (or ``n``) -- unit vector normal to the drawing plane
-    - ``color`` -- RGBA vector
-    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
-                       surface
+    - ``normal`` -- unit vector normal to the drawing plane
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
+      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``color`` -- color letter or RGBA tuple
+    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
+      draw: use '.' for vertices, '-' for edges and '#' for facets
     - ``linewidth`` -- (default: 1.) thickness of drawn line
     - ``pointsize`` -- (default: 0.02) vertex size
 
@@ -184,14 +199,14 @@ def draw_polygon(points, normal=None, color=None, plot_type=6,
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    n = n if n is not None else normal
-    assert n is not None, "Please provide the plane normal as well"
+    n = normal
     t1 = array([n[2] - n[1], n[0] - n[2], n[1] - n[0]], dtype=float)
     t1 /= norm(t1)
     t2 = cross(n, t1)
     points2d = [[dot(t1, x), dot(t2, x)] for x in points]
     hull = ConvexHull(points2d)
-    return draw_polyhedron(points, color, plot_type, hull, linewidth, pointsize)
+    return draw_polyhedron(
+        points, combined, color, faces, linewidth, pointsize, hull=hull)
 
 
 def pick_2d_extreme_rays(rays):
@@ -241,7 +256,8 @@ def _convert_cone2d_to_vertices(vertices, rays):
     return conv_vertices
 
 
-def draw_2d_cone(vertices, rays, n, color, plot_type):
+def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
+                 faces=None):
     """
     Draw a 2D cone defined from its rays and vertices. The normal vector n of
     the plane containing the cone must also be supplied.
@@ -250,10 +266,12 @@ def draw_2d_cone(vertices, rays, n, color, plot_type):
 
     - ``vertices`` -- list of 3D points
     - ``rays`` -- list of 3D vectors
-    - ``n`` -- plane normal vector
-    - ``color`` -- RGBA vector
-    - ``plot_type`` -- bitmask with 1 for vertices, 2 for edges and 4 for
-      surfaces
+    - ``normal`` -- unit vector normal to the drawing plane
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
+      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``color`` -- color letter or RGBA tuple
+    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
+      draw: use '.' for vertices, '-' for edges and '#' for facets
 
     OUTPUT:
 
@@ -261,6 +279,6 @@ def draw_2d_cone(vertices, rays, n, color, plot_type):
     object will vanish instantly.
     """
     if not rays:
-        return draw_polygon(vertices, n, color=color, plot_type=plot_type)
+        return draw_polygon(vertices, normal, combined, color, faces)
     plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
-    return draw_polygon(plot_vertices, n, color=color, plot_type=plot_type)
+    return draw_polygon(plot_vertices, normal, combined, color, faces)
