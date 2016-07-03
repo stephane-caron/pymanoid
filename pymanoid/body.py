@@ -289,12 +289,13 @@ class Box(Body):
         self.Z = Z
         aabb = [0, 0, 0, X, Y, Z]
         env = get_env()
-        box = openravepy.RaveCreateKinBody(env, '')
-        box.InitFromBoxes(array([array(aabb)]), True)
-        super(Box, self).__init__(
-            box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
-            visible=visible, transparency=transparency)
-        env.Add(box, True)
+        with env:
+            box = openravepy.RaveCreateKinBody(env, '')
+            box.InitFromBoxes(array([array(aabb)]), True)
+            super(Box, self).__init__(
+                box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
+                visible=visible, transparency=transparency)
+            env.Add(box, True)
 
 
 class Cube(Box):
