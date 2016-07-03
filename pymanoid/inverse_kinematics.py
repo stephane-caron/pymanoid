@@ -51,33 +51,32 @@ class DiffIKSolver(object):
                  task_type=None):
         assert name not in self.tasks, \
             "Task '%s' already present in IK" % name
-        self.lock.acquire()
-        self.tasks[name] = True
-        self.errors[name] = error
-        self.jacobians[name] = jacobian
-        if gain is not None:
-            self.gains[name] = gain
-        elif name in self.gains:
-            pass  # gain is already defined
-        elif task_type in self.gains:
-            self.gains[name] = self.gains[task_type]
-        else:
-            msg = "No gain provided for task '%s'" % name
-            if task_type is not None:
-                msg += " (task_type='%s')" % task_type
-            raise Exception(msg)
-        if weight is not None:
-            self.weights[name] = weight
-        elif name in self.weights:
-            pass   # weight is already defined
-        elif task_type in self.weights:
-            self.weights[name] = self.weights[task_type]
-        else:
-            msg = "No weight provided for task '%s'" % name
-            if task_type is not None:
-                msg += " (task_type='%s')" % task_type
-            raise Exception(msg)
-        self.lock.release()
+        with self.lock:
+            self.tasks[name] = True
+            self.errors[name] = error
+            self.jacobians[name] = jacobian
+            if gain is not None:
+                self.gains[name] = gain
+            elif name in self.gains:
+                pass  # gain is already defined
+            elif task_type in self.gains:
+                self.gains[name] = self.gains[task_type]
+            else:
+                msg = "No gain provided for task '%s'" % name
+                if task_type is not None:
+                    msg += " (task_type='%s')" % task_type
+                raise Exception(msg)
+            if weight is not None:
+                self.weights[name] = weight
+            elif name in self.weights:
+                pass   # weight is already defined
+            elif task_type in self.weights:
+                self.weights[name] = self.weights[task_type]
+            else:
+                msg = "No weight provided for task '%s'" % name
+                if task_type is not None:
+                    msg += " (task_type='%s')" % task_type
+                raise Exception(msg)
 
     def remove_task(self, name):
         if name not in self.tasks:
@@ -101,17 +100,16 @@ class DiffIKSolver(object):
         return sum(cost(task) for task in self.tasks)
 
     def compute_velocity(self, q, qd):
-        self.lock.acquire()
         P = zeros(self.I.shape)
         r = zeros(self.q_max.shape)
-        for task in self.tasks:
-            J = self.jacobians[task](q)
-            e = self.gains[task] * self.errors[task](q, qd)
-            P += self.weights[task] * dot(J.T, J)
-            r += self.weights[task] * dot(-e.T, J)
+        with self.lock:
+            for task in self.tasks:
+                J = self.jacobians[task](q)
+                e = self.gains[task] * self.errors[task](q, qd)
+                P += self.weights[task] * dot(J.T, J)
+                r += self.weights[task] * dot(-e.T, J)
         qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
-        self.lock.release()
         return cvxopt_solve_qp(P, r, G, h)
