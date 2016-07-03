@@ -19,7 +19,13 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from pymanoid import Manipulator, Robot
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/..')
+
+from body import Manipulator
+from robot import Robot
 
 
 class JVRC1(Robot):

@@ -22,12 +22,16 @@
 import itertools
 
 from env import get_env
-from exceptions import UnboundedPolyhedron
 from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
 from utils import norm
 
 BIG_DIST = 1000.  # [m]
+
+
+class UnboundedPolyhedron(Exception):
+
+    pass
 
 
 def _matplotlib_to_rgb(color):

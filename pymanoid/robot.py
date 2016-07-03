@@ -24,7 +24,6 @@ import time
 
 from contact import Contact
 from env import get_env
-from exceptions import MissingAttribute, RobotNotFound
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
@@ -53,7 +52,7 @@ class Robot(object):
         env = env if env else get_env()
         robot = env.GetRobot(robot_name)
         if not robot:
-            raise RobotNotFound(robot_name)
+            raise Exception("Robot not found: %s" % robot_name)
         q_min, q_max = robot.GetDOFLimits()
         robot.SetDOFVelocityLimits(1000 * robot.GetDOFVelocityLimits())
         robot.SetDOFVelocities([0] * robot.GetDOF())
@@ -247,7 +246,8 @@ class Robot(object):
             def error(q, qd):
                 return target.p - self.compute_com(q)
         else:  # COM target should be a position
-            raise MissingAttribute(target, 'pos')
+            msg = "Target of type %s has no 'pos' attribute" % type(target)
+            raise Exception(msg)
 
         jacobian = self.compute_com_jacobian
         self.ik.add_task('com', error, jacobian, gain, weight)
@@ -324,7 +324,8 @@ class Robot(object):
             def error(q, qd):
                 return target - self.compute_link_pose(link, q)
         else:  # link frame target should be a pose
-            raise MissingAttribute(target, 'pose')
+            msg = "Target of type %s has no 'pose' attribute" % type(target)
+            raise Exception(msg)
 
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
@@ -344,7 +345,8 @@ class Robot(object):
             def error(q, qd):
                 return target - self.compute_link_pose(link, q)
         else:  # this is an aesthetic comment
-            raise MissingAttribute(target, 'pos')
+            msg = "Target of type %s has no 'pos' attribute" % type(target)
+            raise Exception(msg)
 
         def jacobian(q):
             return self.compute_link_active_position_jacobian(link, q)

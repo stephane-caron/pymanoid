@@ -21,7 +21,6 @@
 
 import cdd
 
-from exceptions import NaC, NaP
 from numpy import array, hstack, ones, vstack, zeros
 from utils import is_positive_combination, norm
 
@@ -55,7 +54,7 @@ class Cone(Polyhedron):
         rays = []
         for i in xrange(V.shape[0]):
             if V[i, 0] != 0:  # 1 = vertex, 0 = ray
-                raise NaC(F)
+                raise Exception("Polyhedron is not a cone")
             elif i not in g.lin_set:
                 rays.append(V[i, 1:])
         return array(rays).T
@@ -85,7 +84,7 @@ class Cone(Polyhedron):
             if norm(H[i, 1:]) < 1e-10:
                 continue
             elif abs(H[i, 0]) > 1e-10:  # b should be zero for a cone
-                raise NaC(S)
+                raise Exception("Polyhedron is not a cone")
             elif i not in ineq.lin_set:
                 A.append(-H[i, 1:])
         return array(A)
@@ -150,7 +149,7 @@ class Polytope(Polyhedron):
         vertices = []
         for i in xrange(V.shape[0]):
             if V[i, 0] != 1:  # 1 = vertex, 0 = ray
-                raise NaP(A, b)
+                raise Exception("Polyhedron is not a polytope")
             elif i not in g.lin_set:
                 vertices.append(V[i, 1:])
         return vertices
