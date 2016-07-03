@@ -46,8 +46,7 @@ from env import set_camera_right
 from robot import Robot
 from trajectory import Trajectory
 
-import cones
-import polytopes
+import polyhedra
 import robots
 import rotations
 
@@ -62,7 +61,6 @@ __all__ = [
     'Manipulator',
     'Robot',
     'Trajectory',
-    'cones',
     'draw_2d_cone',
     'draw_arrow',
     'draw_force',
@@ -73,7 +71,7 @@ __all__ = [
     'get_gravity',
     'get_viewer',
     'init',
-    'polytopes',
+    'polyhedra',
     'register_env',
     'robots',
     'rotations',
