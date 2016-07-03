@@ -29,7 +29,6 @@ from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
 from rotations import crossmat
-from inverse_kinematics import DiffIKSolver
 
 
 # Notations and names
@@ -50,8 +49,6 @@ from inverse_kinematics import DiffIKSolver
 
 class Robot(object):
 
-    mass = None
-
     def __init__(self, robot_name, env=None):
         env = env if env else get_env()
         robot = env.GetRobot(robot_name)
@@ -63,17 +60,16 @@ class Robot(object):
 
         self.active_dofs = None
         self.env = env
-        if self.mass is None:  # may not be True for children classes
-            self.mass = sum([link.GetMass() for link in robot.GetLinks()])
+        self.is_visible = True
+        self.mass = sum([link.GetMass() for link in robot.GetLinks()])
         self.q_max_full = q_max
         self.q_max_full.flags.writeable = False
         self.q_min_full = q_min
         self.q_min_full.flags.writeable = False
-        self.qdd_max_full = None  # set by hand in child robot class
-        self.tau_max_full = None  # set by hand in child robot class
+        self.qdd_max_full = None  # set in child class
         self.rave = robot
+        self.tau_max_full = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
-        self.is_visible = True  # initially visible
 
     #
     # Properties
@@ -146,8 +142,42 @@ class Robot(object):
     #
 
     def set_active_dofs(self, active_dofs):
+        """
+        Set active DOFs and initialize the IK.
+
+        active_dofs -- list of DOF indices
+        """
         self.active_dofs = active_dofs
         self.rave.SetActiveDOFs(active_dofs)
+        self.init_ik()
+
+    def init_ik(self):
+        """
+        Initialize the IK solver. Needs to be defined by child classes.
+
+        EXAMPLE:
+
+            self.ik = DiffIKSolver(
+                dt=dt,
+                q_max=self.q_max,
+                q_min=self.q_min,
+                qd_lim=10.,
+                K_doflim=5.,
+                gains={
+                    'com': 1. / dt,
+                    'contact': 0.9 / dt,
+                    'link': 0.2 / dt,
+                    'posture': 0.005 / dt,
+                },
+                weights={
+                    'contact': 100.,
+                    'com': 5.,
+                    'link': 5.,
+                    'posture': 0.1,
+                })
+
+        """
+        print "Warning: no IK defined for robot of type %s" % (str(type(self)))
 
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:
@@ -204,11 +234,7 @@ class Robot(object):
     # Inverse Kinematics
     #
 
-    def init_ik(self, qd_lim, K_doflim=None):
-        assert self.active_dofs, "Initialize active DOFs before using the IK"
-        self.ik = DiffIKSolver(self, qd_lim, K_doflim=K_doflim)
-
-    def add_com_objective(self, target, gain, weight):
+    def add_com_task(self, target, gain=None, weight=None):
         if type(target) is list:
             target = numpy.array(target)
         if type(target) is numpy.ndarray:
@@ -222,17 +248,35 @@ class Robot(object):
                 return target.p - self.compute_com(q)
         else:  # COM target should be a position
             raise MissingAttribute(target, 'pos')
-        self.ik.add_objective(
-            error, self.compute_com_jacobian, gain, weight, name='COM')
 
-    def remove_com_objective(self):
-        self.ik.remove_objective('COM')
+        jacobian = self.compute_com_jacobian
+        self.ik.add_task('com', error, jacobian, gain, weight)
 
-    def add_contact_vargain_objective(self, link, contact, gain, weight, alpha):
+    def add_constant_cam_task(self, weight):
+        def error(q, qd):
+            J = self.compute_cam_jacobian(q)
+            # Ld_G = J d(qd) / dt + qd * H * qd, regulated to 0
+            if False:
+                # i.e., J qd_new = J qd_prev - dt * qd_prev * H * qd_prev
+                H = self.compute_cam_hessian(q)
+                return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
+            else:
+                # neglecting the hessian term, this becomes
+                return dot(J, qd)
+
+        jacobian = self.compute_cam_jacobian
+        gain = 1.  # needs to be one
+        self.ik.add_task('cam', error, jacobian, gain, weight)
+
+    def add_contact_task(self, link, target, gain=None, weight=None):
+        return self.add_link_pose_task(
+            link, target, gain, weight, task_type='contact')
+
+    def add_contact_vargain_task(self, link, contact, gain, weight, alpha):
         """
-        Adds a link objective with "variable gain", i.e. where the gain is
-        multiplied by a factor alpha() between zero and one. This is a bad
-        solution to implement
+        Adds a link task with "variable gain", i.e. where the gain is multiplied
+        by a factor alpha() between zero and one. This is a bad solution to
+        implement
 
         link -- a pymanoid.Link object
         target -- a pymanoid.Body, or any object with a ``pose`` field
@@ -247,31 +291,25 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
+        task_name = 'contact-%s' % link.name
+        self.ik.add_task(task_name, error, jacobian, gain, weight)
 
-    def add_constant_cam_objective(self, weight):
+    def add_dof_task(self, dof_id, dof_ref, gain=None, weight=None):
+        active_dof_id = self.active_dofs.index(dof_id)
+        J = zeros(self.nb_active_dofs)
+        J[active_dof_id] = 1.
+
         def error(q, qd):
-            J = self.compute_cam_jacobian(q)
-            # Ld_G = J d(qd) / dt + qd * H * qd, regulated to 0
-            if False:
-                # i.e., J qd_new = J qd_prev - dt * qd_prev * H * qd_prev
-                H = self.compute_cam_hessian(q)
-                return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
-            else:
-                # neglecting the hessian term, this becomes
-                return dot(J, qd)
-        self.ik.add_objective(
-            error, self.compute_cam_jacobian, 1., weight, name='CAM')
+            return (dof_ref - q[active_dof_id])
 
-    def add_zero_cam_objective(self, weight):
-        def error(q, qd):
-            return zeros((3,))
-        self.ik.add_objective(error, self.compute_cam_jacobian, 0., weight)
+        def jacobian(q):
+            return J
 
-    def remove_cam_objective(self):
-        self.ik.remove_objective('CAM')
+        task_name = 'dof-%d' % dof_id
+        self.ik.add_task(task_name, error, jacobian, gain, weight)
 
-    def add_link_pose_objective(self, link, target, gain, weight):
+    def add_link_pose_task(self, link, target, gain=None, weight=None,
+                           task_type='link'):
         if type(target) is Contact:  # used for ROS communications
             target.robot_link = link.index  # dirty
         if type(target) is list:
@@ -291,9 +329,9 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
+        self.ik.add_task(link.name, error, jacobian, gain, weight, task_type)
 
-    def add_link_pos_objective(self, link, target, gain, weight):
+    def add_link_position_task(self, link, target, gain=None, weight=None):
         if type(target) is list:
             target = numpy.array(target)
         if hasattr(target, 'pos'):
@@ -311,18 +349,33 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_position_jacobian(link, q)
 
-        self.ik.add_objective(error, jacobian, gain, weight, name=link.name)
+        task_name = 'link-%s' % link.name
+        self.ik.add_task(task_name, error, jacobian, gain, weight)
 
-    def add_contact_objective(self, link, target, gain, weight):
-        return self.add_link_pose_objective(link, target, gain, weight)
+    def add_min_acceleration_task(self, weight):
+        identity = eye(self.nb_active_dofs)
 
-    def remove_contact_objective(self, link):
-        self.ik.remove_objective(link.name)
+        def error(q, qd):
+            return qd
 
-    def remove_link_objective(self, link):
-        self.ik.remove_objective(link.name)
+        def jacobian(q):
+            return identity
 
-    def add_posture_objective(self, q_ref, gain, weight):
+        gain = 1.  # needs to be one
+        self.ik.add_task('qdd-min', error, jacobian, gain, weight)
+
+    def add_min_velocity_task(self, gain, weight):
+        identity = eye(self.nb_active_dofs)
+
+        def error(q, qd):
+            return -qd
+
+        def jacobian(q):
+            return identity
+
+        self.ik.add_task('qd-min', error, identity, gain, weight)
+
+    def add_posture_task(self, q_ref, gain=None, weight=None):
         if len(q_ref) == self.nb_dofs:
             q_ref = q_ref[self.active_dofs]
         identity = eye(self.nb_active_dofs)
@@ -333,49 +386,28 @@ class Robot(object):
         def jacobian(q):
             return identity
 
-        self.ik.add_objective(error, jacobian, gain, weight, name='Posture')
+        self.ik.add_task('posture', error, jacobian, gain, weight)
 
-    def remove_posture_objective(self):
-        self.ik.remove_objective('Posture')
-
-    def add_dof_objective(self, dof_id, dof_ref, gain, weight):
-        active_dof_id = self.active_dofs.index(dof_id)
-        J = zeros(self.nb_active_dofs)
-        J[active_dof_id] = 1.
-
+    def add_zero_cam_task(self, weight):
         def error(q, qd):
-            return (dof_ref - q[active_dof_id])
+            return zeros((3,))
 
-        def jacobian(q):
-            return J
+        jacobian = self.compute_cam_jacobian
+        gain = 0.  # needs to be zero
+        self.ik.add_task('cam', error, jacobian, gain, weight)
 
-        name = 'DOF-%d' % dof_id
-        self.ik.add_objective(error, jacobian, gain, weight, name)
+    def remove_contact_task(self, link):
+        self.ik.remove_task(link.name)
 
-    def remove_dof_objective(self, dof_id):
-        self.ik.remove_objective('DOF-%d' % dof_id)
+    def remove_link_task(self, link):
+        self.ik.remove_task(link.name)
 
-    def add_velocity_regularization(self, weight):
-        identity = eye(self.nb_active_dofs)
+    def remove_dof_task(self, dof_id):
+        self.ik.remove_task('dof-%d' % dof_id)
 
-        def error(q, qd):
-            return qd
-
-        def jacobian(q):
-            return identity
-
-        self.ik.add_objective(error, jacobian, 1., weight)
-
-    def add_zero_velocity_objective(self, gain, weight):
-        identity = eye(self.nb_active_dofs)
-
-        def error(q, qd):
-            return -qd
-
-        def jacobian(q):
-            return identity
-
-        self.ik.add_objective(error, identity, gain, weight)
+    def update_com_task(self, target, gain=None, weight=None):
+        self.ik.remove_task('com')
+        self.add_com_task(target, gain, weight)
 
     def step_ik(self, dt):
         qd = self.ik.compute_velocity(self.q, self.qd)
@@ -383,38 +415,65 @@ class Robot(object):
         self.set_dof_values(q)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, dt, max_it=100, conv_tol=1e-5, debug=False):
+    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=False):
         """
         Compute joint-angles q satisfying all constraints at best.
 
-        dt -- time step for the differential IK
-        max_it -- maximum number of differential IK iterations
-        conv_tol -- stop when objective improvement is less than this threshold
-        debug -- print extra debug info
+        INPUT:
 
-        Good values of dt depend on the gains and weights of the IK objectives
-        and constraints. Small values make convergence slower, while big values
-        will render them unstable.
+        - ``dt`` -- time step for the differential IK
+        - ``max_it`` -- maximum number of differential IK iterations
+        - ``conv_tol`` -- stop when cost improvement is less than this threshold
+        - ``debug`` -- print extra debug info
+
+        .. NOTE::
+
+            Good values of dt depend on the gains and weights of the IK tasks.
+            Small values make convergence slower, while big values will render
+            them unstable.
         """
-        cur_obj = 1000.
-        q = self.q
-        qd = zeros(len(self.q))
+        cur_cost = 1000.
+        q, qd = self.q, zeros(self.nb_active_dofs)
+        # qd = zeros(len(self.q))
         if debug:
-            print "solve_ik(dt=%e, max_it=%d, conv_tol=%e)" % (
-                dt, max_it, conv_tol)
+            print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
         for itnum in xrange(max_it):
-            prev_obj = cur_obj
-            cur_obj = self.ik.compute_objective(q, qd)
+            prev_cost = cur_cost
+            cur_cost = self.ik.compute_cost(q, qd)
+            cost_var = cur_cost - prev_cost
             if debug:
-                print "%2d: %.3f (%+.2e)" % (itnum, cur_obj, cur_obj - prev_obj)
-            if abs(cur_obj - prev_obj) < conv_tol:
+                print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
+            if abs(cost_var) < conv_tol:
                 break
             qd = self.ik.compute_velocity(q, qd)
-            q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
+            q = minimum(maximum(self.q_min, q + qd * self.ik.dt), self.q_max)
             if debug:
                 self.set_dof_values(q)
         self.set_dof_values(q)
-        return itnum, cur_obj
+        return itnum, cur_cost
+
+    def generate_posture(self, stance):
+        assert self.active_dofs is not None, \
+            "Please set active DOFs before using the IK"
+        if hasattr(stance, 'com'):
+            self.add_com_task(stance.com)
+        elif hasattr(stance, 'com_target'):
+            self.add_com_task(stance.com_target)
+        if hasattr(stance, 'left_foot'):
+            self.add_contact_task(
+                self.left_foot, stance.left_foot)
+        if hasattr(stance, 'right_foot'):
+            self.add_contact_task(
+                self.right_foot, stance.right_foot)
+        if hasattr(stance, 'left_hand'):
+            self.add_contact_task(
+                self.left_hand, stance.left_hand)
+        if hasattr(stance, 'right_hand'):
+            self.add_contact_task(
+                self.right_hand, stance.right_hand)
+        self.add_posture_task(self.q_halfsit)
+        self.set_dof_values(self.q_halfsit)  # warm start on reference posture
+        self.solve_ik()
 
     #
     # Visualization
