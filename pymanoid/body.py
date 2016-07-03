@@ -47,7 +47,7 @@ class Body(object):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial visibility
-        transparency -- initial transparency (0 is opaque and 1 is transparent)
+        transparency -- transparency value, 0. is opaque and 1. is transparent
         """
         self.rave = rave_body
         if color is not None:
@@ -280,7 +280,7 @@ class Box(Body):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
-        transparency -- initial transparency (0 is opaque and 1 is transparent)
+        transparency -- transparency value, 0. is opaque and 1. is transparent
         """
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
@@ -311,7 +311,7 @@ class Cube(Box):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
-        transparency -- initial transparency (0 is opaque and 1 is transparent)
+        transparency -- transparency value, 0. is opaque and 1. is transparent
         """
         super(Cube, self).__init__(
             size, size, size, pos=pos, rpy=rpy, color=color,
