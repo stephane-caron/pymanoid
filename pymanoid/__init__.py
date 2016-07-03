@@ -37,14 +37,14 @@ from env import get_gravity
 from env import get_viewer
 from env import init
 from env import register_env
+from env import set_camera_above
+from env import set_camera_behind
+from env import set_camera_below
+from env import set_camera_front
+from env import set_camera_left
+from env import set_camera_right
 from robot import Robot
 from trajectory import Trajectory
-from viewer import set_camera_above
-from viewer import set_camera_behind
-from viewer import set_camera_below
-from viewer import set_camera_front
-from viewer import set_camera_left
-from viewer import set_camera_right
 
 import cones
 import polytopes
