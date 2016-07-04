@@ -29,7 +29,7 @@ from polyhedra import Cone
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
-from utils import solve_qp, solve_relaxed_qp
+from utils import solve_relaxed_qp
 
 
 class Contact(Box):
@@ -378,34 +378,36 @@ class ContactSet(object):
         """
         n = 12 * self.nb_contacts
         nb_forces = n / 3
-        Pxy = block_diag(*[
+        P_fric = block_diag(*[
             array([
                 [1, 0, 0],
                 [0, 1, 0],
                 [0, 0, 0]])
             for _ in xrange(nb_forces)])
-        Pz = block_diag(*[
+        P_press = block_diag(*[
             array([
                 [0, 0, 0],
                 [0, 0, 0],
                 [0, 0, 1]])
             for _ in xrange(nb_forces)])
-        oz = hstack([
+        o_z = hstack([
             [0, 0, 1. / n]
             for _ in xrange(nb_forces)])
-        Pz -= dot(oz.reshape((n, 1)), oz.reshape((1, n)))
-        w_xy = w_z = 0.
-        P = w_xy * Pxy + w_z * Pz
+        P_press -= dot(o_z.reshape((n, 1)), o_z.reshape((1, n)))
+        P_local = friction_weight * P_fric + pressure_weight * P_press
         RT_diag = block_diag(*[
             contact.R.T
             for contact in self.contacts for _ in xrange(4)])
-        P = dot(RT_diag.T, dot(P, RT_diag))
+        P = dot(RT_diag.T, dot(P_local, RT_diag))
         q = zeros((n,))
         G = self.compute_stacked_force_cones()
-        h = zeros((G.shape[0],))  # for cvxopt:  G * x <= h
+        h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
-        f_all = cvxopt_solve_qp(P, q, G, h, A, b)
+        # f_all = solve_qp(P, q, G, h, A, b)
+        f_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
+        if f_all is None:
+            return None
         output, next_index = [], 0
         for i, contact in enumerate(self.contacts):
             for j, p in enumerate(contact.vertices):
