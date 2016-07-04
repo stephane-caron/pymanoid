@@ -28,6 +28,7 @@ from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot
 from openravepy import RaveCreateModule
 from rotations import crossmat
+from warnings import warn
 
 
 # Notations and names
@@ -176,7 +177,7 @@ class Robot(object):
                 })
 
         """
-        print "Warning: no IK defined for robot of type %s" % (str(type(self)))
+        warn("no IK defined for robot of type %s" % (str(type(self))))
 
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:

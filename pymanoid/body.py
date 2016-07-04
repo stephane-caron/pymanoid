@@ -26,6 +26,7 @@ from numpy import array
 from env import get_env
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
+from warnings import warn
 
 
 class Body(object):
@@ -338,12 +339,10 @@ class Manipulator(Link):
         self.end_effector = rave_manipulator.GetEndEffector()
 
     def set_transparency(self, transparency):
-        print "Warning:", \
-            "manipulators have no link (called from %s) " % self.name
+        warn("manipulators have no link (called from %s) " % self.name)
 
     def set_visible(self, visible):
-        print "Warning:", \
-            "manipulators have no visibility (called from %s)" % self.name
+        warn("manipulators have no visibility (called from %s)" % self.name)
 
     @property
     def index(self):

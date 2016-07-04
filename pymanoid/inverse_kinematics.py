@@ -22,6 +22,7 @@
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 from utils import cvxopt_solve_qp
+from warnings import warn
 
 
 class DiffIKSolver(object):
@@ -80,7 +81,7 @@ class DiffIKSolver(object):
 
     def remove_task(self, name):
         if name not in self.tasks:
-            print "Warning: no task '%s' to remove" % name
+            warn("no task '%s' to remove" % name)
             return
         del self.tasks[name]
 
