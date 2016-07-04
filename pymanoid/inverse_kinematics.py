@@ -21,7 +21,7 @@
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
-from utils import cvxopt_solve_qp
+from utils import solve_qp
 from warnings import warn
 
 
@@ -113,4 +113,4 @@ class DiffIKSolver(object):
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
-        return cvxopt_solve_qp(P, r, G, h)
+        return solve_qp(P, r, G, h)

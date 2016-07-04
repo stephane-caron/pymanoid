@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -19,6 +19,23 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-class OptimalNotFound(Exception):
+from cvxopt import matrix
+from cvxopt.solvers import lp, options
+from numpy import array
+from warnings import warn
 
-    pass
+
+options['show_progress'] = False  # disable cvxopt output
+
+
+def solve_lp(c, G=None, h=None, A=None, b=None):
+    args = [matrix(c)]
+    if G is not None:
+        args.extend([matrix(G), matrix(h)])
+        if A is not None:
+            args.extend([matrix(A), matrix(b)])
+    sol = lp(*args)
+    if not ('optimal' in sol['status']):
+        warn("LP optimum not found: %s" % sol['status'])
+        return None
+    return array(sol['x']).reshape((c.shape[0],))

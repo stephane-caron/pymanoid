@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -19,14 +19,11 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-import math
-import numpy
-
-from cvxopt_ import cvxopt_solve_lp
-from cvxopt_ import cvxopt_solve_qp
-from exceptions import OptimalNotFound
+from lp import solve_lp
+from qp import solve_qp, solve_relaxed_qp
 from matplotlib_ import plot_polygon
 from numpy import dot, eye, zeros
+from vectors import norm, normalize
 
 
 def is_positive_combination(b, A):
@@ -49,41 +46,17 @@ def is_positive_combination(b, A):
     # constraint), however the precision of the output is quite low (~1e-1).
     #
     G, h = -eye(m), zeros(m)
-    try:
-        x = cvxopt_solve_qp(P, q, G, h, A.T, b)
-        return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
-    except OptimalNotFound:
+    x = solve_qp(P, q, G, h, A.T, b)
+    if x is None:  # optimum not found
         return False
-    return False
+    return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
 
-
-def norm(v):
-    """
-    For some reason, numpy's one is slow. On my machine:
-
-        In [1]: %timeit numpy.linalg.norm(v)
-        100000 loops, best of 3: 3.9 µs per loop
-
-        In [2]: %timeit pymanoid.utils.norm(v)
-        1000000 loops, best of 3: 727 ns per loop
-
-    """
-    return math.sqrt(numpy.dot(v, v))
-
-
-def normalize(v):
-    """Return a unit vector u such that v = norm(v) * u."""
-    return v / norm(v)
-
-
-solve_lp = cvxopt_solve_lp
-solve_qp = cvxopt_solve_qp
 
 __all__ = [
-    'cvxopt_solve_lp',
-    'cvxopt_solve_qp',
     'norm',
+    'normalize',
     'plot_polygon',
     'solve_lp',
     'solve_qp',
+    'solve_relaxed_qp',
 ]

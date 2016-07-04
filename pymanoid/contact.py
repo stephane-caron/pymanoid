@@ -29,7 +29,7 @@ from polyhedra import Cone
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from scipy.linalg import block_diag
-from utils import cvxopt_solve_qp
+from utils import solve_qp, solve_relaxed_qp
 
 
 class Contact(Box):
