@@ -200,7 +200,7 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
 
     INPUT:
 
-    - ``points`` -- list of 3D points
+    - ``points`` -- list of coplanar 3D points
     - ``normal`` -- unit vector normal to the drawing plane
     - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
       letter followed by faces to draw (see ``color`` and ``faces``)
