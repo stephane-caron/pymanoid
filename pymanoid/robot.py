@@ -49,17 +49,123 @@ from warnings import warn
 
 class Robot(object):
 
-    def __init__(self, robot_name, env=None):
-        env = env if env else get_env()
-        robot = env.GetRobot(robot_name)
-        if not robot:
-            raise Exception("Robot not found: %s" % robot_name)
+    __default_xml = """
+    <environment>
+        <robot file="%s" name="%s" />
+    </environment>
+    """
+
+    __free_flyer_xml = """
+    <environment>
+        <robot>
+            <kinbody>
+                <body name="FLYER_TX_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_TY_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_TZ_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_ROLL_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_PITCH_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_YAW_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <robot file="%s" name="%s">
+                <kinbody>
+                    <joint name="FLYER_TX" type="slider" circular="true">
+                        <body>FLYER_TX_LINK</body>
+                        <body>FLYER_TY_LINK</body>
+                        <axis>1 0 0</axis>
+                        <limits>-10 +10</limits>
+                    </joint>
+                    <joint name="FLYER_TY" type="slider" circular="true">
+                        <body>FLYER_TY_LINK</body>
+                        <body>FLYER_TZ_LINK</body>
+                        <axis>0 1 0</axis>
+                        <limits>-10 +10</limits>
+                    </joint>
+                    <joint name="FLYER_TZ" type="slider" circular="true">
+                        <body>FLYER_TZ_LINK</body>
+                        <body>FLYER_ROLL_LINK</body>
+                        <axis>0 0 1</axis>
+                        <limits>-10 +10</limits>
+                    </joint>
+                    <joint name="FLYER_ROLL" type="hinge" circular="true">
+                        <body>FLYER_ROLL_LINK</body>
+                        <body>FLYER_PITCH_LINK</body>
+                        <axis>1 0 0</axis>
+                    </joint>
+                    <joint name="FLYER_PITCH" type="hinge" circular="true">
+                        <body>FLYER_PITCH_LINK</body>
+                        <body>FLYER_YAW_LINK</body>
+                        <axis>0 1 0</axis>
+                    </joint>
+                    <joint name="FLYER_YAW" type="hinge" circular="true">
+                        <body>FLYER_YAW_LINK</body>
+                        <body>%s</body>
+                        <axis>0 0 1</axis>
+                    </joint>
+                </kinbody>
+            </robot>
+        </robot>
+    </environment>
+    """
+
+    def __init__(self, path, root_body, free_flyer=True):
+        """
+        Create a new robot object.
+
+        INPUT:
+
+        - ``path`` -- path to the COLLADA model of the robot
+
+        """
+        if free_flyer:
+            xml = Robot.__free_flyer_xml
+            xml %= (path, basename(splitext(path)[0]), root_body)
+        else:
+            xml = Robot.__default_xml
+            xml %= (path, basename(splitext(path)[0]))
+        env = get_env()
+        env.LoadData(xml)
+        set_default_background_color()  # reset by LoadData
+        robot = env.GetRobots()[0]
         q_min, q_max = robot.GetDOFLimits()
         robot.SetDOFVelocityLimits(1000 * robot.GetDOFVelocityLimits())
         robot.SetDOFVelocities([0] * robot.GetDOF())
 
         self.active_dofs = None
-        self.env = env
+        self.has_free_flyer = free_flyer
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in robot.GetLinks()])
         self.q_max_full = q_max
@@ -236,8 +342,8 @@ class Robot(object):
 
     def add_com_task(self, target, gain=None, weight=None):
         if type(target) is list:
-            target = numpy.array(target)
-        if type(target) is numpy.ndarray:
+            target = array(target)
+        if type(target) is ndarray:
             def error(q, qd):
                 return target - self.compute_com(q)
         elif hasattr(target, 'pos'):
@@ -314,14 +420,14 @@ class Robot(object):
         if type(target) is Contact:  # used for ROS communications
             target.robot_link = link.index  # dirty
         if type(target) is list:
-            target = numpy.array(target)
+            target = array(target)
         if hasattr(target, 'effector_pose'):  # needs to come before 'pose'
             def error(q, qd):
                 return target.effector_pose - self.compute_link_pose(link, q)
         elif hasattr(target, 'pose'):
             def error(q, qd):
                 return target.pose - self.compute_link_pose(link, q)
-        elif type(target) is numpy.ndarray:
+        elif type(target) is ndarray:
             def error(q, qd):
                 return target - self.compute_link_pose(link, q)
         else:  # link frame target should be a pose
@@ -335,14 +441,14 @@ class Robot(object):
 
     def add_link_position_task(self, link, target, gain=None, weight=None):
         if type(target) is list:
-            target = numpy.array(target)
+            target = array(target)
         if hasattr(target, 'pos'):
             def error(q, qd):
                 return target.pos - link.p
         elif hasattr(target, 'p'):
             def error(q, qd):
                 return target.p - link.p
-        elif type(target) is numpy.ndarray:
+        elif type(target) is ndarray:
             def error(q, qd):
                 return target - self.compute_link_pose(link, q)
         else:  # this is an aesthetic comment
@@ -491,23 +597,24 @@ class Robot(object):
             self.set_dof_values(q)
             if callback:
                 callback(t, q, qd, qdd)
-            time.sleep(dt)
+            sleep(dt)
 
     def record_trajectory(self, traj, fname='output.mpg', codec=13,
                           framerate=24, width=800, height=600, dt=3e-2):
-        viewer = self.env.GetViewer()
-        recorder = RaveCreateModule(self.env, 'viewerrecorder')
-        self.env.AddModule(recorder, '')
+        env = get_env()
+        viewer = get_viewer()
+        recorder = RaveCreateModule(env, 'viewerrecorder')
+        env.AddModule(recorder, '')
         self.set_dof_values(traj.q(0))
         recorder.SendCommand('Start %d %d %d codec %d timing '
                              'simtime filename %s\n'
                              'viewer %s' % (width, height, framerate, codec,
                                             fname, viewer.GetName()))
-        time.sleep(1.)
+        sleep(1.)
         self.play_trajectory(traj, dt=dt)
-        time.sleep(1.)
+        sleep(1.)
         recorder.SendCommand('Stop')
-        self.env.Remove(recorder)
+        env.Remove(recorder)
 
     def set_color(self, r, g, b):
         for link in self.rave.GetLinks():
