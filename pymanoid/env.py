@@ -41,20 +41,17 @@ def get_viewer():
     return __env__.GetViewer()
 
 
-def init(env_file=None):
+def init(env_file=None, env_xml=None):
     env = openravepy.Environment()
     if env_file:
         env.Load(env_file)
-    register_env(env)
+    elif env_xml:
+        env.LoadData(env_xml)
     env.GetPhysicsEngine().SetGravity(__gravity__)
     env.SetViewer('qtcoin')
-    viewer = env.GetViewer()
-    viewer.SetBkgndColor([.6, .6, .8])
-    viewer.SetCamera([  # default view from behind
-        [0.,  0., 1., -3.],
-        [-1., 0., 0.,  0.],
-        [0., -1., 0.,  0.7],
-        [0.,  0., 0.,  1.]])
+    register_env(env)
+    set_default_background_color()
+    set_default_camera()
 
 
 def register_env(env):
@@ -62,15 +59,7 @@ def register_env(env):
     __env__ = env
 
 
-def set_camera_above(x=0, y=0, z=3):
-    get_viewer().SetCamera([
-        [0, -1,  0, x],
-        [-1, 0,  0, y],
-        [0,  0, -1, z],
-        [0,  0,  0, 1.]])
-
-
-def set_camera_behind(x=-3, y=0, z=0.7):
+def set_camera_back(x=-3, y=0, z=0.7):
     get_viewer().SetCamera([
         [0,  0, 1, x],
         [-1, 0, 0, y],
@@ -78,7 +67,7 @@ def set_camera_behind(x=-3, y=0, z=0.7):
         [0,  0, 0, 1.]])
 
 
-def set_camera_below(x=0, y=0, z=-2):
+def set_camera_bottom(x=0, y=0, z=-2):
     get_viewer().SetCamera([
         [0, -1, 0, x],
         [1,  0, 0, y],
@@ -108,3 +97,23 @@ def set_camera_right(x=0, y=-3, z=0.7):
         [0,  0, 1, y],
         [0, -1, 0, z],
         [0,  0, 0, 1.]])
+
+
+def set_camera_top(x=0, y=0, z=3):
+    get_viewer().SetCamera([
+        [0, -1,  0, x],
+        [-1, 0,  0, y],
+        [0,  0, -1, z],
+        [0,  0,  0, 1.]])
+
+
+def set_default_background_color():
+    get_viewer().SetBkgndColor([.6, .6, .8])
+
+
+def set_default_camera():
+    get_viewer().SetCamera([  # default view from behind
+        [0.,  0., 1., -3.],
+        [-1., 0., 0.,  0.],
+        [0., -1., 0.,  0.7],
+        [0.,  0., 0.,  1.]])

@@ -39,12 +39,12 @@ from env import get_gravity
 from env import get_viewer
 from env import init
 from env import register_env
-from env import set_camera_above
-from env import set_camera_behind
-from env import set_camera_below
+from env import set_camera_back
+from env import set_camera_bottom
 from env import set_camera_front
 from env import set_camera_left
 from env import set_camera_right
+from env import set_camera_top
 from robot import Robot
 from trajectory import Trajectory
 
@@ -79,10 +79,10 @@ __all__ = [
     'register_env',
     'robots',
     'rotations',
-    'set_camera_above',
-    'set_camera_behind',
-    'set_camera_below',
+    'set_camera_back',
+    'set_camera_bottom',
     'set_camera_front',
     'set_camera_left',
     'set_camera_right',
+    'set_camera_top',
 ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -19,15 +19,15 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy
-import time
-
 from contact import Contact
-from env import get_env
+from env import get_env, get_viewer
+from env import set_default_background_color
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
-from numpy import zeros, hstack, vstack, tensordot
+from numpy import zeros, hstack, vstack, tensordot, ndarray
 from openravepy import RaveCreateModule
+from os.path import basename, splitext
 from rotations import crossmat
+from time import sleep
 from warnings import warn
 
 
