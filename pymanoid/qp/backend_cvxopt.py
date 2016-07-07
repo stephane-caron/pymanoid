@@ -41,13 +41,12 @@ def solve_qp(P, q, G=None, h=None, A=None, b=None, warm_start=None):
 
     """
     n = P.shape[1]
-    P_sym = .5 * (P + P.T)   # necessary for CVXOPT 1.1.7
-    #
     # CVXOPT 1.1.7 only considers the lower entries of P
     # so we need to project on the symmetric part beforehand,
     # otherwise a wrong cost function will be used
-    #
-    args = [matrix(P_sym), matrix(q)]
+    P = .5 * (P + P.T)
+    # now we can proceed
+    args = [matrix(P), matrix(q)]
     if G is not None:
         args.extend([matrix(G), matrix(h)])
         if A is not None:

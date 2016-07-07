@@ -21,7 +21,15 @@
 
 from qpoases import PyQProblem as QProblem
 from qpoases import PyQProblemB as QProblemB
+from qpoases import PyOptions as Options
+from qpoases import PyPrintLevel as PrintLevel
 from numpy import array, hstack, ones, vstack, zeros
+
+
+__infty = 1e10
+options = Options()
+options.printLevel = PrintLevel.NONE
+nb_wsr = array([10])  # number of working set recalculations
 
 
 def solve_qp(P, q, G=None, h=None, A=None, b=None, warm_start=None):
@@ -36,30 +44,30 @@ def solve_qp(P, q, G=None, h=None, A=None, b=None, warm_start=None):
             A * x == b
 
     """
-
-    # min   1/2*x'Hx + x'g
-    # s.t.  lb  <=  x <= ub
-    #       lbA <= Ax <= ubA
-    nb_wsr = array([10])  # number of working set recalculations
-    if G is None and A is None or True:
-        qp = QProblemB(P.shape[0])
-        qp.init(P, q, None, None, nb_wsr)
+    n = P.shape[0]
+    lb = -__infty * ones(P.shape[0])
+    ub = +__infty * ones(P.shape[0])
+    has_cons = G is not None or A is not None
+    if G is not None and A is None:
+        C = G
+        lb_C = -__infty * ones(h.shape[0])
+        ub_C = h
+    elif G is None and A is not None:
+        C = vstack([A, A])
+        lb_C = h
+        ub_C = h
+    else:  # G is not None and A is not None:
+        C = vstack([G, A, A])
+        lb_C = hstack([-__infty * ones(h.shape[0]), b])
+        ub_C = hstack([h, b])
+    if has_cons:
+        qp = QProblem(n, C.shape[0])
+        qp.setOptions(options)
+        qp.init(P, q, C, lb, ub, lb_C, ub_C, nb_wsr)
     else:
-        infty = 1e10
-        if G is not None and A is None:
-            C, lb_C, ub_C = G, -infty * ones(h.shape[0]), h
-        elif G is None and A is not None:
-            C, lb_C, ub_C = vstack([A, A]), h, h
-        else:  # G is not None and A is not None
-            C = vstack([G, A, A])
-            lb_C = hstack([-infty * ones(C.shape[0]), b])
-            ub_C = hstack([h, b])
-        # options = Options()
-        # options.printLevel = PrintLevel.NONE
-        # example.setOptions(options)
-        qp = QProblem(P.shape[0], C.shape[0])
-        qp.init(P, q, C, None, None, lb_C, ub_C, nb_wsr)
-
-    x_opt = zeros(P.shape[0])
+        qp = QProblemB(n)
+        qp.setOptions(options)
+        qp.init(P, q, lb, ub, nb_wsr)
+    x_opt = zeros(n)
     qp.getPrimalSolution(x_opt)
     return x_opt
