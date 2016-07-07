@@ -19,42 +19,34 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from cvxopt import matrix
-from cvxopt.solvers import options, qp
-from numpy import array, dot
-from vectors import norm
-from warnings import warn
+from numpy import dot
 
 
-options['show_progress'] = False  # disable cvxopt output
+solve_qp = None
+
+try:  # CVXOPT
+    from backend_cvxopt import solve_qp as cvxopt_solve_qp
+    solve_qp = cvxopt_solve_qp
+except ImportError:
+    def cvxopt_solve_qp(*args, **kwargs):
+        raise ImportError("CVXOPT not found")
+
+try:  # Gurobi
+    from backend_gurobi import solve_qp as gurobi_solve_qp
+    if solve_qp is not None:
+        solve_qp = gurobi_solve_qp
+except ImportError:
+    def gurobi_solve_qp(*args, **kwargs):
+        raise ImportError("Gurobi not found")
 
 
-def solve_qp(P, q, G=None, h=None, A=None, b=None):
-    """
-    Solve a Quadratic Program defined by
-
-        min_x   x.T * P * x + 2 * q.T * x
-
-         s.t.   G * x <= h
-                A * x == b
-
-    """
-    P_sym = .5 * (P + P.T)   # necessary for CVXOPT 1.1.7
-    #
-    # CVXOPT 1.1.7 only considers the lower entries of P
-    # so we need to project on the symmetric part beforehand,
-    # otherwise a wrong cost function will be used
-    #
-    args = [matrix(P_sym), matrix(q)]
-    if G is not None:
-        args.extend([matrix(G), matrix(h)])
-        if A is not None:
-            args.extend([matrix(A), matrix(b)])
-    sol = qp(*args)
-    if not ('optimal' in sol['status']):
-        warn("QP optimum not found: %s" % sol['status'])
-        return None
-    return array(sol['x']).reshape((P.shape[1],))
+try:  # qpOASES
+    from backend_qpoases import solve_qp as qpoases_solve_qp
+    if solve_qp is not None:
+        solve_qp = qpoases_solve_qp
+except ImportError:
+    def qpoases_solve_qp(*args, **kwargs):
+        raise ImportError("qpOASES not found")
 
 
 def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
@@ -82,6 +74,16 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
     P2 = P + OVER_WEIGHT * dot(A.T, A)
     q2 = q + OVER_WEIGHT * dot(-b.T, A)
     x = solve_qp(P2, q2, G, h)
-    if tol is not None and norm(dot(A, x) - b) / norm(b) > tol:
-        return None
+    if tol is not None:
+        def sq(v):
+            return dot(v, v)
+        if sq(dot(A, x) - b) / sq(b) > tol * tol:
+            return None
     return x
+
+
+__all__ = [
+    'cvxopt_solve_qp',
+    'gurobi_solve_qp',
+    'qpoases_solve_qp',
+]

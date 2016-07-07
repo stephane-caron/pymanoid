@@ -25,11 +25,11 @@ import simplejson
 import uuid
 
 from body import Box
-from polyhedra import Cone
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
+from polyhedra import Cone
+from qp import solve_relaxed_qp
 from scipy.linalg import block_diag
-from utils import solve_relaxed_qp
 
 
 class Contact(Box):

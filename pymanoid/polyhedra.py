@@ -21,8 +21,9 @@
 
 import cdd
 
-from numpy import array, hstack, ones, vstack, zeros
-from utils import is_positive_combination, norm
+from numpy import array, dot, eye, hstack, ones, vstack, zeros
+from qp import solve_qp
+from utils import norm
 
 
 class Polyhedron(object):
@@ -153,3 +154,29 @@ class Polytope(Polyhedron):
             elif i not in g.lin_set:
                 vertices.append(V[i, 1:])
         return vertices
+
+
+def is_positive_combination(b, A):
+    """
+    Check if b can be written as a positive combination of lines from A.
+
+    INPUT:
+
+    - ``b`` -- test vector
+    - ``A`` -- matrix of line vectors to combine
+
+    OUTPUT:
+
+    True if and only if b = A.T * x for some x >= 0.
+    """
+    m = A.shape[0]
+    P, q = eye(m), zeros(m)
+    #
+    # NB: one could try solving a QP minimizing |A * x - b|^2 (and no equality
+    # constraint), however the precision of the output is quite low (~1e-1).
+    #
+    G, h = -eye(m), zeros(m)
+    x = solve_qp(P, q, G, h, A.T, b)
+    if x is None:  # optimum not found
+        return False
+    return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
