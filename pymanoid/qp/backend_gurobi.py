@@ -20,7 +20,10 @@
 
 
 from numpy import empty
-from gurobipy import Model, QuadExpr, GRB
+from gurobipy import Model, QuadExpr, GRB, quicksum, setParam
+
+
+setParam('OutputFlag', 0)
 
 
 def solve_qp(P, q, G=None, h=None, A=None, b=None, do=True):
@@ -43,19 +46,19 @@ def solve_qp(P, q, G=None, h=None, A=None, b=None, do=True):
         for j in xrange(n):
             obj += 0.5 * x[i] * P[i, j] * x[j]
         obj += q[i] * x[i]
-    model.setObjective(obj)
+    model.setObjective(obj, GRB.MINIMIZE)
 
     # subject to
     #     G * x <= h
     if G is not None:
         for i in xrange(n):
-            model.addConstr(sum(G[i, j] * x[j] for j in xrange(n)) <= h[i])
+            model.addConstr(quicksum(G[i, j] * x[j] for j in xrange(n)) <= h[i])
 
     # subject to
     #     A * x == b
     if A is not None:
         for i in xrange(n):
-            model.addConstr(sum(A[i, j] * x[j] for j in xrange(n)) == b[i])
+            model.addConstr(quicksum(A[i, j] * x[j] for j in xrange(n)) == b[i])
 
     if do:
         model.optimize()
