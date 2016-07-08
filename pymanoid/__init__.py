@@ -45,8 +45,10 @@ from env import set_camera_front
 from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
+from qp import solve_qp
 from robot import Robot
 from trajectory import Trajectory
+from utils import solve_lp
 
 import polyhedra
 import robots
@@ -85,4 +87,6 @@ __all__ = [
     'set_camera_left',
     'set_camera_right',
     'set_camera_top',
+    'solve_lp',
+    'solve_qp',
 ]
