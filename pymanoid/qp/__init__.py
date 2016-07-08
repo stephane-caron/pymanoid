@@ -22,31 +22,32 @@
 from numpy import dot
 
 
-solve_qp = None
-
 try:  # CVXOPT
-    from backend_cvxopt import solve_qp as cvxopt_solve_qp
-    solve_qp = cvxopt_solve_qp
+    from backend_cvxopt import cvxopt_solve_qp
 except ImportError:
     def cvxopt_solve_qp(*args, **kwargs):
         raise ImportError("CVXOPT not found")
 
+try:  # CVXPY
+    from backend_cvxpy import cvxpy_solve_qp
+except ImportError:
+    def cvxpy_solve_qp(*args, **kwargs):
+        raise ImportError("CVXPY not found")
+
 try:  # Gurobi
-    from backend_gurobi import solve_qp as gurobi_solve_qp
-    if solve_qp is not None:
-        solve_qp = gurobi_solve_qp
+    from backend_gurobi import gurobi_solve_qp
 except ImportError:
     def gurobi_solve_qp(*args, **kwargs):
         raise ImportError("Gurobi not found")
 
-
 try:  # qpOASES
-    from backend_qpoases import solve_qp as qpoases_solve_qp
-    if solve_qp is not None:
-        solve_qp = qpoases_solve_qp
+    from backend_qpoases import qpoases_solve_qp
 except ImportError:
     def qpoases_solve_qp(*args, **kwargs):
         raise ImportError("qpOASES not found")
+
+
+solve_qp = cvxopt_solve_qp
 
 
 def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
@@ -84,6 +85,7 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
 
 __all__ = [
     'cvxopt_solve_qp',
+    'cvxpy_solve_qp',
     'gurobi_solve_qp',
     'qpoases_solve_qp',
 ]

@@ -19,16 +19,12 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+from cvxpy import Variable, Minimize, Problem, quad_form
 from numpy import array
-from cvxopt import matrix
-from cvxopt.solvers import options, qp
-from warnings import warn
 
 
-options['show_progress'] = False  # disable cvxopt output
-
-
-def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None):
+def cvxpy_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None,
+                   solver=None):
     """
     Solve a Quadratic Program defined as:
 
@@ -39,21 +35,17 @@ def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None):
             G * x <= h
             A * x == b
 
-    using CVXOPT <http://cvxopt.org/>.
+    using CVXPY <http://www.cvxpy.org/>.
     """
-    n = P.shape[1]
-    # CVXOPT 1.1.7 only considers the lower entries of P
-    # so we need to project on the symmetric part beforehand,
-    # otherwise a wrong cost function will be used
-    P = .5 * (P + P.T)
-    # now we can proceed
-    args = [matrix(P), matrix(q)]
+    n = P.shape[0]
+    x = Variable(n)
+    objective = Minimize(0.5 * quad_form(x, P) + q * x)
+    constraints = []
     if G is not None:
-        args.extend([matrix(G), matrix(h)])
-        if A is not None:
-            args.extend([matrix(A), matrix(b)])
-    sol = qp(*args, initvals=initvals)
-    if not ('optimal' in sol['status']):
-        warn("QP optimum not found: %s" % sol['status'])
-        return None
-    return array(sol['x']).reshape((n,))
+        constraints.append(G * x <= h)
+    if A is not None:
+        constraints.append(A * x == b)
+    prob = Problem(objective, constraints)
+    prob.solve(solver=solver)
+    x_opt = array(x.value).reshape((n,))
+    return x_opt

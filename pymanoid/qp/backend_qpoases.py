@@ -33,16 +33,24 @@ options = Options()
 options.printLevel = PrintLevel.NONE
 
 
-def solve_qp(P, q, G=None, h=None, A=None, b=None, warm_start=None):
+def qpoases_solve_qp(P, q, G=None, h=None, A=None, b=None, warm_start=None):
     """
     Solve a Quadratic Program defined as:
 
         minimize
-            1/2 * x.T * P * x + q.T * x
+            (1/2) * x.T * P * x + q.T * x
 
         subject to
             G * x <= h
             A * x == b
+
+    using qpOASES <https://projects.coin-or.org/qpOASES>.
+
+        .. NOTE::
+
+            This function relies on some updates from the standard distribution
+            of qpOASES (details below). A fully compatible repository is
+            published at <https://github.com/stephane-caron/qpOASES>.
 
         .. NOTE::
 

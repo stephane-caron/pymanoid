@@ -26,7 +26,19 @@ from gurobipy import Model, QuadExpr, GRB, quicksum, setParam
 setParam('OutputFlag', 0)
 
 
-def solve_qp(P, q, G=None, h=None, A=None, b=None, do=True):
+def gurobi_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None):
+    """
+    Solve a Quadratic Program defined as:
+
+        minimize
+            (1/2) * x.T * P * x + q.T * x
+
+        subject to
+            G * x <= h
+            A * x == b
+
+    using Gurobi <http://www.gurobi.com/>.
+    """
     n = P.shape[1]
     model = Model()
     x = {
@@ -60,11 +72,9 @@ def solve_qp(P, q, G=None, h=None, A=None, b=None, do=True):
         for i in xrange(n):
             model.addConstr(quicksum(A[i, j] * x[j] for j in xrange(n)) == b[i])
 
-    if do:
-        model.optimize()
+    model.optimize()
 
     a = empty(n)
-    if do:
-        for i in xrange(n):
-            a[i] = model.getVarByName('x_%d' % i).x
+    for i in xrange(n):
+        a[i] = model.getVarByName('x_%d' % i).x
     return a
