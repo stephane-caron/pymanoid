@@ -380,15 +380,15 @@ class ContactSet(object):
         nb_forces = n / 3
         P_fric = block_diag(*[
             array([
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 0]])
+                [1., 0., 0.],
+                [0., 1., 0.],
+                [0., 0., 0.]])
             for _ in xrange(nb_forces)])
         P_press = block_diag(*[
             array([
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 1]])
+                [0., 0., 0.],
+                [0., 0., 0.],
+                [0., 0., 1.]])
             for _ in xrange(nb_forces)])
         o_z = hstack([
             [0, 0, 1. / n]
