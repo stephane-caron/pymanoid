@@ -19,12 +19,12 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from contact import Contact
+from contact import Contact, ContactSet
 from env import get_env, get_viewer
 from env import set_default_background_color
 from numpy import arange, array, concatenate, cross, dot, eye, maximum, minimum
 from numpy import zeros, hstack, vstack, tensordot, ndarray
-from openravepy import RaveCreateModule
+from openravepy import RaveCreateModule, quatInverse, quatMult, quatMultArrayT
 from os.path import basename, splitext
 from rotations import crossmat
 from time import sleep
@@ -423,20 +423,29 @@ class Robot(object):
             target = array(target)
         if hasattr(target, 'effector_pose'):  # needs to come before 'pose'
             def error(q, qd):
-                return target.effector_pose - self.compute_link_pose(link, q)
+                return self.compute_link_local_pose_error(
+                    link, q, target.effector_pose)
+
+            def jacobian(q):
+                return self.compute_link_local_pose_jacobian(
+                    link, q, target.effector_pose)
         elif hasattr(target, 'pose'):
             def error(q, qd):
-                return target.pose - self.compute_link_pose(link, q)
+                return self.compute_link_local_pose_error(
+                    link, q, target.pose)
+
+            def jacobian(q):
+                return self.compute_link_local_pose_jacobian(
+                    link, q, target.pose)
         elif type(target) is ndarray:
             def error(q, qd):
-                return target - self.compute_link_pose(link, q)
+                return self.compute_link_local_pose_error(link, q, target)
+
+            def jacobian(q):
+                return self.compute_link_local_pose_jacobian(link, q, target)
         else:  # link frame target should be a pose
             msg = "Target of type %s has no 'pose' attribute" % type(target)
             raise Exception(msg)
-
-        def jacobian(q):
-            return self.compute_link_active_pose_jacobian(link, q)
-
         self.ik.add_task(link.name, error, jacobian, gain, weight, task_type)
 
     def add_link_position_task(self, link, target, gain=None, weight=None):
@@ -906,6 +915,23 @@ class Robot(object):
     def compute_link_active_pose_jacobian(self, link, q=None):
         J = self.compute_link_pose_jacobian(link, q)
         return J[:, self.active_dofs]
+
+    def compute_link_pose_error(self, link, q, target_pose):
+        link_pose = self.compute_link_pose(link, q)
+        q0 = array([0., 1., 0., 0.])
+        diff[0:4] = quatMult(q0[0:4], quatMult(diff[0:4], quatInverse(q0[0:4])))
+        return diff
+
+    def compute_link_local_pose_jacobian(self, link, q, target_pose):
+        # link_pose = self.compute_link_pose(link, q)
+        from openravepy import quatArrayTMult
+        J = self.compute_link_pose_jacobian(link, q)
+        q0 = array([0., 1., 0., 0.])
+        qarray = J[0:4, :].T
+        qarray = quatMultArrayT(q0[0:4], qarray)
+        qarray = quatArrayTMult(qarray, quatInverse(q0[0:4]))
+        J[0:4, :] = qarray.T
+        return J
 
     def compute_link_position_jacobian(self, link, p=None, q=None):
         """
