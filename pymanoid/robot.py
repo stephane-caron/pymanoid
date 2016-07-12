@@ -571,9 +571,26 @@ class Robot(object):
         self.set_dof_values(q)
         return itnum, cur_cost
 
+    def generate_posture_from_contacts(self, contact_set):
+        assert self.active_dofs is not None, \
+            "Please set active DOFs before using the IK"
+        if 'left_foot' in contact_set:
+            self.add_contact_task(self.left_foot, contact_set['left_foot'])
+        if 'right_foot' in contact_set:
+            self.add_contact_task(self.right_foot, contact_set['right_foot'])
+        if 'left_hand' in contact_set:
+            self.add_contact_task(self.left_hand, contact_set['left_hand'])
+        if 'right_hand' in contact_set:
+            self.add_contact_task(self.right_hand, contact_set['right_hand'])
+        self.add_posture_task(self.q_halfsit)
+        self.set_dof_values(self.q_halfsit)  # warm start on reference posture
+        self.solve_ik()
+
     def generate_posture(self, stance):
         assert self.active_dofs is not None, \
             "Please set active DOFs before using the IK"
+        if type(stance) is ContactSet:
+            return self.generate_posture_from_contacts(stance)
         if hasattr(stance, 'com'):
             self.add_com_task(stance.com)
         elif hasattr(stance, 'com_target'):
