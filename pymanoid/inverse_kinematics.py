@@ -36,12 +36,12 @@ class DiffIKSolver(object):
         self.errors = {}
         self.gains = {}
         self.jacobians = {}
-        self.lock = Lock()
         self.q_max = q_max
         self.q_min = q_min
         self.qd_max = +qd_lim * ones(n)
         self.qd_min = -qd_lim * ones(n)
         self.tasks = {}
+        self.tasks_lock = Lock()
         self.weights = {}
         if gains is not None:
             self.gains.update(gains)
@@ -52,7 +52,7 @@ class DiffIKSolver(object):
                  task_type=None):
         assert name not in self.tasks, \
             "Task '%s' already present in IK" % name
-        with self.lock:
+        with self.tasks_lock:
             self.tasks[name] = True
             self.errors[name] = error
             self.jacobians[name] = jacobian
@@ -80,10 +80,11 @@ class DiffIKSolver(object):
                 raise Exception(msg)
 
     def remove_task(self, name):
-        if name not in self.tasks:
-            warn("no task '%s' to remove" % name)
-            return
-        del self.tasks[name]
+        with self.tasks_lock:
+            if name not in self.tasks:
+                warn("no task '%s' to remove" % name)
+                return
+            del self.tasks[name]
 
     def update_gain(self, name, gain):
         self.gains[name] = gain
@@ -103,7 +104,7 @@ class DiffIKSolver(object):
     def compute_velocity(self, q, qd):
         P = zeros(self.I.shape)
         r = zeros(self.q_max.shape)
-        with self.lock:
+        with self.tasks_lock:
             for task in self.tasks:
                 J = self.jacobians[task](q)
                 e = self.gains[task] * self.errors[task](q, qd)
