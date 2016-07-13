@@ -113,10 +113,11 @@ def draw_force(p, f, scale=0.005, color='r', linewidth=0.02):
     """
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
-    if dot(f, f) < 1e-10:
+    f_scale = scale * f
+    if dot(f_scale, f_scale) < 1e-6:
         return None
     return get_env().drawarrow(
-        p, p + scale * f, linewidth=linewidth, color=color)
+        p, p + f_scale, linewidth=linewidth, color=color)
 
 
 def draw_point(p, color='g', pointsize=0.05):
