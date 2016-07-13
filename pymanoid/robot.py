@@ -27,7 +27,8 @@ from numpy import zeros, hstack, vstack, tensordot, ndarray
 from openravepy import RaveCreateModule
 from os.path import basename, splitext
 from rotations import crossmat
-from time import sleep
+from time import sleep as rt_sleep
+from threading import Lock, Thread
 from warnings import warn
 
 
@@ -168,6 +169,8 @@ class Robot(object):
 
         self.active_dofs = None
         self.has_free_flyer = free_flyer
+        self.ik_lock = None
+        self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in robot.GetLinks()])
         self.q_max_full = q_max
@@ -612,6 +615,39 @@ class Robot(object):
         self.solve_ik()
 
     #
+    # IK Threading
+    #
+
+    def start_ik_thread(self, dt, sleep_fun=None):
+        """
+        Start a new thread stepping the IK every dt, then calling sleep_fun(dt).
+
+        dt -- stepping period in seconds
+        sleep_fun -- sleeping function (default: time.sleep)
+        """
+        if sleep_fun is None:
+            sleep_fun = rt_sleep
+        self.ik_lock = Lock()
+        self.ik_thread = Thread(target=self.run_ik_thread, args=(dt, sleep_fun))
+        self.ik_thread.daemon = True
+        self.ik_thread.start()
+
+    def run_ik_thread(self, dt, sleep_fun):
+        while self.ik_lock:
+            with self.ik_lock:
+                self.step_ik(dt)
+                sleep_fun(dt)
+
+    def pause_ik_thread(self):
+        self.ik_lock.acquire()
+
+    def resume_ik_thread(self):
+        self.ik_lock.release()
+
+    def stop_ik_thread(self):
+        self.ik_lock = None
+
+    #
     # Visualization
     #
 
@@ -624,7 +660,7 @@ class Robot(object):
             self.set_dof_values(q)
             if callback:
                 callback(t, q, qd, qdd)
-            sleep(dt)
+            rt_sleep(dt)
 
     def record_trajectory(self, traj, fname='output.mpg', codec=13,
                           framerate=24, width=800, height=600, dt=3e-2):
@@ -637,9 +673,9 @@ class Robot(object):
                              'simtime filename %s\n'
                              'viewer %s' % (width, height, framerate, codec,
                                             fname, viewer.GetName()))
-        sleep(1.)
+        rt_sleep(1.)
         self.play_trajectory(traj, dt=dt)
-        sleep(1.)
+        rt_sleep(1.)
         recorder.SendCommand('Stop')
         env.Remove(recorder)
 
