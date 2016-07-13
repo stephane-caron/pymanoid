@@ -22,7 +22,7 @@
 import openravepy
 import uuid
 
-from numpy import array, zeros
+from numpy import array
 from env import get_env
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
@@ -320,29 +320,19 @@ class Cube(Box):
             pose=pose, visible=visible, transparency=transparency)
 
 
-class Point(Cube):
+class PointMass(Cube):
 
-    def __init__(self, p, *args, **kwargs):
+    def __init__(self, pos, mass, *args, **kwargs):
         """
         Points are simply cubes with a default size.
 
-        p -- initial position
+        pos -- initial position in inertial frame
+        mass -- total mass in [kg]
         """
-        kwargs['pos'] = p
-        super(Point, self).__init__(0.015, *args, **kwargs)
-
-
-class PointWithVelocity(Point):
-
-    def __init__(self, p, pd=None, *args, **kwargs):
-        """
-        Points are simply cubes with a default size.
-
-        p -- initial position in inertial frame
-        pd -- initial velocity in inertial frame (default: [0, 0, 0])
-        """
-        super(PointWithVelocity, self).__init__(p, *args, **kwargs)
-        self.pd = zeros(3) if pd is None else pd
+        size = 5e-4 * mass
+        kwargs['pos'] = pos
+        super(PointMass, self).__init__(size, *args, **kwargs)
+        self.mass = mass
 
 
 class Link(Body):

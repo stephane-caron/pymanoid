@@ -22,6 +22,7 @@
 from body import Body
 from body import Box
 from body import Cube
+from body import PointMass
 from body import Link
 from body import Manipulator
 from contact import Contact
@@ -63,6 +64,7 @@ __all__ = [
     'Cube',
     'Link',
     'Manipulator',
+    'PointMass',
     'Robot',
     'Trajectory',
     'draw_2d_cone',
