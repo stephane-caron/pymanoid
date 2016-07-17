@@ -32,11 +32,6 @@ from qp import solve_relaxed_qp
 from scipy.linalg import block_diag
 
 
-import time
-from numpy import average, std
-ll = []
-
-
 class Contact(Box):
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
@@ -410,13 +405,7 @@ class ContactSet(object):
         A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
         # f_all = solve_qp(P, q, G, h, A, b)
-        global ll
-        t0 = time.time()
         f_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
-        if len(ll) % 100 == 0:
-            print average(ll), "+/-", std(ll), "ms", len(ll)
-            ll = []
-        ll.append(1000. * (time.time() - t0))
         if f_all is None:
             return None
         output, next_index = [], 0
