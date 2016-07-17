@@ -25,6 +25,11 @@ from threading import Lock
 from warnings import warn
 
 
+from numpy import average, std
+import time
+ll = []
+
+
 class DiffIKSolver(object):
 
     def __init__(self, dt, q_max, q_min, qd_lim, K_doflim, gains=None,
@@ -114,4 +119,12 @@ class DiffIKSolver(object):
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
-        return solve_qp(P, r, G, h)
+        global ll
+        t0 = time.time()
+        qd = solve_qp(P, r, G, h)
+        ll.append(1000. * (time.time() - t0))
+        if len(ll) % 100 == 0:
+            print "%.2f +/- %.2f ms (%d)" % (average(ll), std(ll), len(ll))
+            if len(ll) % 1000 == 0:
+                ll = []
+        return qd
