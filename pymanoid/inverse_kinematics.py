@@ -20,7 +20,7 @@
 
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
-from qp import quadprog_solve_qp
+from qp import solve_qp
 from threading import Lock
 from warnings import warn
 
@@ -114,4 +114,4 @@ class DiffIKSolver(object):
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
-        return quadprog_solve_qp(P, r, G, h)
+        return solve_qp(P, r, G, h)
