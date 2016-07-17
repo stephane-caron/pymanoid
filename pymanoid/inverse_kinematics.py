@@ -20,14 +20,9 @@
 
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
-from qp import solve_qp
+from qp import quadprog_solve_qp
 from threading import Lock
 from warnings import warn
-
-
-from numpy import average, std
-import time
-ll = []
 
 
 class DiffIKSolver(object):
@@ -119,12 +114,4 @@ class DiffIKSolver(object):
         qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
-        global ll
-        t0 = time.time()
-        qd = solve_qp(P, r, G, h)
-        ll.append(1000. * (time.time() - t0))
-        if len(ll) % 100 == 0:
-            print "%.2f +/- %.2f ms (%d)" % (average(ll), std(ll), len(ll))
-            if len(ll) % 1000 == 0:
-                ll = []
-        return qd
+        return quadprog_solve_qp(P, r, G, h)
