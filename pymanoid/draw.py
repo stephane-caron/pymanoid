@@ -55,7 +55,7 @@ def draw_line(p1, p2, color='g', linewidth=1.):
     """
     Draw a line between points p1 and p2.
 
-    INPUT
+    INPUT:
 
     - ``p1`` -- one end of the line
     - ``p2`` -- other end of the line

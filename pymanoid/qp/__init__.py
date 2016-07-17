@@ -42,7 +42,7 @@ except ImportError:
         raise ImportError("qpOASES not found")
 
 
-solve_qp = cvxopt_solve_qp
+solve_qp = quadprog_solve_qp
 
 
 def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
