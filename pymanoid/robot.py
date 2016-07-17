@@ -153,16 +153,15 @@ class Robot(object):
         - ``path`` -- path to the COLLADA model of the robot
 
         """
+        name = basename(splitext(path)[0])
         if free_flyer:
-            xml = Robot.__free_flyer_xml
-            xml %= (path, basename(splitext(path)[0]), root_body)
+            xml = Robot.__free_flyer_xml % (path, name, root_body)
         else:
-            xml = Robot.__default_xml
-            xml %= (path, basename(splitext(path)[0]))
+            xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)
         set_default_background_color()  # reset by LoadData
-        robot = env.GetRobots()[0]
+        robot = env.GetRobot(name)
         q_min, q_max = robot.GetDOFLimits()
         robot.SetDOFVelocityLimits(1000 * robot.GetDOFVelocityLimits())
         robot.SetDOFVelocities([0] * robot.GetDOF())
