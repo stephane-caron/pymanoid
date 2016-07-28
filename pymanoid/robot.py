@@ -363,20 +363,46 @@ class Robot(object):
         jacobian = self.compute_com_jacobian
         self.ik.add_task('com', error, jacobian, gain, weight)
 
-    def add_constant_cam_task(self, weight):
+    def add_constant_cam_task(self, weight=None):
+        """
+        Try to keep the centroidal angular momentum constant.
+
+        INPUT:
+
+        ``weight`` -- task weight (optional)
+
+        .. NOTE::
+
+            The way this task is implemented may be surprising. Basically,
+            keeping a constant CAM means d/dt(CAM) == 0, i.e.,
+
+                d/dt (J_cam * qd) == 0
+                J_cam * qdd + qd * H_cam * qd == 0
+
+            Because the IK works at the velocity level, we approximate qdd by
+            finite difference from the previous velocity (``qd`` argument to the
+            error function):
+
+                J_cam * (qd_next - qd) / dt + qd * H_cam * qd == 0
+
+            Finally, the task in qd_next (output velocity) is:
+
+                J_cam * qd_next == J_cam * qd - dt * qd * H_cam * qd
+
+            Hence, there are two occurrences of J_cam: one in the task error,
+            and the second in the task jacobian.
+
+        """
         def error(q, qd):
             J = self.compute_cam_jacobian(q)
-            # Ld_G = J d(qd) / dt + qd * H * qd, regulated to 0
-            if False:
-                # i.e., J qd_new = J qd_prev - dt * qd_prev * H * qd_prev
-                H = self.compute_cam_hessian(q)
-                return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
-            else:
-                # neglecting the hessian term, this becomes
-                return dot(J, qd)
+            # J * qd_next = J * qd_prev - dt * qd_prev * H * qd_prev
+            # H = self.compute_cam_hessian(q)
+            # return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
+            # we neglect the hessian term, assuming qd is small:
+            return dot(J, qd)
 
         jacobian = self.compute_cam_jacobian
-        gain = 1.  # needs to be one
+        gain = 1.  # needs to be one, see the note above
         self.ik.add_task('cam', error, jacobian, gain, weight)
 
     def add_contact_task(self, link, target, gain=None, weight=None):
@@ -510,6 +536,13 @@ class Robot(object):
         self.ik.add_task('posture', error, jacobian, gain, weight)
 
     def add_zero_cam_task(self, weight):
+        """
+        Regulate the centroidal angular momentum to zero.
+
+        INPUT:
+
+        ``weight`` -- task weight (optional)
+        """
         def error(q, qd):
             return zeros((3,))
 
