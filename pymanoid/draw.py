@@ -70,7 +70,7 @@ def draw_line(p1, p2, color='g', linewidth=1.):
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
     return get_env().drawlinelist(
-        array([p1, p2]), linewidth=linewidth, colors=color),
+        array([p1, p2]), linewidth=linewidth, colors=color)
 
 
 def draw_arrow(p1, p2, color='r', linewidth=0.02):
@@ -94,7 +94,7 @@ def draw_arrow(p1, p2, color='r', linewidth=0.02):
     return get_env().drawarrow(p1, p2, linewidth=linewidth, color=color)
 
 
-def draw_force(p, f, scale=0.005, color='r', linewidth=0.02):
+def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
     """
     Draw a force acting at a given point.
 
