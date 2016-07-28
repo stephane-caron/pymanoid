@@ -168,6 +168,7 @@ class Robot(object):
 
         self.active_dofs = None
         self.has_free_flyer = free_flyer
+        self.ik = None  # created by self.init_ik()
         self.ik_lock = None
         self.ik_thread = None
         self.is_visible = True
@@ -253,15 +254,14 @@ class Robot(object):
 
     def set_active_dofs(self, active_dofs):
         """
-        Set active DOFs and initialize the IK.
+        Set active DOFs.
 
         active_dofs -- list of DOF indices
         """
         self.active_dofs = active_dofs
         self.rave.SetActiveDOFs(active_dofs)
-        self.init_ik()
 
-    def init_ik(self):
+    def init_ik(self, dt, gains=None, weights=None):
         """
         Initialize the IK solver. Needs to be defined by child classes.
 
@@ -574,8 +574,8 @@ class Robot(object):
         return itnum, cur_cost
 
     def generate_posture_from_contacts(self, contact_set):
-        assert self.active_dofs is not None, \
-            "Please set active DOFs before using the IK"
+        assert self.ik is not None, \
+            "Initialize the IK before generating posture"
         if 'left_foot' in contact_set:
             self.add_contact_task(self.left_foot, contact_set['left_foot'])
         if 'right_foot' in contact_set:
@@ -589,8 +589,8 @@ class Robot(object):
         self.solve_ik()
 
     def generate_posture(self, stance):
-        assert self.active_dofs is not None, \
-            "Please set active DOFs before using the IK"
+        assert self.ik is not None, \
+            "Initialize the IK before generating posture"
         if type(stance) is ContactSet:
             return self.generate_posture_from_contacts(stance)
         if hasattr(stance, 'com'):
