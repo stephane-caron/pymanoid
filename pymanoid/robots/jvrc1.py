@@ -19,13 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/..')
-
-from body import Manipulator
-from robot import Robot
+from pymanoid import DiffIKSolver, Robot, Manipulator
 
 
 class JVRC1(Robot):
@@ -39,6 +33,7 @@ class JVRC1(Robot):
 
     mass = 62.  # [kg]
 
+    # DOF indices
     R_HIP_P = 0
     R_HIP_R = 1
     R_HIP_Y = 2
@@ -90,32 +85,86 @@ class JVRC1(Robot):
     ROT_P = 48
     ROT_Y = 49
 
-    chest_dofs = [WAIST_Y, WAIST_P, WAIST_R]
+    # First-level DOF groups
+    chest = [WAIST_Y, WAIST_P, WAIST_R]
+    free_pos = [TRANS_X, TRANS_Y, TRANS_Z]
+    free_rpy = [ROT_R, ROT_P, ROT_Y]
+    left_ankle = [L_ANKLE_R, L_ANKLE_P]
+    left_elbow = [L_ELBOW_P, L_ELBOW_Y]
+    left_hip = [L_HIP_P, L_HIP_R, L_HIP_Y]
+    left_index = [L_UINDEX, L_LINDEX]
+    left_knee = [L_KNEE]
+    left_little = [L_ULITTLE, L_LLITTLE]
+    left_shoulder = [L_SHOULDER_P, L_SHOULDER_R, L_SHOULDER_Y]
+    left_thumb = [L_UTHUMB, L_LTHUMB]
+    left_wrist = [L_WRIST_R, L_WRIST_Y]
+    neck = [NECK_Y, NECK_R, NECK_P]
+    right_ankle = [R_ANKLE_R, R_ANKLE_P]
+    right_elbow = [R_ELBOW_P, R_ELBOW_Y]
+    right_hip = [R_HIP_P, R_HIP_R, R_HIP_Y]
+    right_index = [R_UINDEX, R_LINDEX]
+    right_knee = [R_KNEE]
+    right_little = [R_ULITTLE, R_LLITTLE]
+    right_shoulder = [R_SHOULDER_P, R_SHOULDER_R, R_SHOULDER_Y]
+    right_thumb = [R_UTHUMB, R_LTHUMB]
+    right_wrist = [R_WRIST_R, R_WRIST_Y]
 
-    neck_dofs = [NECK_Y, NECK_R, NECK_P]
+    # Second-level DOF groups
+    free = free_pos + free_rpy
+    left_arm = left_shoulder + left_elbow + left_wrist
+    left_hand = left_thumb + left_index + left_little
+    left_leg = left_hip + left_knee + left_ankle
+    right_arm = right_shoulder + right_elbow + right_wrist
+    right_hand = right_thumb + right_index + right_little
+    right_leg = right_hip + right_knee + right_ankle
 
-    left_leg_dofs = [L_HIP_P, L_HIP_R, L_HIP_Y, L_KNEE, L_ANKLE_R, L_ANKLE_P]
+    def __init__(self, path, root_body='PELVIS_S', free_flyer=True):
+        """
+        Add the JVRC-1 model to the environment.
 
-    right_leg_dofs = [R_HIP_R, R_HIP_Y, R_KNEE, R_ANKLE_R, R_ANKLE_P]
+        INPUT:
 
-    left_arm_dofs = [L_SHOULDER_P, L_SHOULDER_R, L_SHOULDER_Y, L_ELBOW_P,
-                     L_ELBOW_Y, L_WRIST_R, L_WRIST_Y]
-
-    right_arm_dofs = [R_SHOULDER_P, R_SHOULDER_R, R_SHOULDER_Y, R_ELBOW_P,
-                      R_ELBOW_Y, R_WRIST_R, R_WRIST_Y]
-
-    left_hand_dofs = [L_UTHUMB, L_LTHUMB, L_UINDEX, L_LINDEX, L_ULITTLE,
-                      L_LLITTLE]
-
-    right_hand_dofs = [R_UTHUMB, R_LTHUMB, R_UINDEX, R_LINDEX, R_ULITTLE,
-                       R_LLITTLE]
-
-    free_dofs = [TRANS_X, TRANS_Y, TRANS_Z, ROT_R, ROT_P, ROT_Y]
-
-    def __init__(self, robot_name='JVRC-1', env=None):
-        super(JVRC1, self).__init__(robot_name, env)
+        ``path`` -- path to COLLADA file
+        ``root_body`` -- should be BODY
+        ``free_flyer`` -- should be True (come on)
+        """
+        super(JVRC1, self).__init__(path, root_body, free_flyer)
         rave = self.rave
         self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))
-        self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.left_hand = Manipulator(rave.GetManipulator("left_hand_palm"))
+        self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
+        self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
+
+    def init_ik(self, gains=None, weights=None):
+        """
+        Initialize the differential IK solver.
+
+        INPUT:
+
+        ``gain`` -- dictionary of default task gains
+        ``weights`` -- dictionary of default task weights
+        """
+        assert self.active_dofs is not None, \
+            "Please set active DOFs before using the IK"
+        if gains is None:
+            gains = {
+                'com': 1.,
+                'contact': 0.9,
+                'link': 0.2,
+                'posture': 0.005,
+            }
+        if weights is None:
+            weights = {
+                'contact': 100.,
+                'com': 5.,
+                'link': 5.,
+                'posture': 0.1,
+            }
+        self.ik = DiffIKSolver(
+            q_max=self.q_max,
+            q_min=self.q_min,
+            qd_lim=1.,
+            K_doflim=5.,
+            gains=gains,
+            weights=weights)

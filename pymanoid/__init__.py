@@ -39,6 +39,7 @@ from env import get_env
 from env import get_gravity
 from env import get_viewer
 from env import init
+from env import read_window_id
 from env import register_env
 from env import set_camera_back
 from env import set_camera_bottom
@@ -46,6 +47,8 @@ from env import set_camera_front
 from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
+from env import take_screenshot
+from inverse_kinematics import DiffIKSolver
 from qp import solve_qp
 from robot import Robot
 from trajectory import Trajectory
@@ -62,6 +65,7 @@ __all__ = [
     'Contact',
     'ContactSet',
     'Cube',
+    'DiffIKSolver',
     'Link',
     'Manipulator',
     'PointMass',
@@ -80,6 +84,7 @@ __all__ = [
     'get_viewer',
     'init',
     'polyhedra',
+    'read_window_id',
     'register_env',
     'robots',
     'rotations',
@@ -91,4 +96,5 @@ __all__ = [
     'set_camera_top',
     'solve_lp',
     'solve_qp',
+    'take_screenshot',
 ]

@@ -25,31 +25,16 @@ import os.path
 import pymanoid
 import time
 
-
-env_file = './openrave_models/JVRC-1/env.xml'
+model_path = './openrave_models/JVRC-1/JVRC-1.dae'
 
 dt = 1e-2  # [s]
 
-# IK gains
-G_com = 100.
-G_contact = 100.
-G_dof = 0.5
-G_ref = 0.5
-qd_lim = 1.  # [rad/s]
-
-# IK weights
-w_lnk = 100.
-w_com = 001.
-w_reg = 001.
-w_dof = 000.1
-w_ref = 000.1
-
 
 if __name__ == '__main__':
-    if not os.path.isfile(env_file):
-        print "Error opening file %s" % env_file
+    if not os.path.isfile(model_path):
+        print "Error opening file %s" % model_path
         print "                                                                "
-        print "For this example, you need to clone the models repository:      "
+        print "To run this example, you need to clone the models repository:   "
         print "                                                                "
         print "    git clone https://github.com/stephane-caron/openrave_models "
         print "                                                                "
@@ -57,8 +42,8 @@ if __name__ == '__main__':
         print "                                                                "
         exit(-1)
 
-    pymanoid.init(env_file)
-    robot = pymanoid.robots.JVRC1()
+    pymanoid.init()
+    robot = pymanoid.robots.JVRC1(model_path)
 
     viewer = pymanoid.get_env().GetViewer()
     viewer.SetCamera([
@@ -70,11 +55,11 @@ if __name__ == '__main__':
     # Initial robot pose
     robot.set_transparency(0.4)
     robot.scale_dof_limits(0.95)
-    dof_objectives = [  # will also be passed to the IK
+    dof_targets = [  # will also be passed to the IK
         (robot.R_SHOULDER_R, -.5),
         (robot.L_SHOULDER_R, +.5)]
     q_init = robot.q.copy()
-    for (dof_id, dof_ref) in dof_objectives:
+    for (dof_id, dof_ref) in dof_targets:
         robot.set_dof_values([dof_ref], [dof_id])
         q_init[dof_id] = dof_ref
     robot.set_dof_values([-1], [robot.R_SHOULDER_P])
@@ -82,8 +67,8 @@ if __name__ == '__main__':
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
 
     # set active DOFs for the IK
-    active_dofs = robot.chest_dofs + robot.free_dofs + robot.left_arm_dofs + \
-        robot.right_arm_dofs + robot.left_leg_dofs + robot.right_leg_dofs
+    active_dofs = robot.chest + robot.free + robot.left_arm + \
+        robot.right_arm + robot.left_leg + robot.right_leg
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
@@ -103,30 +88,25 @@ if __name__ == '__main__':
         visible=True)
 
     # Initialize the IK
-    robot.init_ik(qd_lim)
-    robot.add_contact_objective(
-        robot.left_foot, left_foot_target, G_contact, w_lnk)
-    robot.add_contact_objective(
-        robot.right_foot, right_foot_target, G_contact, w_lnk)
-    robot.add_com_objective(com, G_com, w_com)
-    robot.add_posture_objective(robot.q, G_ref, w_ref)
-    for (dof_id, dof_ref) in dof_objectives:
-        robot.add_dof_objective(dof_id, dof_ref, G_dof, w_dof)
-    robot.add_velocity_regularization(w_reg)
+    robot.init_ik(gains=None, weights=None)  # using default IK settings
+    robot.add_contact_task(robot.left_foot, left_foot_target)
+    robot.add_contact_task(robot.right_foot, right_foot_target)
+    robot.add_com_task(com)
+    robot.add_posture_task(robot.q)
+    for (dof_id, dof_ref) in dof_targets:
+        robot.add_dof_task(dof_id, dof_ref, gain=0.5, weight=0.1)
 
     print ""
-    print "First, we will solve for an initial posture, enforcing foot contacts"
+    print "First, we solve for an initial posture, enforcing foot contacts"
     print "while keeping the center of mass (COM) at its current position."
+    print "The numbers below show the objective value at each iteration:"
     print ""
-    raw_input("Ready to call solve_ik()? ")
-
-    robot.solve_ik(dt, max_it=100, conv_tol=1e-4, debug=True)
+    robot.solve_ik(max_it=100, conv_tol=1e-4, debug=True)
 
     print ""
-    print "Now, we will move the target COM (green box) back and forth, and"
+    print "Now, we move the target COM (green box) back and forth, and"
     print "have the robot follow it using the step_ik() function."
     print ""
-    raw_input("Ready to go for 10 seconds? ")
 
     for t in numpy.arange(0, 10, 1e-2):
         loop_start = time.time()
@@ -137,8 +117,7 @@ if __name__ == '__main__':
         if rem_time > 0:
             time.sleep(rem_time)
 
+    print "Finally, we launch the IK thread. Try moving the green box!"
     print ""
-    print "This example is over. You can now play with the"
-    print "`robot` object in the following Python shell."
-    print ""
+    robot.start_ik_thread(dt)
     IPython.embed()

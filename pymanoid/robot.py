@@ -261,9 +261,14 @@ class Robot(object):
         self.active_dofs = active_dofs
         self.rave.SetActiveDOFs(active_dofs)
 
-    def init_ik(self, dt, gains=None, weights=None):
+    def init_ik(self, gains=None, weights=None):
         """
         Initialize the IK solver. Needs to be defined by child classes.
+
+        INPUT:
+
+        ``gain`` -- dictionary of default task gains
+        ``weights`` -- dictionary of default task weights
 
         EXAMPLE:
 
@@ -274,10 +279,10 @@ class Robot(object):
                 qd_lim=10.,
                 K_doflim=5.,
                 gains={
-                    'com': 1. / dt,
-                    'contact': 0.9 / dt,
-                    'link': 0.2 / dt,
-                    'posture': 0.005 / dt,
+                    'com': 1.,
+                    'contact': 0.9,
+                    'link': 0.2,
+                    'posture': 0.005,
                 },
                 weights={
                     'contact': 100.,
@@ -500,6 +505,18 @@ class Robot(object):
         self.ik.add_task(task_name, error, jacobian, gain, weight)
 
     def add_min_acceleration_task(self, weight):
+        """
+        Minimize accelerations.
+
+        INPUT:
+
+        ``weight`` -- task weight
+
+        .. NOTE::
+
+            As the differential IK returns velocities, we approximate the task
+            "minimize qdd" by "minimize (qd_next - qd)".
+        """
         identity = eye(self.nb_active_dofs)
 
         def error(q, qd):
@@ -511,7 +528,20 @@ class Robot(object):
         gain = 1.  # needs to be one
         self.ik.add_task('qdd-min', error, jacobian, gain, weight)
 
-    def add_min_velocity_task(self, gain, weight):
+    def add_min_velocity_task(self, gain=None, weight=None):
+        """
+        Minimize the instantaneous velocity.
+
+        INPUT:
+
+        ``gain`` -- task gain
+        ``weight`` -- task weight
+
+        .. NOTE::
+
+            This is a regularization task, therefore ``weight`` should be low
+            compared to the other task weights.
+        """
         identity = eye(self.nb_active_dofs)
 
         def error(q, qd):
@@ -520,7 +550,7 @@ class Robot(object):
         def jacobian(q):
             return identity
 
-        self.ik.add_task('qd-min', error, identity, gain, weight)
+        self.ik.add_task('qdmin', error, jacobian, gain, weight)
 
     def add_posture_task(self, q_ref, gain=None, weight=None):
         if len(q_ref) == self.nb_dofs:
@@ -564,20 +594,20 @@ class Robot(object):
         self.add_com_task(target, gain, weight)
 
     def step_ik(self, dt):
-        qd = self.ik.compute_velocity(self.q, self.qd)
+        qd = self.ik.compute_velocity(self.q, self.qd, dt)
         q = minimum(maximum(self.q_min, self.q + qd * dt), self.q_max)
         self.set_dof_values(q)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, debug=False):
+    def solve_ik(self, max_it=100, conv_tol=1e-5, dt=1e-2, debug=False):
         """
         Compute joint-angles q satisfying all constraints at best.
 
         INPUT:
 
-        - ``dt`` -- time step for the differential IK
         - ``max_it`` -- maximum number of differential IK iterations
         - ``conv_tol`` -- stop when cost improvement is less than this threshold
+        - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
 
         .. NOTE::
@@ -599,8 +629,8 @@ class Robot(object):
                 print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
             if abs(cost_var) < conv_tol:
                 break
-            qd = self.ik.compute_velocity(q, qd)
-            q = minimum(maximum(self.q_min, q + qd * self.ik.dt), self.q_max)
+            qd = self.ik.compute_velocity(q, qd, dt)
+            q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
             if debug:
                 self.set_dof_values(q)
         self.set_dof_values(q)

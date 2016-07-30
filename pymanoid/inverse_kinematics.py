@@ -27,12 +27,11 @@ from warnings import warn
 
 class DiffIKSolver(object):
 
-    def __init__(self, dt, q_max, q_min, qd_lim, K_doflim, gains=None,
+    def __init__(self, q_max, q_min, qd_lim, K_doflim, gains=None,
                  weights=None):
         n = len(q_max)
         self.I = eye(n)
         self.K_doflim = K_doflim
-        self.dt = dt
         self.errors = {}
         self.gains = {}
         self.jacobians = {}
@@ -78,6 +77,10 @@ class DiffIKSolver(object):
                 if task_type is not None:
                     msg += " (task_type='%s')" % task_type
                 raise Exception(msg)
+            assert self.gains[name] < 1. + 1e-10, \
+                "Task gains should be between 0. and 1."
+            assert self.weights[name] > 0., \
+                "Task weights should be positive"
 
     def remove_task(self, name):
         with self.tasks_lock:
@@ -101,13 +104,13 @@ class DiffIKSolver(object):
 
         return sum(cost(task) for task in self.tasks)
 
-    def compute_velocity(self, q, qd):
+    def compute_velocity(self, q, qd, dt):
         P = zeros(self.I.shape)
         r = zeros(self.q_max.shape)
         with self.tasks_lock:
             for task in self.tasks:
                 J = self.jacobians[task](q)
-                e = self.gains[task] * self.errors[task](q, qd)
+                e = self.gains[task] * (self.errors[task](q, qd) / dt)
                 P += self.weights[task] * dot(J.T, J)
                 r += self.weights[task] * dot(-e.T, J)
         qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))

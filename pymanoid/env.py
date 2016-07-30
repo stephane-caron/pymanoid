@@ -22,11 +22,17 @@
 import numpy
 import openravepy
 
+from re import search
+from os import popen, system
+
 
 __env__ = None
 
 
 __gravity__ = numpy.array([0, 0, -9.80665])  # ISO 80000-3
+
+
+__window_id__ = None
 
 
 def get_env():
@@ -52,6 +58,14 @@ def init(env_file=None, env_xml=None):
     register_env(env)
     set_default_background_color()
     set_default_camera()
+
+
+def read_window_id():
+    global __window_id__
+    print "Please click on the OpenRAVE window."
+    line = popen('/usr/bin/xwininfo | grep "Window id:"').readlines()[0]
+    __window_id__ = "0x%s" % search('0x([0-9a-f]+)', line).group(1)
+    print "Window id:", __window_id__
 
 
 def register_env(env):
@@ -117,3 +131,9 @@ def set_default_camera():
         [-1., 0., 0.,  0.],
         [0., -1., 0.,  0.7],
         [0.,  0., 0.,  1.]])
+
+
+def take_screenshot(fname):
+    if __window_id__ is None:
+        read_window_id()
+    system('import -window %s %s' % (__window_id__, fname))
