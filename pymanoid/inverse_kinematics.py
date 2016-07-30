@@ -48,14 +48,16 @@ class DiffIKSolver(object):
             self.weights.update(weights)
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
-                 task_type=None):
+                 task_type=None, unit_gain=False):
         assert name not in self.tasks, \
             "Task '%s' already present in IK" % name
         with self.tasks_lock:
             self.tasks[name] = True
             self.errors[name] = error
             self.jacobians[name] = jacobian
-            if gain is not None:
+            if unit_gain:
+                pass
+            elif gain is not None:
                 self.gains[name] = gain
             elif name in self.gains:
                 pass  # gain is already defined
@@ -77,8 +79,8 @@ class DiffIKSolver(object):
                 if task_type is not None:
                     msg += " (task_type='%s')" % task_type
                 raise Exception(msg)
-            assert self.gains[name] < 1. + 1e-10, \
-                "Task gains should be between 0. and 1."
+            assert unit_gain or self.gains[name] < 1. + 1e-10, \
+                "Task gains should be between 0. and 1 (%f)." % self.gains[name]
             assert self.weights[name] > 0., \
                 "Task weights should be positive"
 
@@ -95,12 +97,12 @@ class DiffIKSolver(object):
     def update_weight(self, name, weight):
         self.weights[name] = weight
 
-    def compute_cost(self, q, qd):
+    def compute_cost(self, q, qd, dt):
         def sq(e):
             return dot(e, e)
 
         def cost(task):
-            return self.weights[task] * sq(self.errors[task](q, qd))
+            return self.weights[task] * sq(self.errors[task](q, qd, dt))
 
         return sum(cost(task) for task in self.tasks)
 
@@ -110,7 +112,10 @@ class DiffIKSolver(object):
         with self.tasks_lock:
             for task in self.tasks:
                 J = self.jacobians[task](q)
-                e = self.gains[task] * (self.errors[task](q, qd) / dt)
+                if task in self.gains:
+                    e = self.gains[task] * (self.errors[task](q, qd, dt) / dt)
+                else:  # for tasks added with unit_gain=True
+                    e = self.errors[task](q, qd, dt)
                 P += self.weights[task] * dot(J.T, J)
                 r += self.weights[task] * dot(-e.T, J)
         qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))

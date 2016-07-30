@@ -355,13 +355,13 @@ class Robot(object):
         if type(target) is list:
             target = array(target)
         if type(target) is ndarray:
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target - self.compute_com(q)
         elif hasattr(target, 'pos'):
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target.pos - self.compute_com(q)
         elif hasattr(target, 'p'):
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target.p - self.compute_com(q)
         else:  # COM target should be a position
             msg = "Target of type %s has no 'pos' attribute" % type(target)
@@ -400,17 +400,13 @@ class Robot(object):
             and the second in the task jacobian.
 
         """
-        def error(q, qd):
-            J = self.compute_cam_jacobian(q)
-            # J * qd_next = J * qd_prev - dt * qd_prev * H * qd_prev
-            # H = self.compute_cam_hessian(q)
-            # return dot(J, qd) - self.ik.dt * dot(qd, dot(H, qd))
-            # we neglect the hessian term, assuming qd is small:
-            return dot(J, qd)
+        def error(q, qd, dt):
+            J_cam = self.compute_cam_jacobian(q)
+            H_cam = self.compute_cam_hessian(q)  # computation intensive :(
+            return dot(J_cam, qd) - dt * dot(qd, dot(H_cam, qd))
 
         jacobian = self.compute_cam_jacobian
-        gain = 1.  # needs to be one, see the note above
-        self.ik.add_task('cam', error, jacobian, gain, weight)
+        self.ik.add_task('cam', error, jacobian, weight=weight, unit_gain=True)
 
     def add_contact_task(self, link, target, gain=None, weight=None):
         return self.add_link_pose_task(
@@ -422,13 +418,15 @@ class Robot(object):
         by a factor alpha() between zero and one. This is a bad solution to
         implement
 
-        link -- a pymanoid.Link object
-        target -- a pymanoid.Body, or any object with a ``pose`` field
-        gain -- positional gain between zero and one
-        weight -- multiplier of the task squared error in IK cost function
-        alpha -- callable function returning a gain multiplier (float)
+        INPUT:
+
+        ``link`` -- a pymanoid.Link object
+        ``target`` -- a pymanoid.Body, or any object with a ``pose`` field
+        ``gain`` -- positional gain between zero and one
+        ``weight`` -- multiplier of the task squared error in IK cost function
+        ``alpha`` -- callable function returning a gain multiplier (float)
         """
-        def error(q, qd):
+        def error(q, qd, dt):
             cur_pose = self.compute_link_pose(link, q)
             return alpha() * (contact.effector_pose - cur_pose)
 
@@ -443,7 +441,7 @@ class Robot(object):
         J = zeros(self.nb_active_dofs)
         J[active_dof_id] = 1.
 
-        def error(q, qd):
+        def error(q, qd, dt):
             return (dof_ref - q[active_dof_id])
 
         def jacobian(q):
@@ -466,14 +464,14 @@ class Robot(object):
         if type(target) is list:
             target = array(target)
         if hasattr(target, 'effector_pose'):  # needs to come before 'pose'
-            def error(q, qd):
+            def error(q, qd, dt):
                 return self.compute_link_pose_error(
                     link, q, target.effector_pose)
         elif hasattr(target, 'pose'):
-            def error(q, qd):
+            def error(q, qd, dt):
                 return self.compute_link_pose_error(link, q, target.pose)
         elif type(target) is ndarray:
-            def error(q, qd):
+            def error(q, qd, dt):
                 return self.compute_link_pose_error(link, q, target)
         else:  # link frame target should be a pose
             msg = "Target of type %s has no 'pose' attribute" % type(target)
@@ -488,13 +486,13 @@ class Robot(object):
         if type(target) is list:
             target = array(target)
         if hasattr(target, 'pos'):
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target.pos - link.p
         elif hasattr(target, 'p'):
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target.p - link.p
         elif type(target) is ndarray:
-            def error(q, qd):
+            def error(q, qd, dt):
                 return target - self.compute_link_pose(link, q)
         else:  # this is an aesthetic comment
             msg = "Target of type %s has no 'pos' attribute" % type(target)
@@ -521,14 +519,14 @@ class Robot(object):
         """
         identity = eye(self.nb_active_dofs)
 
-        def error(q, qd):
+        def error(q, qd, dt):
             return qd
 
         def jacobian(q):
             return identity
 
-        gain = 1.  # needs to be one
-        self.ik.add_task('qdd-min', error, jacobian, gain, weight)
+        self.ik.add_task('qdd-min', error, jacobian, weight=weight,
+                         unit_gain=True)
 
     def add_min_velocity_task(self, gain=None, weight=None):
         """
@@ -546,7 +544,7 @@ class Robot(object):
         """
         identity = eye(self.nb_active_dofs)
 
-        def error(q, qd):
+        def error(q, qd, dt):
             return -qd
 
         def jacobian(q):
@@ -559,7 +557,7 @@ class Robot(object):
             q_ref = q_ref[self.active_dofs]
         identity = eye(self.nb_active_dofs)
 
-        def error(q, qd):
+        def error(q, qd, dt):
             return (q_ref - q)
 
         def jacobian(q):
@@ -567,20 +565,19 @@ class Robot(object):
 
         self.ik.add_task('posture', error, jacobian, gain, weight)
 
-    def add_zero_cam_task(self, weight):
+    def add_min_cam_task(self, weight=None):
         """
-        Regulate the centroidal angular momentum to zero.
+        Minimize the centroidal angular momentum.
 
         INPUT:
 
         ``weight`` -- task weight (optional)
         """
-        def error(q, qd):
+        def error(q, qd, dt):
             return zeros((3,))
 
         jacobian = self.compute_cam_jacobian
-        gain = 0.  # needs to be zero
-        self.ik.add_task('cam', error, jacobian, gain, weight)
+        self.ik.add_task('cam', error, jacobian, weight=weight, unit_gain=True)
 
     def remove_contact_task(self, link):
         self.ik.remove_task(link.name)
@@ -625,7 +622,7 @@ class Robot(object):
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
         for itnum in xrange(max_it):
             prev_cost = cur_cost
-            cur_cost = self.ik.compute_cost(q, qd)
+            cur_cost = self.ik.compute_cost(q, qd, dt)
             cost_var = cur_cost - prev_cost
             if debug:
                 print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
