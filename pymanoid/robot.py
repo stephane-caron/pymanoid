@@ -653,7 +653,7 @@ class Robot(object):
             self.add_com_task(com_target)
         q0 = \
             self.q_halfsit if hasattr(self, 'q_halfsit') \
-            else self.q
+            else zeros(self.nb_dofs)
         self.add_posture_task(q0)
         self.set_dof_values(q0)  # warm start on reference posture
         self.solve_ik()
@@ -683,7 +683,7 @@ class Robot(object):
                 self.right_hand, stance.right_hand)
         q0 = \
             self.q_halfsit if hasattr(self, 'q_halfsit') \
-            else self.q
+            else zeros(self.nb_dofs)
         self.add_posture_task(q0)
         self.set_dof_values(q0)  # warm start on reference posture
         self.solve_ik()
