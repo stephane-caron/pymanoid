@@ -261,7 +261,7 @@ class Robot(object):
         self.active_dofs = active_dofs
         self.rave.SetActiveDOFs(active_dofs)
 
-    def init_ik(self, gains=None, weights=None):
+    def init_ik(self, gains=None, weights=None, qd_lim=None, K_doflim=None):
         """
         Initialize the IK solver. Needs to be defined by child classes.
 
@@ -269,6 +269,8 @@ class Robot(object):
 
         ``gain`` -- dictionary of default task gains
         ``weights`` -- dictionary of default task weights
+        ``qd_lim`` -- special gain to enforce velocity limits
+        ``K_doflim`` -- special gain to enforce DOF limits
 
         EXAMPLE:
 
@@ -636,7 +638,7 @@ class Robot(object):
         self.set_dof_values(q)
         return itnum, cur_cost
 
-    def generate_posture_from_contacts(self, contact_set):
+    def generate_posture_from_contacts(self, contact_set, com_target=None):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
         if 'left_foot' in contact_set:
@@ -647,19 +649,26 @@ class Robot(object):
             self.add_contact_task(self.left_hand, contact_set['left_hand'])
         if 'right_hand' in contact_set:
             self.add_contact_task(self.right_hand, contact_set['right_hand'])
-        self.add_posture_task(self.q_halfsit)
-        self.set_dof_values(self.q_halfsit)  # warm start on reference posture
+        if com_target is not None:
+            self.add_com_task(com_target)
+        q0 = \
+            self.q_halfsit if hasattr(self, 'q_halfsit') \
+            else self.q
+        self.add_posture_task(q0)
+        self.set_dof_values(q0)  # warm start on reference posture
         self.solve_ik()
 
-    def generate_posture(self, stance):
+    def generate_posture(self, stance, com_target=None):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
         if type(stance) is ContactSet:
-            return self.generate_posture_from_contacts(stance)
+            return self.generate_posture_from_contacts(stance, com_target)
         if hasattr(stance, 'com'):
             self.add_com_task(stance.com)
         elif hasattr(stance, 'com_target'):
             self.add_com_task(stance.com_target)
+        elif com_target is not None:
+            self.add_com_task(com_target)
         if hasattr(stance, 'left_foot'):
             self.add_contact_task(
                 self.left_foot, stance.left_foot)
@@ -672,8 +681,11 @@ class Robot(object):
         if hasattr(stance, 'right_hand'):
             self.add_contact_task(
                 self.right_hand, stance.right_hand)
-        self.add_posture_task(self.q_halfsit)
-        self.set_dof_values(self.q_halfsit)  # warm start on reference posture
+        q0 = \
+            self.q_halfsit if hasattr(self, 'q_halfsit') \
+            else self.q
+        self.add_posture_task(q0)
+        self.set_dof_values(q0)  # warm start on reference posture
         self.solve_ik()
 
     #

@@ -136,7 +136,7 @@ class JVRC1(Robot):
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
 
-    def init_ik(self, gains=None, weights=None):
+    def init_ik(self, gains=None, weights=None, qd_lim=1., K_doflim=5.):
         """
         Initialize the differential IK solver.
 
@@ -164,7 +164,7 @@ class JVRC1(Robot):
         self.ik = DiffIKSolver(
             q_max=self.q_max,
             q_min=self.q_min,
-            qd_lim=1.,
-            K_doflim=5.,
+            qd_lim=qd_lim,
+            K_doflim=K_doflim,
             gains=gains,
             weights=weights)
