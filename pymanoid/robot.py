@@ -555,13 +555,25 @@ class Robot(object):
     def add_posture_task(self, q_ref, gain=None, weight=None):
         if len(q_ref) == self.nb_dofs:
             q_ref = q_ref[self.active_dofs]
-        identity = eye(self.nb_active_dofs)
+
+        J_posture = eye(self.nb_active_dofs)
+        trans = []
+
+        if self.has_free_flyer:  # don't include translation coordinates
+            for i in [self.TRANS_X, self.TRANS_Y, self.TRANS_Z]:
+                if i in self.active_dofs:
+                    trans.append(self.active_dofs.index(i))
+            for j in trans:
+                J_posture[j, j] = 0.
 
         def error(q, qd, dt):
-            return (q_ref - q)
+            e = (q_ref - q)
+            for j in trans:
+                e[j] = 0.
+            return e
 
         def jacobian(q):
-            return identity
+            return J_posture
 
         self.ik.add_task('posture', error, jacobian, gain, weight)
 
