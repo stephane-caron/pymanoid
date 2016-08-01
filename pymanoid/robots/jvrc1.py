@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 Stephane Caron <caron@phare.normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <caron@phare.normalesup.org>
 #
 # This file is part of pymanoid.
 #
@@ -19,6 +19,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+from os import system
+from os.path import isfile
 from pymanoid import DiffIKSolver, Robot, Manipulator
 
 
@@ -30,6 +32,9 @@ class JVRC1(Robot):
     See https://github.com/stephane-caron/jvrc_models/tree/openrave/JVRC-1 for
     an OpenRAVE-compatible Collada model (JVRC-1.dae) and environment XML file.
     """
+
+    MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
+        'openrave_models/master/JVRC-1/JVRC-1.dae'
 
     mass = 62.  # [kg]
 
@@ -118,7 +123,8 @@ class JVRC1(Robot):
     right_hand = right_thumb + right_index + right_little
     right_leg = right_hip + right_knee + right_ankle
 
-    def __init__(self, path, root_body='PELVIS_S', free_flyer=True):
+    def __init__(self, path, root_body='PELVIS_S', free_flyer=True,
+                 download_if_needed=False):
         """
         Add the JVRC-1 model to the environment.
 
@@ -127,7 +133,12 @@ class JVRC1(Robot):
         ``path`` -- path to COLLADA file
         ``root_body`` -- should be BODY
         ``free_flyer`` -- should be True (come on)
+        ``download_if_needed`` -- if True and there is no model file in
+            ``path``, will attempt to download it from JVRC1.MODEL_URL
         """
+        if download_if_needed and not isfile(path):
+            rc = system('wget %s -O %s' % (JVRC1.MODEL_URL, path))
+            assert rc == 0, "Download of model file failed"
         super(JVRC1, self).__init__(path, root_body, free_flyer)
         rave = self.rave
         self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))

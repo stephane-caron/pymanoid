@@ -20,7 +20,6 @@
 
 
 import IPython
-import os.path
 import pymanoid
 import thread
 import threading
@@ -29,9 +28,6 @@ import time
 
 com_height = 0.9  # [m]
 dt = 3e-2  # [s]
-model_file = 'JVRC-1.dae'
-model_url = 'https://raw.githubusercontent.com/stephane-caron/' \
-    'openrave_models/master/JVRC-1/JVRC-1.dae'
 env_lock = threading.Lock()
 polygon_handle = None
 z_polygon = 2.
@@ -67,16 +63,8 @@ def recompute_polygon():
 
 
 if __name__ == "__main__":
-    if not os.path.isfile(model_file):
-        os.system('wget %s' % model_url)
-    if not os.path.isfile(model_file):
-        print "Error opening/downloading the model file '%s'" % model_file
-        print "You can get this file directly at: %s" % model_url
-        print "To run this example, copy the file to this folder."
-        sys.exit()
-
     pymanoid.init()
-    robot = pymanoid.robots.JVRC1(model_file)
+    robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
     pymanoid.get_viewer().SetCamera([
         [0.60587192, -0.36596244,  0.70639274, -2.4904027],
         [-0.79126787, -0.36933163,  0.48732874, -1.6965636],

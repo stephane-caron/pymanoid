@@ -21,29 +21,13 @@
 
 import IPython
 import numpy
-import os
 import pymanoid
-import sys
 import time
-
-model_file = 'JVRC-1.dae'
-model_url = 'https://raw.githubusercontent.com/stephane-caron/' \
-    'openrave_models/master/JVRC-1/JVRC-1.dae'
-
-dt = 1e-2  # [s]
 
 
 if __name__ == '__main__':
-    if not os.path.isfile(model_file):
-        os.system('wget %s' % model_url)
-    if not os.path.isfile(model_file):
-        print "Error opening/downloading the model file '%s'" % model_file
-        print "You can get this file directly at: %s" % model_url
-        print "To run this example, copy the file to this folder."
-        sys.exit()
-
     pymanoid.init()
-    robot = pymanoid.robots.JVRC1(model_file)
+    robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
 
     viewer = pymanoid.get_env().GetViewer()
     viewer.SetCamera([
@@ -108,6 +92,7 @@ if __name__ == '__main__':
     print "have the robot follow it using the step_ik() function."
     print ""
 
+    dt = 1e-2  # [s]
     for t in numpy.arange(0, 10, 1e-2):
         loop_start = time.time()
         com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
