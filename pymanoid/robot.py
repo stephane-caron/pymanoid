@@ -553,6 +553,20 @@ class Robot(object):
         self.ik.add_task('qdmin', error, jacobian, gain, weight)
 
     def add_posture_task(self, q_ref, gain=None, weight=None):
+        """
+        Add a postural task, a common choice to regularize the weighted IK
+        problem.
+
+        INPUT:
+
+        ``gain`` -- task gain
+        ``weight`` -- task weight
+
+        .. NOTE::
+
+            This is a regularization task, therefore ``weight`` should be low
+            compared to the other task weights.
+        """
         if len(q_ref) == self.nb_dofs:
             q_ref = q_ref[self.active_dofs]
 
