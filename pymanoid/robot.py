@@ -605,7 +605,8 @@ class Robot(object):
         INPUT:
 
         - ``max_it`` -- maximum number of differential IK iterations
-        - ``conv_tol`` -- stop when cost improvement is less than this threshold
+        - ``conv_tol`` -- stop when the cost improvement ratio is less than this
+            threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
 
@@ -627,6 +628,11 @@ class Robot(object):
             if debug:
                 print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
             if abs(cost_var) < conv_tol:
+                if abs(cur_cost) > 0.5:
+                    warn("IK did not converge to solution, "
+                         "try restarting from random guess.")
+                    # self.set_dof_values(numpy.random.random(self.nb_dofs))
+                    # return self.solve_ik(max_it, conv_tol, dt, debug)
                 break
             qd = self.ik.compute_velocity(q, qd, dt)
             q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
@@ -635,7 +641,8 @@ class Robot(object):
         self.set_dof_values(q)
         return itnum, cur_cost
 
-    def generate_posture_from_contacts(self, contact_set, com_target=None):
+    def generate_posture_from_contacts(self, contact_set, com_target=None,
+                                       *args, **kwargs):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
         if 'left_foot' in contact_set:
@@ -648,14 +655,13 @@ class Robot(object):
             self.add_contact_task(self.right_hand, contact_set['right_hand'])
         if com_target is not None:
             self.add_com_task(com_target)
-        q0 = \
-            self.q_halfsit if hasattr(self, 'q_halfsit') \
-            else zeros(self.nb_dofs)
-        self.add_posture_task(q0)
-        self.set_dof_values(q0)  # warm start on reference posture
-        self.solve_ik()
+        self.add_posture_task(self.q_halfsit)
+        # warm start on halfsit posture
+        # self.set_dof_values(self.q_halfsit)
+        # => no, user may want to override this
+        self.solve_ik(*args, **kwargs)
 
-    def generate_posture(self, stance, com_target=None):
+    def generate_posture(self, stance, com_target=None, *args, **kwargs):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
         if type(stance) is ContactSet:
@@ -678,12 +684,11 @@ class Robot(object):
         if hasattr(stance, 'right_hand'):
             self.add_contact_task(
                 self.right_hand, stance.right_hand)
-        q0 = \
-            self.q_halfsit if hasattr(self, 'q_halfsit') \
-            else zeros(self.nb_dofs)
-        self.add_posture_task(q0)
-        self.set_dof_values(q0)  # warm start on reference posture
-        self.solve_ik()
+        self.add_posture_task(self.q_halfsit)
+        # warm start on halfsit posture
+        # self.set_dof_values(self.q_halfsit)
+        # => no, user may want to override this
+        self.solve_ik(*args, **kwargs)
 
     #
     # IK Threading
