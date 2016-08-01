@@ -19,6 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+from numpy import array
 from os import system
 from os.path import isfile
 from pymanoid import DiffIKSolver, Robot, Manipulator
@@ -122,6 +123,13 @@ class JVRC1(Robot):
     right_arm = right_shoulder + right_elbow + right_wrist
     right_hand = right_thumb + right_index + right_little
     right_leg = right_hip + right_knee + right_ankle
+
+    # Half-sitting posture
+    q_halfsit = array([
+        -0.38, -0.01, 0., 0.72, -0.01, -0.33, -0.38, 0.02, 0., 0.72, -0.02,
+        -0.33, 0., 0., 0., 0., 0., 0., -0.052, -0.17, 0., -0.52, 0., 0., 0., 0.,
+        0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0., 0.,
+        0., 0., 0., 0., 0., 0., 0., 0.])
 
     def __init__(self, path, root_body='PELVIS_S', free_flyer=True,
                  download_if_needed=False):
