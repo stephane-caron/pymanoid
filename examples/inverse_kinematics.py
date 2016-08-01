@@ -21,29 +21,29 @@
 
 import IPython
 import numpy
-import os.path
+import os
 import pymanoid
+import sys
 import time
 
-model_path = './openrave_models/JVRC-1/JVRC-1.dae'
+model_file = 'JVRC-1.dae'
+model_url = 'https://raw.githubusercontent.com/stephane-caron/' \
+    'openrave_models/master/JVRC-1/JVRC-1.dae'
 
 dt = 1e-2  # [s]
 
 
 if __name__ == '__main__':
-    if not os.path.isfile(model_path):
-        print "Error opening file %s" % model_path
-        print "                                                                "
-        print "To run this example, you need to clone the models repository:   "
-        print "                                                                "
-        print "    git clone https://github.com/stephane-caron/openrave_models "
-        print "                                                                "
-        print "and link it in this folder (or update `env_file` in the script)."
-        print "                                                                "
-        exit(-1)
+    if not os.path.isfile(model_file):
+        os.system('wget %s' % model_url)
+    if not os.path.isfile(model_file):
+        print "Error opening/downloading the model file '%s'" % model_file
+        print "You can get this file directly at: %s" % model_url
+        print "To run this example, copy the file to this folder."
+        sys.exit()
 
     pymanoid.init()
-    robot = pymanoid.robots.JVRC1(model_path)
+    robot = pymanoid.robots.JVRC1(model_file)
 
     viewer = pymanoid.get_env().GetViewer()
     viewer.SetCamera([
