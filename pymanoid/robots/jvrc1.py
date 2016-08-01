@@ -37,7 +37,8 @@ class JVRC1(Robot):
     MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
         'openrave_models/master/JVRC-1/JVRC-1.dae'
 
-    mass = 62.  # [kg]
+    leg_length = 0.85  # [m] (for a strechted leg)
+    mass = 62.         # [kg]
 
     # DOF indices
     R_HIP_P = 0
