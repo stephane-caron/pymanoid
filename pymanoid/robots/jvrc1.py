@@ -132,7 +132,7 @@ class JVRC1(Robot):
         0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0., 0.,
         0., 0., 0., 0., 0., 0., 0., 0.])
 
-    def __init__(self, path, root_body='PELVIS_S', free_flyer=True,
+    def __init__(self, path='JVRC-1.dae', root_body='PELVIS_S', free_flyer=True,
                  download_if_needed=False):
         """
         Add the JVRC-1 model to the environment.
