@@ -628,11 +628,9 @@ class Robot(object):
             if debug:
                 print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
             if abs(cost_var) < conv_tol:
-                if abs(cur_cost) > 0.5:
-                    warn("IK did not converge to solution, "
-                         "try restarting from random guess.")
-                    # self.set_dof_values(numpy.random.random(self.nb_dofs))
-                    # return self.solve_ik(max_it, conv_tol, dt, debug)
+                if abs(cur_cost) > 0.1:
+                    warn("IK did not converge to solution. Is it feasible?"
+                         "If so, try restarting from a random guess.")
                 break
             qd = self.ik.compute_velocity(q, qd, dt)
             q = minimum(maximum(self.q_min, q + qd * dt), self.q_max)
