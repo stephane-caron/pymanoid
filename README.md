@@ -20,7 +20,7 @@ Python library for humanoid robotics. Extends OpenRAVE with:
 - [Generalized ZMP support areas](https://scaron.info/research/arxiv-2015.html)
   for locomotion in multi-contact scenarios, including e.g. hand contacts
 - [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
-  executed on the real HRP-4 robot
+  demonstrated on the real HRP-4 robot
 
 ## Installation
 
