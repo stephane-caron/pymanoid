@@ -1,6 +1,6 @@
 # Examples
 
-## inverse\_kinematics.py
+## Inverse Kinematics
 
 <img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/inverse_kinematics.png" width="250" />
 
@@ -14,7 +14,7 @@ To get this example running, you will need a copy or symbolic link of the
 repository in the local folder. Alternatively, you can clone the repository
 anywhere and set the correct path in the ``env_file`` variable of the script.
 
-## static\_equilibrium\_polygon.py
+## Static-equilibrium Polygon
 
 <img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/static_equilibrium_polygon.png" width="250" />
 
