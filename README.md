@@ -1,8 +1,6 @@
 # pymanoid
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
-
-Python library for humanoid robotics in OpenRAVE. Extends the latter with:
+Python library for humanoid robotics. Extends OpenRAVE with:
 
 - Primitives for contacts, stances, point-mass systems, ...
 - Jacobians and hessians for the center of mass, angular momentum, ...
@@ -14,6 +12,8 @@ Python library for humanoid robotics in OpenRAVE. Extends the latter with:
 - Backends for various LP and QP solvers
 
 ## Use cases
+
+<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
 - [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
 - [Generalized ZMP support areas for multi-contact locomotion](https://scaron.info/research/arxiv-2015.html)
