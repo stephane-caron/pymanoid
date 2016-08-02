@@ -13,7 +13,7 @@ Python library for humanoid robotics. Extends OpenRAVE with:
 
 ## Use cases
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+<img src="https://scaron.info/images/ijhr-2016.png" width="300" align="right" />
 
 - [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
   based on Model-Preview Control of the 3D acceleration of the center of mass
