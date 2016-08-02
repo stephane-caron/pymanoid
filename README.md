@@ -18,7 +18,7 @@ Python library for humanoid robotics. Extends OpenRAVE with:
 - [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
   based on Model-Preview Control of the 3D acceleration of the center of mass
 - [Generalized ZMP support areas](https://scaron.info/research/arxiv-2015.html)
-  for locomotion in multi-contact scenarios
+  for locomotion in multi-contact scenarios, including e.g. hand contacts
 - [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
   executed on the real HRP-4 robot
 
