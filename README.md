@@ -16,20 +16,16 @@ Python library for humanoid robotics in OpenRAVE.
 ## Installation
 
 - First, [install OpenRAVE](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
-- Make sure you have all Python dependencies:
+- Install all Python dependencies:
 ```
 sudo apt-get install cython python python-dev python-pip python-scipy
+sudo pip install quadprog pycddlib
 ```
-- Install a QP solver. The preferred one is
-  [quadprog](https://github.com/rmcgibbo/quadprog). Alternatively, ``pymanoid``
-  will try to use [CVXOPT](http://cvxopt.org) or
-  [qpOASES](https://projects.coin-or.org/qpOASES) if they are installed.
+- Finally, if you wish to install the library system-wide:
 ```
-sudo pip install quadprog
+sudo python setup.py install
 ```
-- Install [pycddlib](https://pycddlib.readthedocs.org/en/latest/):
-```
-sudo pip install cvxopt pycddlib
-```
-- To use in a single directory, make a symbolic link to the ``pymanoid`` sub-folder of the cloned repository
-- To install the library system-wide: ``sudo python setup.py install``
+
+The preferred QP solver is [quadprog](https://github.com/rmcgibbo/quadprog).
+Alternatively, ``pymanoid`` will try to use [CVXOPT](http://cvxopt.org) or
+[qpOASES](https://projects.coin-or.org/qpOASES) if they are installed.
