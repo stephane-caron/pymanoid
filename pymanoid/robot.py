@@ -553,15 +553,41 @@ class Robot(object):
         self.ik.add_task('qdmin', error, jacobian, gain, weight)
 
     def add_posture_task(self, q_ref, gain=None, weight=None):
+        """
+        Add a postural task, a common choice to regularize the weighted IK
+        problem.
+
+        INPUT:
+
+        ``gain`` -- task gain
+        ``weight`` -- task weight
+
+        .. NOTE::
+
+            This is a regularization task, therefore ``weight`` should be low
+            compared to the other task weights.
+        """
         if len(q_ref) == self.nb_dofs:
             q_ref = q_ref[self.active_dofs]
-        identity = eye(self.nb_active_dofs)
+
+        J_posture = eye(self.nb_active_dofs)
+        trans = []
+
+        if self.has_free_flyer:  # don't include translation coordinates
+            for i in [self.TRANS_X, self.TRANS_Y, self.TRANS_Z]:
+                if i in self.active_dofs:
+                    trans.append(self.active_dofs.index(i))
+            for j in trans:
+                J_posture[j, j] = 0.
 
         def error(q, qd, dt):
-            return (q_ref - q)
+            e = (q_ref - q)
+            for j in trans:
+                e[j] = 0.
+            return e
 
         def jacobian(q):
-            return identity
+            return J_posture
 
         self.ik.add_task('posture', error, jacobian, gain, weight)
 
@@ -589,6 +615,10 @@ class Robot(object):
         self.ik.remove_task('dof-%d' % dof_id)
 
     def update_com_task(self, target, gain=None, weight=None):
+        if 'com' not in self.ik.gains or 'com' not in self.ik.weights:
+            raise Exception("No COM task to update in robot IK")
+        gain = self.ik.gains['com']
+        weights = self.ik.weights['com']
         self.ik.remove_task('com')
         self.add_com_task(target, gain, weight)
 

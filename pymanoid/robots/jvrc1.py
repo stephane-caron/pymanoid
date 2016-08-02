@@ -37,7 +37,7 @@ class JVRC1(Robot):
     MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
         'openrave_models/master/JVRC-1/JVRC-1.dae'
 
-    leg_length = 0.85  # [m] (for a strechted leg)
+    leg_length = 0.85  # [m] (for a stretched leg)
     mass = 62.         # [kg]
 
     # DOF indices
@@ -132,9 +132,9 @@ class JVRC1(Robot):
     # Half-sitting posture
     q_halfsit = array([
         -0.38, -0.01, 0., 0.72, -0.01, -0.33, -0.38, 0.02, 0., 0.72, -0.02,
-        -0.33, 0., 0., 0., 0., 0., 0., -0.052, -0.17, 0., -0.52, 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., 0., 0., 0.])
+        -0.33, 0., 0.13, 0., 0., 0., 0., -0.052, -0.17, 0., -0.52, 0., 0., 0.,
+        0., 0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0.,
+        0., 0., 0., 0., 0., 0., 0., 0., 0.])
 
     def __init__(self, path='JVRC-1.dae', root_body='PELVIS_S', free_flyer=True,
                  download_if_needed=False):

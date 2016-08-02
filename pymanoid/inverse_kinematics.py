@@ -32,6 +32,8 @@ class DiffIKSolver(object):
         n = len(q_max)
         self.I = eye(n)
         self.K_doflim = K_doflim
+        self.default_gains = {}
+        self.default_weights = {}
         self.errors = {}
         self.gains = {}
         self.jacobians = {}
@@ -43,26 +45,58 @@ class DiffIKSolver(object):
         self.tasks_lock = Lock()
         self.weights = {}
         if gains is not None:
-            self.gains.update(gains)
+            self.default_gains.update(gains)
         if weights is not None:
-            self.weights.update(weights)
+            self.default_weights.update(weights)
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
-        assert name not in self.tasks, \
-            "Task '%s' already present in IK" % name
+        """
+        Add a new task in the IK. A task is perfectly achieved when:
+
+            jacobian(q) * qd == -gain * error(q, qd, dt) / dt     (1)
+
+        To tend toward this, each task adds a term
+
+            weight * |jacobian(q) * qd + gain * error(q, qd, dt) / dt|^2
+
+        to the cost function of the optimization problem solved at each time
+        step.
+
+        INPUT:
+
+        ``name`` -- task name, used as identifier for e.g. removal
+        ``error`` -- error function of the task (depends on q, qd and dt)
+        ``jacobian`` -- jacobian function of the task (depends on q only)
+        ``gain`` -- task gain
+        ``weight`` -- task weight
+        ``task_type`` -- for some tasks such as contact, ``name`` corresponds to
+            a robot link name; ``task_type`` is then used to fetch default gain
+            and weight values
+        ``unit_gain`` -- some tasks have a different formulation where the gain
+            is one and there is no division by dt in Equation (1); set
+            ``unit_gain=1`` for this behavior
+
+        .. NOTE::
+
+            This function is not made to be called frequently.
+
+        """
+        if name in self.tasks:
+            raise Exception("Task '%s' already present in IK" % name)
         with self.tasks_lock:
             self.tasks[name] = True
             self.errors[name] = error
             self.jacobians[name] = jacobian
             if unit_gain:
-                pass
+                if name in self.gains:
+                    del self.gains[name]
             elif gain is not None:
                 self.gains[name] = gain
-            elif name in self.gains:
-                pass  # gain is already defined
-            elif task_type in self.gains:
-                self.gains[name] = self.gains[task_type]
+            elif name in self.default_gains:
+                self.gains[name] = self.default_gains[name]
+            elif task_type in self.default_gains:
+                self.gains[name] = self.default_gains[task_type]
             else:
                 msg = "No gain provided for task '%s'" % name
                 if task_type is not None:
@@ -70,10 +104,10 @@ class DiffIKSolver(object):
                 raise Exception(msg)
             if weight is not None:
                 self.weights[name] = weight
-            elif name in self.weights:
-                pass   # weight is already defined
-            elif task_type in self.weights:
-                self.weights[name] = self.weights[task_type]
+            elif name in self.default_weights:
+                self.weights[name] = self.default_weights[name]
+            elif task_type in self.default_weights:
+                self.weights[name] = self.default_weights[task_type]
             else:
                 msg = "No weight provided for task '%s'" % name
                 if task_type is not None:
@@ -90,12 +124,6 @@ class DiffIKSolver(object):
                 warn("no task '%s' to remove" % name)
                 return
             del self.tasks[name]
-
-    def update_gain(self, name, gain):
-        self.gains[name] = gain
-
-    def update_weight(self, name, weight):
-        self.weights[name] = weight
 
     def compute_cost(self, q, qd, dt):
         def sq(e):
