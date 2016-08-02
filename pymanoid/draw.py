@@ -299,3 +299,35 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
         return draw_polygon(vertices, normal, combined, color, faces)
     plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
     return draw_polygon(plot_vertices, normal, combined, color, faces)
+
+
+def draw_3d_cone(apex, axis, section, combined='r-#', linewidth=2.,
+                 pointsize=0.05):
+    """
+    Draw a 3D cone defined from its apex, axis vector and a cross-section
+    polygon (defined in the plane orthogonal to the axis vector).
+
+    INPUT:
+
+    - ``apex`` -- position of the origin of the cone in world coordinates
+    - ``axis`` -- unit vector directing the cone axis and lying inside the cone
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
+      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``linewidth`` -- thickness of the edges of the cone
+    - ``pointsize`` -- point size in meters
+
+    OUTPUT:
+
+    A list of OpenRAVE handles. Must be stored in some variable, otherwise the
+    drawn object will vanish instantly.
+    """
+    color = _matplotlib_to_rgba('r')
+    env = get_env()
+    handles = draw_polygon(section, axis, combined)
+    edges = vstack([[apex, vertex] for vertex in section])
+    edges = array(edges)
+    edge_color = array(color) * 0.7
+    edge_color[3] = 1.
+    handles.append(env.drawlinelist(
+        edges, linewidth=linewidth, colors=edge_color))
+    return handles
