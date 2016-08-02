@@ -11,23 +11,25 @@ Python library for humanoid robotics. Extends OpenRAVE with:
 - Backends for Linear Programming and Quadratic Programming (QP) solvers
 - Drawing primitives for 2D and 3D polyhedra (polygons, polytopes, cones, ...)
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
-
 ## Use cases
 
+<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+
 - [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
+  based on Model-Preview Control of the 3D acceleration of the center of mass
 - [Generalized ZMP support areas for multi-contact locomotion](https://scaron.info/research/arxiv-2015.html)
 - [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
 
 ## Installation
 
-- First, [install OpenRAVE](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html).
-- Install all Python dependencies:
+First, install OpenRAVE (here are some [instructions for Ubuntu
+14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html)).
+Next, install all Python dependencies with:
 ```
 sudo apt-get install cython python python-dev python-pip python-scipy
 sudo pip install quadprog pycddlib
 ```
-- Finally, if you wish to install the library system-wide:
+Finally, if you wish to install the library system-wide:
 ```
 sudo python setup.py install
 ```
