@@ -6,12 +6,13 @@ Python library for humanoid robotics in OpenRAVE.
 
 ## Features
 
-- Custom inverse kinematics (IK) solver, slower than IKFast but taking into
-  account redundancy, high-DOF systems and general objectives such as
-  center-of-mass position or angular-momentum tracking
-- Jacobians and hessians for the center of mass, ZMP and angular momentum
-- Calculation of contact-stability criteria: contact wrench cones, stability
-  polygons, etc. 
+- Inverse kinematics (IK) implementing a [weight-prioritized multi-task
+  solver](https://hal.archives-ouvertes.fr/hal-01247118). Also known as
+  *generalized IK* or *whole-body IK*, this approach allows general objectives
+  such as center-of-mass (COM) or angular-momentum tracking.
+- Jacobians and hessians for the COM, zero-tilting moment point (ZMP), angular
+  momentum, ...
+- Contact-stability criteria: contact wrench cones, stability polygons, ...
 
 ## Installation
 
