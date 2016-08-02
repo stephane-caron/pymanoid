@@ -51,8 +51,39 @@ class DiffIKSolver(object):
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
-        assert name not in self.tasks, \
-            "Task '%s' already present in IK" % name
+        """
+        Add a new task in the IK. A task is perfectly achieved when:
+
+            jacobian(q) * qd == -gain * error(q, qd, dt) / dt     (1)
+
+        To tend toward this, each task adds a term
+
+            weight * |jacobian(q) * qd + gain * error(q, qd, dt) / dt|^2
+
+        to the cost function of the optimization problem solved at each time
+        step.
+
+        INPUT:
+
+        ``name`` -- task name, used as identifier for e.g. removal
+        ``error`` -- error function of the task (depends on q, qd and dt)
+        ``jacobian`` -- jacobian function of the task (depends on q only)
+        ``gain`` -- task gain
+        ``weight`` -- task weight
+        ``task_type`` -- for some tasks such as contact, ``name`` corresponds to
+            a robot link name; ``task_type`` is then used to fetch default gain
+            and weight values
+        ``unit_gain`` -- some tasks have a different formulation where the gain
+            is one and there is no division by dt in Equation (1); set
+            ``unit_gain=1`` for this behavior
+
+        .. NOTE::
+
+            This function is not made to be called frequently.
+
+        """
+        if name in self.tasks:
+            raise Exception("Task '%s' already present in IK" % name)
         with self.tasks_lock:
             self.tasks[name] = True
             self.errors[name] = error
