@@ -35,9 +35,8 @@ Finally, if you wish to install the library system-wide:
 ```
 sudo python setup.py install
 ```
-
 The preferred QP solver is [quadprog](https://github.com/rmcgibbo/quadprog).
-Alternatively, *pymanoid* will try to use [CVXOPT](http://cvxopt.org) or
+Alternatively, the library will try to use [CVXOPT](http://cvxopt.org) or
 [qpOASES](https://projects.coin-or.org/qpOASES) if they are installed.
 
 ## Usage
