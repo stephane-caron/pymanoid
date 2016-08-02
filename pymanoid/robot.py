@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
-# This file is part of pymanoid.
+# This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
 # pymanoid is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
