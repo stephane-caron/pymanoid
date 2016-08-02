@@ -20,27 +20,30 @@
 
 from numpy import dot
 
-try:  # CVXOPT
-    from backend_cvxopt import cvxopt_solve_qp
-except ImportError:
-    def cvxopt_solve_qp(*args, **kwargs):
-        raise ImportError("CVXOPT not found")
+solve_qp = None
 
-try:  # quadprog
+try:  # quadprog (1st choice)
     from backend_quadprog import quadprog_solve_qp
+    solve_qp = quadprog_solve_qp
 except ImportError:
     def quadprog_solve_qp(*args, **kwargs):
         raise ImportError("quadprog not found")
 
-try:  # qpOASES
+try:  # CVXOPT (2nd choice)
+    from backend_cvxopt import cvxopt_solve_qp
+    if solve_qp is None:
+        solve_qp = cvxopt_solve_qp
+except ImportError:
+    def cvxopt_solve_qp(*args, **kwargs):
+        raise ImportError("CVXOPT not found")
+
+try:  # qpOASES (3rd choice)
     from backend_qpoases import qpoases_solve_qp
+    if solve_qp is None:
+        solve_qp = qpoases_solve_qp
 except ImportError:
     def qpoases_solve_qp(*args, **kwargs):
         raise ImportError("qpOASES not found")
-
-
-# Default solver: quadprog (fastest in practice, see git logs)
-solve_qp = quadprog_solve_qp
 
 
 def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):

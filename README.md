@@ -20,7 +20,14 @@ Python library for humanoid robotics in OpenRAVE.
 ```
 sudo apt-get install cython python python-dev python-pip python-scipy
 ```
-- Install [CVXOPT](http://cvxopt.org/) and [pycddlib](https://pycddlib.readthedocs.org/en/latest/):
+- Install a QP solver. The default (and fastest in practice) is
+  [quadprog](https://github.com/rmcgibbo/quadprog):
+```
+sudo pip install quadprog
+```
+  Alternatively, ``pymanoid`` will try to use [CVXOPT](http://cvxopt.org) or
+  [qpOASES](https://projects.coin-or.org/qpOASES) if they are installed.
+- Install [pycddlib](https://pycddlib.readthedocs.org/en/latest/):
 ```
 sudo pip install cvxopt pycddlib
 ```
