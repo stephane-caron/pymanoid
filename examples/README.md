@@ -5,14 +5,11 @@
 <img align="right" src="https://raw.githubusercontent.com/stephane-caron/pymanoid/master/examples/images/inverse_kinematics.png" width="250" />
 
 This is a toy example showing how to use the IK for whole-body motions. It
-loads the JVRC-1 model and generates a posture where the robot has its two feet
-on pre-defined contacts. Then, its COM tracks the motion of a virtual box using
-the ``step_ik()`` function.
-
-To get this example running, you will need a copy or symbolic link of the
-[openrave\_models](https://github.com/stephane-caron/openrave_models)
-repository in the local folder. Alternatively, you can clone the repository
-anywhere and set the correct path in the ``env_file`` variable of the script.
+loads (and downloads, if necessary) the
+[JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
+model and generates a posture where the robot has its two feet on pre-defined
+contacts. Then, its COM tracks the motion of a virtual box using the
+``step_ik()`` function.
 
 ## Static-equilibrium Polygon
 
