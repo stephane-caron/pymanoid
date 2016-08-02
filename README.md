@@ -27,5 +27,9 @@ sudo python setup.py install
 ```
 
 The preferred QP solver is [quadprog](https://github.com/rmcgibbo/quadprog).
-Alternatively, ``pymanoid`` will try to use [CVXOPT](http://cvxopt.org) or
+Alternatively, *pymanoid* will try to use [CVXOPT](http://cvxopt.org) or
 [qpOASES](https://projects.coin-or.org/qpOASES) if they are installed.
+
+## Usage
+
+See the [examples](/examples) folder for some sample test cases.
