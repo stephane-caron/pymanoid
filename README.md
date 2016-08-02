@@ -2,17 +2,22 @@
 
 <img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
-Python library for humanoid robotics in OpenRAVE.
+Python library for humanoid robotics in OpenRAVE. Extends the latter with:
 
-## Features
+- Primitives for contacts, stances, point-mass systems, ...
+- Jacobians and hessians for the center of mass, angular momentum, ...
+- A whole-body  Inverse Kinematics (IK) solver based on the [weight-prioritized
+  multi-task framework](https://hal.archives-ouvertes.fr/hal-01247118)
+- Contact stability criteria: Contact Wrench Cone (CWC), stability polygons,
+  computation of supporting contact forces, ...
+- Drawing primitives for 2D and 3D polyhedra (polygons, cones, ...)
+- Backends for various LP and QP solvers
 
-- Inverse kinematics (IK) implementing a [weight-prioritized multi-task
-  solver](https://hal.archives-ouvertes.fr/hal-01247118). Also known as
-  *generalized IK* or *whole-body IK*, this approach allows general objectives
-  such as center-of-mass (COM) or angular-momentum tracking.
-- Jacobians and hessians for the COM, zero-tilting moment point (ZMP), angular
-  momentum, ...
-- Contact-stability criteria: contact wrench cones, stability polygons, ...
+## Use cases
+
+- [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
+- [Generalized ZMP support areas for multi-contact locomotion](https://scaron.info/research/arxiv-2015.html)
+- [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
 
 ## Installation
 
@@ -33,4 +38,5 @@ Alternatively, *pymanoid* will try to use [CVXOPT](http://cvxopt.org) or
 
 ## Usage
 
-See the [examples](/examples) folder for some sample test cases.
+See the [examples](/examples) folder for some sample test cases. For a more
+elaborate use case, see [3d-mpc](https://github.com/stephane-caron/3d-mpc).
