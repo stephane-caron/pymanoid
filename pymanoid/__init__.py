@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 from body import Body
 from body import Box
 from body import Cube
@@ -58,7 +57,6 @@ from utils import solve_lp
 import polyhedra
 import robots
 import rotations
-
 
 __all__ = [
     'Body',

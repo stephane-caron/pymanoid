@@ -18,13 +18,13 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 import itertools
 
 from env import get_env
 from numpy import array, int64, vstack, cross, dot
 from scipy.spatial import ConvexHull
 from utils import norm
+
 
 BIG_DIST = 1000.  # [m]
 

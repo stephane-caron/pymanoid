@@ -18,11 +18,9 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
-import matplotlib
-import pylab
-
+from matplotlib import patches
 from numpy import array
+from pylab import gca, axis
 from scipy.spatial import ConvexHull
 
 
@@ -30,15 +28,15 @@ def plot_polygon(poly, alpha=.4, color='g', linestyle='solid', fill=True,
                  linewidth=None, **kwargs):
     if type(poly) is list:
         poly = array(poly)
-    ax = pylab.gca()
+    ax = gca()
     hull = ConvexHull(poly)
     poly = poly[hull.vertices, :]
-    xmin1, xmax1, ymin1, ymax1 = pylab.axis()
+    xmin1, xmax1, ymin1, ymax1 = axis()
     xmin2, ymin2 = 1.5 * poly.min(axis=0)
     xmax2, ymax2 = 1.5 * poly.max(axis=0)
-    pylab.axis((min(xmin1, xmin2), max(xmax1, xmax2),
-                min(ymin1, ymin2), max(ymax1, ymax2)))
-    patch = matplotlib.patches.Polygon(poly, alpha=alpha, color=color,
-                                       linestyle=linestyle, fill=fill,
-                                       linewidth=linewidth, **kwargs)
+    axis((min(xmin1, xmin2), max(xmax1, xmax2),
+          min(ymin1, ymin2), max(ymax1, ymax2)))
+    patch = patches.Polygon(
+        poly, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
+        linewidth=linewidth, **kwargs)
     ax.add_patch(patch)

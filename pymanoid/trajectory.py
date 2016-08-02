@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 from bisect import bisect
 from numpy import arange, array, poly1d, zeros
 
@@ -64,11 +63,18 @@ class Chunk(object):
         return self.qdd(self.T)
 
     def retime(self, T2, s, sd, sdd):
-        q2 = lambda t: self.q(s(t))
-        qd2 = lambda t: sd(t) * self.qd(s(t))
+        def q2(t):
+            return self.q(s(t))
+
+        def qd2(t):
+            return sd(t) * self.qd(s(t))
+
         if not self.qdd:
             return Chunk(T2, q2, qd2)
-        qdd2 = lambda t: sdd(t) * self.qd(s(t)) + sd(t) ** 2 * self.qdd(s(t))
+
+        def qdd2(t):
+            return sdd(t) * self.qd(s(t)) + sd(t) ** 2 * self.qdd(s(t))
+
         return Chunk(T2, q2, qd2, qdd2)
 
     def timescale(self, scaling):

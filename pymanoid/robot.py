@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 from contact import Contact, ContactSet
 from env import get_env, get_viewer
 from env import set_default_background_color
@@ -35,20 +34,23 @@ from warnings import warn
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
-# Notations and names
-# ===================
-#
-# am: Angular Momentum
-# am_rate: Rate (time-derivative) of Angular Momentum
-# c: link COM
-# m: link mass
-# omega: link angular velocity
-# r: origin of link frame
-# R: link rotation
-# T: link transform
-# v: link velocity (v = [rd, omega])
-#
-# Unless otherwise mentioned, coordinates are in the absolute reference frame.
+"""
+Notations and names
+===================
+
+am: Angular Momentum
+am_rate: Rate (time-derivative) of Angular Momentum
+c: link COM
+m: link mass
+omega: link angular velocity
+r: origin of link frame
+R: link rotation
+T: link transform
+v: link velocity (v = [rd, omega])
+
+Unless otherwise mentioned, coordinates are in the absolute reference frame.
+"""
+
 
 class Robot(object):
 
@@ -618,7 +620,7 @@ class Robot(object):
         if 'com' not in self.ik.gains or 'com' not in self.ik.weights:
             raise Exception("No COM task to update in robot IK")
         gain = self.ik.gains['com']
-        weights = self.ik.weights['com']
+        weight = self.ik.weights['com']
         self.ik.remove_task('com')
         self.add_com_task(target, gain, weight)
 

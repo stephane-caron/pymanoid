@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from qp import solve_qp
 from threading import Lock

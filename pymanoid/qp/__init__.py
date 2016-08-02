@@ -18,9 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 from numpy import dot
-
 
 try:  # CVXOPT
     from backend_cvxopt import cvxopt_solve_qp
@@ -34,7 +32,6 @@ except ImportError:
     def quadprog_solve_qp(*args, **kwargs):
         raise ImportError("quadprog not found")
 
-
 try:  # qpOASES
     from backend_qpoases import qpoases_solve_qp
 except ImportError:
@@ -42,6 +39,7 @@ except ImportError:
         raise ImportError("qpOASES not found")
 
 
+# Default solver: quadprog (fastest in practice, see git logs)
 solve_qp = quadprog_solve_qp
 
 

@@ -18,12 +18,10 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 import IPython
 import numpy
 import pymanoid
 import time
-
 
 if __name__ == '__main__':
     pymanoid.init()

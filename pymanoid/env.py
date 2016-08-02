@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy
 import openravepy
 
@@ -27,11 +26,7 @@ from os import popen, system
 
 
 __env__ = None
-
-
 __gravity__ = numpy.array([0, 0, -9.80665])  # ISO 80000-3
-
-
 __window_id__ = None
 
 
