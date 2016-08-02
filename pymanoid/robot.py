@@ -615,6 +615,10 @@ class Robot(object):
         self.ik.remove_task('dof-%d' % dof_id)
 
     def update_com_task(self, target, gain=None, weight=None):
+        if 'com' not in self.ik.gains or 'com' not in self.ik.weights:
+            raise Exception("No COM task to update in robot IK")
+        gain = self.ik.gains['com']
+        weights = self.ik.weights['com']
         self.ik.remove_task('com')
         self.add_com_task(target, gain, weight)
 

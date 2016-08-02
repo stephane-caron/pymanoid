@@ -32,6 +32,8 @@ class DiffIKSolver(object):
         n = len(q_max)
         self.I = eye(n)
         self.K_doflim = K_doflim
+        self.default_gains = {}
+        self.default_weights = {}
         self.errors = {}
         self.gains = {}
         self.jacobians = {}
@@ -43,9 +45,9 @@ class DiffIKSolver(object):
         self.tasks_lock = Lock()
         self.weights = {}
         if gains is not None:
-            self.gains.update(gains)
+            self.default_gains.update(gains)
         if weights is not None:
-            self.weights.update(weights)
+            self.default_weights.update(weights)
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
@@ -56,13 +58,14 @@ class DiffIKSolver(object):
             self.errors[name] = error
             self.jacobians[name] = jacobian
             if unit_gain:
-                pass
+                if name in self.gains:
+                    del self.gains[name]
             elif gain is not None:
                 self.gains[name] = gain
-            elif name in self.gains:
-                pass  # gain is already defined
-            elif task_type in self.gains:
-                self.gains[name] = self.gains[task_type]
+            elif name in self.default_gains:
+                self.gains[name] = self.default_gains[name]
+            elif task_type in self.default_gains:
+                self.gains[name] = self.default_gains[task_type]
             else:
                 msg = "No gain provided for task '%s'" % name
                 if task_type is not None:
@@ -70,10 +73,10 @@ class DiffIKSolver(object):
                 raise Exception(msg)
             if weight is not None:
                 self.weights[name] = weight
-            elif name in self.weights:
-                pass   # weight is already defined
-            elif task_type in self.weights:
-                self.weights[name] = self.weights[task_type]
+            elif name in self.default_weights:
+                self.weights[name] = self.default_weights[name]
+            elif task_type in self.default_weights:
+                self.weights[name] = self.default_weights[task_type]
             else:
                 msg = "No weight provided for task '%s'" % name
                 if task_type is not None:
@@ -90,12 +93,6 @@ class DiffIKSolver(object):
                 warn("no task '%s' to remove" % name)
                 return
             del self.tasks[name]
-
-    def update_gain(self, name, gain):
-        self.gains[name] = gain
-
-    def update_weight(self, name, weight):
-        self.weights[name] = weight
 
     def compute_cost(self, q, qd, dt):
         def sq(e):
