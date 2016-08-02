@@ -125,6 +125,10 @@ class JVRC1(Robot):
     right_hand = right_thumb + right_index + right_little
     right_leg = right_hip + right_knee + right_ankle
 
+    # Third-level DOF groups
+    legs = left_leg + right_leg
+    arms = left_arm + right_arm
+
     # Half-sitting posture
     q_halfsit = array([
         -0.38, -0.01, 0., 0.72, -0.01, -0.33, -0.38, 0.02, 0., 0.72, -0.02,
