@@ -26,11 +26,44 @@ from warnings import warn
 
 class DiffIKSolver(object):
 
-    def __init__(self, q_max, q_min, qd_lim, K_doflim, gains=None,
-                 weights=None):
+    """
+    The differential IK solver computes velocities ``qd`` that bring the system
+    closer to fulfilling a set of tasks. A task is defined by
+
+    - ``error(q, qd, dt)``, specifying the workspace displacement between
+      desired and actual position/orientation
+    - ``jacobian(q)``, mapping joint velocities to workspace displacements
+    - two scalars ``gain`` and ``weight``.
+
+    A task is perfectly achieved when:
+
+        jacobian(q) * qd == -gain * error(q, qd, dt) / dt     (1)
+
+    To tend toward this, each task adds a term
+
+        cost(task, qd) = weight * |jacobian * qd + gain * error / dt|^2
+
+    to the cost function of the optimization problem solved at each time step
+    by the differential IK:
+
+        minimize    sum_tasks cost(task, qd)
+        subject to  qd_min <= qd <= qd_max
+    """
+
+    def __init__(self, q_max, q_min, qd_lim, gains=None, weights=None):
+        """
+        Initialize the differential IK solver.
+
+        INPUT:
+
+        ``q_max`` -- upper DOF limit
+        ``q_min`` -- lower DOF limit
+        ``qd_lim`` -- maximum joint velocity (in [rad]), same for all joints
+        ``gains`` -- dictionary of default task gains
+        ``weights`` -- dictionary of default task weights
+        """
         n = len(q_max)
         self.I = eye(n)
-        self.K_doflim = K_doflim
         self.default_gains = {}
         self.default_weights = {}
         self.errors = {}
@@ -47,20 +80,13 @@ class DiffIKSolver(object):
             self.default_gains.update(gains)
         if weights is not None:
             self.default_weights.update(weights)
+        if 'doflim' not in self.gains:
+            self.gains['doflim'] = 0.5
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
         """
-        Add a new task in the IK. A task is perfectly achieved when:
-
-            jacobian(q) * qd == -gain * error(q, qd, dt) / dt     (1)
-
-        To tend toward this, each task adds a term
-
-            weight * |jacobian(q) * qd + gain * error(q, qd, dt) / dt|^2
-
-        to the cost function of the optimization problem solved at each time
-        step.
+        Add a new task in the IK.
 
         INPUT:
 
@@ -70,11 +96,11 @@ class DiffIKSolver(object):
         ``gain`` -- task gain
         ``weight`` -- task weight
         ``task_type`` -- for some tasks such as contact, ``name`` corresponds to
-            a robot link name; ``task_type`` is then used to fetch default gain
-            and weight values
+                         a robot link name; ``task_type`` is then used to fetch
+                         default gain and weight values
         ``unit_gain`` -- some tasks have a different formulation where the gain
-            is one and there is no division by dt in Equation (1); set
-            ``unit_gain=1`` for this behavior
+                         is one and there is no division by dt in Equation (1);
+                         set ``unit_gain=1`` for this behavior
 
         .. NOTE::
 
@@ -134,6 +160,22 @@ class DiffIKSolver(object):
         return sum(cost(task) for task in self.tasks)
 
     def compute_velocity(self, q, qd, dt):
+        """
+        Compute a new velocity satisfying all tasks at best, while staying
+        within joint-velocity limits.
+
+        INPUT:
+
+        ``q`` -- current joint vector
+        ``qd`` -- current joint velocities
+        ``dt`` -- time step until next call to the IK
+
+        .. NOTE::
+
+            A special gain 'doflim' converts joint limits into a suitable
+            velocity limit. See Equation (50) in
+            <http://www.roboticsproceedings.org/rss07/p21.pdf>.
+        """
         P = zeros(self.I.shape)
         r = zeros(self.q_max.shape)
         with self.tasks_lock:
@@ -145,8 +187,10 @@ class DiffIKSolver(object):
                     e = self.errors[task](q, qd, dt)
                 P += self.weights[task] * dot(J.T, J)
                 r += self.weights[task] * dot(-e.T, J)
-        qd_max = minimum(self.qd_max, self.K_doflim * (self.q_max - q))
-        qd_min = maximum(self.qd_min, self.K_doflim * (self.q_min - q))
+        qd_max_doflim = self.gains['doflim'] * (self.q_max - q) / dt
+        qd_min_doflim = self.gains['doflim'] * (self.q_min - q) / dt
+        qd_max = minimum(self.qd_max, qd_max_doflim)
+        qd_min = maximum(self.qd_min, qd_min_doflim)
         G = vstack([+self.I, -self.I])
         h = hstack([qd_max, -qd_min])
         return solve_qp(P, r, G, h)

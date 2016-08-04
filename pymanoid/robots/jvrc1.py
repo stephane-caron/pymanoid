@@ -159,7 +159,7 @@ class JVRC1(Robot):
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
 
-    def init_ik(self, gains=None, weights=None, qd_lim=1., K_doflim=5.):
+    def init_ik(self, gains=None, weights=None, qd_lim=10.):
         """
         Initialize the differential IK solver.
 
@@ -167,6 +167,7 @@ class JVRC1(Robot):
 
         ``gain`` -- dictionary of default task gains
         ``weights`` -- dictionary of default task weights
+        ``qd_lim`` -- maximum joint velocity (in [rad]), same for all joints
         """
         assert self.active_dofs is not None, \
             "Please set active DOFs before using the IK"
@@ -188,6 +189,5 @@ class JVRC1(Robot):
             q_max=self.q_max,
             q_min=self.q_min,
             qd_lim=qd_lim,
-            K_doflim=K_doflim,
             gains=gains,
             weights=weights)
