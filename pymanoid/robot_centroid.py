@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
+#
+# This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
+#
+# pymanoid is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# pymanoid is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, cross, dot, zeros, tensordot, ndarray
 from robot_contact import ContactingRobot
@@ -302,3 +321,64 @@ class CentroidalRobot(ContactingRobot):
         jacobian = self.compute_cam_jacobian
         self.ik.add_task('cam', residual, jacobian, weight=weight,
                          unit_gain=True)
+
+    """
+    Whole-body wrenches
+    ===================
+    """
+
+    def compute_gravito_inertial_wrench(self, qdd, p):
+        """
+        Compute the gravito-inertial wrench:
+
+            w(p) = [ f      ] = [ m (g - pdd_G)                    ]
+                   [ tau(p) ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
+
+        with m the robot mass, g the gravity vector, G the COM, pdd_G the
+        acceleration of the COM, and Ld_GG the rate of change of the angular
+        momentum (taken at the COM).
+
+        INPUT:
+
+        - ``qdd`` -- array of DOF accelerations
+        - ``p`` -- reference point at which the wrench is taken
+        """
+        g = array([0, 0, -9.81])
+        f_gi = self.mass * g
+        tau_gi = zeros(3)
+        link_velocities = self.rave.GetLinkVelocities()
+        link_accelerations = self.rave.GetLinkAccelerations(qdd)
+        for link in self.rave.GetLinks():
+            mi = link.GetMass()
+            ci = link.GetGlobalCOM()
+            I_ci = link.GetLocalInertia()
+            Ri = link.GetTransform()[0:3, 0:3]
+            ri = dot(Ri, link.GetLocalCOM())
+            angvel = link_velocities[link.GetIndex()][3:]
+            linacc = link_accelerations[link.GetIndex()][:3]
+            angacc = link_accelerations[link.GetIndex()][3:]
+            ci_ddot = linacc \
+                + cross(angvel, cross(angvel, ri)) \
+                + cross(angacc, ri)
+            angmmt = dot(I_ci, angacc) - cross(dot(I_ci, angvel), angvel)
+            f_gi -= mi * ci_ddot[2]
+            tau_gi += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
+        return f_gi, tau_gi
+
+    def compute_zmp(self, qdd):
+        """
+        Compute the Zero-tilting Moment Point (ZMP).
+
+        The best introduction I know to this concept is:
+
+            P. Sardain and G. Bessonnet, “Forces acting on a biped robot. center
+            of pressure-zero moment point”
+            <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
+
+        INPUT:
+
+        ``qdd`` -- vector of joint accelerations
+        """
+        O, n = zeros(3), array([0, 0, 1])
+        f_gi, tau_gi = self.compute_gravito_inertial_wrench(qdd, O)
+        return cross(n, tau_gi) * 1. / dot(n, f_gi)
