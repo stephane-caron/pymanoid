@@ -20,6 +20,9 @@
 
 from bisect import bisect
 from numpy import arange, array, poly1d, zeros
+from openravepy import RaveCreateModule
+from pymanoid import get_env, get_viewer
+from time import sleep
 
 
 class Chunk(object):
@@ -246,3 +249,43 @@ class Trajectory(object):
     def timescale(self, scaling):
         c = Chunk(self.T, self.q, self.qd, self.qdd)
         return Trajectory([c.timescale(scaling)])
+
+
+def play_trajectory(robot, traj, callback=None, dt=3e-2):
+    """
+    Play a recorded trajectory.
+
+    INPUT:
+
+    ``robot`` -- wrapper around OpenRAVE robot
+    ``traj`` -- trajectory object
+    ``callback`` -- (optional) function called after each time step
+    ``dt`` -- (optional) time step
+    """
+    trange = list(arange(0, traj.T, dt))
+    for t in trange:
+        q = traj.q(t)
+        qd = traj.qd(t)
+        qdd = traj.qdd(t)
+        robot.set_dof_values(q)
+        if callback:
+            callback(t, q, qd, qdd)
+        sleep(dt)
+
+
+def record_trajectory(robot, traj, fname='output.mpg', codec=13,
+                      framerate=24, width=800, height=600, dt=3e-2):
+    env = get_env()
+    viewer = get_viewer()
+    recorder = RaveCreateModule(env, 'viewerrecorder')
+    env.AddModule(recorder, '')
+    robot.set_dof_values(traj.q(0))
+    recorder.SendCommand('Start %d %d %d codec %d timing '
+                         'simtime filename %s\n'
+                         'viewer %s' % (width, height, framerate, codec,
+                                        fname, viewer.GetName()))
+    sleep(1.)
+    robot.play_trajectory(traj, dt=dt)
+    sleep(1.)
+    recorder.SendCommand('Stop')
+    env.Remove(recorder)

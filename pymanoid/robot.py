@@ -670,38 +670,6 @@ class RobotBase(object):
     def stop_ik_thread(self):
         self.ik_lock = None
 
-    #
-    # Visualization
-    #
-
-    def play_trajectory(self, traj, callback=None, dt=3e-2):
-        trange = list(arange(0, traj.T, dt))
-        for t in trange:
-            q = traj.q(t)
-            qd = traj.qd(t)
-            qdd = traj.qdd(t)
-            self.set_dof_values(q)
-            if callback:
-                callback(t, q, qd, qdd)
-            rt_sleep(dt)
-
-    def record_trajectory(self, traj, fname='output.mpg', codec=13,
-                          framerate=24, width=800, height=600, dt=3e-2):
-        env = get_env()
-        viewer = get_viewer()
-        recorder = RaveCreateModule(env, 'viewerrecorder')
-        env.AddModule(recorder, '')
-        self.set_dof_values(traj.q(0))
-        recorder.SendCommand('Start %d %d %d codec %d timing '
-                             'simtime filename %s\n'
-                             'viewer %s' % (width, height, framerate, codec,
-                                            fname, viewer.GetName()))
-        rt_sleep(1.)
-        self.play_trajectory(traj, dt=dt)
-        rt_sleep(1.)
-        recorder.SendCommand('Stop')
-        env.Remove(recorder)
-
     def set_color(self, r, g, b):
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
