@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
+from numpy import dot, eye, hstack, maximum, minimum, vstack, zeros
 from qp import solve_qp
 from threading import Lock
 from warnings import warn
@@ -30,14 +30,14 @@ class DiffIKSolver(object):
     The differential IK solver computes velocities ``qd`` that bring the system
     closer to fulfilling a set of tasks. A task is defined by
 
-    - ``residual(q, qd, dt)``, specifying the (desired - current) workspace
+    - ``residual(dt)``, specifying the (desired - current) workspace
       displacement
-    - ``jacobian(q)``, mapping joint velocities to workspace displacements
+    - ``jacobian()``, mapping joint velocities to workspace displacements
     - two scalars ``gain`` and ``weight``.
 
     A task is perfectly achieved when:
 
-        jacobian(q) * qd == gain * residual(q, qd, dt) / dt     (1)
+        jacobian() * qd == gain * residual(q, qd, dt) / dt     (1)
 
     To tend toward this, each task adds a term
 
@@ -63,38 +63,34 @@ class DiffIKSolver(object):
         Gauss-Newton update rule.
     """
 
-    def __init__(self, q_max, q_min, qd_lim, gains=None, weights=None):
+    def __init__(self, robot, default_gains=None, default_weights=None,
+                 doflim_gain=1.):
         """
         Initialize the differential IK solver.
 
         INPUT:
 
-        ``q_max`` -- upper DOF limit
-        ``q_min`` -- lower DOF limit
-        ``qd_lim`` -- maximum joint velocity (in [rad]), same for all joints
-        ``gains`` -- dictionary of default task gains
-        ``weights`` -- dictionary of default task weights
+        - ``robot`` -- upper DOF limit
+        - ``gains`` -- dictionary of default task gains
+        - ``weights`` -- dictionary of default task weights
+        - ``doflim`` -- (optional, default: 0.5) a special gain converting joint
+                     limits into a suitable velocity bound. See Equation (50) in
+                     <http://www.roboticsproceedings.org/rss07/p21.pdf>.
         """
-        n = len(q_max)
-        self.I = eye(n)
         self.default_gains = {}
         self.default_weights = {}
-        self.errors = {}
+        self.doflim_gain = doflim_gain
         self.gains = {}
         self.jacobians = {}
-        self.q_max = q_max
-        self.q_min = q_min
-        self.qd_max = +qd_lim * ones(n)
-        self.qd_min = -qd_lim * ones(n)
+        self.residuals = {}
+        self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
         self.weights = {}
-        if gains is not None:
-            self.default_gains.update(gains)
-        if weights is not None:
-            self.default_weights.update(weights)
-        if 'doflim' not in self.gains:
-            self.gains['doflim'] = 0.5
+        if default_gains is not None:
+            self.default_gains.update(default_gains)
+        if default_weights is not None:
+            self.default_weights.update(default_weights)
 
     def add_task(self, name, error, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
@@ -124,7 +120,7 @@ class DiffIKSolver(object):
             raise Exception("Task '%s' already present in IK" % name)
         with self.tasks_lock:
             self.tasks[name] = True
-            self.errors[name] = error
+            self.residuals[name] = error
             self.jacobians[name] = jacobian
             if unit_gain:
                 if name in self.gains:
@@ -163,16 +159,16 @@ class DiffIKSolver(object):
                 return
             del self.tasks[name]
 
-    def compute_cost(self, q, qd, dt):
+    def compute_cost(self, dt):
         def sq(e):
             return dot(e, e)
 
         def cost(task):
-            return self.weights[task] * sq(self.errors[task](q, qd, dt))
+            return self.weights[task] * sq(self.residuals[task](dt))
 
         return sum(cost(task) for task in self.tasks)
 
-    def compute_velocity(self, q, qd, dt):
+    def compute_velocity(self, dt):
         """
         Compute a new velocity satisfying all tasks at best, while staying
         within joint-velocity limits.
@@ -185,25 +181,29 @@ class DiffIKSolver(object):
 
         .. NOTE::
 
-            A special gain 'doflim' converts joint limits into a suitable
-            velocity limit. See Equation (50) in
-            <http://www.roboticsproceedings.org/rss07/p21.pdf>.
         """
-        P = zeros(self.I.shape)
-        r = zeros(self.q_max.shape)
+        n = self.robot.nb_active_dofs
+        q = self.robot.q_active
+        q_max = self.robot.q_max[self.robot.active_dofs]
+        q_min = self.robot.q_min[self.robot.active_dofs]
+        qd_max = self.robot.qd_max[self.robot.active_dofs]
+        qd_min = self.robot.qd_min[self.robot.active_dofs]
+        E = eye(n)
+        P = zeros((n, n))
+        r = zeros(n)
         with self.tasks_lock:
             for task in self.tasks:
-                J = self.jacobians[task](q)
+                J = self.jacobians[task]()[:, self.robot.active_dofs]
                 if task in self.gains:
-                    e = self.gains[task] * (self.errors[task](q, qd, dt) / dt)
+                    e = self.gains[task] * (self.residuals[task](dt) / dt)
                 else:  # for tasks added with unit_gain=True
-                    e = self.errors[task](q, qd, dt)
+                    e = self.residuals[task](dt)
                 P += self.weights[task] * dot(J.T, J)
                 r += self.weights[task] * dot(-e.T, J)
-        qd_max_doflim = self.gains['doflim'] * (self.q_max - q) / dt
-        qd_min_doflim = self.gains['doflim'] * (self.q_min - q) / dt
-        qd_max = minimum(self.qd_max, qd_max_doflim)
-        qd_min = maximum(self.qd_min, qd_min_doflim)
-        G = vstack([+self.I, -self.I])
+        qd_max_doflim = self.doflim_gain * (q_max - q) / dt
+        qd_min_doflim = self.doflim_gain * (q_min - q) / dt
+        qd_max = minimum(qd_max, qd_max_doflim)
+        qd_min = maximum(qd_min, qd_min_doflim)
+        G = vstack([+E, -E])
         h = hstack([qd_max, -qd_min])
         return solve_qp(P, r, G, h)

@@ -50,7 +50,7 @@ from env import set_camera_top
 from env import take_screenshot
 from inverse_kinematics import DiffIKSolver
 from qp import solve_qp
-from robot import Robot
+from robot_humanoid import Humanoid
 from utils import solve_lp
 
 import polyhedra
@@ -64,10 +64,10 @@ __all__ = [
     'ContactSet',
     'Cube',
     'DiffIKSolver',
+    'Humanoid',
     'Link',
     'Manipulator',
     'PointMass',
-    'Robot',
     'draw_2d_cone',
     'draw_3d_cone',
     'draw_arrow',

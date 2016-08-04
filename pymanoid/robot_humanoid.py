@@ -19,12 +19,12 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
-from centroid import RobotWithCentroid
+from robot_centroid import CentroidalRobot
 from contact import ContactSet
 from numpy import array, dot, cross, zeros
 
 
-class Humanoid(RobotWithCentroid):
+class Humanoid(CentroidalRobot):
 
     #
     # Whole-body forces

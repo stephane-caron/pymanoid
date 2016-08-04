@@ -1,10 +1,10 @@
 
-from numpy import array, cross, dot, zeros, tensordot
-from robot import RobotBase
+from numpy import array, cross, dot, zeros, tensordot, ndarray
+from robot_contact import ContactingRobot
 from rotations import crossmat
 
 
-class RobotWithCentroid(RobotBase):
+class CentroidalRobot(ContactingRobot):
 
     """
     Center Of Mass
@@ -78,6 +78,40 @@ class RobotWithCentroid(RobotBase):
             H_com += m * self.rave.ComputeHessianTranslation(index, c)
         H_com /= self.mass
         return H_com
+
+    def add_com_task(self, target, gain=None, weight=None):
+        """
+        Add a COM tracking task to the IK.
+
+        INPUT:
+
+        - ``target`` -- coordinates or any Body object with a 'pos' attribute
+        """
+        if type(target) is list:
+            target = array(target)
+        if type(target) is ndarray:
+            def residual(dt):
+                return target - self.com
+        elif hasattr(target, 'pos'):
+            def residual(dt):
+                return target.pos - self.com
+        elif hasattr(target, 'p'):
+            def residual(dt):
+                return target.p - self.com
+        else:  # COM target should be a position
+            msg = "Target of type %s has no 'pos' attribute" % type(target)
+            raise Exception(msg)
+
+        jacobian = self.compute_com_jacobian
+        self.ik.add_task('com', residual, jacobian, gain, weight)
+
+    def update_com_task(self, target, gain=None, weight=None):
+        if 'com' not in self.ik.gains or 'com' not in self.ik.weights:
+            raise Exception("No COM task to update in robot IK")
+        gain = self.ik.gains['com']
+        weight = self.ik.weights['com']
+        self.ik.remove_task('com')
+        self.add_com_task(target, gain, weight)
 
     """
     Angular Momentum
@@ -213,3 +247,58 @@ class RobotWithCentroid(RobotBase):
         """
         p_G = self.compute_com(q)
         return self.compute_angular_momentum_hessian(q, p_G)
+
+    def add_constant_cam_task(self, weight=None):
+        """
+        Try to keep the centroidal angular momentum constant.
+
+        INPUT:
+
+        ``weight`` -- task weight (optional)
+
+        .. NOTE::
+
+            The way this task is implemented may be surprising. Basically,
+            keeping a constant CAM means d/dt(CAM) == 0, i.e.,
+
+                d/dt (J_cam * qd) == 0
+                J_cam * qdd + qd * H_cam * qd == 0
+
+            Because the IK works at the velocity level, we approximate qdd by
+            finite difference from the previous velocity (``qd`` argument to the
+            residual function):
+
+                J_cam * (qd_next - qd) / dt + qd * H_cam * qd == 0
+
+            Finally, the task in qd_next (output velocity) is:
+
+                J_cam * qd_next == J_cam * qd - dt * qd * H_cam * qd
+
+            Hence, there are two occurrences of J_cam: one in the task residual,
+            and the second in the task jacobian.
+
+        """
+        def residual(dt):
+            qd = self.qd
+            J_cam = self.compute_cam_jacobian()
+            H_cam = self.compute_cam_hessian()  # computation intensive :(
+            return dot(J_cam, qd) - dt * dot(qd, dot(H_cam, qd))
+
+        jacobian = self.compute_cam_jacobian
+        self.ik.add_task('cam', residual, jacobian, weight=weight,
+                         unit_gain=True)
+
+    def add_min_cam_task(self, weight=None):
+        """
+        Minimize the centroidal angular momentum.
+
+        INPUT:
+
+        ``weight`` -- task weight (optional)
+        """
+        def residual(dt):
+            return zeros((3,))
+
+        jacobian = self.compute_cam_jacobian
+        self.ik.add_task('cam', residual, jacobian, weight=weight,
+                         unit_gain=True)

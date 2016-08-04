@@ -21,10 +21,10 @@
 from numpy import array
 from os import system
 from os.path import isfile
-from pymanoid import DiffIKSolver, Robot, Manipulator
+from pymanoid import DiffIKSolver, Humanoid, Manipulator
 
 
-class JVRC1(Robot):
+class JVRC1(Humanoid):
 
     """
     Helper class for the JVRC-1 robot model.
@@ -159,7 +159,7 @@ class JVRC1(Robot):
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
 
-    def init_ik(self, gains=None, weights=None, qd_lim=10.):
+    def init_ik(self, gains=None, weights=None):
         """
         Initialize the differential IK solver.
 
@@ -185,9 +185,4 @@ class JVRC1(Robot):
                 'link': 5.,
                 'posture': 0.1,
             }
-        self.ik = DiffIKSolver(
-            q_max=self.q_max,
-            q_min=self.q_min,
-            qd_lim=qd_lim,
-            gains=gains,
-            weights=weights)
+        self.ik = DiffIKSolver(self, gains, weights)
