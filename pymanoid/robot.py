@@ -357,20 +357,20 @@ class Robot(object):
         if type(target) is list:
             target = array(target)
         if type(target) is ndarray:
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target - self.compute_com(q)
         elif hasattr(target, 'pos'):
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target.pos - self.compute_com(q)
         elif hasattr(target, 'p'):
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target.p - self.compute_com(q)
         else:  # COM target should be a position
             msg = "Target of type %s has no 'pos' attribute" % type(target)
             raise Exception(msg)
 
         jacobian = self.compute_com_jacobian
-        self.ik.add_task('com', error, jacobian, gain, weight)
+        self.ik.add_task('com', residual, jacobian, gain, weight)
 
     def add_constant_cam_task(self, weight=None):
         """
@@ -390,7 +390,7 @@ class Robot(object):
 
             Because the IK works at the velocity level, we approximate qdd by
             finite difference from the previous velocity (``qd`` argument to the
-            error function):
+            residual function):
 
                 J_cam * (qd_next - qd) / dt + qd * H_cam * qd == 0
 
@@ -398,17 +398,18 @@ class Robot(object):
 
                 J_cam * qd_next == J_cam * qd - dt * qd * H_cam * qd
 
-            Hence, there are two occurrences of J_cam: one in the task error,
+            Hence, there are two occurrences of J_cam: one in the task residual,
             and the second in the task jacobian.
 
         """
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             J_cam = self.compute_cam_jacobian(q)
             H_cam = self.compute_cam_hessian(q)  # computation intensive :(
             return dot(J_cam, qd) - dt * dot(qd, dot(H_cam, qd))
 
         jacobian = self.compute_cam_jacobian
-        self.ik.add_task('cam', error, jacobian, weight=weight, unit_gain=True)
+        self.ik.add_task('cam', residual, jacobian, weight=weight,
+                         unit_gain=True)
 
     def add_contact_task(self, link, target, gain=None, weight=None):
         return self.add_link_pose_task(
@@ -425,10 +426,10 @@ class Robot(object):
         ``link`` -- a pymanoid.Link object
         ``target`` -- a pymanoid.Body, or any object with a ``pose`` field
         ``gain`` -- positional gain between zero and one
-        ``weight`` -- multiplier of the task squared error in IK cost function
+        ``weight`` -- multiplier of the task squared residual in cost function
         ``alpha`` -- callable function returning a gain multiplier (float)
         """
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             cur_pose = self.compute_link_pose(link, q)
             return alpha() * (contact.effector_pose - cur_pose)
 
@@ -436,23 +437,23 @@ class Robot(object):
             return self.compute_link_active_pose_jacobian(link, q)
 
         task_name = 'contact-%s' % link.name
-        self.ik.add_task(task_name, error, jacobian, gain, weight)
+        self.ik.add_task(task_name, residual, jacobian, gain, weight)
 
     def add_dof_task(self, dof_id, dof_ref, gain=None, weight=None):
         active_dof_id = self.active_dofs.index(dof_id)
         J = zeros(self.nb_active_dofs)
         J[active_dof_id] = 1.
 
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             return (dof_ref - q[active_dof_id])
 
         def jacobian(q):
             return J
 
         task_name = 'dof-%d' % dof_id
-        self.ik.add_task(task_name, error, jacobian, gain, weight)
+        self.ik.add_task(task_name, residual, jacobian, gain, weight)
 
-    def compute_link_pose_error(self, link, q, target_pose):
+    def compute_link_pose_residual(self, link, q, target_pose):
         link_pose = self.compute_link_pose(link, q)
         diff = target_pose - link_pose
         if dot(diff[0:4], diff[0:4]) > 1.:
@@ -466,15 +467,15 @@ class Robot(object):
         if type(target) is list:
             target = array(target)
         if hasattr(target, 'effector_pose'):  # needs to come before 'pose'
-            def error(q, qd, dt):
-                return self.compute_link_pose_error(
+            def residual(q, qd, dt):
+                return self.compute_link_pose_residual(
                     link, q, target.effector_pose)
         elif hasattr(target, 'pose'):
-            def error(q, qd, dt):
-                return self.compute_link_pose_error(link, q, target.pose)
+            def residual(q, qd, dt):
+                return self.compute_link_pose_residual(link, q, target.pose)
         elif type(target) is ndarray:
-            def error(q, qd, dt):
-                return self.compute_link_pose_error(link, q, target)
+            def residual(q, qd, dt):
+                return self.compute_link_pose_residual(link, q, target)
         else:  # link frame target should be a pose
             msg = "Target of type %s has no 'pose' attribute" % type(target)
             raise Exception(msg)
@@ -482,19 +483,19 @@ class Robot(object):
         def jacobian(q):
             return self.compute_link_active_pose_jacobian(link, q)
 
-        self.ik.add_task(link.name, error, jacobian, gain, weight, task_type)
+        self.ik.add_task(link.name, residual, jacobian, gain, weight, task_type)
 
     def add_link_position_task(self, link, target, gain=None, weight=None):
         if type(target) is list:
             target = array(target)
         if hasattr(target, 'pos'):
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target.pos - link.p
         elif hasattr(target, 'p'):
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target.p - link.p
         elif type(target) is ndarray:
-            def error(q, qd, dt):
+            def residual(q, qd, dt):
                 return target - self.compute_link_pose(link, q)
         else:  # this is an aesthetic comment
             msg = "Target of type %s has no 'pos' attribute" % type(target)
@@ -504,7 +505,7 @@ class Robot(object):
             return self.compute_link_active_position_jacobian(link, q)
 
         task_name = 'link-%s' % link.name
-        self.ik.add_task(task_name, error, jacobian, gain, weight)
+        self.ik.add_task(task_name, residual, jacobian, gain, weight)
 
     def add_min_acceleration_task(self, weight):
         """
@@ -521,13 +522,13 @@ class Robot(object):
         """
         identity = eye(self.nb_active_dofs)
 
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             return qd
 
         def jacobian(q):
             return identity
 
-        self.ik.add_task('qdd-min', error, jacobian, weight=weight,
+        self.ik.add_task('qdd-min', residual, jacobian, weight=weight,
                          unit_gain=True)
 
     def add_min_velocity_task(self, gain=None, weight=None):
@@ -546,13 +547,13 @@ class Robot(object):
         """
         identity = eye(self.nb_active_dofs)
 
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             return -qd
 
         def jacobian(q):
             return identity
 
-        self.ik.add_task('qdmin', error, jacobian, gain, weight)
+        self.ik.add_task('qdmin', residual, jacobian, gain, weight)
 
     def add_posture_task(self, q_ref, gain=None, weight=None):
         """
@@ -582,7 +583,7 @@ class Robot(object):
             for j in trans:
                 J_posture[j, j] = 0.
 
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             e = (q_ref - q)
             for j in trans:
                 e[j] = 0.
@@ -591,7 +592,7 @@ class Robot(object):
         def jacobian(q):
             return J_posture
 
-        self.ik.add_task('posture', error, jacobian, gain, weight)
+        self.ik.add_task('posture', residual, jacobian, gain, weight)
 
     def add_min_cam_task(self, weight=None):
         """
@@ -601,11 +602,12 @@ class Robot(object):
 
         ``weight`` -- task weight (optional)
         """
-        def error(q, qd, dt):
+        def residual(q, qd, dt):
             return zeros((3,))
 
         jacobian = self.compute_cam_jacobian
-        self.ik.add_task('cam', error, jacobian, weight=weight, unit_gain=True)
+        self.ik.add_task('cam', residual, jacobian, weight=weight,
+                         unit_gain=True)
 
     def remove_contact_task(self, link):
         self.ik.remove_task(link.name)

@@ -30,24 +30,37 @@ class DiffIKSolver(object):
     The differential IK solver computes velocities ``qd`` that bring the system
     closer to fulfilling a set of tasks. A task is defined by
 
-    - ``error(q, qd, dt)``, specifying the workspace displacement between
-      desired and actual position/orientation
+    - ``residual(q, qd, dt)``, specifying the (desired - current) workspace
+      displacement
     - ``jacobian(q)``, mapping joint velocities to workspace displacements
     - two scalars ``gain`` and ``weight``.
 
     A task is perfectly achieved when:
 
-        jacobian(q) * qd == -gain * error(q, qd, dt) / dt     (1)
+        jacobian(q) * qd == gain * residual(q, qd, dt) / dt     (1)
 
     To tend toward this, each task adds a term
 
-        cost(task, qd) = weight * |jacobian * qd + gain * error / dt|^2
+        cost(task, qd) = weight * |jacobian * qd - gain * residual / dt|^2
 
     to the cost function of the optimization problem solved at each time step
     by the differential IK:
 
         minimize    sum_tasks cost(task, qd)
-        subject to  qd_min <= qd <= qd_max
+            s.t.    qd_min <= qd <= qd_max
+
+    .. NOTE::
+
+        Minimizing squared residuals as in the cost functions above corresponds
+        to the Gauss-Newton algorithm
+        <https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm>. Indeed,
+        expanding the square expression in cost(task, qd) yields
+
+            minimize    qd * (J.T * J) * qd - 2 * (residual / dt) * J * qd
+
+        Differentiating with respect to ``qd`` shows that the minimum is
+        attained for (J.T * J) * qd == (residual / dt), and we recognize the
+        Gauss-Newton update rule.
     """
 
     def __init__(self, q_max, q_min, qd_lim, gains=None, weights=None):
