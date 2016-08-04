@@ -277,16 +277,6 @@ class RobotBase(object):
         assert len(q) == self.nb_dofs, "Invalid DOF vector"
         return self.rave.SetDOFValues(q)
 
-    def update_dof_limits(self, dof_index, q_min=None, q_max=None):
-        if q_min is not None:
-            self.q_min_full.flags.writeable = True
-            self.q_min_full[dof_index] = q_min
-            self.q_min_full.flags.writeable = False
-        if q_max is not None:
-            self.q_max_full.flags.writeable = True
-            self.q_max_full[dof_index] = q_max
-            self.q_max_full.flags.writeable = False
-
     def scale_dof_limits(self, scale=1.):
         q_avg = .5 * (self.q_max_full + self.q_min_full)
         q_dev = .5 * (self.q_max_full - self.q_min_full)
