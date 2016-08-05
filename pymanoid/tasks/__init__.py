@@ -18,16 +18,16 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from tasks_contact import ContactTask
-from tasks_contact import LinkPosTask
-from tasks_contact import LinkPoseTask
-from tasks_dof import DOFTask
-from tasks_dof import MinAccelerationTask
-from tasks_dof import MinVelocityTask
-from tasks_dof import PostureTask
-from tasks_centroid import COMTask
-from tasks_centroid import ConstantCAMTask
-from tasks_centroid import MinCAMTask
+from contact import ContactTask
+from contact import LinkPosTask
+from contact import LinkPoseTask
+from dof import DOFTask
+from dof import MinAccelerationTask
+from dof import MinVelocityTask
+from dof import PostureTask
+from centroid import COMTask
+from centroid import ConstantCAMTask
+from centroid import MinCAMTask
 
 __all__ = [
     'COMTask',

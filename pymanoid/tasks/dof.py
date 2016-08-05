@@ -18,8 +18,8 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from inverse_kinematics import Task
 from numpy import array, eye, zeros
+from task import Task
 
 
 class DOFTask(Task):

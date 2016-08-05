@@ -24,58 +24,6 @@ from threading import Lock
 from warnings import warn
 
 
-class Task(object):
-
-    task_type = 'generic'
-
-    def __init__(self, jacobian, pos_residual=None, vel_residual=None,
-                 gain=None, weight=None, exclude_dofs=None):
-        """
-        Create a new IK task.
-
-        INPUT:
-
-        - ``pos_residual``:
-        """
-        assert pos_residual or vel_residual
-        self.__jacobian = jacobian
-        self.__exclude_dofs = exclude_dofs
-        self.gain = gain
-        self.pos_residual = pos_residual
-        self.vel_residual = vel_residual
-        self.weight = weight
-
-    @property
-    def name(self):
-        return self.task_type
-
-    def cost(self, dt):
-        def sq(r):
-            return dot(r, r)
-
-        return self.weight * sq(self.residual(dt))
-
-    def exclude_dofs(self, dofs):
-        if self.__exclude_dofs is None:
-            self.__exclude_dofs = []
-        self.__exclude_dofs.extend(dofs)
-
-    def jacobian(self):
-        J = self.__jacobian()
-        if self.__exclude_dofs:
-            for dof_id in self.__exclude_dofs:
-                J[:, dof_id] *= 0.  # we are working on the full jacobian
-        return J
-
-    def residual(self, dt):
-        vel_residual = \
-            self.vel_residual(dt) if self.vel_residual is not None else \
-            self.pos_residual() / dt
-        if self.gain is None:
-            return vel_residual
-        return self.gain * vel_residual
-
-
 class VelocitySolver(object):
 
     """
