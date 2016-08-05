@@ -267,7 +267,7 @@ class Robot(object):
     ==================
     """
 
-    def init_ik(self, gains, weights):
+    def init_ik(self, gains=None, weights=None):
         """
         Initialize the IK solver.
 
@@ -276,7 +276,8 @@ class Robot(object):
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
         """
-        self.ik = VelocitySolver(self, gains, weights)
+        self.ik = VelocitySolver(
+            self, default_gains=gains, default_weights=weights)
 
     def step_ik(self, dt):
         qd_active = self.ik.compute_velocity(dt)

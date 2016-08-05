@@ -124,6 +124,24 @@ class Humanoid(Robot):
         super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
         self.has_free_flyer = True
 
+    def init_ik(self, gains=None, weights=None):
+        """
+        Initialize the IK solver.
+
+        INPUT:
+
+        - ``gains`` -- dictionary of default task gains
+        - ``weights`` -- dictionary of default task weights
+        """
+        if weights is None:
+            weights = {
+                'com': 10.,
+                'contact': 10000.,
+                'link': 100.,
+                'posture': 1.,
+            }
+        super(Humanoid, self).init_ik(gains, weights)
+
     """
     Center Of Mass
     ==============

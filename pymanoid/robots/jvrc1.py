@@ -158,31 +158,3 @@ class JVRC1(Humanoid):
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
         self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
-
-    def init_ik(self, gains=None, weights=None):
-        """
-        Initialize the differential IK solver.
-
-        INPUT:
-
-        ``gain`` -- dictionary of default task gains
-        ``weights`` -- dictionary of default task weights
-        ``qd_lim`` -- maximum joint velocity (in [rad]), same for all joints
-        """
-        assert self.active_dofs is not None, \
-            "Please set active DOFs before using the IK"
-        if gains is None:
-            gains = {
-                'com': 1.,
-                'contact': 0.9,
-                'link': 0.2,
-                'posture': 0.005,
-            }
-        if weights is None:
-            weights = {
-                'contact': 100.,
-                'com': 5.,
-                'link': 5.,
-                'posture': 0.1,
-            }
-        super(JVRC1, self).init_ik(gains, weights)
