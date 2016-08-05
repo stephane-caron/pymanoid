@@ -24,6 +24,45 @@ from threading import Lock
 from warnings import warn
 
 
+class Task(object):
+
+    task_type = 'generic'
+
+    def __init__(self, jacobian, pos_residual=None, vel_residual=None,
+                 gain=None, weight=None):
+        """
+        Create a new IK task.
+
+        INPUT:
+
+        - ``pos_residual``:
+        """
+        assert pos_residual or vel_residual
+        self.gain = gain
+        self.jacobian = jacobian
+        self.pos_residual = pos_residual
+        self.vel_residual = vel_residual
+        self.weight = weight
+
+    @property
+    def name(self):
+        return self.task_type
+
+    def cost(self, dt):
+        def sq(r):
+            return dot(r, r)
+
+        return self.weight * sq(self.residual(dt))
+
+    def residual(self, dt):
+        vel_residual = \
+            self.vel_residual(dt) if self.vel_residual is not None else \
+            self.pos_residual() / dt
+        if self.gain is None:
+            return vel_residual
+        return self.gain * vel_residual
+
+
 class VelocitySolver(object):
 
     """
@@ -64,7 +103,7 @@ class VelocitySolver(object):
     """
 
     def __init__(self, robot, default_gains=None, default_weights=None,
-                 doflim_gain=1., dt=None):
+                 doflim_gain=0.5, dt=None):
         """
         Initialize the differential IK solver.
 
@@ -93,65 +132,35 @@ class VelocitySolver(object):
         if default_weights is not None:
             self.default_weights.update(default_weights)
 
-    def add_task(self, name, residual, jacobian, gain=None, weight=None,
-                 task_type=None, unit_gain=False):
+    def add_task(self, task):
         """
         Add a new task in the IK.
 
         INPUT:
 
-        ``name`` -- task name, used as identifier for e.g. removal
-        ``residual`` -- residual of the task (depends on q, qd and dt)
-        ``jacobian`` -- jacobian function of the task (depends on q only)
-        ``gain`` -- task gain
-        ``weight`` -- task weight
-        ``task_type`` -- for some tasks such as contact, ``name`` corresponds to
-                         a robot link name; ``task_type`` is then used to fetch
-                         default gain and weight values
-        ``unit_gain`` -- some tasks have a different formulation where the gain
-                         is one and there is no division by dt in Equation (1);
-                         set ``unit_gain=1`` for this behavior
+        ``task`` -- Task object
 
         .. NOTE::
 
             This function is not made to be called frequently.
 
         """
-        if name in self.tasks:
-            raise Exception("Task '%s' already present in IK" % name)
+        if task.name in self.tasks:
+            raise Exception("Task '%s' already present in IK" % task.name)
         with self.tasks_lock:
-            self.tasks[name] = True
-            self.residuals[name] = residual
-            self.jacobians[name] = jacobian
-            if unit_gain:
-                if name in self.gains:
-                    del self.gains[name]
-            elif gain is not None:
-                self.gains[name] = gain
-            elif name in self.default_gains:
-                self.gains[name] = self.default_gains[name]
-            elif task_type in self.default_gains:
-                self.gains[name] = self.default_gains[task_type]
-            else:
-                msg = "No gain provided for task '%s'" % name
-                if task_type is not None:
-                    msg += " (task_type='%s')" % task_type
-                raise Exception(msg)
-            if weight is not None:
-                self.weights[name] = weight
-            elif name in self.default_weights:
-                self.weights[name] = self.default_weights[name]
-            elif task_type in self.default_weights:
-                self.weights[name] = self.default_weights[task_type]
-            else:
-                msg = "No weight provided for task '%s'" % name
-                if task_type is not None:
-                    msg += " (task_type='%s')" % task_type
-                raise Exception(msg)
-            assert unit_gain or self.gains[name] < 1. + 1e-10, \
-                "Task gains should be between 0. and 1 (%f)." % self.gains[name]
-            assert self.weights[name] > 0., \
-                "Task weights should be positive"
+            self.tasks[task.name] = task
+            if task.task_type in self.default_gains:
+                if task.gain is None:
+                    task.gain = self.default_gains[task.task_type]
+                if task.weight is None:
+                    task.weight = self.default_weights[task.task_type]
+            if task.weight is None:
+                raise Exception("No weight supplied for task '%s' of type '%s'"
+                                % (task.name, task.task_type))
+            if task.gain is not None and task.gain > 1.:
+                raise Exception("Gains should be in (0, 1) (%f)" % task.gain)
+            if task.weight < 0.:
+                raise Exception("Weights should be positive (%f)" % task.weight)
 
     def remove_task(self, name):
         with self.tasks_lock:
@@ -161,13 +170,7 @@ class VelocitySolver(object):
             del self.tasks[name]
 
     def compute_cost(self, dt):
-        def sq(e):
-            return dot(e, e)
-
-        def cost(task):
-            return self.weights[task] * sq(self.residuals[task](dt))
-
-        return sum(cost(task) for task in self.tasks)
+        return sum(task.cost(dt) for task in self.tasks.itervalues())
 
     def compute_velocity(self, dt):
         """
@@ -176,9 +179,7 @@ class VelocitySolver(object):
 
         INPUT:
 
-        ``q`` -- current joint vector
-        ``qd`` -- current joint velocities
-        ``dt`` -- (optional) time step until next call to the IK
+        - ``dt`` -- time step
         """
         n = self.robot.nb_active_dofs
         q = self.robot.q_active
@@ -187,21 +188,18 @@ class VelocitySolver(object):
         qd_max = self.robot.qd_max[self.robot.active_dofs]
         qd_min = self.robot.qd_min[self.robot.active_dofs]
         E = eye(n)
-        P = zeros((n, n))
-        r = zeros(n)
+        qp_P = zeros((n, n))
+        qp_q = zeros(n)
         with self.tasks_lock:
-            for task in self.tasks:
-                J = self.jacobians[task]()[:, self.robot.active_dofs]
-                if task in self.gains:
-                    e = self.gains[task] * (self.residuals[task](dt) / dt)
-                else:  # for tasks added with unit_gain=True
-                    e = self.residuals[task](dt)
-                P += self.weights[task] * dot(J.T, J)
-                r += self.weights[task] * dot(-e.T, J)
+            for task in self.tasks.itervalues():
+                J = task.jacobian()[:, self.robot.active_dofs]
+                r = task.residual(dt)
+                qp_P += task.weight * dot(J.T, J)
+                qp_q += task.weight * dot(-r.T, J)
         qd_max_doflim = self.doflim_gain * (q_max - q) / dt
         qd_min_doflim = self.doflim_gain * (q_min - q) / dt
         qd_max = minimum(qd_max, qd_max_doflim)
         qd_min = maximum(qd_min, qd_min_doflim)
-        G = vstack([+E, -E])
-        h = hstack([qd_max, -qd_min])
-        return solve_qp(P, r, G, h)
+        qp_G = vstack([+E, -E])
+        qp_h = hstack([qd_max, -qd_min])
+        return solve_qp(qp_P, qp_q, qp_G, qp_h)

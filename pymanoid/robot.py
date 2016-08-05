@@ -20,11 +20,19 @@
 
 from env import get_env
 from env import set_default_background_color
-from numpy import eye, ones, zeros
+from inverse_kinematics import VelocitySolver
+from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
 from os.path import basename, splitext
+from threading import Lock, Thread
+from time import sleep as rt_sleep
+from warnings import warn
 
 
 class Robot(object):
+
+    """
+    Robot with a fixed base. This class wraps OpenRAVE's Robot type.
+    """
 
     __default_xml = """
     <environment>
@@ -32,107 +40,19 @@ class Robot(object):
     </environment>
     """
 
-    __free_flyer_xml = """
-    <environment>
-        <robot>
-            <kinbody>
-                <body name="FLYER_TX_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <kinbody>
-                <body name="FLYER_TY_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <kinbody>
-                <body name="FLYER_TZ_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <kinbody>
-                <body name="FLYER_ROLL_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <kinbody>
-                <body name="FLYER_PITCH_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <kinbody>
-                <body name="FLYER_YAW_LINK">
-                    <mass type="mimicgeom">
-                        <total>0</total>
-                    </mass>
-                </body>
-            </kinbody>
-            <robot file="%s" name="%s">
-                <kinbody>
-                    <joint name="FLYER_TX" type="slider" circular="true">
-                        <body>FLYER_TX_LINK</body>
-                        <body>FLYER_TY_LINK</body>
-                        <axis>1 0 0</axis>
-                        <limits>-10 +10</limits>
-                    </joint>
-                    <joint name="FLYER_TY" type="slider" circular="true">
-                        <body>FLYER_TY_LINK</body>
-                        <body>FLYER_TZ_LINK</body>
-                        <axis>0 1 0</axis>
-                        <limits>-10 +10</limits>
-                    </joint>
-                    <joint name="FLYER_TZ" type="slider" circular="true">
-                        <body>FLYER_TZ_LINK</body>
-                        <body>FLYER_ROLL_LINK</body>
-                        <axis>0 0 1</axis>
-                        <limits>-10 +10</limits>
-                    </joint>
-                    <joint name="FLYER_ROLL" type="hinge" circular="true">
-                        <body>FLYER_ROLL_LINK</body>
-                        <body>FLYER_PITCH_LINK</body>
-                        <axis>1 0 0</axis>
-                    </joint>
-                    <joint name="FLYER_PITCH" type="hinge" circular="true">
-                        <body>FLYER_PITCH_LINK</body>
-                        <body>FLYER_YAW_LINK</body>
-                        <axis>0 1 0</axis>
-                    </joint>
-                    <joint name="FLYER_YAW" type="hinge" circular="true">
-                        <body>FLYER_YAW_LINK</body>
-                        <body>%s</body>
-                        <axis>0 0 1</axis>
-                    </joint>
-                </kinbody>
-            </robot>
-        </robot>
-    </environment>
-    """
-
-    def __init__(self, path, root_body, free_flyer=True, qd_lim=10.):
+    def __init__(self, path=None, xml=None, qd_lim=10.):
         """
         Create a new robot object.
 
         INPUT:
 
         - ``path`` -- path to the COLLADA model of the robot
-        - ``root_body`` -- name of first body in COLLADA file
         - ``free_flyer`` -- add 6 unactuated DOF? (optional, default is True)
         - ``qd_lim`` -- maximum angular joint velocity (in [rad])
         """
-        name = basename(splitext(path)[0])
-        if free_flyer:
-            xml = Robot.__free_flyer_xml % (path, name, root_body)
-        else:
+        assert path is not None or xml is not None
+        if xml is None:
+            name = basename(splitext(path)[0])
             xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)
@@ -143,7 +63,10 @@ class Robot(object):
         rave.SetDOFVelocities([0] * rave.GetDOF())
 
         self.active_dofs = None
-        self.has_free_flyer = free_flyer
+        self.has_free_flyer = False
+        self.ik = None  # created by self.init_ik()
+        self.ik_lock = None
+        self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.q_max = q_max
@@ -160,6 +83,33 @@ class Robot(object):
         self.rave = rave
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
+
+    """
+    Visualization
+    =============
+    """
+
+    def hide(self):
+        self.rave.SetVisible(False)
+
+    def set_color(self, r, g, b):
+        for link in self.rave.GetLinks():
+            for geom in link.GetGeometries():
+                geom.SetAmbientColor([r, g, b])
+                geom.SetDiffuseColor([r, g, b])
+
+    def set_transparency(self, transparency):
+        self.transparency = transparency
+        for link in self.rave.GetLinks():
+            for geom in link.GetGeometries():
+                geom.SetTransparency(transparency)
+
+    def set_visible(self, visible):
+        self.is_visible = visible
+        self.rave.SetVisible(visible)
+
+    def show(self):
+        self.rave.SetVisible(True)
 
     """
     Degrees of freedom
@@ -239,23 +189,172 @@ class Robot(object):
         return self.rave.SetActiveDOFVelocities(qd_active, check_dof_limits)
 
     """
-    DOF limits
-    ==========
+    Jacobians and Hessians
+    ======================
     """
 
-    def scale_dof_limits(self, scale=1.):
-        q_avg = .5 * (self.q_max + self.q_min)
-        q_dev = .5 * (self.q_max - self.q_min)
-        self.q_max.flags.writeable = True
-        self.q_min.flags.writeable = True
-        self.q_max = (q_avg + scale * q_dev)
-        self.q_min = (q_avg - scale * q_dev)
-        self.q_max.flags.writeable = False
-        self.q_min.flags.writeable = False
+    def compute_link_jacobian(self, link, p=None):
+        """
+        Compute the jacobian J(q) of the reference frame of the link, i.e. the
+        velocity of the link frame is given by:
+
+            [v omega] = J(q) * qd
+
+        where v and omega are the linear and angular velocities of the link
+        frame, respectively.
+
+        INPUT:
+
+        - ``link`` -- link index or pymanoid.Link object
+        - ``p`` -- link frame origin (optional: if None, link.p is used)
+        - ``q`` -- vector of joint angles (optional: if None, robot.q is used)
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
+        J_lin = self.rave.ComputeJacobianTranslation(link_index, p)
+        J_ang = self.rave.ComputeJacobianAxisAngle(link_index)
+        J = vstack([J_lin, J_ang])
+        return J
+
+    def compute_link_pose_jacobian(self, link):
+        J_trans = self.rave.CalculateJacobian(link.index, link.p)
+        or_quat = link.rave.GetTransformPose()[:4]  # don't use link.pose
+        J_quat = self.rave.CalculateRotationJacobian(link.index, or_quat)
+        if or_quat[0] < 0:  # we enforce positive first coefficients
+            J_quat *= -1.
+        J = vstack([J_quat, J_trans])
+        return J
+
+    def compute_link_pos_jacobian(self, link, p=None):
+        """
+        Compute the position Jacobian of a point p on a given robot link.
+
+        INPUT:
+
+        - ``link`` -- link index or pymanoid.Link object
+        - ``p`` -- point coordinates in world frame (optional, default is the
+                   origin of the link reference frame
+        """
+        link_index = link if type(link) is int else link.index
+        p = link.p if p is None else p
+        J = self.rave.ComputeJacobianTranslation(link_index, p)
+        return J
+
+    def compute_link_hessian(self, link, p=None):
+        """
+        Compute the hessian H(q) of the reference frame of the link, i.e. the
+        acceleration of the link frame is given by:
+
+            [a omegad] = J(q) * qdd + qd.T * H(q) * qd
+
+        where a and omegad are the linear and angular accelerations of the
+        frame, and J(q) is the frame jacobian.
+
+        INPUT:
+
+        - ``link`` -- link index or pymanoid.Link object
+        - ``p`` -- link frame origin (optional: if None, link.p is used)
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
+        H_lin = self.rave.ComputeHessianTranslation(link_index, p)
+        H_ang = self.rave.ComputeHessianAxisAngle(link_index)
+        H = concatenate([H_lin, H_ang], axis=1)
+        return H
 
     """
-    Dynamics
-    ========
+    Inverse Kinematics
+    ==================
+    """
+
+    def init_ik(self, gains, weights):
+        """
+        Initialize the IK solver.
+
+        INPUT:
+
+        - ``gains`` -- dictionary of default task gains
+        - ``weights`` -- dictionary of default task weights
+        """
+        self.ik = VelocitySolver(self, gains, weights)
+
+    def step_ik(self, dt):
+        qd_active = self.ik.compute_velocity(dt)
+        q_active = minimum(
+            maximum(
+                self.q_min_active,
+                self.q_active + qd_active * dt),
+            self.q_max_active)
+        self.set_active_dof_values(q_active)
+        self.set_active_dof_velocities(qd_active)
+
+    def solve_ik(self, max_it=100, conv_tol=1e-5, dt=1e-2, debug=False):
+        """
+        Compute joint-angles q satisfying all constraints at best.
+
+        INPUT:
+
+        - ``max_it`` -- maximum number of differential IK iterations
+        - ``conv_tol`` -- stop when the cost improvement ratio is less than this
+            threshold
+        - ``dt`` -- time step for the differential IK
+        - ``debug`` -- print extra debug info
+
+        .. NOTE::
+
+            Good values of dt depend on the gains and weights of the IK tasks.
+            Small values make convergence slower, while big values will render
+            them unstable.
+        """
+        if debug:
+            print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
+        cur_cost = 100000.
+        for itnum in xrange(max_it):
+            prev_cost = cur_cost
+            cur_cost = self.ik.compute_cost(dt)
+            cost_var = cur_cost - prev_cost
+            if debug:
+                print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
+            if abs(cost_var) < conv_tol:
+                if abs(cur_cost) > 0.1:
+                    warn("IK did not converge to solution. Is it feasible?"
+                         "If so, try restarting from a random guess.")
+                break
+            self.step_ik(dt)
+        return itnum, cur_cost
+
+    def start_ik_thread(self, dt, sleep_fun=None):
+        """
+        Start a new thread stepping the IK every dt, then calling sleep_fun(dt).
+
+        dt -- stepping period in seconds
+        sleep_fun -- sleeping function (default: time.sleep)
+        """
+        if sleep_fun is None:
+            sleep_fun = rt_sleep
+        self.ik_lock = Lock()
+        self.ik_thread = Thread(target=self.run_ik_thread, args=(dt, sleep_fun))
+        self.ik_thread.daemon = True
+        self.ik_thread.start()
+
+    def run_ik_thread(self, dt, sleep_fun):
+        while self.ik_lock:
+            with self.ik_lock:
+                self.step_ik(dt)
+                sleep_fun(dt)
+
+    def pause_ik_thread(self):
+        self.ik_lock.acquire()
+
+    def resume_ik_thread(self):
+        self.ik_lock.release()
+
+    def stop_ik_thread(self):
+        self.ik_lock = None
+
+    """
+    Inverse Dynamics
+    ================
     """
 
     def compute_inertia_matrix(self, external_torque=None):
@@ -324,30 +423,3 @@ class Robot(object):
         tm, tc, tg = self.rave.ComputeInverseDynamics(
             qdd, external_torque, returncomponents=True)
         return tm, tc, tg
-
-    """
-    Visualization
-    =============
-    """
-
-    def hide(self):
-        self.rave.SetVisible(False)
-
-    def set_color(self, r, g, b):
-        for link in self.rave.GetLinks():
-            for geom in link.GetGeometries():
-                geom.SetAmbientColor([r, g, b])
-                geom.SetDiffuseColor([r, g, b])
-
-    def set_transparency(self, transparency):
-        self.transparency = transparency
-        for link in self.rave.GetLinks():
-            for geom in link.GetGeometries():
-                geom.SetTransparency(transparency)
-
-    def set_visible(self, visible):
-        self.is_visible = visible
-        self.rave.SetVisible(visible)
-
-    def show(self):
-        self.rave.SetVisible(True)

@@ -152,11 +152,6 @@ class Body(object):
         return self.T[0:3, 3]
 
     @property
-    def pos(self):
-        """Position in world frame"""
-        return self.T[0:3, 3]
-
-    @property
     def x(self):
         return self.p[0]
 

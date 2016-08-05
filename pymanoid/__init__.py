@@ -48,8 +48,9 @@ from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
 from env import take_screenshot
+from humanoid import Humanoid
 from qp import solve_qp
-from robot_humanoid import Humanoid
+from robot import Robot
 from utils import solve_lp
 
 import polyhedra
@@ -66,6 +67,7 @@ __all__ = [
     'Link',
     'Manipulator',
     'PointMass',
+    'Robot',
     'draw_2d_cone',
     'draw_3d_cone',
     'draw_arrow',
