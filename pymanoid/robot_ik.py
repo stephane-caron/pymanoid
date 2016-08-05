@@ -19,13 +19,13 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import eye, maximum, minimum, zeros
-from robot_base import BaseRobot
+from robot_base import Robot
 from threading import Lock, Thread
 from time import sleep as rt_sleep
 from warnings import warn
 
 
-class IKRobot(BaseRobot):
+class KinematicRobot(Robot):
 
     """
     Robot with an Inverse Kinematics (IK) solver and default IK tasks on DOF
@@ -33,7 +33,7 @@ class IKRobot(BaseRobot):
     """
 
     def __init__(self, path, root_body, free_flyer=True):
-        super(IKRobot, self).__init__(path, root_body, free_flyer)
+        super(KinematicRobot, self).__init__(path, root_body, free_flyer)
         self.ik = None  # created by self.init_ik()
         self.ik_lock = None
         self.ik_thread = None

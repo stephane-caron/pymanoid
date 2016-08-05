@@ -42,7 +42,7 @@ Unless otherwise mentioned, coordinates are in the absolute reference frame.
 """
 
 
-class BaseRobot(object):
+class Robot(object):
 
     __default_xml = """
     <environment>
@@ -149,9 +149,9 @@ class BaseRobot(object):
         """
         name = basename(splitext(path)[0])
         if free_flyer:
-            xml = BaseRobot.__free_flyer_xml % (path, name, root_body)
+            xml = Robot.__free_flyer_xml % (path, name, root_body)
         else:
-            xml = BaseRobot.__default_xml % (path, name)
+            xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)
         set_default_background_color()  # reset by LoadData

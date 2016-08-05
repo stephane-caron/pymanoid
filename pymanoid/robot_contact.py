@@ -20,13 +20,13 @@
 
 from contact import Contact
 from numpy import array, concatenate, dot, vstack, ndarray
-from robot_ik import IKRobot
+from robot_ik import KinematicRobot
 
 
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
-class ContactingRobot(IKRobot):
+class ContactingRobot(KinematicRobot):
 
     def compute_link_jacobian(self, link, p=None):
         """
