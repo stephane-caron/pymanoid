@@ -23,9 +23,7 @@ from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 from robot import Robot
 from rotations import crossmat
-from task_centroid import COMTask
-from task_contact import ContactTask
-from task_dof import PostureTask
+from tasks import COMTask, ContactTask, PostureTask
 
 
 class Humanoid(Robot):

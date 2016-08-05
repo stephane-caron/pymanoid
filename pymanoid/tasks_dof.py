@@ -131,8 +131,9 @@ class PostureTask(Task):
         J_posture = eye(robot.nb_dofs)
         if exclude_dofs is None:
             exclude_dofs = []
-        if robot.has_free_flyer:  # don't include translation coordinates
-            exclude_dofs.extend([robot.TRANS_X, robot.TRANS_Y, robot.TRANS_Z])
+        if robot.has_free_flyer:  # don't include free-flyer coordinates
+            exclude_dofs.extend([
+                robot.TRANS_X, robot.TRANS_Y, robot.TRANS_Z, robot.ROT_Y])
         for i in exclude_dofs:
             J_posture[i, i] = 0.
 
