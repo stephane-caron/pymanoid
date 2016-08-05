@@ -162,11 +162,10 @@ class VelocitySolver(object):
             raise Exception("Task '%s' already present in IK" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
-            if task.task_type in self.default_gains:
-                if task.gain is None:
-                    task.gain = self.default_gains[task.task_type]
-                if task.weight is None:
-                    task.weight = self.default_weights[task.task_type]
+            if task.gain is None and task.task_type in self.default_gains:
+                task.gain = self.default_gains[task.task_type]
+            if task.weight is None and task.task_type in self.default_weights:
+                task.weight = self.default_weights[task.task_type]
             if task.weight is None:
                 raise Exception("No weight supplied for task '%s' of type '%s'"
                                 % (task.name, task.task_type))
