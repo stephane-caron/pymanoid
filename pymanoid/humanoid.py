@@ -123,6 +123,30 @@ class Humanoid(Robot):
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
         super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
         self.has_free_flyer = True
+        self.__cam = None
+        self.__com = None
+        self.__comd = None
+
+    def set_dof_values(self, *args, **kwargs):
+        self.__cam = None
+        self.__com = None
+        self.__comd = None
+        super(Humanoid, self).set_dof_values(*args, **kwargs)
+
+    def set_dof_velocities(self, *args, **kwargs):
+        self.__cam = None
+        self.__comd = None
+        super(Humanoid, self).set_dof_velocities(*args, **kwargs)
+
+    def set_active_dof_values(self, *args, **kwargs):
+        self.__cam = None
+        self.__com = None
+        self.__comd = None
+        super(Humanoid, self).set_active_dof_values(*args, **kwargs)
+
+    def set_active_dof_velocities(self, *args, **kwargs):
+        self.__cam = None
+        super(Humanoid, self).set_active_dof_velocities(*args, **kwargs)
 
     def init_ik(self, gains=None, weights=None):
         """
@@ -149,11 +173,15 @@ class Humanoid(Robot):
 
     @property
     def com(self):
-        return self.compute_com()
+        if self.__com is None:
+            self.__com = self.compute_com()
+        return self.__com
 
     @property
     def comd(self):
-        return self.compute_com_velocity()
+        if self.__comd is None:
+            self.__comd = self.compute_com_velocity()
+        return self.__comd
 
     def compute_com(self):
         total = zeros(3)
@@ -320,11 +348,14 @@ class Humanoid(Robot):
 
     @property
     def cam(self):
-        return self.compute_cam(self.q, self.qd)
+        if self.__cam is None:
+            self.__cam = self.compute_cam()
+        return self.__cam
 
     def compute_cam(self):
         """Compute the centroidal angular momentum."""
-        return self.compute_angular_momentum(self.compute_com())
+        p_G = self.compute_com()
+        return self.compute_angular_momentum(p_G)
 
     def compute_cam_jacobian(self):
         """
@@ -347,8 +378,8 @@ class Humanoid(Robot):
 
             Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd))
         """
-        p_G = self.compute_com(q)
-        return self.compute_angular_momentum_hessian(q, p_G)
+        p_G = self.compute_com()
+        return self.compute_angular_momentum_hessian(p_G)
 
     """
     Whole-body wrench

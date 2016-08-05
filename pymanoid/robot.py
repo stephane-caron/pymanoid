@@ -69,6 +69,7 @@ class Robot(object):
         self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
+        self.nb_dofs = rave.GetDOF()
         self.q_max = q_max
         self.q_max.flags.writeable = False
         self.q_max_active = None
@@ -118,10 +119,6 @@ class Robot(object):
     OpenRAVE calls "DOF values" what we will also call "joint angles". Same for
     "DOF velocities" and "joint velocities".
     """
-
-    @property
-    def nb_dofs(self):
-        return self.rave.GetDOF()
 
     @property
     def q(self):
