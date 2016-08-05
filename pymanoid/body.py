@@ -31,8 +31,7 @@ from warnings import warn
 class Body(object):
 
     """
-    Wrapper for a RAVE object with the GetTransform() and GetTransformPose()
-    methods, e.g. a Link or a Manipulator.
+    Wrapper around OpenRAVE KinBody.
     """
 
     def __init__(self, rave_body, pos=None, rpy=None, color=None, name=None,
@@ -40,14 +39,16 @@ class Body(object):
         """
         Create body from an OpenRAVE KinBody.
 
-        rave_body -- object to wrap
-        pos -- initial position in inertial frame
-        rpy -- initial orientation in inertial frame
-        color -- color applied to all links (if any) in the object
-        name -- object's name (optional)
-        pose -- initial pose (supersedes pos and rpy)
-        visible -- initial visibility
-        transparency -- transparency value, 0. is opaque and 1. is transparent
+        INPUT:
+
+        - ``rave_body`` -- KinBody object to wrap
+        - ``pos`` -- initial position in inertial frame
+        - ``rpy`` -- initial orientation in inertial frame
+        - ``color`` -- color applied to all links (if any) in the object
+        - ``name`` -- object's name (optional)
+        - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``visible`` -- initial visibility
+        - ``transparency`` -- transparency value (0: opaque, 1: transparent)
         """
         self.rave = rave_body
         if color is not None:
@@ -73,8 +74,10 @@ class Body(object):
         """
         Set the color of all bodies in the OpenRAVE KinBody object.
 
-        color -- color code in Matplotlib convention
-                 c.f. http://matplotlib.org/api/colors_api.html
+        INPUT:
+
+        - ``color`` -- color code in Matplotlib convention,
+                       see <http://matplotlib.org/api/colors_api.html>.
         """
         if color == 'w':
             acolor = array([1., 1., 1.])
