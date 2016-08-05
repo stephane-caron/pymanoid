@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+from inverse_kinematics import VelocitySolver
 from numpy import eye, maximum, minimum, zeros
 from robot_base import Robot
 from threading import Lock, Thread
@@ -38,20 +39,18 @@ class KinematicRobot(Robot):
         self.ik_lock = None
         self.ik_thread = None
 
-    def init_ik(self, gains=None, weights=None, qd_lim=None):
+    def init_ik(self, gains, weights):
         """
-        Initialize the IK solver. Needs to be defined by child classes.
+        Initialize the IK solver.
 
         INPUT:
 
-        ``gains`` -- dictionary of default task gains
-        ``weights`` -- dictionary of default task weights
-        ``qd_lim`` -- maximum velocity (in [rad]), same for each joint
+        - ``gains`` -- dictionary of default task gains
+        - ``weights`` -- dictionary of default task weights
         """
-        warn("no IK defined for robot of type %s" % (str(type(self))))
+        self.ik = VelocitySolver(self, gains, weights)
 
-    def step_ik(self, dt):
-        qd_active = self.ik.compute_velocity(dt)
+    def __apply_velocity_step(self, qd_active, dt):
         q_active = minimum(
             maximum(
                 self.q_min_active,
@@ -59,6 +58,10 @@ class KinematicRobot(Robot):
             self.q_max_active)
         self.set_active_dof_values(q_active)
         self.set_active_dof_velocities(qd_active)
+
+    def step_ik(self, dt):
+        qd_active = self.ik.compute_velocity(dt)
+        self.__apply_velocity_step(qd_active, dt)
 
     def solve_ik(self, max_it=100, conv_tol=1e-5, dt=1e-2, debug=False):
         """
@@ -78,11 +81,9 @@ class KinematicRobot(Robot):
             Small values make convergence slower, while big values will render
             them unstable.
         """
-        cur_cost = 1000.
-        q_active = self.q_active
-        qd_active = zeros(self.nb_active_dofs)
         if debug:
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
+        cur_cost = 100000.
         for itnum in xrange(max_it):
             prev_cost = cur_cost
             cur_cost = self.ik.compute_cost(dt)
@@ -95,10 +96,7 @@ class KinematicRobot(Robot):
                          "If so, try restarting from a random guess.")
                 break
             qd_active = self.ik.compute_velocity(dt)
-            q_active = minimum(
-                maximum(self.q_min_active, q_active + qd_active * dt),
-                self.q_max_active)
-            self.set_active_dof_values(q_active)
+            self.__apply_velocity_step(qd_active, dt)
         return itnum, cur_cost
 
     """

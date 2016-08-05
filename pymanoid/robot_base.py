@@ -24,24 +24,6 @@ from numpy import eye, ones, zeros
 from os.path import basename, splitext
 
 
-"""
-Notations and names
-===================
-
-am: Angular Momentum
-am_rate: Rate (time-derivative) of Angular Momentum
-c: link COM
-m: link mass
-omega: link angular velocity
-r: origin of link frame
-R: link rotation
-T: link transform
-v: link velocity (v = [rd, omega])
-
-Unless otherwise mentioned, coordinates are in the absolute reference frame.
-"""
-
-
 class Robot(object):
 
     __default_xml = """

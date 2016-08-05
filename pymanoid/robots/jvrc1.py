@@ -21,7 +21,7 @@
 from numpy import array
 from os import system
 from os.path import isfile
-from pymanoid import DiffIKSolver, Humanoid, Manipulator
+from pymanoid import Humanoid, Manipulator
 
 
 class JVRC1(Humanoid):
@@ -185,4 +185,4 @@ class JVRC1(Humanoid):
                 'link': 5.,
                 'posture': 0.1,
             }
-        self.ik = DiffIKSolver(self, gains, weights)
+        super(JVRC1, self).init_ik(gains, weights)

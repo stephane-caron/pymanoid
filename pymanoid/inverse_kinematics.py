@@ -24,11 +24,11 @@ from threading import Lock
 from warnings import warn
 
 
-class DiffIKSolver(object):
+class VelocitySolver(object):
 
     """
-    The differential IK solver computes velocities ``qd`` that bring the system
-    closer to fulfilling a set of tasks. A task is defined by
+    Computes velocities ``qd`` that bring the system closer to fulfilling a set
+    of tasks. A task is defined by
 
     - ``residual(dt)``, specifying the (desired - current) workspace
       displacement
@@ -37,11 +37,11 @@ class DiffIKSolver(object):
 
     A task is perfectly achieved when:
 
-        jacobian() * qd == gain * residual(q, qd, dt) / dt     (1)
+        jacobian() * qd == gain * residual(dt) / dt     (1)
 
     To tend toward this, each task adds a term
 
-        cost(task, qd) = weight * |jacobian * qd - gain * residual / dt|^2
+        cost(task, qd) = weight * |jacobian() * qd - gain * residual(dt) / dt|^2
 
     to the cost function of the optimization problem solved at each time step
     by the differential IK:
@@ -64,7 +64,7 @@ class DiffIKSolver(object):
     """
 
     def __init__(self, robot, default_gains=None, default_weights=None,
-                 doflim_gain=1.):
+                 doflim_gain=1., dt=None):
         """
         Initialize the differential IK solver.
 
@@ -76,6 +76,7 @@ class DiffIKSolver(object):
         - ``doflim`` -- (optional, default: 0.5) a special gain converting joint
                      limits into a suitable velocity bound. See Equation (50) in
                      <http://www.roboticsproceedings.org/rss07/p21.pdf>.
+        - ``dt`` -- default time step
         """
         self.default_gains = {}
         self.default_weights = {}
@@ -92,7 +93,7 @@ class DiffIKSolver(object):
         if default_weights is not None:
             self.default_weights.update(default_weights)
 
-    def add_task(self, name, error, jacobian, gain=None, weight=None,
+    def add_task(self, name, residual, jacobian, gain=None, weight=None,
                  task_type=None, unit_gain=False):
         """
         Add a new task in the IK.
@@ -100,7 +101,7 @@ class DiffIKSolver(object):
         INPUT:
 
         ``name`` -- task name, used as identifier for e.g. removal
-        ``error`` -- error function of the task (depends on q, qd and dt)
+        ``residual`` -- residual of the task (depends on q, qd and dt)
         ``jacobian`` -- jacobian function of the task (depends on q only)
         ``gain`` -- task gain
         ``weight`` -- task weight
@@ -120,7 +121,7 @@ class DiffIKSolver(object):
             raise Exception("Task '%s' already present in IK" % name)
         with self.tasks_lock:
             self.tasks[name] = True
-            self.residuals[name] = error
+            self.residuals[name] = residual
             self.jacobians[name] = jacobian
             if unit_gain:
                 if name in self.gains:
@@ -177,10 +178,7 @@ class DiffIKSolver(object):
 
         ``q`` -- current joint vector
         ``qd`` -- current joint velocities
-        ``dt`` -- time step until next call to the IK
-
-        .. NOTE::
-
+        ``dt`` -- (optional) time step until next call to the IK
         """
         n = self.robot.nb_active_dofs
         q = self.robot.q_active

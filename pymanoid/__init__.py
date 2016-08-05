@@ -48,7 +48,6 @@ from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
 from env import take_screenshot
-from inverse_kinematics import DiffIKSolver
 from qp import solve_qp
 from robot_humanoid import Humanoid
 from utils import solve_lp
@@ -63,7 +62,6 @@ __all__ = [
     'Contact',
     'ContactSet',
     'Cube',
-    'DiffIKSolver',
     'Humanoid',
     'Link',
     'Manipulator',
