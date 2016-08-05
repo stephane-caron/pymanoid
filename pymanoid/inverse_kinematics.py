@@ -27,56 +27,29 @@ from warnings import warn
 class VelocitySolver(object):
 
     """
-    Computes velocities ``qd`` that bring the system closer to fulfilling a set
-    of tasks. A task is defined by
+    Compute velocities bringing the system closer to fulfilling a set of tasks.
 
-    - ``residual(dt)``, specifying the (desired - current) workspace
-      displacement
-    - ``jacobian()``, mapping joint velocities to workspace displacements
-    - two scalars ``gain`` and ``weight``.
-
-    A task is perfectly achieved when:
-
-        jacobian() * qd == gain * residual(dt) / dt     (1)
-
-    To tend toward this, each task adds a term
-
-        cost(task, qd) = weight * |jacobian() * qd - gain * residual(dt) / dt|^2
-
-    to the cost function of the optimization problem solved at each time step
-    by the differential IK:
-
-        minimize    sum_tasks cost(task, qd)
-            s.t.    qd_min <= qd <= qd_max
-
-    .. NOTE::
-
-        Minimizing squared residuals as in the cost functions above corresponds
-        to the Gauss-Newton algorithm
-        <https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm>. Indeed,
-        expanding the square expression in cost(task, qd) yields
-
-            minimize    qd * (J.T * J) * qd - 2 * (residual / dt) * J * qd
-
-        Differentiating with respect to ``qd`` shows that the minimum is
-        attained for (J.T * J) * qd == (residual / dt), and we recognize the
-        Gauss-Newton update rule.
+    Technical details: <https://scaron.info/teaching/inverse-kinematics.html>
     """
 
     def __init__(self, robot, default_gains=None, default_weights=None,
                  doflim_gain=0.5, dt=None):
         """
-        Initialize the differential IK solver.
+        Initialize the solver.
 
         INPUT:
 
         - ``robot`` -- upper DOF limit
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
-        - ``doflim`` -- (optional, default: 0.5) a special gain converting joint
-                     limits into a suitable velocity bound. See Equation (50) in
-                     <http://www.roboticsproceedings.org/rss07/p21.pdf>.
+        - ``doflim_gain`` -- (optional, default: 0.5) a special gain used to
+                             implement DOF limits into velocity bounds
         - ``dt`` -- default time step
+
+        .. NOTE::
+
+            For details on ``doflim_gain``, the the full spec above, or Equation
+            (50) in <http://www.roboticsproceedings.org/rss07/p21.pdf>.
         """
         self.default_gains = {}
         self.default_weights = {}
@@ -140,6 +113,19 @@ class VelocitySolver(object):
         INPUT:
 
         - ``dt`` -- time step
+
+        .. NOTE::
+
+            Minimizing squared residuals as in the weighted cost function
+            corresponds to the Gauss-Newton algorithm
+            <https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm>.
+            Indeed, expanding the square expression in cost(task, qd) yields
+
+                minimize    qd * (J.T * J) * qd - 2 * (residual / dt) * J * qd
+
+            Differentiating with respect to ``qd`` shows that the minimum is
+            attained for (J.T * J) * qd == (residual / dt), and we recognize the
+            Gauss-Newton update rule.
         """
         n = self.robot.nb_active_dofs
         q = self.robot.q_active
