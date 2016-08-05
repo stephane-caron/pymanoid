@@ -51,8 +51,8 @@ class Robot(object):
         - ``qd_lim`` -- maximum angular joint velocity (in [rad])
         """
         assert path is not None or xml is not None
+        name = basename(splitext(path)[0])
         if xml is None:
-            name = basename(splitext(path)[0])
             xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)

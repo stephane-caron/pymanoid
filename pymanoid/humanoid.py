@@ -22,7 +22,6 @@ from contact import ContactSet
 from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 from robot import Robot
-from robot_centroid import CentroidalRobot
 from rotations import crossmat
 from task_centroid import COMTask
 from task_contact import ContactTask
@@ -123,8 +122,8 @@ class Humanoid(Robot):
 
     def __init__(self, path, root_body, qd_lim=10.):
         name = basename(splitext(path)[0])
-        xml = CentroidalRobot.__free_flyer_xml % (path, name, root_body)
-        super(CentroidalRobot, self).__init__(path, xml=xml, qd_lim=qd_lim)
+        xml = Humanoid.__free_flyer_xml % (path, name, root_body)
+        super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
         self.has_free_flyer = True
 
     """
