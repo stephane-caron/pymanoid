@@ -21,9 +21,9 @@
 from body import Body
 from body import Box
 from body import Cube
-from body import PointMass
 from body import Link
 from body import Manipulator
+from body import PointMass
 from contact import Contact
 from contact import ContactSet
 from draw import draw_2d_cone
@@ -49,9 +49,9 @@ from env import set_camera_right
 from env import set_camera_top
 from env import take_screenshot
 from humanoid import Humanoid
-from qp import solve_qp
+from linear_programming import solve_lp
+from quadratic_programming import solve_qp
 from robot import Robot
-from utils import solve_lp
 
 import polyhedra
 import robots

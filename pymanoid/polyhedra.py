@@ -20,9 +20,12 @@
 
 import cdd
 
-from numpy import array, dot, eye, hstack, ones, vstack, zeros
-from qp import solve_qp
-from utils import norm
+from numpy import array, dot, eye, hstack, ones, sqrt, vstack, zeros
+from quadratic_programming import solve_qp
+
+
+def norm(v):
+    return sqrt(dot(v, v))
 
 
 class Polyhedron(object):
@@ -179,3 +182,25 @@ def is_positive_combination(b, A):
     if x is None:  # optimum not found
         return False
     return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
+
+
+def plot_polygon(poly, alpha=.4, color='g', linestyle='solid', fill=True,
+                 linewidth=None, **kwargs):
+    from matplotlib import patches
+    from numpy import array
+    from pylab import gca, axis
+    from scipy.spatial import ConvexHull
+    if type(poly) is list:
+        poly = array(poly)
+    ax = gca()
+    hull = ConvexHull(poly)
+    poly = poly[hull.vertices, :]
+    xmin1, xmax1, ymin1, ymax1 = axis()
+    xmin2, ymin2 = 1.5 * poly.min(axis=0)
+    xmax2, ymax2 = 1.5 * poly.max(axis=0)
+    axis((min(xmin1, xmin2), max(xmax1, xmax2),
+          min(ymin1, ymin2), max(ymax1, ymax2)))
+    patch = patches.Polygon(
+        poly, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
+        linewidth=linewidth, **kwargs)
+    ax.add_patch(patch)

@@ -21,9 +21,8 @@
 import itertools
 
 from env import get_env
-from numpy import array, int64, vstack, cross, dot
+from numpy import array, cross, dot, int64, sqrt, vstack
 from scipy.spatial import ConvexHull
-from utils import norm
 
 
 BIG_DIST = 1000.  # [m]
@@ -218,7 +217,7 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
     """
     n = normal
     t1 = array([n[2] - n[1], n[0] - n[2], n[1] - n[0]], dtype=float)
-    t1 /= norm(t1)
+    t1 /= sqrt(dot(t1, t1))
     t2 = cross(n, t1)
     points2d = [[dot(t1, x), dot(t2, x)] for x in points]
     hull = ConvexHull(points2d)
@@ -265,8 +264,8 @@ def _convert_cone2d_to_vertices(vertices, rays):
         return vertices, []
     r0 = array([r0[0], r0[1], 0.])
     r1 = array([r1[0], r1[1], 0.])
-    r0 = r0 / norm(r0)
-    r1 = r1 / norm(r1)
+    r0 = r0 / sqrt(dot(r0, r0))
+    r1 = r1 / sqrt(dot(r1, r1))
     conv_vertices = [v for v in vertices]
     conv_vertices += [v + r0 * BIG_DIST for v in vertices]
     conv_vertices += [v + r1 * BIG_DIST for v in vertices]
