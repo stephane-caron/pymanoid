@@ -23,6 +23,8 @@ import numpy
 import pymanoid
 import time
 
+from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
+
 
 if __name__ == '__main__':
     pymanoid.init()
@@ -37,7 +39,6 @@ if __name__ == '__main__':
 
     # Initial robot pose
     robot.set_transparency(0.4)
-    robot.scale_dof_limits(0.95)
     dof_targets = [  # will also be passed to the IK
         (robot.R_SHOULDER_R, -.5),
         (robot.L_SHOULDER_R, +.5)]
@@ -71,13 +72,16 @@ if __name__ == '__main__':
         visible=True)
 
     # Initialize the IK
-    robot.init_ik(gains=None, weights=None)  # using default IK settings
-    robot.add_contact_task(robot.left_foot, left_foot_target)
-    robot.add_contact_task(robot.right_foot, right_foot_target)
-    robot.add_com_task(com)
-    robot.add_posture_task(robot.q)
+    robot.init_ik()
+    robot.ik.add_task(
+        ContactTask(robot, robot.left_foot, left_foot_target))
+    robot.ik.add_task(
+        ContactTask(robot, robot.right_foot, right_foot_target))
+    robot.ik.add_task(COMTask(robot, com))
+    robot.ik.add_task(PostureTask(robot, robot.q))
     for (dof_id, dof_ref) in dof_targets:
-        robot.add_dof_task(dof_id, dof_ref, gain=0.5, weight=0.1)
+        robot.ik.add_task(
+            DOFTask(robot, dof_id, dof_ref, gain=0.5, weight=0.1))
 
     print ""
     print "First, we solve for an initial posture, enforcing foot contacts"

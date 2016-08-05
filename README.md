@@ -5,8 +5,9 @@ Python library for humanoid robotics. Extends OpenRAVE with:
 - Primitives for contacts, stances, point-mass systems, etc.
 - Jacobians and hessians for contacts, center of mass and angular momentum
 - **Whole-body Inverse Kinematics** based on the [weight-prioritized
-  multi-task framework](https://hal.archives-ouvertes.fr/hal-01247118)
-- **Contact stability criteria:** Contact Wrench Cone, stability polygons,
+  multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
+- **Contact stability criteria:** [Contact Wrench
+  Cone](http://www.roboticsproceedings.org/rss11/p28.pdf), stability polygons,
   computation of supporting contact forces, etc.
 - Backends for Linear Programming and Quadratic Programming (QP) solvers
 - Drawing primitives for 2D and 3D polyhedra (polygons, polytopes, cones, ...)
