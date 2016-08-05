@@ -19,7 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from inverse_kinematics import Task
-from numpy import eye, zeros
+from numpy import array, eye, zeros
 
 
 class DOFTask(Task):
@@ -36,11 +36,11 @@ class DOFTask(Task):
 
         - ``robot`` -- a Robot object
         """
-        J = zeros(robot.nb_dofs)
-        J[dof_id] = 1.
+        J = zeros((1, robot.nb_dofs))
+        J[0, dof_id] = 1.
 
         def pos_residual():
-            return (dof_ref - robot.q[dof_id])
+            return array([dof_ref - robot.q[dof_id]])
 
         def jacobian():
             return J
