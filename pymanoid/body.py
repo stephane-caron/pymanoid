@@ -326,7 +326,7 @@ class PointMass(Cube):
         pos -- initial position in inertial frame
         mass -- total mass in [kg]
         """
-        size = 5e-4 * mass
+        size = max(5e-3, 5e-4 * mass)
         kwargs['pos'] = pos
         super(PointMass, self).__init__(size, *args, **kwargs)
         self.mass = mass
