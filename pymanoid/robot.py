@@ -325,8 +325,10 @@ class Robot(object):
         """
         Start a new thread stepping the IK every dt, then calling sleep_fun(dt).
 
-        dt -- stepping period in seconds
-        sleep_fun -- sleeping function (default: time.sleep)
+        INPUT:
+
+        - ``dt`` -- stepping period in seconds
+        - ``sleep_fun`` -- sleeping function (default: time.sleep)
         """
         if sleep_fun is None:
             sleep_fun = rt_sleep

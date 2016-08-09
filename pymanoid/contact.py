@@ -24,11 +24,14 @@ import simplejson
 import uuid
 
 from body import Box
+from draw import draw_force
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from polyhedra import Cone
 from quadratic_programming import solve_relaxed_qp
 from scipy.linalg import block_diag
+from threading import Lock, Thread
+from time import sleep as rt_sleep
 
 
 class Contact(Box):
@@ -655,3 +658,40 @@ class ContactSet(object):
             p = dot(D, V[i, 1:])
             vertices.append([p[0], p[1]])
         return vertices
+
+    """
+    Draw forces in separate thread
+    """
+
+    def start_force_thread(self, com, mass, dt, sleep_fun=None):
+        if sleep_fun is None:
+            sleep_fun = rt_sleep
+
+        def sleep():
+            return sleep_fun(dt)
+
+        self.force_handles = []
+        self.force_lock = Lock()
+        self.force_thread = Thread(
+            target=self.run_force_thread, args=(com, mass, sleep))
+        self.force_thread.daemon = True
+        self.force_thread.start()
+
+    def run_force_thread(self, com, mass, sleep):
+        while self.force_lock:
+            with self.force_lock:
+                cf = self.find_static_supporting_forces(com.p, mass)
+                if cf is not None:
+                    self.force_handles = [draw_force(c, fc) for (c, fc) in cf]
+                else:  # no force
+                    self.force_handles = []
+                sleep()
+
+    def pause_force_thread(self):
+        self.force_lock.acquire()
+
+    def resume_force_thread(self):
+        self.force_lock.release()
+
+    def stop_force_thread(self):
+        self.force_lock = None
