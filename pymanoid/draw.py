@@ -23,6 +23,8 @@ import itertools
 from env import get_env
 from numpy import array, cross, dot, int64, sqrt, vstack
 from scipy.spatial import ConvexHull
+from scipy.spatial.qhull import QhullError
+from warnings import warn
 
 
 BIG_DIST = 1000.  # [m]
@@ -161,7 +163,11 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     if type(color) is str:
         color = _matplotlib_to_rgba(color)
     if hull is None:
-        hull = ConvexHull(points)
+        try:
+            hull = ConvexHull(points)
+        except QhullError:
+            warn("QhullError: maybe polyhedron is empty?")
+            return []
     vertices = array([points[i] for i in hull.vertices])
     points = array(points)
     color = array(color if color is not None else (0.0, 0.5, 0.0, 0.5))
@@ -220,7 +226,14 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
     t1 /= sqrt(dot(t1, t1))
     t2 = cross(n, t1)
     points2d = [[dot(t1, x), dot(t2, x)] for x in points]
-    hull = ConvexHull(points2d)
+    try:
+        hull = ConvexHull(points2d)
+    except QhullError:
+        warn("QhullError: maybe polygon is empty?")
+        return []
+    except IndexError:
+        warn("Qhull raised an IndexError for points2d=%s" % repr(points2d))
+        return []
     return draw_polyhedron(
         points, combined, color, faces, linewidth, pointsize, hull=hull)
 
@@ -320,6 +333,9 @@ def draw_3d_cone(apex, axis, section, combined='r-#', linewidth=2.,
     A list of OpenRAVE handles. Must be stored in some variable, otherwise the
     drawn object will vanish instantly.
     """
+    if len(section) < 1:
+        warn("Trying to draw an empty cone")
+        return []
     color = _matplotlib_to_rgba('r')
     env = get_env()
     handles = draw_polygon(section, axis, combined)
