@@ -21,7 +21,7 @@
 import openravepy
 import uuid
 
-from numpy import array
+from numpy import array, zeros
 from env import get_env
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
@@ -330,6 +330,18 @@ class PointMass(Cube):
         kwargs['pos'] = pos
         super(PointMass, self).__init__(size, *args, **kwargs)
         self.mass = mass
+        self.pd = zeros(3)
+
+    def set_velocity(self, pd):
+        """Update the point-mass velocity."""
+        self.pd = pd
+
+    def integrate_acceleration(self, pdd, dt):
+        """
+        Euler integration of constant acceleration ``pdd`` over duration ``dt``.
+        """
+        self.set_pos(self.p + self.pd * dt + pdd * .5 * dt ** 2)
+        self.set_velocity(self.pd + pdd * dt)
 
 
 class Link(Body):
