@@ -330,11 +330,15 @@ class PointMass(Cube):
         kwargs['pos'] = pos
         super(PointMass, self).__init__(size, *args, **kwargs)
         self.mass = mass
-        self.pd = zeros(3)
+        self.__pd = zeros(3)
 
     def set_velocity(self, pd):
         """Update the point-mass velocity."""
-        self.pd = pd
+        self.__pd = array(pd)
+
+    @property
+    def pd(self):
+        return self.__pd.copy()
 
     def integrate_acceleration(self, pdd, dt):
         """
