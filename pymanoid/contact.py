@@ -527,12 +527,12 @@ class ContactSet(object):
         for contact in self.contacts:
             x, y, z = contact.p - p
             Gi = array([
-                [1, 0,  0, 0, 0, 0],
-                [0, 1,  0, 0, 0, 0],
-                [0, 0,  1, 0, 0, 0],
-                [0, -z, y, 1, 0, 0],
-                [z, 0, -x, 0, 1, 0],
-                [-y, x, 0, 0, 0, 1]])
+                [1,  0,  0, 0, 0, 0],
+                [0,  1,  0, 0, 0, 0],
+                [0,  0,  1, 0, 0, 0],
+                [0, -z,  y, 1, 0, 0],
+                [z,  0, -x, 0, 1, 0],
+                [-y, x,  0, 0, 0, 1]])
             span_blocks.append(dot(Gi, contact.wrench_span))
         S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
