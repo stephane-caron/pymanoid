@@ -26,7 +26,7 @@ solve_qp = None
 try:
     from quadprog import solve_qp as _quadprog_solve_qp
 
-    def quadprog_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None):
+    def quadprog_solve_qp(P, q, G, h, initvals=None):
         """
         Solve a Quadratic Program defined as:
 
@@ -35,11 +35,12 @@ try:
 
             subject to
                 G * x <= h
-                A * x == b
 
         using quadprog <https://pypi.python.org/pypi/quadprog/>.
         """
-        P = .5 * (P + P.T)  # quadprog assumes that P is symmetric
+        # quadprog assumes that P is symmetric so we project it and its
+        # symmetric part beforehand
+        P = .5 * (P + P.T)
         return _quadprog_solve_qp(P, -q, -G.T, -h)[0]
 
     if solve_qp is None:
@@ -49,12 +50,13 @@ except ImportError:
         raise ImportError("quadprog not found")
 
 try:  # CVXOPT (2nd choice)
-    from cvxopt import matrix
-    from cvxopt.solvers import options, qp
+    from cvxopt import matrix as cvxmat
+    from cvxopt.solvers import options
+    from cvxopt.solvers import qp as cvxopt_qp
 
     options['show_progress'] = False  # disable cvxopt output
 
-    def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None, initvals=None):
+    def cvxopt_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
         """
         Solve a Quadratic Program defined as:
 
@@ -63,26 +65,21 @@ try:  # CVXOPT (2nd choice)
 
             subject to
                 G * x <= h
-                A * x == b
+                A * x == b  (optional)
 
         using CVXOPT <http://cvxopt.org/>.
         """
-        n = P.shape[1]
-        # CVXOPT 1.1.7 only considers the lower entries of P
-        # so we need to project on the symmetric part beforehand,
-        # otherwise a wrong cost function will be used
+        # CVXOPT only considers the lower entries of P so we project on its
+        # symmetric part beforehand
         P = .5 * (P + P.T)
-        # now we can proceed
-        args = [matrix(P), matrix(q)]
-        if G is not None:
-            args.extend([matrix(G), matrix(h)])
-            if A is not None:
-                args.extend([matrix(A), matrix(b)])
-        sol = qp(*args, initvals=initvals)
+        args = [cvxmat(P), cvxmat(q), cvxmat(G), cvxmat(h)]
+        if A is not None:
+            args.extend([cvxmat(A), cvxmat(b)])
+        sol = cvxopt_qp(*args, initvals=initvals)
         if not ('optimal' in sol['status']):
             warn("QP optimum not found: %s" % sol['status'])
             return None
-        return array(sol['x']).reshape((n,))
+        return array(sol['x']).reshape((P.shape[1],))
 
     if solve_qp is None:
         solve_qp = cvxopt_solve_qp
