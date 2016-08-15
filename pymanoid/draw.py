@@ -313,7 +313,7 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
     return draw_polygon(plot_vertices, normal, combined, color, faces)
 
 
-def draw_3d_cone(apex, axis, section, combined='r-#', linewidth=2.,
+def draw_3d_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
                  pointsize=0.05):
     """
     Draw a 3D cone defined from its apex, axis vector and a cross-section
@@ -336,9 +336,10 @@ def draw_3d_cone(apex, axis, section, combined='r-#', linewidth=2.,
     if len(section) < 1:
         warn("Trying to draw an empty cone")
         return []
-    color = _matplotlib_to_rgba('r')
+    color = color if color is not None else _matplotlib_to_rgba(combined[0])
     env = get_env()
-    handles = draw_polygon(section, axis, combined)
+    handles = draw_polygon(
+        points=section, normal=axis, combined=combined, color=color)
     edges = vstack([[apex, vertex] for vertex in section])
     edges = array(edges)
     edge_color = array(color) * 0.7
