@@ -29,7 +29,7 @@ First, install OpenRAVE (here are some [instructions for Ubuntu
 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html)).
 Next, install all Python dependencies with:
 ```
-sudo apt-get install cython python python-dev python-pip python-scipy
+sudo apt-get install cython python python-dev python-pip python-scipy python-simplejson
 sudo pip install quadprog pycddlib
 ```
 Finally, if you wish to install the library system-wide:
