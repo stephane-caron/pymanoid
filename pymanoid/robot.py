@@ -20,7 +20,7 @@
 
 from env import get_env
 from env import set_default_background_color
-from inverse_kinematics import VelocitySolver
+from ik import VelocitySolver
 from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
 from os.path import basename, splitext
 from threading import Lock, Thread

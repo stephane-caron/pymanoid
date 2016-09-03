@@ -49,8 +49,8 @@ from env import set_camera_right
 from env import set_camera_top
 from env import take_screenshot
 from humanoid import Humanoid
-from linear_programming import solve_lp
-from quadratic_programming import solve_qp
+from optim import solve_lp
+from optim import solve_qp
 from robot import Robot
 
 import polyhedra
