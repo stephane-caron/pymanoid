@@ -28,7 +28,8 @@ class HRP4(Humanoid):
     Class for the HRP-4 (HRP4R) humanoid robot.
 
     This file only includes information that is publicly released in
-    <http://dx.doi.org/10.1109/IROS.2011.6094465> or over the Web.
+    <http://dx.doi.org/10.1109/IROS.2011.6094465> or over the Web (total mass
+    and kinematic chain). All other information is read from the COLLADA model.
     """
 
     leg_length = 0.8  # [m]   (roughly, for a strechted leg)
