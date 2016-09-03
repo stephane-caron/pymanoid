@@ -19,7 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import dot, eye, hstack, maximum, minimum, vstack, zeros
-from quadratic_programming import solve_qp
+from optim import solve_qp
 from threading import Lock
 from warnings import warn
 

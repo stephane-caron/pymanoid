@@ -28,7 +28,7 @@ from draw import draw_force
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from polyhedra import Cone
-from quadratic_programming import solve_relaxed_qp
+from optim import solve_relaxed_qp
 from scipy.linalg import block_diag
 from threading import Lock, Thread
 from time import sleep as rt_sleep

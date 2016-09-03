@@ -21,7 +21,7 @@
 import cdd
 
 from numpy import array, dot, eye, hstack, ones, sqrt, vstack, zeros
-from quadratic_programming import solve_qp
+from optim import solve_qp
 
 
 def norm(v):
