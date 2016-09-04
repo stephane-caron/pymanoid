@@ -60,9 +60,10 @@ def init(env_file=None, env_xml=None, show=True):
     env.GetPhysicsEngine().SetGravity(__gravity__)
     if show:
         env.SetViewer('qtcoin')
+    register_env(env)
+    if show:
         set_default_background_color()
         set_default_camera()
-    register_env(env)
 
 
 def read_window_id():
