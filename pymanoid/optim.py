@@ -18,12 +18,15 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from cvxopt import matrix
-from cvxopt.solvers import lp, options
+import cvxopt
+import cvxopt.solvers
+
+from cvxopt import matrix as cvxmat
+from cvxopt.solvers import lp as cvxopt_lp
 from numpy import array, dot
 from warnings import warn
 
-options['show_progress'] = False  # disable cvxopt output
+cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
 
 """
@@ -31,14 +34,24 @@ Linear Programming
 ==================
 """
 
+try:
+    import cvxopt.glpk
+    __default_solver = 'glpk'
+    # GLPK is the fastest LP solver I could find so far:
+    # <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
+    # ... however, it's verbose by default, so tell it to STFU:
+    cvxopt.solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}  # cvxopt 1.1.8
+    cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
+    cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
+except ImportError:
+    __default_solver = None
 
-def solve_lp(c, G=None, h=None, A=None, b=None):
-    args = [matrix(c)]
-    if G is not None:
-        args.extend([matrix(G), matrix(h)])
-        if A is not None:
-            args.extend([matrix(A), matrix(b)])
-    sol = lp(*args)
+
+def solve_lp(c, G, h, A=None, b=None, solver=__default_solver):
+    args = [cvxmat(c), cvxmat(G), cvxmat(h)]
+    if A is not None:
+        args.extend([cvxmat(A), cvxmat(b)])
+    sol = cvxopt_lp(*args, solver=solver)
     if not ('optimal' in sol['status']):
         warn("LP optimum not found: %s" % sol['status'])
         return None
