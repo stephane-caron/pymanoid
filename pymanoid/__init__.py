@@ -53,10 +53,6 @@ from optim import solve_lp
 from optim import solve_qp
 from robot import Robot
 
-import polyhedra
-import robots
-import rotations
-
 __all__ = [
     'Body',
     'Box',
@@ -81,11 +77,8 @@ __all__ = [
     'get_gravity',
     'get_viewer',
     'init',
-    'polyhedra',
     'read_window_id',
     'register_env',
-    'robots',
-    'rotations',
     'set_camera_back',
     'set_camera_bottom',
     'set_camera_front',
