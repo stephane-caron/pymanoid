@@ -66,6 +66,7 @@ Quadratic Programming
 solve_qp = None
 
 try:
+    # quadprog is the fastest QP solver I could find so far
     from quadprog import solve_qp as _quadprog_solve_qp
 
     def quadprog_solve_qp(P, q, G, h, initvals=None):
@@ -91,12 +92,9 @@ except ImportError:
     def quadprog_solve_qp(*args, **kwargs):
         raise ImportError("quadprog not found")
 
-try:  # CVXOPT (2nd choice)
-    from cvxopt import matrix as cvxmat
-    from cvxopt.solvers import options
+try:
+    # CVXOPT is our second choice
     from cvxopt.solvers import qp as cvxopt_qp
-
-    options['show_progress'] = False  # disable cvxopt output
 
     def cvxopt_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
         """
@@ -155,7 +153,7 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
     P2 = P + OVER_WEIGHT * dot(A.T, A)
     q2 = q + OVER_WEIGHT * dot(-b.T, A)
     x = solve_qp(P2, q2, G, h)
-    if tol is not None:
+    if x is not None and tol is not None:
         def sq(v):
             return dot(v, v)
         if sq(dot(A, x) - b) / sq(b) > tol * tol:
