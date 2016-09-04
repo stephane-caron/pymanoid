@@ -19,11 +19,18 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import IPython
-import pymanoid
 import thread
 import threading
 import time
 
+try:
+    import pymanoid
+except ImportError:
+    import os
+    import sys
+    script_path = os.path.realpath(__file__)
+    sys.path.append(os.path.dirname(script_path) + '/../')
+    import pymanoid
 
 com_height = 0.9  # [m]
 dt = 3e-2  # [s]
@@ -55,7 +62,7 @@ def run_forces_thread():
 
 def recompute_polygon():
     global polygon_handle
-    vertices = contacts.compute_static_equilibrium_area(robot.mass)
+    vertices = contacts.compute_static_equilibrium_polygon()
     polygon_handle = pymanoid.draw_polygon(
         [(x[0], x[1], z_polygon) for x in vertices],
         normal=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))

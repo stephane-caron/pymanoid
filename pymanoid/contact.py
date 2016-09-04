@@ -613,38 +613,46 @@ class ContactSet(object):
                 G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
         return G
 
-    def compute_static_equilibrium_area(self, mass):
+    def compute_static_equilibrium_polygon(self):
         """
-        Compute the static-equilibrium area of the center of mass.
-
-        INPUT:
-
-        - ``mass`` -- total mass of the robot
+        Compute the static-equilibrium polygon of the center of mass.
 
         .. NOTE::
 
-            See http://dx.doi.org/10.1109/TRO.2008.2001360 for details. The
-            implementation here uses the double-description method (cdd) rather
-            than the equality-set projection algorithm, as described in
-            http://arxiv.org/abs/1510.03232.
+            The static-equilibrium polygon was introduced in
+            <http://dx.doi.org/10.1109/TRO.2008.2001360>. Here, we compute it
+            with the double-description method as described in
+            <http://arxiv.org/abs/1510.03232> rather than the original
+            algorithm.
+
+        .. NOTE::
+
+            Regarding performances, the double-description method is the
+            fastest known solution for contact sets with one or two contacts.
+            For three contacts or more, it is best to do the final reduction
+            with a 2D convex-hull algorithm. See Section IV.B and the Appendix
+            from <https://hal.archives-ouvertes.fr/hal-01349880> for details.
         """
+        mass = 42.  # [kg]
+        # mass has no effect on the output polygon, see Section IV.B in
+        # <https://hal.archives-ouvertes.fr/hal-01349880> for details
+
         G = self.compute_grasp_matrix([0, 0, 0])
-        F = self.compute_stacked_wrench_cones()
-        b = zeros((F.shape[0], 1))
-        # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
+        A = self.compute_stacked_wrench_cones()
+        b = zeros((A.shape[0], 1))
+        # the input [b, -A] to cdd.Matrix represents (b - A x >= 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M = cdd.Matrix(hstack([b, -F]), number_type='float')
+        M = cdd.Matrix(hstack([b, -A]), number_type='float')
         M.rep_type = cdd.RepType.INEQUALITY
 
         # Equalities:  C [GAW_1 GAW_2 ...] + d == 0
         C = G[(0, 1, 2, 5), :]
-        d = array([0, 0, mass * 9.81, 0])
+        d = array([0, 0, mass * 9.81, 0]).reshape((4, 1))
         # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M.extend(hstack([d.reshape((4, 1)), -C]), linear=True)
+        M.extend(hstack([d, -C]), linear=True)
 
         # Convert from H- to V-representation
-        # M.canonicalize()
         P = cdd.Polyhedron(M)
         V = array(P.get_generators())
         if V.shape[0] < 1:
