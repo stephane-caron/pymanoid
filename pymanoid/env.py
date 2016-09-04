@@ -42,17 +42,27 @@ def get_viewer():
     return __env__.GetViewer()
 
 
-def init(env_file=None, env_xml=None):
+def init(env_file=None, env_xml=None, show=True):
+    """
+    Initialize environment.
+
+    INPUT:
+
+    - ``env_file`` -- (optional) load environment from XML/DAE file
+    - ``env_xml`` -- (optional) load environment from XML string
+    - ``show`` -- (default: True) show the QtCoin GUI
+    """
     env = openravepy.Environment()
     if env_file:
         env.Load(env_file)
     elif env_xml:
         env.LoadData(env_xml)
     env.GetPhysicsEngine().SetGravity(__gravity__)
-    env.SetViewer('qtcoin')
+    if show:
+        env.SetViewer('qtcoin')
+        set_default_background_color()
+        set_default_camera()
     register_env(env)
-    set_default_background_color()
-    set_default_camera()
 
 
 def read_window_id():
