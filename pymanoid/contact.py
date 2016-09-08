@@ -28,6 +28,7 @@ from draw import draw_force
 from env import get_env
 from numpy import array, dot, hstack, vstack, zeros
 from polyhedra import Cone
+# from optim import cvxopt_solve_qp
 from optim import solve_relaxed_qp
 from scipy.linalg import block_diag
 from threading import Lock, Thread
@@ -406,7 +407,7 @@ class ContactSet(object):
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
-        # f_all = solve_qp(P, q, G, h, A, b)
+        # f_all = cvxopt_solve_qp(P, q, G, h, A, b)  # useful for debugging
         f_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
         if f_all is None:
             return None

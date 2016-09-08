@@ -247,6 +247,11 @@ class Body(object):
         T = openravepy.matrixFromPose(pose)
         self.set_transform(T)
 
+    def set_quat(self, quat):
+        pose = self.pose.copy()
+        pose[0:4] = quat
+        self.set_pose(pose)
+
     #
     # Others
     #
