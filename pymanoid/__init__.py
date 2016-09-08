@@ -53,6 +53,8 @@ from optim import solve_lp
 from optim import solve_qp
 from robot import Robot
 
+import robots
+
 __all__ = [
     'Body',
     'Box',
@@ -79,6 +81,7 @@ __all__ = [
     'init',
     'read_window_id',
     'register_env',
+    'robots',
     'set_camera_back',
     'set_camera_bottom',
     'set_camera_front',
