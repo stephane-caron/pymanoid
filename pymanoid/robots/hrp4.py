@@ -151,3 +151,11 @@ class HRP4(Humanoid):
             self.rave.GetManipulator("left_hand_palm"))
         self.right_hand = Manipulator(
             self.rave.GetManipulator("right_hand_palm"))
+
+    def suntan(self, ambient=0., diffuse=0.85):
+        """Prepare model for screenshots on white background ;)"""
+        for link in self.rave.GetLinks():
+            if len(link.GetGeometries()) > 0:
+                geom = link.GetGeometries()[0]
+                geom.SetAmbientColor([ambient] * 3)
+                geom.SetDiffuseColor([diffuse] * 3)
