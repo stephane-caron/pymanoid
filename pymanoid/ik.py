@@ -29,7 +29,7 @@ class VelocitySolver(object):
     """
     Compute velocities bringing the system closer to fulfilling a set of tasks.
 
-    Technical details: <https://scaron.info/teaching/inverse-kinematics.html>
+    See  for details.
     """
 
     def __init__(self, robot, default_gains=None, default_weights=None,
@@ -42,14 +42,16 @@ class VelocitySolver(object):
         - ``robot`` -- upper DOF limit
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
-        - ``doflim_gain`` -- (optional, default: 0.5) a special gain used to
-                             implement DOF limits into velocity bounds
+        - ``doflim_gain`` -- (optional, default: 0.5) gain used for DOF-limit
+                             velocity constraints [Kanoun2012]. Should be
+                             between 0 and 1 [Caron2016]. implement DOF limits
+                             as velocity bounds
         - ``dt`` -- default time step
 
-        .. NOTE::
+        REFERENCES:
 
-            For details on ``doflim_gain``, the the full spec above, or Equation
-            (50) in <http://www.roboticsproceedings.org/rss07/p21.pdf>.
+        .. [Caron2016] <https://scaron.info/teaching/inverse-kinematics.html>
+        .. [Kanoun2012] <http://www.roboticsproceedings.org/rss07/p21.pdf>
         """
         self.default_gains = {}
         self.default_weights = {}
