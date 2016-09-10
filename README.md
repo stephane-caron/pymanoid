@@ -29,16 +29,18 @@ First, install OpenRAVE (here are some [instructions for Ubuntu
 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html)).
 Next, install all Python dependencies with:
 ```
-sudo apt-get install cython python python-dev python-pip python-scipy
+sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy
 sudo pip install quadprog pycddlib
+sudo CVXOPT_BUILD_GLPK=1 pip install cvxopt
 ```
 Finally, if you wish to install the library system-wide:
 ```
 sudo python setup.py install
 ```
-The preferred QP solver is [quadprog](https://github.com/rmcgibbo/quadprog).
-Alternatively, the library will try to use [CVXOPT](http://cvxopt.org) if it is
-installed.
+The preferred solvers are [quadprog](https://github.com/rmcgibbo/quadprog) for
+quadratic programming and [GLPK](https://www.gnu.org/software/glpk/) for linear
+programming. If any of these is not available, the library will try to use
+[CVXOPT](http://cvxopt.org) instead.
 
 ## Usage
 
