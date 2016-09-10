@@ -75,7 +75,7 @@ class MinAccelerationTask(Task):
         """
         E = eye(robot.nb_dofs)
 
-        def vel_residual():
+        def vel_residual(dt):
             return robot.qd
 
         def jacobian():
@@ -100,7 +100,7 @@ class MinVelocityTask(Task):
         """
         E = eye(robot.nb_dofs)
 
-        def vel_residual():
+        def vel_residual(dt):
             return -robot.qd
 
         def jacobian():
