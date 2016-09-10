@@ -286,40 +286,39 @@ class Robot(object):
         self.set_active_dof_values(q_active)
         self.set_active_dof_velocities(qd_active)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, dt=1e-2, debug=False):
+    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-2, debug=False):
         """
-        Compute joint-angles q satisfying all constraints at best.
+        Compute joint-angles q satisfying all kinematic constraints at best.
 
         INPUT:
 
-        - ``max_it`` -- maximum number of differential IK iterations
-        - ``conv_tol`` -- stop when the cost improvement ratio is less than this
-            threshold
+        - ``max_it`` -- maximum number of solver iterations
+        - ``conv_tol`` -- stop when cost improvement is less than this threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
 
         .. NOTE::
 
-            Good values of dt depend on the gains and weights of the IK tasks.
-            Small values make convergence slower, while big values will render
-            them unstable.
+            Good values of dt depend on the weights of the IK tasks. Small
+            values make convergence slower, while big values may jeopardize it.
         """
         if debug:
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
-        cur_cost = 100000.
+        cost = 100000.
         for itnum in xrange(max_it):
-            prev_cost = cur_cost
-            cur_cost = self.ik.compute_cost(dt)
-            cost_var = cur_cost - prev_cost
+            prev_cost = cost
+            cost = self.ik.compute_cost(dt)
+            cost_var = cost - prev_cost
             if debug:
-                print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
+                print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_var)
             if abs(cost_var) < conv_tol:
-                if abs(cur_cost) > 0.1:
-                    warn("IK did not converge to solution. Is it feasible?"
+                if abs(cost) > 0.1:
+                    warn("IK did not converge to solution. "
+                         "Is the problem feasible? "
                          "If so, try restarting from a random guess.")
                 break
             self.step_ik(dt)
-        return itnum, cur_cost
+        return itnum, cost
 
     def start_ik_thread(self, dt, sleep_fun=None):
         """
