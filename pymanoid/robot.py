@@ -172,21 +172,21 @@ class Robot(object):
 
     def set_dof_limits(self, q_min, q_max, dof_indices=None):
         self.rave.SetDOFLimits(q_min, q_max, dof_indices)
-        self.q_min.flags.writeable = True
         self.q_max.flags.writeable = True
+        self.q_min.flags.writeable = True
         if dof_indices is not None:
             assert len(q_min) == len(q_max) == len(dof_indices)
-            self.q_min[dof_indices] = q_min
             self.q_max[dof_indices] = q_max
+            self.q_min[dof_indices] = q_min
         else:
             assert len(q_min) == len(q_max) == self.nb_dofs
-            self.q_min = q_min
             self.q_max = q_max
+            self.q_min = q_min
         if self.active_dofs:
-            self.q_min_active = self.q_min[self.active_dofs]
             self.q_max_active = self.q_max[self.active_dofs]
-        self.q_min.flags.writeable = False
+            self.q_min_active = self.q_min[self.active_dofs]
         self.q_max.flags.writeable = False
+        self.q_min.flags.writeable = False
 
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
