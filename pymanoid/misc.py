@@ -30,6 +30,11 @@ def norm(v):
     return sqrt(dot(v, v))
 
 
+def normalize(v):
+    """Normalize a vector. Don't catch ZeroDivisionError on purpose."""
+    return v / norm(v)
+
+
 def plot_polygon(poly, alpha=.4, color='g', linestyle='solid', fill=True,
                  linewidth=None, **kwargs):
     if type(poly) is list:
