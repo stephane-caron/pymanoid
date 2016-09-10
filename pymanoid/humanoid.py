@@ -118,7 +118,16 @@ class Humanoid(Robot):
     </environment>
     """
 
-    def __init__(self, path, root_body, qd_lim=10.):
+    def __init__(self, path, root_body, qd_lim=None):
+        """
+        Create a new humanoid robot model.
+
+        INPUT:
+
+        - ``path`` -- path to the COLLADA model of the robot
+        - ``root_body`` -- name of the root (first) body in the model
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
+        """
         name = basename(splitext(path)[0])
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
         super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)

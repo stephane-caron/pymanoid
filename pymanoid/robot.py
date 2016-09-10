@@ -40,15 +40,15 @@ class Robot(object):
     </environment>
     """
 
-    def __init__(self, path=None, xml=None, qd_lim=10.):
+    def __init__(self, path=None, xml=None, qd_lim=None):
         """
-        Create a new robot object.
+        Create a new robot model.
 
         INPUT:
 
         - ``path`` -- path to the COLLADA model of the robot
-        - ``free_flyer`` -- add 6 unactuated DOF? (optional, default is True)
-        - ``qd_lim`` -- maximum angular joint velocity (in [rad])
+        - ``xml`` -- (optional) string in OpenRAVE XML format
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
         """
         assert path is not None or xml is not None
         name = basename(splitext(path)[0])
@@ -56,11 +56,16 @@ class Robot(object):
             xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)
-        set_default_background_color()  # reset by LoadData
         rave = env.GetRobot(name)
+        nb_dofs = rave.GetDOF()
+        set_default_background_color()  # [dirty] reset by LoadData
         q_min, q_max = rave.GetDOFLimits()
-        rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
-        rave.SetDOFVelocities([0] * rave.GetDOF())
+        rave.SetDOFVelocities([0] * nb_dofs)
+        rave.SetDOFVelocityLimits([1000.] * nb_dofs)
+        if qd_lim is None:
+            qd_lim = 10.  # [rad] / [s]; this is already quite fast
+        qd_max = +qd_lim * ones(nb_dofs)
+        qd_min = -qd_lim * ones(nb_dofs)
 
         self.active_dofs = None
         self.has_free_flyer = False
@@ -69,16 +74,16 @@ class Robot(object):
         self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
-        self.nb_dofs = rave.GetDOF()
+        self.nb_dofs = nb_dofs
         self.q_max = q_max
         self.q_max.flags.writeable = False
         self.q_max_active = None
         self.q_min = q_min
         self.q_min.flags.writeable = False
         self.q_min_active = None
-        self.qd_max = +qd_lim * ones(len(q_max))
+        self.qd_max = qd_max
         self.qd_max_active = None
-        self.qd_min = -qd_lim * ones(len(q_min))
+        self.qd_min = qd_min
         self.qd_min_active = None
         self.qdd_max = None  # set in child class
         self.rave = rave
@@ -151,8 +156,8 @@ class Robot(object):
         """
         q_min, q_max = self.q_min, self.q_max
         if dof_indices is not None:
-            q_min = q_min[dof_indices]
             q_max = q_max[dof_indices]
+            q_min = q_min[dof_indices]
         return (q_min, q_max)
 
     def get_dof_values(self, dof_indices=None):

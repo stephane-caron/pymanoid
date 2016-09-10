@@ -123,16 +123,17 @@ class HRP4(Humanoid):
         array([0., 0., 0.])
     ])
 
-    def __init__(self, path='HRP4R.dae', root_body='BODY', free_flyer=True,
+    def __init__(self, path='HRP4R.dae', root_body='BODY', qd_lim=None,
                  download_if_needed=False):
         """
         Add the HRP4R model to the environment.
 
         INPUT:
 
-        ``path`` -- path to COLLADA file
-        ``root_body`` -- should be BODY
-        ``free_flyer`` -- should be True (come on)
+        - ``path`` -- path to the COLLADA model of the robot
+        - ``root_body`` -- name of the root (first) body in the model
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
+        - ``download_if_needed`` -- unavailable, here for compatibility reasons
 
         .. NOTE::
 
@@ -141,7 +142,7 @@ class HRP4(Humanoid):
         """
         if download_if_needed and not isfile(path):
             raise Exception("Model cannot be downloaded due to copyright :(")
-        super(HRP4, self).__init__(path, root_body, free_flyer)
+        super(HRP4, self).__init__(path, root_body, qd_lim=qd_lim)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.left_foot = Manipulator(
             self.rave.GetManipulator("left_foot_center"))
