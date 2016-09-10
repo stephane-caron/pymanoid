@@ -42,11 +42,15 @@ class VelocitySolver(object):
         - ``robot`` -- upper DOF limit
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
-        - ``doflim_gain`` -- (optional, default: 0.5) gain used for DOF-limit
-                             velocity constraints [Kanoun2012]. Should be
-                             between 0 and 1 [Caron2016]. implement DOF limits
-                             as velocity bounds
+        - ``doflim_gain`` -- (optional, default: 0.5) gain used for DOF limits
         - ``dt`` -- default time step
+
+        The ``doflim_gain`` is described in [Kanoun2012]. In this
+        implementation, it should be between 0. and 1. [Caron2016]. One
+        unsatisfactory aspect of this solution is that it artificially slows
+        down the robot when approaching DOF limits. For instance, it may slow
+        down a foot motion when approaching the knee singularity, despite the
+        robot being able to move faster with a fully extended knee.
 
         REFERENCES:
 
