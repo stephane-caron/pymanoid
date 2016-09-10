@@ -308,10 +308,10 @@ class Robot(object):
         for itnum in xrange(max_it):
             prev_cost = cost
             cost = self.ik.compute_cost(dt)
-            cost_var = cost - prev_cost
+            cost_relvar = abs(cost - prev_cost) / prev_cost
             if debug:
-                print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_var)
-            if abs(cost_var) < conv_tol:
+                print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_relvar)
+            if cost_relvar < conv_tol:
                 if abs(cost) > 0.1:
                     warn("IK did not converge to solution. "
                          "Is the problem feasible? "
