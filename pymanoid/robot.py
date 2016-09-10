@@ -128,6 +128,33 @@ class Robot(object):
     def qd(self):
         return self.rave.GetDOFVelocities()
 
+    def get_dof_limits(self, dof_indices=None):
+        """
+        Get the couple (q_min, q_max) of DOF limits.
+
+        INPUT:
+
+        - ``dof_indices`` -- (optional) only compute limits for these indices
+
+        .. NOTE::
+
+            This OpenRAVE function is wrapped because it is too slow in
+            practice. On my machine:
+
+                In [1]: %timeit robot.get_dof_limits()
+                1000000 loops, best of 3: 205 ns per loop
+
+                In [2]: %timeit robot.rave.GetDOFLimits()
+                100000 loops, best of 3: 2.59 µs per loop
+
+            Recall that this function is called at every IK step.
+        """
+        q_min, q_max = self.q_min, self.q_max
+        if dof_indices is not None:
+            q_min = q_min[dof_indices]
+            q_max = q_max[dof_indices]
+        return (q_min, q_max)
+
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:
             return self.rave.GetDOFValues(dof_indices)
@@ -137,6 +164,24 @@ class Robot(object):
         if dof_indices is not None:
             return self.rave.GetDOFVelocities(dof_indices)
         return self.rave.GetDOFVelocities()
+
+    def set_dof_limits(self, q_min, q_max, dof_indices=None):
+        self.rave.SetDOFLimits(q_min, q_max, dof_indices)
+        self.q_min.flags.writeable = True
+        self.q_max.flags.writeable = True
+        if dof_indices is not None:
+            assert len(q_min) == len(q_max) == len(dof_indices)
+            self.q_min[dof_indices] = q_min
+            self.q_max[dof_indices] = q_max
+        else:
+            assert len(q_min) == len(q_max) == self.nb_dofs
+            self.q_min = q_min
+            self.q_max = q_max
+        if self.active_dofs:
+            self.q_min_active = self.q_min[self.active_dofs]
+            self.q_max_active = self.q_max[self.active_dofs]
+        self.q_min.flags.writeable = False
+        self.q_max.flags.writeable = False
 
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
