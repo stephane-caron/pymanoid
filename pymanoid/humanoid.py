@@ -23,7 +23,7 @@ from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 from robot import Robot
 from rotations import crossmat
-from tasks import COMTask, ContactTask, PostureTask
+from tasks import COMTask, ContactTask, PostureTask, MinAccelerationTask
 
 
 class Humanoid(Robot):
@@ -453,9 +453,11 @@ class Humanoid(Robot):
     """
 
     def generate_posture_from_contacts(self, contact_set, com_target=None,
-                                       *args, **kwargs):
+                                       regularization='posture', *args,
+                                       **kwargs):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
+        assert regularization in ['posture', 'min_acceleration']
         if 'left_foot' in contact_set:
             self.ik.add_task(
                 ContactTask(self, self.left_foot, contact_set['left_foot']))
@@ -470,11 +472,15 @@ class Humanoid(Robot):
                 ContactTask(self.right_hand, contact_set['right_hand']))
         if com_target is not None:
             self.ik.add_task(COMTask(self, com_target))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
+        if regularization == 'posture':
+            self.ik.add_task(PostureTask(self, self.q_halfsit))
+        else:  # regularization == 'min_acceleration'
+            self.ik.add_task(MinAccelerationTask(self))
         self.solve_ik(*args, **kwargs)
 
-    def generate_posture_from_stance(self, stance, com_target=None, *args,
-                                     **kwargs):
+    def generate_posture_from_stance(self, stance, com_target=None,
+                                     regularization='posture', *args, **kwargs):
+        assert regularization in ['posture', 'min_acceleration']
         if hasattr(stance, 'com'):
             self.ik.add_task(COMTask(self, stance.com))
         elif hasattr(stance, 'com_target'):
@@ -493,7 +499,10 @@ class Humanoid(Robot):
         if hasattr(stance, 'right_hand'):
             self.ik.add_task(
                 ContactTask(self, self.right_hand, stance.right_hand))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
+        if regularization == 'posture':
+            self.ik.add_task(PostureTask(self, self.q_halfsit))
+        else:  # regularization == 'min_acceleration'
+            self.ik.add_task(MinAccelerationTask(self))
         self.solve_ik(*args, **kwargs)
 
     def generate_posture(self, contacts, *args, **kwargs):
