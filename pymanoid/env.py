@@ -128,7 +128,7 @@ def set_camera_top(x=0, y=0, z=3):
 
 
 def set_default_background_color():
-    get_viewer().SetBkgndColor([0.55, 0.75, 1.])
+    get_viewer().SetBkgndColor([1, 1, 1])
 
 
 def set_default_camera():
