@@ -136,26 +136,26 @@ class Humanoid(Robot):
         self.__com = None
         self.__comd = None
 
-    def set_dof_values(self, *args, **kwargs):
+    def set_dof_values(self, q, dof_indices=None):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        super(Humanoid, self).set_dof_values(*args, **kwargs)
+        super(Humanoid, self).set_dof_values(q, dof_indices=dof_indices)
 
-    def set_dof_velocities(self, *args, **kwargs):
+    def set_dof_velocities(self, qd, dof_indices=None):
         self.__cam = None
         self.__comd = None
-        super(Humanoid, self).set_dof_velocities(*args, **kwargs)
+        super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
 
-    def set_active_dof_values(self, *args, **kwargs):
+    def set_active_dof_values(self, q_active):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        super(Humanoid, self).set_active_dof_values(*args, **kwargs)
+        super(Humanoid, self).set_active_dof_values(q_active)
 
-    def set_active_dof_velocities(self, *args, **kwargs):
+    def set_active_dof_velocities(self, qd_active):
         self.__cam = None
-        super(Humanoid, self).set_active_dof_velocities(*args, **kwargs)
+        super(Humanoid, self).set_active_dof_velocities(qd_active)
 
     def init_ik(self, gains=None, weights=None):
         """
