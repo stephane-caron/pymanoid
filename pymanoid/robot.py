@@ -280,7 +280,7 @@ class Robot(object):
 
         - ``link`` -- link index or pymanoid.Link object
         - ``p`` -- point coordinates in world frame (optional, default is the
-                   origin of the link reference frame
+                   origin of the link reference frame)
         """
         link_index = link if type(link) is int else link.index
         p = link.p if p is None else p
@@ -307,6 +307,21 @@ class Robot(object):
         H_lin = self.rave.ComputeHessianTranslation(link_index, p)
         H_ang = self.rave.ComputeHessianAxisAngle(link_index)
         H = concatenate([H_lin, H_ang], axis=1)
+        return H
+
+    def compute_link_pos_hessian(self, link, p=None):
+        """
+        Compute the hessian H(q) of a point p on ``link``.
+
+        INPUT:
+
+        - ``link`` -- link index or pymanoid.Link object
+        - ``p`` -- point coordinates in world frame (optional, default is the
+                   origin of the link reference frame)
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
+        H = self.rave.ComputeHessianTranslation(link_index, p)
         return H
 
     """
