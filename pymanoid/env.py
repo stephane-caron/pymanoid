@@ -42,7 +42,7 @@ def get_viewer():
     return __env__.GetViewer()
 
 
-def init(env_file=None, env_xml=None, set_viewer=False):
+def init(env_file=None, env_xml=None, set_viewer=True):
     env = openravepy.Environment()
     if env_file:
         env.Load(env_file)
