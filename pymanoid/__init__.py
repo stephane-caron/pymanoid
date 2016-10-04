@@ -47,6 +47,7 @@ from env import set_camera_front
 from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
+from env import set_viewer
 from env import take_screenshot
 from humanoid import Humanoid
 from optim import solve_lp
@@ -88,6 +89,7 @@ __all__ = [
     'set_camera_left',
     'set_camera_right',
     'set_camera_top',
+    'set_viewer',
     'solve_lp',
     'solve_qp',
     'take_screenshot',
