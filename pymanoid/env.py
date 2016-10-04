@@ -66,6 +66,12 @@ def init(env_file=None, env_xml=None, set_viewer=True):
         set_default_camera()
 
 
+def set_viewer(viewer='qtcoin'):
+    __env__.SetViewer('qtcoin')
+    set_default_background_color()
+    set_default_camera()
+
+
 def read_window_id():
     global __window_id__
     print "Please click on the OpenRAVE window."
