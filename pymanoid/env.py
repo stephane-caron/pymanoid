@@ -42,7 +42,7 @@ def get_viewer():
     return __env__.GetViewer()
 
 
-def init(env_file=None, env_xml=None, show=True):
+def init(env_file=None, env_xml=None, set_viewer=True):
     """
     Initialize environment.
 
@@ -58,10 +58,10 @@ def init(env_file=None, env_xml=None, show=True):
     elif env_xml:
         env.LoadData(env_xml)
     env.GetPhysicsEngine().SetGravity(__gravity__)
-    if show:
+    if set_viewer:
         env.SetViewer('qtcoin')
     register_env(env)
-    if show:
+    if set_viewer:
         set_default_background_color()
         set_default_camera()
 
@@ -128,7 +128,9 @@ def set_camera_top(x=0, y=0, z=3):
 
 
 def set_default_background_color():
-    get_viewer().SetBkgndColor([1, 1, 1])
+    viewer = get_viewer()
+    if viewer is not None:
+        viewer.SetBkgndColor([0.55, 0.75, 1.])
 
 
 def set_default_camera():
