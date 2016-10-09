@@ -22,7 +22,7 @@ import cdd
 
 from misc import norm
 from numpy import array, dot, eye, hstack, ones, vstack, zeros
-from optim import solve_qp
+from optim import solve_lp, solve_qp
 
 
 class Polyhedron(object):
@@ -153,6 +153,34 @@ class Polytope(Polyhedron):
             elif i not in g.lin_set:
                 vertices.append(V[i, 1:])
         return vertices
+
+    @staticmethod
+    def compute_chebyshev_center(A, b):
+        """
+        Compute the Chebyshev center of a polyhedron, that is, the point
+        furthest away from all inequalities.
+
+        INPUT:
+
+        - ``A`` -- matrix of polytope H-representation
+        - ``b`` -- vector of polytope H-representation
+
+        OUTPUT:
+
+        A numpy array of shape ``(A.shape[1],)``.
+
+        REFERENCES:
+
+        Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
+        Section 4.3.1, p. 148.
+        """
+        cost = zeros(A.shape[1] + 1)
+        cost[-1] = -1.
+        a_cheby = array([norm(A[i, :]) for i in xrange(A.shape[0])])
+        A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
+        z = solve_lp(cost, A_cheby, b)
+        assert z[-1] > 0  # last coordinate is distance to boundaries
+        return z[:-1]
 
 
 def is_positive_combination(b, A):
