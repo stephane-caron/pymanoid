@@ -53,6 +53,7 @@ class JVRC1(Humanoid):
     L_ANKLE_R = 10
     L_ANKLE_P = 11
     WAIST_Y = 12
+    CHEST_Y = 12  # compatibility with HRP-4
     WAIST_P = 13
     CHEST_P = 13  # compatibility with HRP-4
     WAIST_R = 14
