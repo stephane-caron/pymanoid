@@ -20,12 +20,9 @@
 
 import cdd
 
-from numpy import array, dot, eye, hstack, ones, sqrt, vstack, zeros
-from quadratic_programming import solve_qp
-
-
-def norm(v):
-    return sqrt(dot(v, v))
+from misc import norm
+from numpy import array, dot, eye, hstack, ones, vstack, zeros
+from optim import solve_lp, solve_qp
 
 
 class Polyhedron(object):
@@ -157,6 +154,34 @@ class Polytope(Polyhedron):
                 vertices.append(V[i, 1:])
         return vertices
 
+    @staticmethod
+    def compute_chebyshev_center(A, b):
+        """
+        Compute the Chebyshev center of a polyhedron, that is, the point
+        furthest away from all inequalities.
+
+        INPUT:
+
+        - ``A`` -- matrix of polytope H-representation
+        - ``b`` -- vector of polytope H-representation
+
+        OUTPUT:
+
+        A numpy array of shape ``(A.shape[1],)``.
+
+        REFERENCES:
+
+        Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
+        Section 4.3.1, p. 148.
+        """
+        cost = zeros(A.shape[1] + 1)
+        cost[-1] = -1.
+        a_cheby = array([norm(A[i, :]) for i in xrange(A.shape[0])])
+        A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
+        z = solve_lp(cost, A_cheby, b)
+        assert z[-1] > 0  # last coordinate is distance to boundaries
+        return z[:-1]
+
 
 def is_positive_combination(b, A):
     """
@@ -182,25 +207,3 @@ def is_positive_combination(b, A):
     if x is None:  # optimum not found
         return False
     return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
-
-
-def plot_polygon(poly, alpha=.4, color='g', linestyle='solid', fill=True,
-                 linewidth=None, **kwargs):
-    from matplotlib import patches
-    from numpy import array
-    from pylab import gca, axis
-    from scipy.spatial import ConvexHull
-    if type(poly) is list:
-        poly = array(poly)
-    ax = gca()
-    hull = ConvexHull(poly)
-    poly = poly[hull.vertices, :]
-    xmin1, xmax1, ymin1, ymax1 = axis()
-    xmin2, ymin2 = 1.5 * poly.min(axis=0)
-    xmax2, ymax2 = 1.5 * poly.max(axis=0)
-    axis((min(xmin1, xmin2), max(xmax1, xmax2),
-          min(ymin1, ymin2), max(ymax1, ymax2)))
-    patch = patches.Polygon(
-        poly, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
-        linewidth=linewidth, **kwargs)
-    ax.add_patch(patch)

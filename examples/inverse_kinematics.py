@@ -20,8 +20,16 @@
 
 import IPython
 import numpy
-import pymanoid
 import time
+
+try:
+    import pymanoid
+except ImportError:
+    import os
+    import sys
+    script_path = os.path.realpath(__file__)
+    sys.path.append(os.path.dirname(script_path) + '/../')
+    import pymanoid
 
 from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 

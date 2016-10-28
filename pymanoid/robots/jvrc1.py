@@ -53,8 +53,11 @@ class JVRC1(Humanoid):
     L_ANKLE_R = 10
     L_ANKLE_P = 11
     WAIST_Y = 12
+    CHEST_Y = 12  # compatibility with HRP-4
     WAIST_P = 13
+    CHEST_P = 13  # compatibility with HRP-4
     WAIST_R = 14
+    CHEST_R = 14  # compatibility with HRP-4
     NECK_Y = 15
     NECK_R = 16
     NECK_P = 17
@@ -135,23 +138,23 @@ class JVRC1(Humanoid):
         0., 0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0.,
         0., 0., 0., 0., 0., 0., 0., 0., 0.])
 
-    def __init__(self, path='JVRC-1.dae', root_body='PELVIS_S', free_flyer=True,
-                 download_if_needed=False):
+    def __init__(self, path='JVRC-1.dae', root_body='PELVIS_S', qd_lim=None,
+                 download_if_needed=True):
         """
         Add the JVRC-1 model to the environment.
 
         INPUT:
 
-        ``path`` -- path to COLLADA file
-        ``root_body`` -- should be BODY
-        ``free_flyer`` -- should be True (come on)
-        ``download_if_needed`` -- if True and there is no model file in
-            ``path``, will attempt to download it from JVRC1.MODEL_URL
+        - ``path`` -- path to the COLLADA model of the robot
+        - ``root_body`` -- name of the root (first) body in the model
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
+        - ``download_if_needed`` -- if True and there is no model file in
+          ``path``, will attempt to download it from JVRC1.MODEL_URL
         """
         if download_if_needed and not isfile(path):
             rc = system('wget %s -O %s' % (JVRC1.MODEL_URL, path))
             assert rc == 0, "Download of model file failed"
-        super(JVRC1, self).__init__(path, root_body, free_flyer)
+        super(JVRC1, self).__init__(path, root_body, qd_lim=qd_lim)
         rave = self.rave
         self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))
         self.left_hand = Manipulator(rave.GetManipulator("left_hand_palm"))

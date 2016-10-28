@@ -23,7 +23,7 @@ from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 from robot import Robot
 from rotations import crossmat
-from tasks import COMTask, ContactTask, PostureTask
+from tasks import COMTask, ContactTask, PostureTask, MinAccelerationTask
 
 
 class Humanoid(Robot):
@@ -118,7 +118,16 @@ class Humanoid(Robot):
     </environment>
     """
 
-    def __init__(self, path, root_body, qd_lim=10.):
+    def __init__(self, path, root_body, qd_lim=None):
+        """
+        Create a new humanoid robot model.
+
+        INPUT:
+
+        - ``path`` -- path to the COLLADA model of the robot
+        - ``root_body`` -- name of the root (first) body in the model
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
+        """
         name = basename(splitext(path)[0])
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
         super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
@@ -127,26 +136,26 @@ class Humanoid(Robot):
         self.__com = None
         self.__comd = None
 
-    def set_dof_values(self, *args, **kwargs):
+    def set_dof_values(self, q, dof_indices=None):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        super(Humanoid, self).set_dof_values(*args, **kwargs)
+        super(Humanoid, self).set_dof_values(q, dof_indices=dof_indices)
 
-    def set_dof_velocities(self, *args, **kwargs):
+    def set_dof_velocities(self, qd, dof_indices=None):
         self.__cam = None
         self.__comd = None
-        super(Humanoid, self).set_dof_velocities(*args, **kwargs)
+        super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
 
-    def set_active_dof_values(self, *args, **kwargs):
+    def set_active_dof_values(self, q_active):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        super(Humanoid, self).set_active_dof_values(*args, **kwargs)
+        super(Humanoid, self).set_active_dof_values(q_active)
 
-    def set_active_dof_velocities(self, *args, **kwargs):
+    def set_active_dof_velocities(self, qd_active):
         self.__cam = None
-        super(Humanoid, self).set_active_dof_velocities(*args, **kwargs)
+        super(Humanoid, self).set_active_dof_velocities(qd_active)
 
     def init_ik(self, gains=None, weights=None):
         """
@@ -453,9 +462,11 @@ class Humanoid(Robot):
     """
 
     def generate_posture_from_contacts(self, contact_set, com_target=None,
-                                       *args, **kwargs):
+                                       regularization='posture', *args,
+                                       **kwargs):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
+        assert regularization in ['posture', 'min_acceleration']
         if 'left_foot' in contact_set:
             self.ik.add_task(
                 ContactTask(self, self.left_foot, contact_set['left_foot']))
@@ -470,11 +481,15 @@ class Humanoid(Robot):
                 ContactTask(self.right_hand, contact_set['right_hand']))
         if com_target is not None:
             self.ik.add_task(COMTask(self, com_target))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
+        if regularization == 'posture':
+            self.ik.add_task(PostureTask(self, self.q_halfsit))
+        else:  # regularization == 'min_acceleration'
+            self.ik.add_task(MinAccelerationTask(self))
         self.solve_ik(*args, **kwargs)
 
-    def generate_posture_from_stance(self, stance, com_target=None, *args,
-                                     **kwargs):
+    def generate_posture_from_stance(self, stance, com_target=None,
+                                     regularization='posture', *args, **kwargs):
+        assert regularization in ['posture', 'min_acceleration']
         if hasattr(stance, 'com'):
             self.ik.add_task(COMTask(self, stance.com))
         elif hasattr(stance, 'com_target'):
@@ -493,7 +508,10 @@ class Humanoid(Robot):
         if hasattr(stance, 'right_hand'):
             self.ik.add_task(
                 ContactTask(self, self.right_hand, stance.right_hand))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
+        if regularization == 'posture':
+            self.ik.add_task(PostureTask(self, self.q_halfsit))
+        else:  # regularization == 'min_acceleration'
+            self.ik.add_task(MinAccelerationTask(self))
         self.solve_ik(*args, **kwargs)
 
     def generate_posture(self, contacts, *args, **kwargs):

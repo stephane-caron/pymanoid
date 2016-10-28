@@ -18,15 +18,78 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+import cvxopt
+import cvxopt.solvers
+
+from cvxopt import matrix as cvxmat
+from cvxopt.solvers import lp as cvxopt_lp
 from numpy import array, dot
 from warnings import warn
+
+cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
+
+
+"""
+Linear Programming
+==================
+"""
+
+try:
+    import cvxopt.glpk
+    __default_solver = 'glpk'
+    # GLPK is the fastest LP solver I could find so far:
+    # <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
+    # ... however, it's verbose by default, so tell it to STFU:
+    cvxopt.solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}  # cvxopt 1.1.8
+    cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
+    cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
+except ImportError:
+    __default_solver = None
+
+
+def solve_lp(c, G, h, A=None, b=None, solver=__default_solver):
+    """
+    Solve a Linear Program defined by:
+
+        minimize
+            c.T * x
+
+        subject to
+            G * x <= h
+            A * x == b  (optional)
+
+    using CVXOPT <http://cvxopt.org/userguide/coneprog.html#linear-programming>.
+
+    INPUT:
+
+    - ``c`` -- cost vector
+    - ``G`` -- inequality matrix
+    - ``h`` -- inequality vector
+    - ``A`` -- (optional) equality matrix
+    - ``b`` -- (optional) equality vector
+    - ``solver`` -- (optional) solver to use, defaults to GLPK if available
+    """
+    args = [cvxmat(c), cvxmat(G), cvxmat(h)]
+    if A is not None:
+        args.extend([cvxmat(A), cvxmat(b)])
+    sol = cvxopt_lp(*args, solver=solver)
+    if 'optimal' not in sol['status']:
+        return None
+    return array(sol['x']).reshape((c.shape[0],))
+
+
+"""
+Quadratic Programming
+=====================
+"""
 
 solve_qp = None
 
 try:
+    # quadprog is the fastest QP solver I could find so far
     from quadprog import solve_qp as _quadprog_solve_qp
 
-    def quadprog_solve_qp(P, q, G, h, initvals=None):
+    def quadprog_solve_qp(P, q, G, h):
         """
         Solve a Quadratic Program defined as:
 
@@ -49,12 +112,9 @@ except ImportError:
     def quadprog_solve_qp(*args, **kwargs):
         raise ImportError("quadprog not found")
 
-try:  # CVXOPT (2nd choice)
-    from cvxopt import matrix as cvxmat
-    from cvxopt.solvers import options
+try:
+    # CVXOPT is our second choice
     from cvxopt.solvers import qp as cvxopt_qp
-
-    options['show_progress'] = False  # disable cvxopt output
 
     def cvxopt_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
         """
@@ -67,7 +127,8 @@ try:  # CVXOPT (2nd choice)
                 G * x <= h
                 A * x == b  (optional)
 
-        using CVXOPT <http://cvxopt.org/>.
+        using CVXOPT
+        <http://cvxopt.org/userguide/coneprog.html#quadratic-programming>.
         """
         # CVXOPT only considers the lower entries of P so we project on its
         # symmetric part beforehand
@@ -113,7 +174,7 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
     P2 = P + OVER_WEIGHT * dot(A.T, A)
     q2 = q + OVER_WEIGHT * dot(-b.T, A)
     x = solve_qp(P2, q2, G, h)
-    if tol is not None:
+    if x is not None and tol is not None:
         def sq(v):
             return dot(v, v)
         if sq(dot(A, x) - b) / sq(b) > tol * tol:

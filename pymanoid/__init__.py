@@ -47,15 +47,14 @@ from env import set_camera_front
 from env import set_camera_left
 from env import set_camera_right
 from env import set_camera_top
+from env import set_viewer
 from env import take_screenshot
 from humanoid import Humanoid
-from linear_programming import solve_lp
-from quadratic_programming import solve_qp
+from optim import solve_lp
+from optim import solve_qp
 from robot import Robot
 
-import polyhedra
 import robots
-import rotations
 
 __all__ = [
     'Body',
@@ -81,17 +80,16 @@ __all__ = [
     'get_gravity',
     'get_viewer',
     'init',
-    'polyhedra',
     'read_window_id',
     'register_env',
     'robots',
-    'rotations',
     'set_camera_back',
     'set_camera_bottom',
     'set_camera_front',
     'set_camera_left',
     'set_camera_right',
     'set_camera_top',
+    'set_viewer',
     'solve_lp',
     'solve_qp',
     'take_screenshot',

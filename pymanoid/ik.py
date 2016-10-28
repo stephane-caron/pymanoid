@@ -19,7 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import dot, eye, hstack, maximum, minimum, vstack, zeros
-from quadratic_programming import solve_qp
+from optim import solve_qp
 from threading import Lock
 from warnings import warn
 
@@ -29,7 +29,7 @@ class VelocitySolver(object):
     """
     Compute velocities bringing the system closer to fulfilling a set of tasks.
 
-    Technical details: <https://scaron.info/teaching/inverse-kinematics.html>
+    See  for details.
     """
 
     def __init__(self, robot, default_gains=None, default_weights=None,
@@ -42,14 +42,20 @@ class VelocitySolver(object):
         - ``robot`` -- upper DOF limit
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
-        - ``doflim_gain`` -- (optional, default: 0.5) a special gain used to
-                             implement DOF limits into velocity bounds
+        - ``doflim_gain`` -- (optional, default: 0.5) gain used for DOF limits
         - ``dt`` -- default time step
 
-        .. NOTE::
+        The ``doflim_gain`` is described in [Kanoun2012]. In this
+        implementation, it should be between 0. and 1. [Caron2016]. One
+        unsatisfactory aspect of this solution is that it artificially slows
+        down the robot when approaching DOF limits. For instance, it may slow
+        down a foot motion when approaching the knee singularity, despite the
+        robot being able to move faster with a fully extended knee.
 
-            For details on ``doflim_gain``, the the full spec above, or Equation
-            (50) in <http://www.roboticsproceedings.org/rss07/p21.pdf>.
+        REFERENCES:
+
+        .. [Caron2016] <https://scaron.info/teaching/inverse-kinematics.html>
+        .. [Kanoun2012] <http://www.roboticsproceedings.org/rss07/p21.pdf>
         """
         self.default_gains = {}
         self.default_weights = {}

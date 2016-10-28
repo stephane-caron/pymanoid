@@ -20,7 +20,7 @@
 
 from env import get_env
 from env import set_default_background_color
-from inverse_kinematics import VelocitySolver
+from ik import VelocitySolver
 from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
 from os.path import basename, splitext
 from threading import Lock, Thread
@@ -40,15 +40,15 @@ class Robot(object):
     </environment>
     """
 
-    def __init__(self, path=None, xml=None, qd_lim=10.):
+    def __init__(self, path=None, xml=None, qd_lim=None):
         """
-        Create a new robot object.
+        Create a new robot model.
 
         INPUT:
 
         - ``path`` -- path to the COLLADA model of the robot
-        - ``free_flyer`` -- add 6 unactuated DOF? (optional, default is True)
-        - ``qd_lim`` -- maximum angular joint velocity (in [rad])
+        - ``xml`` -- (optional) string in OpenRAVE XML format
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
         """
         assert path is not None or xml is not None
         name = basename(splitext(path)[0])
@@ -56,11 +56,16 @@ class Robot(object):
             xml = Robot.__default_xml % (path, name)
         env = get_env()
         env.LoadData(xml)
-        set_default_background_color()  # reset by LoadData
         rave = env.GetRobot(name)
+        nb_dofs = rave.GetDOF()
+        set_default_background_color()  # [dirty] reset by LoadData
         q_min, q_max = rave.GetDOFLimits()
-        rave.SetDOFVelocityLimits(1000 * rave.GetDOFVelocityLimits())
-        rave.SetDOFVelocities([0] * rave.GetDOF())
+        rave.SetDOFVelocities([0] * nb_dofs)
+        rave.SetDOFVelocityLimits([1000.] * nb_dofs)
+        if qd_lim is None:
+            qd_lim = 10.  # [rad] / [s]; this is already quite fast
+        qd_max = +qd_lim * ones(nb_dofs)
+        qd_min = -qd_lim * ones(nb_dofs)
 
         self.active_dofs = None
         self.has_free_flyer = False
@@ -69,16 +74,16 @@ class Robot(object):
         self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
-        self.nb_dofs = rave.GetDOF()
+        self.nb_dofs = nb_dofs
         self.q_max = q_max
         self.q_max.flags.writeable = False
         self.q_max_active = None
         self.q_min = q_min
         self.q_min.flags.writeable = False
         self.q_min_active = None
-        self.qd_max = +qd_lim * ones(len(q_max))
+        self.qd_max = qd_max
         self.qd_max_active = None
-        self.qd_min = -qd_lim * ones(len(q_min))
+        self.qd_min = qd_min
         self.qd_min_active = None
         self.qdd_max = None  # set in child class
         self.rave = rave
@@ -128,6 +133,33 @@ class Robot(object):
     def qd(self):
         return self.rave.GetDOFVelocities()
 
+    def get_dof_limits(self, dof_indices=None):
+        """
+        Get the couple (q_min, q_max) of DOF limits.
+
+        INPUT:
+
+        - ``dof_indices`` -- (optional) only compute limits for these indices
+
+        .. NOTE::
+
+            This OpenRAVE function is wrapped because it is too slow in
+            practice. On my machine:
+
+                In [1]: %timeit robot.get_dof_limits()
+                1000000 loops, best of 3: 205 ns per loop
+
+                In [2]: %timeit robot.rave.GetDOFLimits()
+                100000 loops, best of 3: 2.59 µs per loop
+
+            Recall that this function is called at every IK step.
+        """
+        q_min, q_max = self.q_min, self.q_max
+        if dof_indices is not None:
+            q_max = q_max[dof_indices]
+            q_min = q_min[dof_indices]
+        return (q_min, q_max)
+
     def get_dof_values(self, dof_indices=None):
         if dof_indices is not None:
             return self.rave.GetDOFValues(dof_indices)
@@ -137,6 +169,24 @@ class Robot(object):
         if dof_indices is not None:
             return self.rave.GetDOFVelocities(dof_indices)
         return self.rave.GetDOFVelocities()
+
+    def set_dof_limits(self, q_min, q_max, dof_indices=None):
+        self.rave.SetDOFLimits(q_min, q_max, dof_indices)
+        self.q_max.flags.writeable = True
+        self.q_min.flags.writeable = True
+        if dof_indices is not None:
+            assert len(q_min) == len(q_max) == len(dof_indices)
+            self.q_max[dof_indices] = q_max
+            self.q_min[dof_indices] = q_min
+        else:
+            assert len(q_min) == len(q_max) == self.nb_dofs
+            self.q_max = q_max
+            self.q_min = q_min
+        if self.active_dofs:
+            self.q_max_active = self.q_max[self.active_dofs]
+            self.q_min_active = self.q_min[self.active_dofs]
+        self.q_max.flags.writeable = False
+        self.q_min.flags.writeable = False
 
     def set_dof_values(self, q, dof_indices=None):
         if dof_indices is not None:
@@ -230,7 +280,7 @@ class Robot(object):
 
         - ``link`` -- link index or pymanoid.Link object
         - ``p`` -- point coordinates in world frame (optional, default is the
-                   origin of the link reference frame
+                   origin of the link reference frame)
         """
         link_index = link if type(link) is int else link.index
         p = link.p if p is None else p
@@ -257,6 +307,21 @@ class Robot(object):
         H_lin = self.rave.ComputeHessianTranslation(link_index, p)
         H_ang = self.rave.ComputeHessianAxisAngle(link_index)
         H = concatenate([H_lin, H_ang], axis=1)
+        return H
+
+    def compute_link_pos_hessian(self, link, p=None):
+        """
+        Compute the hessian H(q) of a point p on ``link``.
+
+        INPUT:
+
+        - ``link`` -- link index or pymanoid.Link object
+        - ``p`` -- point coordinates in world frame (optional, default is the
+                   origin of the link reference frame)
+        """
+        link_index = link if type(link) is int else link.index
+        p = p if type(link) is int else link.p
+        H = self.rave.ComputeHessianTranslation(link_index, p)
         return H
 
     """
@@ -286,40 +351,39 @@ class Robot(object):
         self.set_active_dof_values(q_active)
         self.set_active_dof_velocities(qd_active)
 
-    def solve_ik(self, max_it=100, conv_tol=1e-5, dt=1e-2, debug=False):
+    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-2, debug=False):
         """
-        Compute joint-angles q satisfying all constraints at best.
+        Compute joint-angles q satisfying all kinematic constraints at best.
 
         INPUT:
 
-        - ``max_it`` -- maximum number of differential IK iterations
-        - ``conv_tol`` -- stop when the cost improvement ratio is less than this
-            threshold
+        - ``max_it`` -- maximum number of solver iterations
+        - ``conv_tol`` -- stop when cost improvement is less than this threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
 
         .. NOTE::
 
-            Good values of dt depend on the gains and weights of the IK tasks.
-            Small values make convergence slower, while big values will render
-            them unstable.
+            Good values of dt depend on the weights of the IK tasks. Small
+            values make convergence slower, while big values may jeopardize it.
         """
         if debug:
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
-        cur_cost = 100000.
+        cost = 100000.
         for itnum in xrange(max_it):
-            prev_cost = cur_cost
-            cur_cost = self.ik.compute_cost(dt)
-            cost_var = cur_cost - prev_cost
+            prev_cost = cost
+            cost = self.ik.compute_cost(dt)
+            cost_relvar = abs(cost - prev_cost) / prev_cost
             if debug:
-                print "%2d: %.3f (%+.2e)" % (itnum, cur_cost, cost_var)
-            if abs(cost_var) < conv_tol:
-                if abs(cur_cost) > 0.1:
-                    warn("IK did not converge to solution. Is it feasible?"
+                print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_relvar)
+            if cost_relvar < conv_tol:
+                if abs(cost) > 0.1:
+                    warn("IK did not converge to solution. "
+                         "Is the problem feasible? "
                          "If so, try restarting from a random guess.")
                 break
             self.step_ik(dt)
-        return itnum, cur_cost
+        return itnum, cost
 
     def start_ik_thread(self, dt, sleep_fun=None):
         """
