@@ -72,7 +72,7 @@ class Contact(Box):
             'X': self.X,
             'Y': self.Y,
             'Z': self.Z,
-            'pos': list(self.pos),
+            'pos': list(self.p),
             'rpy': list(self.rpy),
             'friction': self.friction,
         }
@@ -80,8 +80,6 @@ class Contact(Box):
             d['max_pressure'] = self.max_pressure
         if self.robot_link >= 0:
             d['robot_link'] = self.robot_link
-        if not self.name.startswith('Contact-'):
-            d['name'] = self.name
         if self.is_visible:
             d['visible'] = True
         return d
