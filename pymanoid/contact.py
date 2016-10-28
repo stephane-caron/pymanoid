@@ -23,16 +23,17 @@ import numpy
 import simplejson
 import uuid
 
-from body import Box
-from draw import draw_force
-from env import get_env
-from numpy import array, dot, hstack, vstack, zeros
-from polyhedra import Cone
-# from optim import cvxopt_solve_qp
-from optim import solve_relaxed_qp
+from numpy import array, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from threading import Lock, Thread
 from time import sleep as rt_sleep
+
+from body import Box
+from draw import draw_force
+from env import get_env
+from optim import solve_relaxed_qp
+from polyhedra import Cone
+from rotations import crossmat
 
 
 class Contact(Box):
@@ -665,6 +666,73 @@ class ContactSet(object):
             p = dot(D, V[i, 1:])
             vertices.append([p[0], p[1]])
         return vertices
+
+    def compute_zmp_support_area(self, com, plane):
+        """
+        Compute the (pendular) ZMP support area for a given COM position.
+
+        INPUT:
+
+        - ``com`` -- COM position
+        - ``plane`` -- position of horizontal plane
+
+        OUTPUT:
+
+        List of vertices of the area.
+
+        ALGORITHM:
+
+        This method implements the double-description version of the algorithm
+        (with a vertical plane normal) <https://arxiv.org/pdf/1510.03232.pdf>
+
+        Two better alternatives are available:
+
+        1) the raycasting method (Bretl algorithm), available in
+            <https://github.com/stephane-caron/contact_stability>
+
+        2) the more recent convex-hull reduction, described in
+            <https://scaron.info/research/humanoids-2016.html>
+
+        """
+        mass = 42.  # [kg]
+        # mass has no effect on the output polygon, c.f. Section IV.C in
+        # <https://hal.archives-ouvertes.fr/hal-01349880>
+        n = [0, 0, 1]
+        z_in, z_out = com[2], plane[2]
+
+        G = self.compute_grasp_matrix([0, 0, 0])
+        F = -self.compute_stacked_wrench_cones()
+        b = zeros((F.shape[0], 1))
+        # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
+        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+        M = cdd.Matrix(hstack([b, -F]), number_type='float')
+        M.rep_type = cdd.RepType.INEQUALITY
+
+        B = vstack([
+            hstack([z_in * eye(3), crossmat(n)]),
+            hstack([zeros(3), com])])  # hstack([-(cross(n, p_in)), n])])
+        C = 1. / (- mass * 9.81) * dot(B, G)
+        d = hstack([com, [0]])
+        # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
+        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+        M.extend(hstack([d.reshape((4, 1)), -C]), linear=True)
+
+        # Convert from H- to V-representation
+        # M.canonicalize()
+        P = cdd.Polyhedron(M)
+        V = array(P.get_generators())
+
+        # Project output wrenches to 2D set
+        vertices, rays = [], []
+        for i in xrange(V.shape[0]):
+            f_gi = dot(G, V[i, 1:])[:3]
+            if V[i, 0] == 1:  # 1 = vertex, 0 = ray
+                p_out = (z_out - z_in) * f_gi / (- mass * 9.81) + com
+                vertices.append(p_out)
+            else:
+                r_out = (z_out - z_in) * f_gi / (- mass * 9.81)
+                rays.append(r_out)
+        return vertices, rays
 
     """
     Draw forces in separate thread
