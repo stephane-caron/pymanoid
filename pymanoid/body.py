@@ -22,10 +22,11 @@ import openravepy
 import uuid
 
 from numpy import array, zeros
-from env import get_env
+from warnings import warn
+
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
-from warnings import warn
+from sim import get_openrave_env
 
 
 class Body(object):
@@ -258,7 +259,7 @@ class Body(object):
 
     def remove(self):
         """Remove body from OpenRAVE environment."""
-        env = get_env()
+        env = get_openrave_env()
         with env:
             env.Remove(self.rave)
 
@@ -291,7 +292,7 @@ class Box(Body):
         self.Y = Y
         self.Z = Z
         aabb = [0, 0, 0, X, Y, Z]
-        env = get_env()
+        env = get_openrave_env()
         with env:
             box = openravepy.RaveCreateKinBody(env, '')
             box.InitFromBoxes(array([array(aabb)]), True)

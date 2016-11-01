@@ -20,26 +20,27 @@
 
 import IPython
 import numpy
+import os
+import sys
 import time
 
 try:
-    import pymanoid
+    from pymanoid import Cube
 except ImportError:
-    import os
-    import sys
     script_path = os.path.realpath(__file__)
     sys.path.append(os.path.dirname(script_path) + '/../')
-    import pymanoid
+    from pymanoid import Cube
 
+from pymanoid import Contact, Simulation
+from pymanoid.robots import JVRC1
 from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 
 
 if __name__ == '__main__':
-    pymanoid.init()
-    robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
-
-    viewer = pymanoid.get_env().GetViewer()
-    viewer.SetCamera([
+    sim = Simulation()
+    robot = JVRC1('JVRC-1.dae', download_if_needed=True)
+    sim.set_viewer()
+    sim.viewer.SetCamera([
         [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
         [0.95680251,  0.10095043, -0.2726499,  0.86080128],
         [-0.02267371, -0.90901857, -0.41613837,  2.06654644],
@@ -64,15 +65,15 @@ if __name__ == '__main__':
     robot.set_active_dofs(active_dofs)
 
     # IK targets: COM and foot poses
-    com = pymanoid.Cube(0.05, pos=robot.com, color='g')
+    com = Cube(0.05, pos=robot.com, color='g')
     init_com = com.p.copy()
-    left_foot_target = pymanoid.Contact(
+    left_foot_target = Contact(
         X=0.224 / 2,
         Y=0.130 / 2,
         Z=0.01,
         pos=[0, 0.3, 0],
         visible=True)
-    right_foot_target = pymanoid.Contact(
+    right_foot_target = Contact(
         X=0.224 / 2,
         Y=0.130 / 2,
         Z=0.01,

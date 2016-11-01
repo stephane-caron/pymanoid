@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from env import get_env
-from env import set_default_background_color
-from ik import VelocitySolver
 from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
 from os.path import basename, splitext
 from threading import Lock, Thread
 from time import sleep as rt_sleep
 from warnings import warn
+
+from ik import VelocitySolver
+from sim import get_openrave_env
 
 
 class Robot(object):
@@ -54,11 +54,10 @@ class Robot(object):
         name = basename(splitext(path)[0])
         if xml is None:
             xml = Robot.__default_xml % (path, name)
-        env = get_env()
+        env = get_openrave_env()
         env.LoadData(xml)
         rave = env.GetRobot(name)
         nb_dofs = rave.GetDOF()
-        set_default_background_color()  # [dirty] reset by LoadData
         q_min, q_max = rave.GetDOFLimits()
         rave.SetDOFVelocities([0] * nb_dofs)
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)

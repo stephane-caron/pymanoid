@@ -30,10 +30,10 @@ from time import sleep as rt_sleep
 
 from body import Box
 from draw import draw_force
-from env import get_env
 from optim import solve_relaxed_qp
 from polyhedra import Cone
 from rotations import crossmat
+from sim import get_openrave_env
 
 
 class Contact(Box):
@@ -260,7 +260,7 @@ class Contact(Box):
         return S
 
     def draw_force_lines(self, length=0.25):
-        env = get_env()
+        env = get_openrave_env()
         self.gui_handles = []
         for c in self.vertices:
             color = [0.1, 0.1, 0.1]

@@ -20,11 +20,12 @@
 
 import itertools
 
-from env import get_env
 from numpy import array, cross, dot, int64, sqrt, vstack
 from scipy.spatial import ConvexHull
 from scipy.spatial.qhull import QhullError
 from warnings import warn
+
+from sim import get_openrave_env
 
 
 BIG_DIST = 1000.  # [m]
@@ -70,7 +71,7 @@ def draw_line(p1, p2, color='g', linewidth=1.):
     """
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
-    return get_env().drawlinelist(
+    return get_openrave_env().drawlinelist(
         array([p1, p2]), linewidth=linewidth, colors=color)
 
 
@@ -92,7 +93,8 @@ def draw_arrow(p1, p2, color='r', linewidth=0.02):
     """
     if type(color) is str:
         color = _matplotlib_to_rgb(color)
-    return get_env().drawarrow(p1, p2, linewidth=linewidth, color=color)
+    env = get_openrave_env()
+    return env.drawarrow(p1, p2, linewidth=linewidth, color=color)
 
 
 def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
@@ -117,7 +119,7 @@ def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
     f_scale = scale * f
     if dot(f_scale, f_scale) < 1e-6:
         return None
-    return get_env().drawarrow(
+    return get_openrave_env().drawarrow(
         p, p + f_scale, linewidth=linewidth, color=color)
 
 
@@ -128,7 +130,7 @@ def draw_point(p, color='g', pointsize=0.05):
 def draw_points(points, color='g', pointsize=0.05):
     if type(color) is str:
         color = _matplotlib_to_rgba(color, alpha=1.)
-    return get_env().plot3(
+    return get_openrave_env().plot3(
         array(points), pointsize=pointsize, drawstyle=1,
         colors=color)
 
@@ -172,7 +174,7 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     points = array(points)
     color = array(color if color is not None else (0.0, 0.5, 0.0, 0.5))
     handles = []
-    env = get_env()
+    env = get_openrave_env()
     if '-' in faces:  # edges
         edge_color = color * 0.7
         edge_color[3] = 1.
@@ -337,7 +339,7 @@ def draw_3d_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
         warn("Trying to draw an empty cone")
         return []
     color = color if color is not None else _matplotlib_to_rgba(combined[0])
-    env = get_env()
+    env = get_openrave_env()
     handles = draw_polygon(
         points=section, normal=axis, combined=combined, color=color)
     edges = vstack([[apex, vertex] for vertex in section])

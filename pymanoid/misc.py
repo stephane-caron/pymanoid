@@ -25,6 +25,39 @@ from scipy.spatial import ConvexHull
 from numpy import array, dot, sqrt
 
 
+class AvgStdEstimator(object):
+
+    """Estimate average and standard deviation online for a scalar series."""
+
+    def __init__(self):
+        self.x = 0.
+        self.x2 = 0.
+        self.n = 0
+
+    def add(self, v):
+        self.x += v
+        self.x2 += v ** 2
+        self.n += 1
+
+    @property
+    def avg(self):
+        if self.n < 1:
+            return None
+        return self.x / self.n
+
+    @property
+    def std(self):
+        if self.n < 1:
+            return None
+        elif self.n == 1:
+            return 0.
+        unbiased = sqrt(self.n * 1. / (self.n - 1))
+        return unbiased * sqrt(self.x2 / self.n - self.avg ** 2)
+
+    def get_all(self):
+        return (self.avg, self.std, self.n)
+
+
 def norm(v):
     """Euclidean norm, 2x faster than numpy.linalg.norm on my machine."""
     return sqrt(dot(v, v))

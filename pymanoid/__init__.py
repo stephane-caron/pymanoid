@@ -35,24 +35,11 @@ from draw import draw_point
 from draw import draw_points
 from draw import draw_polygon
 from draw import draw_polyhedron
-from env import get_env
-from env import get_gravity
-from env import get_viewer
-from env import init
-from env import read_window_id
-from env import register_env
-from env import set_camera_back
-from env import set_camera_bottom
-from env import set_camera_front
-from env import set_camera_left
-from env import set_camera_right
-from env import set_camera_top
-from env import set_viewer
-from env import take_screenshot
 from humanoid import Humanoid
 from optim import solve_lp
 from optim import solve_qp
 from robot import Robot
+from sim import Simulation
 
 import robots
 
@@ -67,6 +54,7 @@ __all__ = [
     'Manipulator',
     'PointMass',
     'Robot',
+    'Simulation',
     'draw_2d_cone',
     'draw_3d_cone',
     'draw_arrow',
@@ -76,20 +64,7 @@ __all__ = [
     'draw_points',
     'draw_polygon',
     'draw_polyhedron',
-    'get_env',
-    'get_gravity',
-    'get_viewer',
-    'init',
-    'read_window_id',
-    'register_env',
     'robots',
-    'set_camera_back',
-    'set_camera_bottom',
-    'set_camera_front',
-    'set_camera_left',
-    'set_camera_right',
-    'set_camera_top',
-    'set_viewer',
     'solve_lp',
     'solve_qp',
     'take_screenshot',
