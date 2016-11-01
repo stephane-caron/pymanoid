@@ -39,23 +39,23 @@ from sim import get_openrave_env
 class Contact(Box):
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 max_pressure=None, robot_link=-1, Z=0.01, color='r', name=None,
-                 pose=None, visible=False):
+                 max_pressure=None, robot_link=-1, name=None,
+                 pose=None, visible=True, **kwargs):
         """
         Create a new rectangular contact.
 
-        X -- half-length of the contact surface
-        Y -- half-width of the contact surface
-        pos -- initial position of the contact frame w.r.t the world frame
-        rpy -- initial orientation of the contact frame w.r.t the world frame
-        friction -- friction coefficient
-        max_pressure -- maximum pressure sustainable by the contact
-        robot_link -- saves link index of robot link in contact
-        Z -- half-height of the surface display box
-        color -- color letter in ['r', 'g', 'b']
-        name -- object's name (optional)
-        pose -- initial pose (supersedes pos and rpy)
-        visible -- initial box visibility
+        INPUT:
+
+        - ``X`` -- half-length of the contact surface
+        - ``Y`` -- half-width of the contact surface
+        - ``pos`` -- contact position in world frame
+        - ``rpy`` -- contact orientation in world frame
+        - ``friction`` -- friction coefficient
+        - ``max_pressure`` -- maximum pressure sustainable by the contact
+        - ``robot_link`` -- saves link index of robot link in contact
+        - ``name`` -- object's name (optional)
+        - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``visible`` -- initial box visibility
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
@@ -64,8 +64,8 @@ class Contact(Box):
         self.friction = friction
         self.robot_link = robot_link
         super(Contact, self).__init__(
-            X, Y, Z, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
-            visible=visible)
+            X, Y, 0.01, pos=pos, rpy=rpy, name=name, pose=pose,
+            visible=visible, **kwargs)
 
     @property
     def dict_repr(self):

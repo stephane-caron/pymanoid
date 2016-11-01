@@ -21,7 +21,6 @@
 from body import Body
 from body import Box
 from body import Cube
-from body import Link
 from body import Manipulator
 from body import PointMass
 from contact import Contact
@@ -51,7 +50,6 @@ __all__ = [
     'ContactSet',
     'Cube',
     'Humanoid',
-    'Link',
     'Manipulator',
     'PointMass',
     'Process',

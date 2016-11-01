@@ -67,18 +67,8 @@ if __name__ == '__main__':
     # IK targets: COM and foot poses
     com = Cube(0.05, pos=robot.com, color='g')
     init_com = com.p.copy()
-    left_foot_target = Contact(
-        X=0.224 / 2,
-        Y=0.130 / 2,
-        Z=0.01,
-        pos=[0, 0.3, 0],
-        visible=True)
-    right_foot_target = Contact(
-        X=0.224 / 2,
-        Y=0.130 / 2,
-        Z=0.01,
-        pos=[0, -0.3, 0],
-        visible=True)
+    left_foot_target = Contact(0.112, Y=0.065, pos=[0, 0.3, 0], visible=True)
+    right_foot_target = Contact(0.112, 0.065, pos=[0, -0.3, 0], visible=True)
 
     # Initialize the IK
     robot.init_ik()

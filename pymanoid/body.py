@@ -354,16 +354,7 @@ class PointMass(Cube):
         self.set_velocity(self.pd + pdd * dt)
 
 
-class Link(Body):
-
-    def __init__(self, rave_link, color=None, pos=None, rpy=None,
-                 pose=None, visible=True):
-        super(Link, self).__init__(
-            rave_link, color=color, pos=pos, rpy=rpy, pose=pose,
-            visible=visible)
-
-
-class Manipulator(Link):
+class Manipulator(Body):
 
     def __init__(self, rave_manipulator, color=None, pos=None,
                  rpy=None, pose=None, visible=True):
