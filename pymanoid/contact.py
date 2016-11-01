@@ -66,6 +66,55 @@ class Contact(Box):
             X, Y, 0.01, pos=pos, rpy=rpy, name=name, pose=pose,
             visible=visible, **kwargs)
 
+    """
+    Geometry
+    ========
+    """
+
+    @property
+    def contact_pose(self):
+        """
+        Pose of the contact frame.
+
+        .. NOTE::
+
+            The contact frame is not the same as the object frame (e.g.
+            self.pose). The latter is located inside the contact slab.
+        """
+        pose = super(Contact, self).pose
+        pose[4:] += self.Z * self.n   # self.n calls self.T
+        return pose
+
+    @property
+    def contact_transform(self):
+        """
+        Transformation matrix of the contact frame.
+
+        .. NOTE::
+
+            The contact frame is not the same as the object frame (e.g.
+            self.pose). The latter is located inside the contact slab.
+        """
+        T = super(Contact, self).T
+        n = T[0:3, 2]
+        T[0:3, 3] += self.Z * n
+        return T
+
+    @property
+    def vertices(self):
+        """Vertices of the contact area."""
+        T = self.contact_transform
+        c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
+        c2 = dot(T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
+        c3 = dot(T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
+        c4 = dot(T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
+        return [c1, c2, c3, c4]
+
+    """
+    Others
+    ======
+    """
+
     @property
     def dict_repr(self):
         d = {
@@ -83,38 +132,6 @@ class Contact(Box):
         if self.is_visible:
             d['visible'] = True
         return d
-
-    @property
-    def effector_pose(self):
-        """
-        Target pose for the robot end-effector.
-
-        .. NOTE::
-
-            Don't use self.pose, which corresponds to the KinBody pose and
-            would result in a frame inside the contact box.
-        """
-        pose = super(Contact, self).pose
-        pose[4:] += self.Z * self.n   # self.n calls self.T
-        return pose
-
-    @property
-    def effector_transform(self):
-        """Transformation matrix."""
-        T = super(Contact, self).T
-        n = T[0:3, 2]
-        T[0:3, 3] += self.Z * n
-        return T
-
-    @property
-    def vertices(self):
-        """Vertices of the contact area."""
-        T = self.effector_transform
-        c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
-        c2 = dot(T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
-        c3 = dot(T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
-        c4 = dot(T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
-        return [c1, c2, c3, c4]
 
     def compute_grasp_matrix(self, p):
         """

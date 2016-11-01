@@ -38,9 +38,9 @@ class ContactTask(LinkPoseTask):
             target = array(target)
 
         def pos_residual():
-            residual = target.effector_pose - link.pose
+            residual = target.contact_pose - link.pose
             if dot(residual[0:4], residual[0:4]) > 1.:
-                return _oppose_quat * target.effector_pose - link.pose
+                return _oppose_quat * target.contact_pose - link.pose
             return residual
 
         def jacobian():
