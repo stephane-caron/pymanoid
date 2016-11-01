@@ -24,11 +24,8 @@ import simplejson
 
 from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
-from threading import Lock, Thread
-from time import sleep as rt_sleep
 
 from body import Box
-from draw import draw_force
 from misc import norm
 from optim import solve_relaxed_qp
 from polyhedra import Cone
@@ -439,7 +436,7 @@ class ContactSet(object):
 
         .. SEEALSO::
 
-            :meth:`pymanoid.contact.ContactSet.compute_supporting_forces`,
+            :meth:`pymanoid.contact.ContactSet.find_supporting_forces`,
         """
         f = numpy.array([0., 0., mass * 9.81])
         tau = zeros(3)
@@ -490,25 +487,6 @@ class ContactSet(object):
         corresponding contact point in the world frame.
         """
         return block_diag(*[c.wrench_face() for c in self.contacts])
-
-    def compute_stacked_wrench_polytopes(self):
-        """
-        Compute the friction polytope on all contact wrenches.
-
-        The polytope is describe by a matrix-vector (F, b) so that friction
-        constraints (Coulomb dry friction + maximum pressure at each contact) on
-        all contact wrenches are written:
-
-            F * w_all <= b
-
-        where w_all is the stacked vector of contact wrenches, each taken at its
-        corresponding contact point in the world frame.
-        """
-        polytopes = [c.wrench_polytope for c in self.contacts]
-        F_list, b_list = zip(*polytopes)
-        F = block_diag(*F_list)
-        b = hstack(b_list)
-        return F, b
 
     def compute_wrench_span(self, p):
         """
@@ -734,40 +712,3 @@ class ContactSet(object):
                 r_out = (z_out - z_in) * f_gi / (- mass * 9.81)
                 rays.append(r_out)
         return vertices, rays
-
-    """
-    Draw forces in separate thread
-    """
-
-    def start_force_thread(self, com, mass, dt, sleep_fun=None):
-        if sleep_fun is None:
-            sleep_fun = rt_sleep
-
-        def sleep():
-            return sleep_fun(dt)
-
-        self.force_handles = []
-        self.force_lock = Lock()
-        self.force_thread = Thread(
-            target=self.run_force_thread, args=(com, mass, sleep))
-        self.force_thread.daemon = True
-        self.force_thread.start()
-
-    def run_force_thread(self, com, mass, sleep):
-        while self.force_lock:
-            with self.force_lock:
-                cf = self.find_static_supporting_forces(com.p, mass)
-                if cf is not None:
-                    self.force_handles = [draw_force(c, fc) for (c, fc) in cf]
-                else:  # no force
-                    self.force_handles = []
-                sleep()
-
-    def pause_force_thread(self):
-        self.force_lock.acquire()
-
-    def resume_force_thread(self):
-        self.force_lock.release()
-
-    def stop_force_thread(self):
-        self.force_lock = None

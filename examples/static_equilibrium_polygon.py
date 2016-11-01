@@ -19,9 +19,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import IPython
-import thread
-import threading
-import time
 
 try:
     import pymanoid
@@ -32,9 +29,11 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
+from pymanoid.drawers import StaticForceDrawer, SEPDrawer
+from pymanoid.sim import Process
+
 com_height = 0.9  # [m]
 dt = 3e-2  # [s]
-env_lock = threading.Lock()
 polygon_handle = None
 z_polygon = 2.
 
@@ -42,36 +41,18 @@ qd_lim = 10.
 K_doflim = 5.
 
 
-def run_forces_thread():
-    handles = []
-    while True:
-        env_lock.acquire()
+class COMSync(Process):
+
+    def on_tick(self, sim):
         com_target.set_x(com_above.x)
         com_target.set_y(com_above.y)
-        try:
-            support = contacts.find_static_supporting_forces(
-                com_target.p, robot.mass)
-            handles = [pymanoid.draw_force(c, fc) for (c, fc) in support]
-        except Exception as e:
-            print "Force computation failed:", e
-            print "Did you move the target COM (blue box) out of the polygon?\n"
-        env_lock.release()
-        time.sleep(dt)
-    return handles
-
-
-def recompute_polygon():
-    global polygon_handle
-    vertices = contacts.compute_static_equilibrium_polygon()
-    polygon_handle = pymanoid.draw_polygon(
-        [(x[0], x[1], z_polygon) for x in vertices],
-        normal=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))
 
 
 if __name__ == "__main__":
-    pymanoid.init()
+    sim = pymanoid.Simulation()
     robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
-    pymanoid.get_viewer().SetCamera([
+    sim.set_viewer()
+    sim.viewer.SetCamera([
         [0.60587192, -0.36596244,  0.70639274, -2.4904027],
         [-0.79126787, -0.36933163,  0.48732874, -1.6965636],
         [0.08254916, -0.85420468, -0.51334199,  2.79584694],
@@ -102,8 +83,8 @@ if __name__ == "__main__":
             visible=True)
     })
 
-    com_target = pymanoid.Cube(0.02, pos=[0., 0., com_height], color='b',
-                               visible=False)
+    com_target = pymanoid.PointMass(
+        pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
     active_dofs = robot.chest + robot.free + robot.left_arm + \
@@ -129,7 +110,6 @@ if __name__ == "__main__":
         -4.90099381e-02,   8.17415141e-01,  -8.71841480e-02,
         -1.36966665e-01,  -4.26226421e-02])
     robot.generate_posture(contacts, com_target)
-    recompute_polygon()
 
     print ""
     print "In this example, we display the static-equilibrium COM polygon"
@@ -149,5 +129,14 @@ if __name__ == "__main__":
     print ""
 
     robot.start_ik_thread(dt)
-    thread.start_new_thread(run_forces_thread, ())
-    IPython.embed()
+
+    force_drawer = StaticForceDrawer(com_target, contacts)
+    sep_drawer = SEPDrawer(contacts, z_polygon)
+
+    sim.schedule(force_drawer)
+    sim.schedule(sep_drawer)
+    sim.schedule(COMSync())
+    sim.start()
+
+    if IPython.get_ipython() is None:
+        IPython.embed()

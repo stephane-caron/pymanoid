@@ -107,4 +107,6 @@ if __name__ == '__main__':
     print "Finally, we launch the IK thread. Try moving the green box!"
     print ""
     robot.start_ik_thread(dt)
-    IPython.embed()
+
+    if IPython.get_ipython() is None:
+        IPython.embed()
