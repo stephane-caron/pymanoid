@@ -29,6 +29,7 @@ from time import sleep as rt_sleep
 
 from body import Box
 from draw import draw_force
+from misc import norm
 from optim import solve_relaxed_qp
 from polyhedra import Cone
 from rotations import crossmat
@@ -54,48 +55,19 @@ class Contact(Box):
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
         """
+        self.__force_cone = None
+        self.__force_pose = None
+        self.__wrench_cone = None
+        self.__wrench_pose = None
         self.friction = friction
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, **kwargs)
-        self.force_cone = Cone(
-            face=self.force_face(), rays=self.force_rays())
-        self.wrench_cone = Cone(
-            face=self.wrench_face(), rays=self.wrench_rays())
 
     """
     Geometry
     ========
     """
-
-    @property
-    def contact_pose(self):
-        """
-        Pose of the contact frame.
-
-        .. NOTE::
-
-            The contact frame is not the same as the object frame (e.g.
-            self.pose). The latter is located inside the contact slab.
-        """
-        pose = super(Contact, self).pose
-        pose[4:] += self.Z * self.n   # self.n calls self.T
-        return pose
-
-    @property
-    def contact_transform(self):
-        """
-        Transformation matrix of the contact frame.
-
-        .. NOTE::
-
-            The contact frame is not the same as the object frame (e.g.
-            self.pose). The latter is located inside the contact slab.
-        """
-        T = super(Contact, self).T
-        n = T[0:3, 2]
-        T[0:3, 3] += self.Z * n
-        return T
 
     @property
     def vertices(self):
@@ -114,6 +86,19 @@ class Contact(Box):
     All linearized friction cones in pymanoid use the inner (conservative)
     approximation. See <https://scaron.info/teaching/friction-model.html>
     """
+
+    @property
+    def force_cone(self):
+        """
+        Contact-force friction cone.
+        """
+        if self.__force_cone and self.__force_pose and \
+                norm(self.__force_pose - self.pose) < 1e-10:
+            return self.__force_cone
+        force_cone = Cone(face=self.force_face(), rays=self.force_rays())
+        self.__force_cone = force_cone
+        self.__force_pose = self.pose
+        return force_cone
 
     def force_face(self):
         """
@@ -149,21 +134,35 @@ class Contact(Box):
     ====================
     """
 
+    @property
+    def wrench_cone(self):
+        """
+        Contact-wrench friction cone.
+        """
+        if self.__wrench_cone and self.__wrench_pose and \
+                norm(self.__wrench_pose - self.pose) < 1e-10:
+            return self.__wrench_cone
+        wrench_cone = Cone(face=self.wrench_face(), rays=self.wrench_rays())
+        self.__wrench_cone = wrench_cone
+        self.__wrench_pose = self.pose
+        return wrench_cone
+
     def wrench_face(self):
         """
-        Compute the matrix F of friction inequalities.
+        Compute the matrix F of friction inequalities derived in [Caron2015]_.
 
         This matrix describes the linearized Coulomb friction model by:
 
             F * w <= 0
 
-        where w is the contact wrench taken at the contact point (self.p) in the
+        where w is the contact wrench at the contact point (self.p) in the
         world frame.
 
-        .. NOTE::
+        REFERENCES:
 
-            Uses the inner (conservative) approximation of friction cones.
-            See <https://scaron.info/teaching/friction-model.html>
+        .. [Caron2015] S. Caron, Q.-C. Pham, Y. Nakamura. Stability of Surface
+           Contacts for Humanoid Robots Closed-Form Formulae of the Contact
+           Wrench Cone for Rectangular Support Areas. ICRA 2015.
 
         """
         mu = self.friction / sqrt(2)  # inner approximation
@@ -229,51 +228,10 @@ class Contact(Box):
         assert S.shape == (6, 16)
         return S
 
-    def compute_grasp_matrix(self, p):
-        """
-        Compute the grasp matrix at point p in the world frame.
-
-        INPUT:
-
-        - ``p`` -- point where the resultant wrench is taken
-
-        OUTPUT:
-
-        The grasp matrix G(p) converting the local contact wrench w (taken at
-        ``self.p``) to the contact wrench w(p) at another point p:
-
-            w(p) = G(p) * w
-
-        All wrenches are expressed with respect to the world frame.
-        """
-        x, y, z = self.p - p
-        return array([
-            # fx fy  fz taux tauy tauz
-            [1,   0,  0,   0,   0,   0],
-            [0,   1,  0,   0,   0,   0],
-            [0,   0,  1,   0,   0,   0],
-            [0,  -z,  y,   1,   0,   0],
-            [z,   0, -x,   0,   1,   0],
-            [-y,  x,  0,   0,   0,   1]])
-
     """
     Others
     ======
     """
-
-    @property
-    def dict_repr(self):
-        d = {
-            'X': self.X,
-            'Y': self.Y,
-            'Z': self.Z,
-            'pos': list(self.p),
-            'rpy': list(self.rpy),
-            'friction': self.friction,
-        }
-        if self.is_visible:
-            d['visible'] = True
-        return d
 
     def draw_force_lines(self, length=0.25):
         env = get_openrave_env()
@@ -289,6 +247,47 @@ class Contact(Box):
                 array([c, c + length * self.n]),
                 linewidth=5, colors=color))
         return handles
+
+    @property
+    def dict_repr(self):
+        d = {
+            'X': self.X,
+            'Y': self.Y,
+            'Z': self.Z,
+            'pos': list(self.p),
+            'rpy': list(self.rpy),
+            'friction': self.friction,
+        }
+        if self.is_visible:
+            d['visible'] = True
+        return d
+
+    def grasp_matrix(self, p):
+        """
+        Compute the grasp matrix from contact point to ``p`` in the world frame.
+
+        INPUT:
+
+        - ``p`` -- end point where the resultant wrench is taken
+
+        OUTPUT:
+
+        The grasp matrix G(p) converting the local contact wrench w to the
+        contact wrench w(p) at another point p:
+
+            w(p) = G(p) * w
+
+        All wrenches are expressed with respect to the world frame.
+        """
+        x, y, z = self.p - p
+        return array([
+            # fx fy  fz taux tauy tauz
+            [1,   0,  0,   0,   0,   0],
+            [0,   1,  0,   0,   0,   0],
+            [0,   0,  1,   0,   0,   0],
+            [0,  -z,  y,   1,   0,   0],
+            [z,   0, -x,   0,   1,   0],
+            [-y,  x,  0,   0,   0,   1]])
 
 
 class ContactSet(object):
@@ -584,7 +583,7 @@ class ContactSet(object):
         with w_all the stacked vector of contact wrenches, each wrench being
         taken at its respective contact point and in the world frame.
         """
-        return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
+        return hstack([c.grasp_matrix(p) for c in self.contacts])
 
     def compute_grasp_matrix_from_forces(self, p):
         """
