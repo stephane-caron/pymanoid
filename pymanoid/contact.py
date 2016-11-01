@@ -37,6 +37,8 @@ from sim import get_openrave_env
 
 class Contact(Box):
 
+    THICKNESS = 0.01
+
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
                  pose=None, visible=True, **kwargs):
         """
@@ -54,7 +56,12 @@ class Contact(Box):
         """
         self.friction = friction
         super(Contact, self).__init__(
-            X, Y, 0.01, pos=pos, rpy=rpy, pose=pose, visible=visible, **kwargs)
+            X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
+            visible=visible, dZ=-self.THICKNESS, **kwargs)
+        self.force_cone = Cone(
+            face=self.force_face(), rays=self.force_rays())
+        self.wrench_cone = Cone(
+            face=self.wrench_face(), rays=self.wrench_rays())
 
     """
     Geometry

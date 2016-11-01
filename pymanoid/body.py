@@ -22,7 +22,6 @@ import openravepy
 import uuid
 
 from numpy import array, zeros
-from warnings import warn
 
 from rotations import rotation_matrix_from_rpy
 from rotations import rpy_from_quat
@@ -271,27 +270,29 @@ class Body(object):
 class Box(Body):
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True, transparency=None):
+                 pose=None, visible=True, dZ=0.):
         """
         Create a new rectangular box.
 
-        X -- box half-length
-        Y -- box half-width
-        Z -- box half-height
-        pos -- initial position in inertial frame
-        rpy -- initial orientation in inertial frame
-        color -- color letter in ['r', 'g', 'b']
-        name -- object's name (optional)
-        pose -- initial pose (supersedes pos and rpy)
-        visible -- initial box visibility
-        transparency -- transparency value, 0. is opaque and 1. is transparent
+        INPUT:
+
+        - ``X`` -- box half-length
+        - ``Y`` -- box half-width
+        - ``Z`` -- box half-height
+        - ``pos`` -- initial position in inertial frame
+        - ``rpy`` -- initial orientation in inertial frame
+        - ``color`` -- color letter in ['r', 'g', 'b']
+        - ``name`` -- object's name (optional)
+        - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``visible`` -- initial box visibility
+        - ``dZ`` -- special value used to make Contact slabs
         """
         if not name:
             name = "Box-%s" % str(uuid.uuid1())[0:3]
         self.X = X
         self.Y = Y
         self.Z = Z
-        aabb = [0, 0, 0, X, Y, Z]
+        aabb = [0, 0, dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
             box = openravepy.RaveCreateKinBody(env, '')
