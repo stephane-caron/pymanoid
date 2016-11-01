@@ -21,7 +21,6 @@
 import cdd
 import numpy
 import simplejson
-import uuid
 
 from numpy import array, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
@@ -39,7 +38,7 @@ from sim import get_openrave_env
 class Contact(Box):
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 name=None, pose=None, visible=True, **kwargs):
+                 pose=None, visible=True, **kwargs):
         """
         Create a new rectangular contact.
 
@@ -50,16 +49,12 @@ class Contact(Box):
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
         - ``friction`` -- friction coefficient
-        - ``name`` -- object's name (optional)
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
         """
-        if not name:
-            name = "Contact-%s" % str(uuid.uuid1())[0:3]
         self.friction = friction
         super(Contact, self).__init__(
-            X, Y, 0.01, pos=pos, rpy=rpy, name=name, pose=pose,
-            visible=visible, **kwargs)
+            X, Y, 0.01, pos=pos, rpy=rpy, pose=pose, visible=visible, **kwargs)
 
     """
     Geometry
@@ -106,23 +101,9 @@ class Contact(Box):
         return [c1, c2, c3, c4]
 
     """
-    Others
-    ======
+    Wrench matrices
+    ===============
     """
-
-    @property
-    def dict_repr(self):
-        d = {
-            'X': self.X,
-            'Y': self.Y,
-            'Z': self.Z,
-            'pos': list(self.p),
-            'rpy': list(self.rpy),
-            'friction': self.friction,
-        }
-        if self.is_visible:
-            d['visible'] = True
-        return d
 
     def compute_grasp_matrix(self, p):
         """
@@ -233,30 +214,6 @@ class Contact(Box):
         return dot(local_cone, block_diag(self.R.T, self.R.T))
 
     @property
-    def wrench_polytope(self):
-        """
-        Compute the matrix-vector (F, b) of friction-polytope inequalities.
-
-        These two describe the linearized Coulomb friction model with maximum
-        contact pressure by:
-
-            F * w <= b
-
-        where w is the contact wrench taken at the contact point (self.p) in the
-        world frame.
-        """
-        if not self.max_pressure:
-            F = self.wrench_cone
-            return (F, zeros((F.shape[0],)))
-        F_local = array([0, 0, 1, 0, 0, 0])
-        F = vstack([
-            self.wrench_cone,
-            dot(F_local, block_diag(self.R.T, self.R.T))])
-        b = zeros((F.shape[0],))
-        b[-1] = self.max_pressure
-        return (F, b)
-
-    @property
     def wrench_span(self):
         """
         Compute a span matrix of the contact wrench cone in world frame.
@@ -285,6 +242,25 @@ class Contact(Box):
         assert S.shape == (6, 16)
         return S
 
+    """
+    Others
+    ======
+    """
+
+    @property
+    def dict_repr(self):
+        d = {
+            'X': self.X,
+            'Y': self.Y,
+            'Z': self.Z,
+            'pos': list(self.p),
+            'rpy': list(self.rpy),
+            'friction': self.friction,
+        }
+        if self.is_visible:
+            d['visible'] = True
+        return d
+
     def draw_force_lines(self, length=0.25):
         env = get_openrave_env()
         handles = []
@@ -312,7 +288,8 @@ class ContactSet(object):
         - ``contacts`` -- list or dictionary of Contact objects
         """
         if type(contacts) is list:
-            self.contact_dict = {c.name: c for c in contacts}
+            self.contact_dict = {
+                "Contact-%d" % i: c for (i, c) in enumerate(contacts)}
         elif type(contacts) is dict:
             self.contact_dict = contacts
         else:  # contacts is None
@@ -328,35 +305,26 @@ class ContactSet(object):
         with open(path, 'r') as fp:
             d = simplejson.load(fp)
         contacts = {
-            contact_name: Contact(name=contact_name, **contact_dict)
-            for (contact_name, contact_dict) in d.iteritems()}
+            name: Contact(**kwargs) for (name, kwargs) in d.iteritems()}
         return ContactSet(contacts)
 
     def save_json(self, path):
-        d = {contact_name: contact.dict_repr
-             for (contact_name, contact) in self.contact_dict.iteritems()}
+        d = {name: contact.dict_repr
+             for (name, contact) in self.contact_dict.iteritems()}
         with open(path, 'w') as fp:
             simplejson.dump(d, fp, indent=4, sort_keys=True)
 
     def __contains__(self, name):
-        """When using dictionaries, check whether a named contact is present."""
+        """Check whether a named contact is present."""
         return name in self.contact_dict
 
     def __getitem__(self, name):
-        """When using dictionaries, get named contact directly."""
+        """Get a named contact from the set."""
         return self.contact_dict[name]
 
     def __iter__(self):
         for contact in self.contact_dict.itervalues():
             yield contact
-
-    def append(self, contact):
-        """Append a new contact to the set."""
-        self.contact_dict[contact.name] = contact
-
-    def subset(self, names):
-        """Get a subset of contacts, identified by their names."""
-        return ContactSet({k: self.contact_dict[k] for k in names})
 
     @property
     def contacts(self):
