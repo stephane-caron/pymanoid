@@ -22,7 +22,7 @@ import cdd
 import numpy
 import simplejson
 
-from numpy import array, dot, eye, hstack, sqrt, vstack, zeros
+from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 from threading import Lock, Thread
 from time import sleep as rt_sleep
@@ -108,67 +108,16 @@ class Contact(Box):
         return [c1, c2, c3, c4]
 
     """
-    Wrench matrices
-    ===============
+    Force Friction Cone
+    ===================
+
+    All linearized friction cones in pymanoid use the inner (conservative)
+    approximation. See <https://scaron.info/teaching/friction-model.html>
     """
 
-    def compute_grasp_matrix(self, p):
-        """
-        Compute the grasp matrix at point p in the world frame.
-
-        INPUT:
-
-        - ``p`` -- point where the resultant wrench is taken
-
-        OUTPUT:
-
-        The grasp matrix G(p) converting the local contact wrench w (taken at
-        ``self.p``) to the contact wrench w(p) at another point p:
-
-            w(p) = G(p) * w
-
-        All wrenches are expressed with respect to the world frame.
-        """
-        x, y, z = self.p - p
-        return array([
-            # fx fy  fz taux tauy tauz
-            [1,   0,  0,   0,   0,   0],
-            [0,   1,  0,   0,   0,   0],
-            [0,   0,  1,   0,   0,   0],
-            [0,  -z,  y,   1,   0,   0],
-            [z,   0, -x,   0,   1,   0],
-            [-y,  x,  0,   0,   0,   1]])
-
-    @property
-    def force_span(self):
-        """
-        Span (V-representation) of the friction cone for the contact force in
-        the world frame.
-
-        .. NOTE::
-
-            Uses the inner (conservative) approximation of friction cones.
-            See <https://scaron.info/teaching/friction-model.html>
-
-        """
-        mu = self.friction / sqrt(2)  # inner approximation
-        f1 = dot(self.R, [+mu, +mu, +1])
-        f2 = dot(self.R, [+mu, -mu, +1])
-        f3 = dot(self.R, [-mu, +mu, +1])
-        f4 = dot(self.R, [-mu, -mu, +1])
-        return [f1, f2, f3, f4]
-
-    @property
     def force_face(self):
         """
-        Face (H-representation) of the friction cone for the ground-applied
-        force in the world frame.
-
-        .. NOTE::
-
-            Uses the inner (conservative) approximation of friction cones.
-            See <https://scaron.info/teaching/friction-model.html>
-
+        Face (H-rep) of the contact-force friction cone in world frame.
         """
         mu = self.friction / sqrt(2)  # inner approximation
         local_cone = array([
@@ -178,7 +127,28 @@ class Contact(Box):
             [0, +1, -mu]])
         return dot(local_cone, self.R.T)
 
-    @property
+    def force_rays(self):
+        """
+        Rays (V-rep) of the contact-force friction cone in world frame.
+        """
+        mu = self.friction / sqrt(2)  # inner approximation
+        f1 = dot(self.R, [+mu, +mu, +1])
+        f2 = dot(self.R, [+mu, -mu, +1])
+        f3 = dot(self.R, [-mu, +mu, +1])
+        f4 = dot(self.R, [-mu, -mu, +1])
+        return [f1, f2, f3, f4]
+
+    def force_span(self):
+        """
+        Span matrix of the contact-force friction cone in world frame.
+        """
+        return array(self.force_rays).T
+
+    """
+    Wrench Friction Cone
+    ====================
+    """
+
     def wrench_face(self):
         """
         Compute the matrix F of friction inequalities.
@@ -216,14 +186,24 @@ class Contact(Box):
             [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
             [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
             [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
-        # gaw_face = F
-        # gaw_face[:, (2, 3, 4)] *= -1  # oppose local Z-axis
         return dot(local_cone, block_diag(self.R.T, self.R.T))
+
+    @property
+    def wrench_rays(self):
+        """
+        Rays (V-rep) of the contact wrench cone in world frame.
+        """
+        rays = []
+        for v in self.vertices:
+            x, y, z = v - self.p
+            for f in self.force_rays:
+                rays.append(hstack([f, cross(v - self.p, f)]))
+        return rays
 
     @property
     def wrench_span(self):
         """
-        Compute a span matrix of the contact wrench cone in world frame.
+        Span matrix of the contact wrench cone in world frame.
 
         This matrix is such that all valid contact wrenches can be written as:
 
@@ -233,10 +213,10 @@ class Contact(Box):
         coordinates. Note that the contact wrench w is taken at the contact
         point (self.p) and in the world frame.
         """
-        force_span = array(self.force_span).T
         span_blocks = []
-        for (i, c) in enumerate(self.vertices):
-            x, y, z = c - self.p
+        force_span = self.force_span()
+        for (i, v) in enumerate(self.vertices):
+            x, y, z = v - self.p
             Gi = array([
                 [1, 0, 0],
                 [0, 1, 0],
@@ -248,6 +228,33 @@ class Contact(Box):
         S = hstack(span_blocks)
         assert S.shape == (6, 16)
         return S
+
+    def compute_grasp_matrix(self, p):
+        """
+        Compute the grasp matrix at point p in the world frame.
+
+        INPUT:
+
+        - ``p`` -- point where the resultant wrench is taken
+
+        OUTPUT:
+
+        The grasp matrix G(p) converting the local contact wrench w (taken at
+        ``self.p``) to the contact wrench w(p) at another point p:
+
+            w(p) = G(p) * w
+
+        All wrenches are expressed with respect to the world frame.
+        """
+        x, y, z = self.p - p
+        return array([
+            # fx fy  fz taux tauy tauz
+            [1,   0,  0,   0,   0,   0],
+            [0,   1,  0,   0,   0,   0],
+            [0,   0,  1,   0,   0,   0],
+            [0,  -z,  y,   1,   0,   0],
+            [z,   0, -x,   0,   1,   0],
+            [-y,  x,  0,   0,   0,   1]])
 
     """
     Others
@@ -274,7 +281,7 @@ class Contact(Box):
         for c in self.vertices:
             color = [0.1, 0.1, 0.1]
             color[numpy.random.randint(3)] += 0.2
-            for f in self.force_span:
+            for f in self.force_rays:
                 handles.append(env.drawlinelist(
                     array([c, c + length * f]),
                     linewidth=1, colors=color))
@@ -471,7 +478,7 @@ class ContactSet(object):
         where f_all is the stacked vector of contact forces, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.force_face for c in self.contacts
+        return block_diag(*[c.force_face() for c in self.contacts
                             for p in c.vertices])
 
     def compute_stacked_wrench_faces(self):
@@ -486,7 +493,7 @@ class ContactSet(object):
         where w_all is the stacked vector of contact wrenches, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.wrench_face for c in self.contacts])
+        return block_diag(*[c.wrench_face() for c in self.contacts])
 
     def compute_stacked_wrench_polytopes(self):
         """

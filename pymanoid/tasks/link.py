@@ -26,40 +26,6 @@ from generic import Task
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
-class LinkPoseTask(Task):
-
-    task_type = 'link_pose'
-
-    def __init__(self, robot, link, target, **kwargs):
-        if type(target) is list:
-            target = array(target)
-
-        def _pos_residual(target_pose):
-            residual = target_pose - link.pose
-            if dot(residual[0:4], residual[0:4]) > 1.:
-                return _oppose_quat * target_pose - link.pose
-            return residual
-
-        if hasattr(target, 'pose'):
-            def pos_residual():
-                return _pos_residual(target.pose)
-        elif type(target) is ndarray:
-            def pos_residual():
-                return _pos_residual(target)
-        else:  # link frame target should be a pose
-            raise Exception("Target %s has no 'pose' attribute" % type(target))
-
-        def jacobian():
-            return robot.compute_link_pose_jacobian(link)
-
-        self.link = link
-        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
-
-    @property
-    def name(self):
-        return self.link.name
-
-
 class LinkPosTask(Task):
 
     task_type = 'link_pos'
@@ -79,6 +45,40 @@ class LinkPosTask(Task):
 
         def jacobian():
             return robot.compute_link_pos_jacobian(link)
+
+        self.link = link
+        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
+
+    @property
+    def name(self):
+        return self.link.name
+
+
+class LinkPoseTask(Task):
+
+    task_type = 'link_pose'
+
+    def __init__(self, robot, link, target, **kwargs):
+        if type(target) is list:
+            target = array(target)
+
+        if hasattr(target, 'pose'):
+            def pos_residual():
+                residual = target.pose - link.pose
+                if dot(residual[0:4], residual[0:4]) > 1.:
+                    return _oppose_quat * target.pose - link.pose
+                return residual
+        elif type(target) is ndarray:
+            def pos_residual():
+                residual = target - link.pose
+                if dot(residual[0:4], residual[0:4]) > 1.:
+                    return _oppose_quat * target - link.pose
+                return residual
+        else:  # link frame target should be a pose
+            raise Exception("Target %s has no 'pose' attribute" % type(target))
+
+        def jacobian():
+            return robot.compute_link_pose_jacobian(link)
 
         self.link = link
         Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
