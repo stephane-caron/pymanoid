@@ -128,11 +128,10 @@ if __name__ == "__main__":
     print "box around, and see what happens when it exits the polygon."
     print ""
 
-    robot.start_ik_thread(dt)
-
     force_drawer = StaticForceDrawer(com_target, contacts)
     sep_drawer = SEPDrawer(contacts, z_polygon)
 
+    sim.schedule(robot.ik_process)
     sim.schedule(force_drawer)
     sim.schedule(sep_drawer)
     sim.schedule(COMSync())

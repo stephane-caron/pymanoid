@@ -104,9 +104,11 @@ if __name__ == '__main__':
         if rem_time > 0:
             time.sleep(rem_time)
 
-    print "Finally, we launch the IK thread. Try moving the green box!"
+    print "Finally, we start the simulation. Try moving the green box!"
     print ""
-    robot.start_ik_thread(dt)
+
+    sim.schedule(robot.ik_process)
+    sim.start()
 
     if IPython.get_ipython() is None:
         IPython.embed()

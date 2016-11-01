@@ -20,12 +20,10 @@
 
 from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
 from os.path import basename, splitext
-from threading import Lock, Thread
-from time import sleep as rt_sleep
 from warnings import warn
 
 from ik import VelocitySolver
-from sim import get_openrave_env
+from sim import get_openrave_env, Process
 
 
 class Robot(object):
@@ -69,7 +67,7 @@ class Robot(object):
         self.active_dofs = None
         self.has_free_flyer = False
         self.ik = None  # created by self.init_ik()
-        self.ik_lock = None
+        self.ik_process = None  # created by self.init_ik()
         self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
@@ -337,8 +335,13 @@ class Robot(object):
         - ``gains`` -- dictionary of default task gains
         - ``weights`` -- dictionary of default task weights
         """
+        class IKProcess(Process):
+            def on_tick(_, sim):
+                self.step_ik(sim.dt)
+
         self.ik = VelocitySolver(
             self, default_gains=gains, default_weights=weights)
+        self.ik_process = IKProcess()
 
     def step_ik(self, dt):
         qd_active = self.ik.compute_velocity(dt)
@@ -383,37 +386,6 @@ class Robot(object):
                 break
             self.step_ik(dt)
         return itnum, cost
-
-    def start_ik_thread(self, dt, sleep_fun=None):
-        """
-        Start a new thread stepping the IK every dt, then calling sleep_fun(dt).
-
-        INPUT:
-
-        - ``dt`` -- stepping period in seconds
-        - ``sleep_fun`` -- sleeping function (default: time.sleep)
-        """
-        if sleep_fun is None:
-            sleep_fun = rt_sleep
-        self.ik_lock = Lock()
-        self.ik_thread = Thread(target=self.run_ik_thread, args=(dt, sleep_fun))
-        self.ik_thread.daemon = True
-        self.ik_thread.start()
-
-    def run_ik_thread(self, dt, sleep_fun):
-        while self.ik_lock:
-            with self.ik_lock:
-                self.step_ik(dt)
-                sleep_fun(dt)
-
-    def pause_ik_thread(self):
-        self.ik_lock.acquire()
-
-    def resume_ik_thread(self):
-        self.ik_lock.release()
-
-    def stop_ik_thread(self):
-        self.ik_lock = None
 
     """
     Inverse Dynamics
