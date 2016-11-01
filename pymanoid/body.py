@@ -35,7 +35,7 @@ class Body(object):
     """
 
     def __init__(self, rave_body, pos=None, rpy=None, color=None, name=None,
-                 pose=None, visible=True, transparency=None):
+                 pose=None, visible=True):
         """
         Create body from an OpenRAVE KinBody.
 
@@ -48,7 +48,6 @@ class Body(object):
         - ``name`` -- object's name (optional)
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial visibility
-        - ``transparency`` -- transparency value (0: opaque, 1: transparent)
         """
         self.rave = rave_body
         if color is not None:
@@ -63,8 +62,6 @@ class Body(object):
             self.set_pose(pose)
         if not visible:
             self.set_visible(False)
-        if transparency is not None:
-            self.set_transparency(transparency)
         self.is_visible = visible
 
     def __str__(self):
@@ -299,14 +296,14 @@ class Box(Body):
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
                 box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
-                visible=visible, transparency=transparency)
+                visible=visible)
             env.Add(box, True)
 
 
 class Cube(Box):
 
     def __init__(self, size, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True, transparency=None):
+                 pose=None, visible=True):
         """
         Create a new cube.
 
@@ -317,11 +314,10 @@ class Cube(Box):
         name -- object's name (optional)
         pose -- initial pose (supersedes pos and rpy)
         visible -- initial box visibility
-        transparency -- transparency value, 0. is opaque and 1. is transparent
         """
         super(Cube, self).__init__(
             size, size, size, pos=pos, rpy=rpy, color=color, name=name,
-            pose=pose, visible=visible, transparency=transparency)
+            pose=pose, visible=visible)
 
 
 class PointMass(Cube):
@@ -363,12 +359,6 @@ class Manipulator(Body):
             rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
             visible=visible)
         self.end_effector = rave_manipulator.GetEndEffector()
-
-    def set_transparency(self, transparency):
-        warn("manipulators have no link (called from %s) " % self.name)
-
-    def set_visible(self, visible):
-        warn("manipulators have no visibility (called from %s)" % self.name)
 
     @property
     def index(self):
