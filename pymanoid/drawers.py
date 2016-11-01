@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
