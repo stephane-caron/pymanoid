@@ -23,7 +23,7 @@ import numpy
 import simplejson
 import uuid
 
-from numpy import array, dot, eye, hstack, vstack, zeros
+from numpy import array, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 from threading import Lock, Thread
 from time import sleep as rt_sleep
@@ -149,8 +149,14 @@ class Contact(Box):
         """
         Span (V-representation) of the friction cone for the contact force in
         the world frame.
+
+        .. NOTE::
+
+            Uses the inner (conservative) approximation of friction cones.
+            See <https://scaron.info/teaching/friction-model.html>
+
         """
-        mu = self.friction
+        mu = self.friction / sqrt(2)  # inner approximation
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
@@ -162,8 +168,14 @@ class Contact(Box):
         """
         Face (H-representation) of the friction cone for the ground-applied
         force in the world frame.
+
+        .. NOTE::
+
+            Uses the inner (conservative) approximation of friction cones.
+            See <https://scaron.info/teaching/friction-model.html>
+
         """
-        mu = self.friction
+        mu = self.friction / sqrt(2)  # inner approximation
         local_cone = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
@@ -182,8 +194,15 @@ class Contact(Box):
 
         where w is the contact wrench taken at the contact point (self.p) in the
         world frame.
+
+        .. NOTE::
+
+            Uses the inner (conservative) approximation of friction cones.
+            See <https://scaron.info/teaching/friction-model.html>
+
         """
-        mu, X, Y = self.friction, self.X, self.Y
+        mu = self.friction / sqrt(2)  # inner approximation
+        X, Y = self.X, self.Y
         local_cone = array([
             # fx fy             fz taux tauy tauz
             [-1,  0,           -mu,   0,   0,   0],
