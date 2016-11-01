@@ -84,8 +84,6 @@ class Cone(Polyhedron):
     """
 
     def __init__(self, face=None, rays=None):
-        assert face is not None or rays is not None, \
-            "Please provided either the face matrix or a set of rays."
         super(Cone, self).__init__(hrep=None, vrep=None)
         if rays is not None:
             R = array(rays)
@@ -96,6 +94,8 @@ class Cone(Polyhedron):
         elif face is not None:
             self.__face = face
             self.__hrep = hstack([zeros((face.shape[0], 1)), -face])
+        else:
+            raise ValueError("needs either the face matrix or a set of rays")
 
     def face(self):
         """

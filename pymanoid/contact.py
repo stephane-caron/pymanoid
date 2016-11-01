@@ -59,7 +59,6 @@ class Contact(Box):
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
-        self.gui_handles = []
         self.max_pressure = max_pressure
         self.friction = friction
         self.robot_link = robot_link
@@ -280,17 +279,18 @@ class Contact(Box):
 
     def draw_force_lines(self, length=0.25):
         env = get_openrave_env()
-        self.gui_handles = []
+        handles = []
         for c in self.vertices:
             color = [0.1, 0.1, 0.1]
             color[numpy.random.randint(3)] += 0.2
             for f in self.force_span:
-                self.gui_handles.append(env.drawlinelist(
+                handles.append(env.drawlinelist(
                     array([c, c + length * f]),
                     linewidth=1, colors=color))
-            self.gui_handles.append(env.drawlinelist(
+            handles.append(env.drawlinelist(
                 array([c, c + length * self.n]),
                 linewidth=5, colors=color))
+        return handles
 
 
 class ContactSet(object):
