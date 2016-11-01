@@ -72,11 +72,10 @@ class Contact(Box):
     @property
     def vertices(self):
         """Vertices of the contact area."""
-        T = self.contact_transform
-        c1 = dot(T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
-        c2 = dot(T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
-        c3 = dot(T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
-        c4 = dot(T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
+        c1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
+        c2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
+        c3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
+        c4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         return [c1, c2, c3, c4]
 
     """
@@ -127,7 +126,7 @@ class Contact(Box):
         """
         Span matrix of the contact-force friction cone in world frame.
         """
-        return array(self.force_rays).T
+        return array(self.force_rays()).T
 
     """
     Wrench Friction Cone
@@ -187,7 +186,6 @@ class Contact(Box):
             [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         return dot(local_cone, block_diag(self.R.T, self.R.T))
 
-    @property
     def wrench_rays(self):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
@@ -199,7 +197,6 @@ class Contact(Box):
                 rays.append(hstack([f, cross(v - self.p, f)]))
         return rays
 
-    @property
     def wrench_span(self):
         """
         Span matrix of the contact wrench cone in world frame.
@@ -541,7 +538,7 @@ class ContactSet(object):
                 [0, -z,  y, 1, 0, 0],
                 [z,  0, -x, 0, 1, 0],
                 [-y, x,  0, 0, 0, 1]])
-            span_blocks.append(dot(Gi, contact.wrench_span))
+            span_blocks.append(dot(Gi, contact.wrench_span()))
         S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
