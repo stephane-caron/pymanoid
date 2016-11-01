@@ -39,8 +39,7 @@ from sim import get_openrave_env
 class Contact(Box):
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 max_pressure=None, robot_link=-1, name=None,
-                 pose=None, visible=True, **kwargs):
+                 name=None, pose=None, visible=True, **kwargs):
         """
         Create a new rectangular contact.
 
@@ -51,17 +50,13 @@ class Contact(Box):
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
         - ``friction`` -- friction coefficient
-        - ``max_pressure`` -- maximum pressure sustainable by the contact
-        - ``robot_link`` -- saves link index of robot link in contact
         - ``name`` -- object's name (optional)
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
-        self.max_pressure = max_pressure
         self.friction = friction
-        self.robot_link = robot_link
         super(Contact, self).__init__(
             X, Y, 0.01, pos=pos, rpy=rpy, name=name, pose=pose,
             visible=visible, **kwargs)
@@ -125,10 +120,6 @@ class Contact(Box):
             'rpy': list(self.rpy),
             'friction': self.friction,
         }
-        if self.max_pressure:
-            d['max_pressure'] = self.max_pressure
-        if self.robot_link >= 0:
-            d['robot_link'] = self.robot_link
         if self.is_visible:
             d['visible'] = True
         return d

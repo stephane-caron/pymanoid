@@ -31,9 +31,7 @@ class LinkPoseTask(Task):
     task_type = 'link_pose'
 
     def __init__(self, robot, link, target, **kwargs):
-        if hasattr(target, 'robot_link'):  # used for ROS communications
-            target.robot_link = link.index  # dirty
-        elif type(target) is list:
+        if type(target) is list:
             target = array(target)
 
         def _pos_residual(target_pose):
