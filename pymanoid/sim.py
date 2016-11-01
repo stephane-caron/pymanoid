@@ -49,7 +49,6 @@ class Simulation(object):
         - ``dt`` -- time interval between two ticks in simulation time
         - ``env_path`` -- (optional) load environment from XML/DAE file
         - ``env_xml`` -- (optional) load environment from XML string
-        - ``set_viewer`` -- (default: True) show the QtCoin GUI
         """
         global env
         if env is not None:
@@ -72,10 +71,17 @@ class Simulation(object):
         self.viewer = None
         self.window_id = None
 
-    def set_viewer(self):
+    def set_viewer(self, plugin='qtcoin'):
+        """
+        Set OpenRAVE viewer.
+
+        INPUT:
+
+        - ``plugin`` -- (optional) viewer plugin name, e.g. 'qtcoin' or 'qtosg'
+        """
         if self.viewer is not None:
             raise Exception("viewer is already set")
-        self.env.SetViewer('qtcoin')
+        self.env.SetViewer(plugin)
         self.viewer = self.env.GetViewer()
         self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
         self.set_camera_back()

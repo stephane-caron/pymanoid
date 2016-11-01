@@ -39,6 +39,7 @@ from humanoid import Humanoid
 from optim import solve_lp
 from optim import solve_qp
 from robot import Robot
+from sim import Process
 from sim import Simulation
 
 import robots
@@ -53,6 +54,7 @@ __all__ = [
     'Link',
     'Manipulator',
     'PointMass',
+    'Process',
     'Robot',
     'Simulation',
     'draw_2d_cone',

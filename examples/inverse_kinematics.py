@@ -25,19 +25,19 @@ import sys
 import time
 
 try:
-    from pymanoid import Cube
+    import pymanoid
 except ImportError:
     script_path = os.path.realpath(__file__)
     sys.path.append(os.path.dirname(script_path) + '/../')
-    from pymanoid import Cube
+    import pymanoid
 
-from pymanoid import Contact, Simulation
+from pymanoid import Contact, Cube
 from pymanoid.robots import JVRC1
 from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 
 
 if __name__ == '__main__':
-    sim = Simulation()
+    sim = pymanoid.Simulation()
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
     sim.set_viewer()
     sim.viewer.SetCamera([
