@@ -71,29 +71,9 @@ class Simulation(object):
         self.viewer = None
         self.window_id = None
 
-    def set_viewer(self, plugin='qtcoin'):
-        """
-        Set OpenRAVE viewer.
-
-        INPUT:
-
-        - ``plugin`` -- (optional) viewer plugin name, e.g. 'qtcoin' or 'qtosg'
-        """
-        if self.viewer is not None:
-            raise Exception("viewer is already set")
-        self.env.SetViewer(plugin)
-        self.viewer = self.env.GetViewer()
-        self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
-        self.set_camera_back()
-
     def __del__(self):
         """Close thread at shutdown."""
         self.stop()
-
-    def run_thread(self):
-        """Run simulation thread."""
-        while self.is_running:
-            self.step()
 
     def schedule(self, process):
         """Add a Process to the schedule list (insertion order matters)."""
@@ -102,13 +82,6 @@ class Simulation(object):
     def schedule_extra(self, process):
         """Schedule a Process not counted in the computation time budget."""
         self.extras.append(process)
-
-    def start(self):
-        """Start simulation thread. """
-        self.is_running = True
-        self.thread = Thread(target=self.run_thread, args=())
-        self.thread.daemon = True
-        self.thread.start()
 
     def step(self, n=1):
         """Perform one simulation step."""
@@ -126,27 +99,45 @@ class Simulation(object):
                 time.sleep(rem_time)
             self.tick_time += 1
 
+    """
+    Threading
+    =========
+    """
+
+    def run_thread(self):
+        """Run simulation thread."""
+        while self.is_running:
+            self.step()
+
+    def start(self):
+        """Start simulation thread. """
+        self.is_running = True
+        self.thread = Thread(target=self.run_thread, args=())
+        self.thread.daemon = True
+        self.thread.start()
+
     def stop(self):
         self.is_running = False
 
-    def report_comp_times(self, d):
-        for (key, value) in d.iteritems():
-            if key not in self.comp_times:
-                self.comp_times[key] = AvgStdEstimator()
-            self.comp_times[key].add(value)
+    """
+    Viewer
+    ======
+    """
 
-    def print_comp_times(self):
-        total_avg, total_std = 0., 0.
-        for (key, estimator) in self.comp_times.iteritems():
-            avg, std, n = estimator.get_all()
-            avg *= 1000  # [ms]
-            std *= 1000  # [ms]
-            print "%20s: %.1f ms +/- %.1f ms over %5d items" % (
-                key, avg, std, n)
-            total_avg += avg
-            total_std += std
-        print "%20s  ----------------------------------" % ''
-        print "%20s: %.1f ms +/- %.1f ms" % ("total", total_avg, total_std)
+    def set_viewer(self, plugin='qtcoin'):
+        """
+        Set OpenRAVE viewer.
+
+        INPUT:
+
+        - ``plugin`` -- (optional) viewer plugin name, e.g. 'qtcoin' or 'qtosg'
+        """
+        if self.viewer is not None:
+            raise Exception("viewer is already set")
+        self.env.SetViewer(plugin)
+        self.viewer = self.env.GetViewer()
+        self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
+        self.set_camera_back()
 
     def set_camera_back(self, x=-3., y=0., z=0.7):
         self.viewer.SetCamera([
@@ -192,6 +183,7 @@ class Simulation(object):
 
     """
     Screnshots
+    ==========
     """
 
     def read_window_id(self):
@@ -204,6 +196,30 @@ class Simulation(object):
         if self.window_id is None:
             self.read_window_id()
         system('import -window %s %s' % (self.window_id, fname))
+
+    """
+    Logging
+    =======
+    """
+
+    def report_comp_times(self, d):
+        for (key, value) in d.iteritems():
+            if key not in self.comp_times:
+                self.comp_times[key] = AvgStdEstimator()
+            self.comp_times[key].add(value)
+
+    def print_comp_times(self):
+        total_avg, total_std = 0., 0.
+        for (key, estimator) in self.comp_times.iteritems():
+            avg, std, n = estimator.get_all()
+            avg *= 1000  # [ms]
+            std *= 1000  # [ms]
+            print "%20s: %.1f ms +/- %.1f ms over %5d items" % (
+                key, avg, std, n)
+            total_avg += avg
+            total_std += std
+        print "%20s  ----------------------------------" % ''
+        print "%20s: %.1f ms +/- %.1f ms" % ("total", total_avg, total_std)
 
 
 class Process(object):
