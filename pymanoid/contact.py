@@ -152,7 +152,7 @@ class Contact(Box):
         return [f1, f2, f3, f4]
 
     @property
-    def force_cone(self):
+    def force_face(self):
         """
         Face (H-representation) of the friction cone for the ground-applied
         force in the world frame.
@@ -172,7 +172,7 @@ class Contact(Box):
         return dot(local_cone, self.R.T)
 
     @property
-    def wrench_cone(self):
+    def wrench_face(self):
         """
         Compute the matrix F of friction inequalities.
 
@@ -397,7 +397,7 @@ class ContactSet(object):
             for contact in self.contacts for _ in xrange(4)])
         P = dot(RT_diag.T, dot(P_local, RT_diag))
         q = zeros((n,))
-        G = self.compute_stacked_force_cones()
+        G = self.compute_stacked_force_faces()
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
@@ -452,7 +452,7 @@ class ContactSet(object):
         """
         return self.find_static_supporting_forces(com, mass) is not None
 
-    def compute_stacked_force_cones(self):
+    def compute_stacked_force_faces(self):
         """
         Compute the friction constraints on all contact forces.
 
@@ -464,10 +464,10 @@ class ContactSet(object):
         where f_all is the stacked vector of contact forces, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.force_cone for c in self.contacts
+        return block_diag(*[c.force_face for c in self.contacts
                             for p in c.vertices])
 
-    def compute_stacked_wrench_cones(self):
+    def compute_stacked_wrench_faces(self):
         """
         Compute the friction constraints on all contact wrenches.
 
@@ -479,7 +479,7 @@ class ContactSet(object):
         where w_all is the stacked vector of contact wrenches, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.wrench_cone for c in self.contacts])
+        return block_diag(*[c.wrench_face for c in self.contacts])
 
     def compute_stacked_wrench_polytopes(self):
         """
@@ -533,7 +533,7 @@ class ContactSet(object):
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
 
-    def compute_wrench_cone(self, p):
+    def compute_wrench_face(self, p):
         """
         Compute the face matrix of the contact wrench cone in the world frame.
 
@@ -549,10 +549,6 @@ class ContactSet(object):
 
         where w(p) is the resultant contact wrench at p.
         """
-        # F = self.compute_stacked_wrench_cones()
-        # G = self.compute_grasp_matrix(p)
-        # S0 = Cone.span_of_face(F)
-        # S = dot(-G, S0)
         S = self.compute_wrench_span(p)
         return Cone.face_of_span(S)
 
@@ -633,7 +629,7 @@ class ContactSet(object):
         # <https://hal.archives-ouvertes.fr/hal-01349880> for details
 
         G = self.compute_grasp_matrix([0, 0, 0])
-        A = self.compute_stacked_wrench_cones()
+        A = self.compute_stacked_wrench_faces()
         b = zeros((A.shape[0], 1))
         # the input [b, -A] to cdd.Matrix represents (b - A x >= 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
@@ -696,7 +692,7 @@ class ContactSet(object):
         z_in, z_out = com[2], plane[2]
 
         G = self.compute_grasp_matrix([0, 0, 0])
-        F = -self.compute_stacked_wrench_cones()
+        F = -self.compute_stacked_wrench_faces()
         b = zeros((F.shape[0], 1))
         # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
         # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
