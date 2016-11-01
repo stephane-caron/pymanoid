@@ -19,7 +19,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, eye, zeros
-from task import Task
+
+from generic import Task
 
 
 class DOFTask(Task):

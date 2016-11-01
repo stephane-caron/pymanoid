@@ -18,33 +18,46 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot
+from numpy import eye
 
 from generic import Task
-from link import LinkPoseTask
 
 
-_oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
+class PostureTask(Task):
 
+    """
+    Track a set of reference joint angles, a common choice to regularize the
+    weighted IK problem.
+    """
 
-class ContactTask(LinkPoseTask):
+    task_type = 'posture'
 
-    task_type = 'contact'
+    def __init__(self, robot, q_ref, exclude_dofs=None, **kwargs):
+        """
+        Create task.
 
-    def __init__(self, robot, link, target, **kwargs):
-        if hasattr(target, 'robot_link'):  # used for ROS communications
-            target.robot_link = link.index  # dirty
-        elif type(target) is list:
-            target = array(target)
+        INPUT:
+
+        - ``robot`` -- a Robot object
+        """
+        assert len(q_ref) == robot.nb_dofs
+
+        J_posture = eye(robot.nb_dofs)
+        if exclude_dofs is None:
+            exclude_dofs = []
+        if robot.has_free_flyer:  # don't include free-flyer coordinates
+            exclude_dofs.extend([
+                robot.TRANS_X, robot.TRANS_Y, robot.TRANS_Z, robot.ROT_Y])
+        for i in exclude_dofs:
+            J_posture[i, i] = 0.
 
         def pos_residual():
-            residual = target.effector_pose - link.pose
-            if dot(residual[0:4], residual[0:4]) > 1.:
-                return _oppose_quat * target.effector_pose - link.pose
-            return residual
+            e = (q_ref - robot.q)
+            for j in exclude_dofs:
+                e[j] = 0.
+            return e
 
         def jacobian():
-            return robot.compute_link_pose_jacobian(link)
+            return J_posture
 
-        self.link = link  # used by LinkPoseTask.name
         Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)

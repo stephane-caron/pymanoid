@@ -18,26 +18,36 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from accel import MinAccelerationTask
-from cam import ConstantCAMTask
-from cam import MinCAMTask
-from com import COMTask
-from contact import ContactTask
-from dof import DOFTask
-from link import LinkPosTask
-from link import LinkPoseTask
-from posture import PostureTask
-from velocity import MinVelocityTask
+from numpy import eye
 
-__all__ = [
-    'COMTask',
-    'ConstantCAMTask',
-    'ContactTask',
-    'DOFTask',
-    'LinkPosTask',
-    'LinkPoseTask',
-    'MinAccelerationTask',
-    'MinCAMTask',
-    'MinVelocityTask',
-    'PostureTask',
-]
+from generic import Task
+
+
+class MinAccelerationTask(Task):
+
+    """Minimize joint accelerations"""
+
+    task_type = 'minaccel'
+
+    def __init__(self, robot, **kwargs):
+        """
+        Create task.
+
+        INPUT:
+
+        - ``robot`` -- a Robot object
+
+        .. NOTE::
+
+            As the differential IK returns velocities, we approximate the task
+            "minimize qdd" by "minimize (qd_next - qd)".
+        """
+        E = eye(robot.nb_dofs)
+
+        def vel_residual(dt):
+            return robot.qd
+
+        def jacobian():
+            return E
+
+        Task.__init__(self, jacobian, vel_residual=vel_residual, **kwargs)
