@@ -138,55 +138,11 @@ class Cone(Polyhedron):
         self.__rays = list(V[:, 1:])
         return self.__rays
 
-    """
-    Drawing
-    =======
-    """
-
-    def draw(self, apex, size=1., combined='r-#', color=None, linewidth=2.):
+    def span(self):
         """
-        Draw a 2D or 3D cone with apex at a given world position.
-
-        INPUT:
-
-        - ``apex`` -- position of the apex of the cone in world coordinates
-        - ``scale`` -- scale factor (default: 1.)
-        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
-        - ``color`` -- color letter or RGBA tuple
-        - ``linewidth`` -- thickness of the edges of the cone
-
-        OUTPUT:
-
-        A list of OpenRAVE handles. Must be stored in some variable, otherwise
-        the drawn object will vanish instantly.
+        Span matrix S such that the cone is defined by x = S * z (z >= 0).
         """
-        assert len(apex) == 3, "apex is not a 3D point"
-        rays = self.rays()
-        dim = len(rays[0])
-        if dim == 2:
-            return self.__draw2d(apex, rays, size, combined, color, linewidth)
-        elif dim == 3:
-            return self.__draw3d(apex, rays, size, combined, color, linewidth)
-        raise ValueError("only 2D or 3D cones can be drawn")
-
-    def __draw2d(self, apex, rays, size, combined, color, linewidth):
-        raise NotImplementedError("use draw_2d_cone() instead")
-
-    def __draw3d(self, apex, rays, size, combined, color, linewidth):
-        if color is None:
-            color = matplotlib_to_rgba(combined[0])
-        env = get_openrave_env()
-        normal = average(rays, axis=0)
-        normal /= norm(normal)
-        section = [apex + ray * size / dot(normal, ray) for ray in rays]
-        handles = draw_polygon(
-            points=section, normal=normal, combined=combined, color=color)
-        edges = vstack([[apex, vertex] for vertex in section])
-        edge_color = array(color) * 0.7
-        edge_color[3] = 1.
-        handles.append(env.drawlinelist(
-            edges, linewidth=linewidth, colors=edge_color))
-        return handles
+        return array(self.rays()).T
 
     """
     Backward compatibility
@@ -235,6 +191,45 @@ class Cone(Polyhedron):
             elif i not in ineq.lin_set:
                 A.append(-H[i, 1:])
         return array(A)
+
+
+class Cone3D(Cone):
+
+    def draw(self, apex, size=1., combined='g-#', color=None, linewidth=2):
+        """
+        Draw cone with apex at a given world position.
+
+        INPUT:
+
+        - ``apex`` -- position of the apex of the cone in world coordinates
+        - ``scale`` -- scale factor (default: 1.)
+        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
+        - ``color`` -- color letter or RGBA tuple
+        - ``linewidth`` -- thickness of the edges of the cone
+
+        OUTPUT:
+
+        A list of OpenRAVE handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
+        """
+        assert len(apex) == 3, "apex is not a 3D point"
+        rays = self.rays()
+        if color is None:
+            color = matplotlib_to_rgba(combined[0])
+        if type(color) is str:
+            color = matplotlib_to_rgba(color)
+        env = get_openrave_env()
+        normal = average(rays, axis=0)
+        normal /= norm(normal)
+        section = [apex + ray * size / dot(normal, ray) for ray in rays]
+        handles = draw_polygon(
+            points=section, normal=normal, combined=combined, color=color)
+        edges = vstack([[apex, vertex] for vertex in section])
+        edge_color = array(color) * 0.7
+        edge_color[3] = 1.
+        handles.append(env.drawlinelist(
+            edges, linewidth=linewidth, colors=edge_color))
+        return handles
 
 
 class Polytope(Polyhedron):

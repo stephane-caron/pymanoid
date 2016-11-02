@@ -27,7 +27,7 @@ from scipy.linalg import block_diag
 
 from body import Box
 from optim import solve_relaxed_qp
-from polyhedra import Cone
+from polyhedra import Cone, Cone3D
 from rotations import crossmat
 from sim import get_openrave_env
 
@@ -81,7 +81,7 @@ class Contact(Box):
         """
         Contact-force friction cone.
         """
-        return Cone(face=self.force_face(), rays=self.force_rays())
+        return Cone3D(face=self.force_face(), rays=self.force_rays())
 
     def force_face(self):
         """

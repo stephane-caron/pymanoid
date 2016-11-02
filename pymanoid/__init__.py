@@ -55,7 +55,6 @@ __all__ = [
     'Robot',
     'Simulation',
     'draw_2d_cone',
-    'draw_3d_cone',
     'draw_arrow',
     'draw_force',
     'draw_line',
