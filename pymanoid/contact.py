@@ -51,10 +51,6 @@ class Contact(Box):
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
         """
-        self.__force_cone = None
-        self.__force_pose = None
-        self.__wrench_cone = None
-        self.__wrench_pose = None
         self.friction = friction
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
@@ -65,7 +61,6 @@ class Contact(Box):
     ========
     """
 
-    @property
     def vertices(self):
         """Vertices of the contact area."""
         c1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
@@ -82,18 +77,11 @@ class Contact(Box):
     approximation. See <https://scaron.info/teaching/friction-model.html>
     """
 
-    @property
     def force_cone(self):
         """
         Contact-force friction cone.
         """
-        if self.__force_cone and self.__force_pose and \
-                norm(self.__force_pose - self.pose) < 1e-10:
-            return self.__force_cone
-        force_cone = Cone(face=self.force_face(), rays=self.force_rays())
-        self.__force_cone = force_cone
-        self.__force_pose = self.pose
-        return force_cone
+        return Cone(face=self.force_face(), rays=self.force_rays())
 
     def force_face(self):
         """
@@ -129,17 +117,11 @@ class Contact(Box):
     ====================
     """
 
-    @property
     def wrench_cone(self):
         """
         Contact-wrench friction cone.
         """
-        if self.__wrench_cone and self.__wrench_pose and \
-                norm(self.__wrench_pose - self.pose) < 1e-10:
-            return self.__wrench_cone
         wrench_cone = Cone(face=self.wrench_face(), rays=self.wrench_rays())
-        self.__wrench_cone = wrench_cone
-        self.__wrench_pose = self.pose
         return wrench_cone
 
     def wrench_face(self):
@@ -207,15 +189,10 @@ class Contact(Box):
         """
         span_blocks = []
         force_span = self.force_span()
-        for (i, v) in enumerate(self.vertices):
-            x, y, z = v - self.p
-            Gi = array([
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1],
-                [0, -z, y],
-                [z, 0, -x],
-                [-y, x, 0]])
+        p, vertices = self.p, self.vertices()
+        for (i, v) in enumerate(vertices):
+            x, y, z = v - p
+            Gi = vstack([eye(3), crossmat(v - p)])
             span_blocks.append(dot(Gi, force_span))
         S = hstack(span_blocks)
         assert S.shape == (6, 16)
@@ -243,17 +220,15 @@ class Contact(Box):
 
     @property
     def dict_repr(self):
-        d = {
+        return {
             'X': self.X,
             'Y': self.Y,
             'Z': self.Z,
             'pos': list(self.p),
             'rpy': list(self.rpy),
             'friction': self.friction,
+            'visible': self.is_visible,
         }
-        if self.is_visible:
-            d['visible'] = True
-        return d
 
     def grasp_matrix(self, p):
         """
