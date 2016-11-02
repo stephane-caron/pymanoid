@@ -20,9 +20,12 @@
 
 import cdd
 
+from numpy import array, average, dot, eye, hstack, ones, vstack, zeros
+
+from draw import draw_polygon, matplotlib_to_rgba
 from misc import norm
-from numpy import array, dot, eye, hstack, ones, vstack, zeros
 from optim import solve_lp, solve_qp
+from sim import get_openrave_env
 
 
 class Polyhedron(object):
@@ -84,18 +87,20 @@ class Cone(Polyhedron):
     """
 
     def __init__(self, face=None, rays=None):
-        super(Cone, self).__init__(hrep=None, vrep=None)
+        assert rays is not None or face is not None, \
+            "needs either the face matrix or a set of rays"
+        hrep = None
+        vrep = None
         if rays is not None:
             R = array(rays)
-            self.__rays = rays
-            self.__vrep = vstack([
+            vrep = vstack([
                 hstack([zeros((R.shape[0], 1)), R]),
-                hstack([1, zeros(R.shape[0])])])
-        elif face is not None:
-            self.__face = face
-            self.__hrep = hstack([zeros((face.shape[0], 1)), -face])
-        else:
-            raise ValueError("needs either the face matrix or a set of rays")
+                hstack([[1], zeros(R.shape[1])])])
+        if face is not None:
+            hrep = hstack([zeros((face.shape[0], 1)), -face])
+        self.__face = face
+        self.__rays = rays
+        super(Cone, self).__init__(hrep, vrep)
 
     def face(self):
         """
@@ -132,6 +137,56 @@ class Cone(Polyhedron):
             #     rays.append(V[i, 1:])
         self.__rays = list(V[:, 1:])
         return self.__rays
+
+    """
+    Drawing
+    =======
+    """
+
+    def draw(self, apex, size=1., combined='r-#', color=None, linewidth=2.):
+        """
+        Draw a 2D or 3D cone with apex at a given world position.
+
+        INPUT:
+
+        - ``apex`` -- position of the apex of the cone in world coordinates
+        - ``scale`` -- scale factor (default: 1.)
+        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
+        - ``color`` -- color letter or RGBA tuple
+        - ``linewidth`` -- thickness of the edges of the cone
+
+        OUTPUT:
+
+        A list of OpenRAVE handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
+        """
+        assert len(apex) == 3, "apex is not a 3D point"
+        rays = self.rays()
+        dim = len(rays[0])
+        if dim == 2:
+            return self.__draw2d(apex, rays, size, combined, color, linewidth)
+        elif dim == 3:
+            return self.__draw3d(apex, rays, size, combined, color, linewidth)
+        raise ValueError("only 2D or 3D cones can be drawn")
+
+    def __draw2d(self, apex, rays, size, combined, color, linewidth):
+        raise NotImplementedError("use draw_2d_cone() instead")
+
+    def __draw3d(self, apex, rays, size, combined, color, linewidth):
+        if color is None:
+            color = matplotlib_to_rgba(combined[0])
+        env = get_openrave_env()
+        normal = average(rays, axis=0)
+        normal /= norm(normal)
+        section = [apex + ray * size / dot(normal, ray) for ray in rays]
+        handles = draw_polygon(
+            points=section, normal=normal, combined=combined, color=color)
+        edges = vstack([[apex, vertex] for vertex in section])
+        edge_color = array(color) * 0.7
+        edge_color[3] = 1.
+        handles.append(env.drawlinelist(
+            edges, linewidth=linewidth, colors=edge_color))
+        return handles
 
     """
     Backward compatibility

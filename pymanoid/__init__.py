@@ -26,7 +26,6 @@ from body import PointMass
 from contact import Contact
 from contact import ContactSet
 from draw import draw_2d_cone
-from draw import draw_3d_cone
 from draw import draw_arrow
 from draw import draw_force
 from draw import draw_line

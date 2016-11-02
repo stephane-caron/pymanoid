@@ -26,7 +26,6 @@ from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 
 from body import Box
-from misc import norm
 from optim import solve_relaxed_qp
 from polyhedra import Cone
 from rotations import crossmat
