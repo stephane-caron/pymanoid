@@ -202,7 +202,7 @@ class Cone3D(Cone):
         INPUT:
 
         - ``apex`` -- position of the apex of the cone in world coordinates
-        - ``scale`` -- scale factor (default: 1.)
+        - ``size`` -- scale factor (default: 1.)
         - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
         - ``color`` -- color letter or RGBA tuple
         - ``linewidth`` -- thickness of the edges of the cone

@@ -35,6 +35,8 @@ from draw import draw_polyhedron
 from humanoid import Humanoid
 from optim import solve_lp
 from optim import solve_qp
+from polyhedra import Cone
+from polyhedra import Cone3D
 from robot import Robot
 from sim import Process
 from sim import Simulation
@@ -42,8 +44,9 @@ from sim import Simulation
 import robots
 
 __all__ = [
-    'Body',
     'Box',
+    'Cone',
+    'Cone3D',
     'Contact',
     'ContactSet',
     'Cube',
@@ -64,5 +67,4 @@ __all__ = [
     'robots',
     'solve_lp',
     'solve_qp',
-    'take_screenshot',
 ]
