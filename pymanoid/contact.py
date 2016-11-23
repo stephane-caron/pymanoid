@@ -403,6 +403,15 @@ class ContactSet(object):
                 next_index += 3
         return output
 
+    def draw_supporting_forces(self, wrench, point, force_scale=0.0025,
+                               **kwargs):
+        support = self.find_supporting_forces(wrench, point, **kwargs)
+        if support is None:
+            warn("draw_supporting_support(): there are no supporting forces")
+            return
+        handles = [draw_force(c, fc, force_scale) for (c, fc) in support]
+        return handles
+
     def find_static_supporting_forces(self, com, mass):
         """
         Find a set of contact forces supporting the robot in static equilibrium
