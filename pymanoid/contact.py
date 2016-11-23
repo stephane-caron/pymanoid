@@ -439,14 +439,12 @@ class ContactSet(object):
     def find_supporting_wrenches(self, wrench, point, friction_weight=.1,
                                  pressure_weight=10.):
         n = 6 * self.nb_contacts
-        # nb_wrenches = n / 6
         P = eye(n)
         q = zeros((n,))
         G = self.compute_stacked_wrench_faces()
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix(point)
         b = wrench
-        # f_all = cvxopt_solve_qp(P, q, G, h, A, b)  # useful for debugging
         w_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
         if w_all is None:
             return None

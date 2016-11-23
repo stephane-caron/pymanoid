@@ -18,11 +18,12 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from contact import ContactSet
 from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
+
+from contact import ContactSet
 from robot import Robot
-from rotations import crossmat
+from rotations import crossmat, rpy_from_quat
 from tasks import COMTask, ContactTask, PostureTask, MinAccelerationTask
 
 
