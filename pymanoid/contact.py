@@ -24,8 +24,10 @@ import simplejson
 
 from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
+from warnings import warn
 
 from body import Box
+from draw import draw_force
 from optim import solve_relaxed_qp
 from polyhedra import Cone, Cone3D
 from rotations import crossmat
@@ -61,6 +63,7 @@ class Contact(Box):
     ========
     """
 
+    @property
     def vertices(self):
         """Vertices of the contact area."""
         c1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
@@ -77,12 +80,14 @@ class Contact(Box):
     approximation. See <https://scaron.info/teaching/friction-model.html>
     """
 
+    @property
     def force_cone(self):
         """
         Contact-force friction cone.
         """
-        return Cone3D(face=self.force_face(), rays=self.force_rays())
+        return Cone3D(face=self.force_face, rays=self.force_rays)
 
+    @property
     def force_face(self):
         """
         Face (H-rep) of the contact-force friction cone in world frame.
@@ -95,6 +100,7 @@ class Contact(Box):
             [0, +1, -mu]])
         return dot(local_cone, self.R.T)
 
+    @property
     def force_rays(self):
         """
         Rays (V-rep) of the contact-force friction cone in world frame.
@@ -106,24 +112,28 @@ class Contact(Box):
         f4 = dot(self.R, [-mu, -mu, +1])
         return [f1, f2, f3, f4]
 
+    @property
     def force_span(self):
         """
         Span matrix of the contact-force friction cone in world frame.
         """
-        return array(self.force_rays()).T
+        S = array(self.force_rays).T
+        return S
 
     """
     Wrench Friction Cone
     ====================
     """
 
+    @property
     def wrench_cone(self):
         """
         Contact-wrench friction cone.
         """
-        wrench_cone = Cone(face=self.wrench_face(), rays=self.wrench_rays())
+        wrench_cone = Cone(face=self.wrench_face, rays=self.wrench_rays)
         return wrench_cone
 
+    @property
     def wrench_face(self):
         """
         Compute the matrix F of friction inequalities derived in [Caron2015]_.
@@ -164,6 +174,7 @@ class Contact(Box):
             [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         return dot(local_cone, block_diag(self.R.T, self.R.T))
 
+    @property
     def wrench_rays(self):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
@@ -175,6 +186,7 @@ class Contact(Box):
                 rays.append(hstack([f, cross(v - self.p, f)]))
         return rays
 
+    @property
     def wrench_span(self):
         """
         Span matrix of the contact wrench cone in world frame.
@@ -188,12 +200,10 @@ class Contact(Box):
         point (self.p) and in the world frame.
         """
         span_blocks = []
-        force_span = self.force_span()
-        p, vertices = self.p, self.vertices()
-        for (i, v) in enumerate(vertices):
-            x, y, z = v - p
-            Gi = vstack([eye(3), crossmat(v - p)])
-            span_blocks.append(dot(Gi, force_span))
+        for (i, v) in enumerate(self.vertices):
+            x, y, z = v - self.p
+            Gi = vstack([eye(3), crossmat(v - self.p)])
+            span_blocks.append(dot(Gi, self.force_span))
         S = hstack(span_blocks)
         assert S.shape == (6, 16)
         return S
@@ -445,7 +455,7 @@ class ContactSet(object):
         where f_all is the stacked vector of contact forces, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.force_face() for c in self.contacts
+        return block_diag(*[c.force_face for c in self.contacts
                             for p in c.vertices])
 
     def compute_stacked_wrench_faces(self):
@@ -460,7 +470,7 @@ class ContactSet(object):
         where w_all is the stacked vector of contact wrenches, each taken at its
         corresponding contact point in the world frame.
         """
-        return block_diag(*[c.wrench_face() for c in self.contacts])
+        return block_diag(*[c.wrench_face for c in self.contacts])
 
     def compute_wrench_span(self, p):
         """
@@ -490,7 +500,7 @@ class ContactSet(object):
                 [0, -z,  y, 1, 0, 0],
                 [z,  0, -x, 0, 1, 0],
                 [-y, x,  0, 0, 0, 1]])
-            span_blocks.append(dot(Gi, contact.wrench_span()))
+            span_blocks.append(dot(Gi, contact.wrench_span))
         S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
