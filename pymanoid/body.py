@@ -211,6 +211,11 @@ class Body(object):
         T[:3, 3] = pos
         self.set_transform(T)
 
+    def set_rotation_matrix(self, R):
+        T = self.T.copy()
+        T[:3, :3] = R
+        self.set_transform(T)
+
     def set_x(self, x):
         T = self.T.copy()
         T[0, 3] = x
