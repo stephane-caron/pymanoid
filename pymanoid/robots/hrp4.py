@@ -37,6 +37,22 @@ class HRP4(Humanoid):
     mass = 39.        # [kg]  (includes batteries)
 
     # DOF indexes with respect to COLLADA model
+    L_F53 = 0
+    L_F52 = 1
+    L_F43 = 2
+    L_F42 = 3
+    L_F33 = 4
+    L_F32 = 5
+    L_F23 = 6
+    L_F22 = 7
+    R_F53 = 8
+    R_F52 = 9
+    R_F43 = 10
+    R_F42 = 11
+    R_F33 = 12
+    R_F32 = 13
+    R_F23 = 14
+    R_F22 = 15
     R_HIP_Y = 16
     R_HIP_R = 17
     R_HIP_P = 18

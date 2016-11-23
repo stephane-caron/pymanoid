@@ -38,7 +38,7 @@ def get_openrave_env():
 
 class Simulation(object):
 
-    BACKGROUND_COLOR = [1., 1., 1.]
+    BACKGROUND_COLOR = [0.7, 0.8, 0.9]  # rien de tel que le bleu canard
 
     def __init__(self, dt=3e-2, env_path=None, env_xml=None):
         """
