@@ -52,7 +52,7 @@ def crossmat(x):
 
 
 def rpy_from_quat(q):
-    """Convention: upward pointing yaw axis."""
+    """Roll-pitch-yaw is Euler sequence (1, 2, 3)."""
     roll = atan2(
         2 * q[2] * q[3] + 2 * q[0] * q[1],
         q[3] ** 2 - q[2] ** 2 - q[1] ** 2 + q[0] ** 2)
@@ -65,7 +65,7 @@ def rpy_from_quat(q):
 
 
 def quat_from_rpy(roll, pitch, yaw):
-    """Convention: upward pointing yaw axis."""
+    """Roll-pitch-yaw is Euler sequence (1, 2, 3)."""
     cr, cp, cy = cos(roll / 2), cos(pitch / 2), cos(yaw / 2)
     sr, sp, sy = sin(roll / 2), sin(pitch / 2), sin(yaw / 2)
     return array([

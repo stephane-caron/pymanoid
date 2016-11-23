@@ -74,9 +74,9 @@ class HRP4(Humanoid):
     TRANS_X = 50
     TRANS_Y = 51
     TRANS_Z = 52
-    ROT_R = 53
+    ROT_Y = 53
     ROT_P = 54
-    ROT_Y = 55
+    ROT_R = 55
 
     # First-level DOF groups
     chest = [CHEST_P, CHEST_Y]

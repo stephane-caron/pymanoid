@@ -90,9 +90,9 @@ class JVRC1(Humanoid):
     TRANS_X = 44
     TRANS_Y = 45
     TRANS_Z = 46
-    ROT_R = 47
+    ROT_Y = 47
     ROT_P = 48
-    ROT_Y = 49
+    ROT_R = 49
 
     # First-level DOF groups
     chest = [WAIST_Y, WAIST_P, WAIST_R]

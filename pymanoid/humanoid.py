@@ -80,38 +80,35 @@ class Humanoid(Robot):
             </kinbody>
             <robot file="%s" name="%s">
                 <kinbody>
-                    <joint name="FLYER_TX" type="slider" circular="true">
+                    <joint name="FLYER_TX" type="slider">
                         <body>FLYER_TX_LINK</body>
                         <body>FLYER_TY_LINK</body>
                         <axis>1 0 0</axis>
-                        <limits>-10 +10</limits>
                     </joint>
-                    <joint name="FLYER_TY" type="slider" circular="true">
+                    <joint name="FLYER_TY" type="slider">
                         <body>FLYER_TY_LINK</body>
                         <body>FLYER_TZ_LINK</body>
                         <axis>0 1 0</axis>
-                        <limits>-10 +10</limits>
                     </joint>
-                    <joint name="FLYER_TZ" type="slider" circular="true">
+                    <joint name="FLYER_TZ" type="slider">
                         <body>FLYER_TZ_LINK</body>
-                        <body>FLYER_ROLL_LINK</body>
-                        <axis>0 0 1</axis>
-                        <limits>-10 +10</limits>
-                    </joint>
-                    <joint name="FLYER_ROLL" type="hinge" circular="true">
-                        <body>FLYER_ROLL_LINK</body>
-                        <body>FLYER_PITCH_LINK</body>
-                        <axis>1 0 0</axis>
-                    </joint>
-                    <joint name="FLYER_PITCH" type="hinge" circular="true">
-                        <body>FLYER_PITCH_LINK</body>
                         <body>FLYER_YAW_LINK</body>
-                        <axis>0 1 0</axis>
+                        <axis>0 0 1</axis>
                     </joint>
                     <joint name="FLYER_YAW" type="hinge" circular="true">
                         <body>FLYER_YAW_LINK</body>
-                        <body>%s</body>
+                        <body>FLYER_PITCH_LINK</body>
                         <axis>0 0 1</axis>
+                    </joint>
+                    <joint name="FLYER_PITCH" type="hinge" circular="true">
+                        <body>FLYER_PITCH_LINK</body>
+                        <body>FLYER_ROLL_LINK</body>
+                        <axis>0 1 0</axis>
+                    </joint>
+                    <joint name="FLYER_ROLL" type="hinge" circular="true">
+                        <body>FLYER_ROLL_LINK</body>
+                        <body>%s</body>
+                        <axis>1 0 0</axis>
                     </joint>
                 </kinbody>
             </robot>
@@ -136,6 +133,12 @@ class Humanoid(Robot):
         self.__cam = None
         self.__com = None
         self.__comd = None
+
+    def set_free_flyer(self, pos, rpy=None, quat=None):
+        if rpy is None and quat is not None:
+            rpy = rpy_from_quat(quat)
+        self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
+        self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
 
     def set_dof_values(self, q, dof_indices=None):
         self.__cam = None
