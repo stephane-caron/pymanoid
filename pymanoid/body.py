@@ -325,19 +325,20 @@ class Cube(Box):
             pose=pose, visible=visible)
 
 
-class PointMass(Cube):
+class Point(Cube):
 
-    def __init__(self, pos, mass, *args, **kwargs):
+    def __init__(self, pos=None, size=0.01, *args, **kwargs):
         """
         Points are simply cubes with a default size.
 
-        pos -- initial position in inertial frame
-        mass -- total mass in [kg]
+        INPUT:
+
+        - ``pos`` -- (optional) initial position in inertial frame
+        - ``size`` -- (optional) cube size, defaults to 1 cm
         """
-        size = max(5e-3, 5e-4 * mass)
-        kwargs['pos'] = pos
-        super(PointMass, self).__init__(size, *args, **kwargs)
-        self.mass = mass
+        if pos is None:
+            pos = [0., 0., 0.]
+        super(Point, self).__init__(size, pos=pos, *args, **kwargs)
         self.__pd = zeros(3)
 
     def set_velocity(self, pd):
@@ -354,6 +355,22 @@ class PointMass(Cube):
         """
         self.set_pos(self.p + self.pd * dt + pdd * .5 * dt ** 2)
         self.set_velocity(self.pd + pdd * dt)
+
+
+class PointMass(Point):
+
+    def __init__(self, pos, mass, *args, **kwargs):
+        """
+        A point-mass is a simple cubes with size proportional to its mass.
+
+        INPUT:
+
+        - ``pos`` -- initial position in inertial frame
+        - ``mass`` -- total mass in [kg]
+        """
+        size = max(5e-3, 6e-4 * mass)
+        super(PointMass, self).__init__(pos, size, *args, **kwargs)
+        self.mass = mass
 
 
 class Manipulator(Body):
