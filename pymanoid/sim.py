@@ -60,6 +60,7 @@ class Simulation(object):
         elif env_xml:
             env.LoadData(env_xml)
         env.GetPhysicsEngine().SetGravity(gravity)
+        self.bodies = []
         self.comp_times = {}
         self.dt = dt
         self.env = env
@@ -198,15 +199,24 @@ class Simulation(object):
         system('import -window %s %s' % (self.window_id, fname))
 
     """
-    Logging
-    =======
+    Miscellaneous
+    =============
     """
 
-    def report_comp_times(self, d):
-        for (key, value) in d.iteritems():
-            if key not in self.comp_times:
-                self.comp_times[key] = AvgStdEstimator()
-            self.comp_times[key].add(value)
+    def load_mesh(self, path, *args, **kwargs):
+        """
+        Load a pymanoid.Body from a DAE or VRML model.
+
+        INPUT:
+
+        - ``path`` -- path to DAE or VRML model
+        """
+        from body import Body
+        assert path.endswith('.dae') or path.endswith('.wrl')
+        rave_body = self.env.Load(path)
+        body = Body(rave_body, *args, **kwargs)
+        self.bodies.append(body)
+        return body
 
     def print_comp_times(self):
         total_avg, total_std = 0., 0.
@@ -220,6 +230,12 @@ class Simulation(object):
             total_std += std
         print "%20s  ----------------------------------" % ''
         print "%20s: %.1f ms +/- %.1f ms" % ("total", total_avg, total_std)
+
+    def report_comp_times(self, d):
+        for (key, value) in d.iteritems():
+            if key not in self.comp_times:
+                self.comp_times[key] = AvgStdEstimator()
+            self.comp_times[key].add(value)
 
 
 class Process(object):
