@@ -26,6 +26,14 @@ class ROSWrapper(object):
     """
 
     def __init__(self, robot, ignore_dofs=None):
+        """
+        Update robot configuration from ROS topics and tfs.
+
+        INPUT:
+
+        - ``robot`` -- a pymanoid.Robot object
+        - ``ignore_dofs`` -- list of DOFs not updated by ROS
+        """
         import rospy  # not global, will be initialized by child script
         self.dof_mapping = type(robot).__dict__
         self.flyer_tf = None
