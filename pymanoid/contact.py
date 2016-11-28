@@ -21,6 +21,7 @@
 import cdd
 import numpy
 import simplejson
+import uuid
 
 from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
@@ -39,7 +40,7 @@ class Contact(Box):
     THICKNESS = 0.01
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 pose=None, visible=True, **kwargs):
+                 pose=None, visible=True, name=None):
         """
         Create a new rectangular contact.
 
@@ -53,10 +54,12 @@ class Contact(Box):
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
         """
+        if not name:
+            name = "Contact-%s" % str(uuid.uuid1())[0:3]
         self.friction = friction
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
-            visible=visible, dZ=-self.THICKNESS, **kwargs)
+            visible=visible, dZ=-self.THICKNESS, name=name)
 
     """
     Geometry

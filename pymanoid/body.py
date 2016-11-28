@@ -294,7 +294,7 @@ class Box(Body):
         self.X = X
         self.Y = Y
         self.Z = Z
-        aabb = [0, 0, dZ, X, Y, Z]
+        aabb = [0., 0., dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
             box = openravepy.RaveCreateKinBody(env, '')
