@@ -89,12 +89,13 @@ class Simulation(object):
         for _ in xrange(n):
             t0 = time.time()
             for process in self.processes:
-                process.on_tick(self)
+                if not process.paused:
+                    process.on_tick(self)
             rem_time = self.dt - (time.time() - t0)
-            # TODO: internal sim/real time estimate
             if self.extras:
                 for process in self.extras:
-                    process.on_tick(self)
+                    if not process.paused:
+                        process.on_tick(self)
                 rem_time = self.dt - (time.time() - t0)
             if rem_time > 1e-4:
                 time.sleep(rem_time)
@@ -242,6 +243,15 @@ class Process(object):
 
     """Processes implement the ``on_tick`` method called by the Simulation."""
 
+    def __init__(self):
+        self.paused = False
+
     def on_tick(self, sim):
         """Function called by the Simulation parent after each clock tick."""
         raise NotImplementedError
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
