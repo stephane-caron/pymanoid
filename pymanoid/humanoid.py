@@ -21,6 +21,7 @@
 from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 
+from body import PointMass
 from contact import ContactSet
 from robot import Robot
 from rotations import crossmat, rpy_from_quat
@@ -132,6 +133,7 @@ class Humanoid(Robot):
         self.has_free_flyer = True
         self.__cam = None
         self.__com = None
+        self.__com_box = None
         self.__comd = None
 
     def set_free_flyer(self, pos, rpy=None, quat=None):
@@ -171,6 +173,8 @@ class Humanoid(Robot):
     def com(self):
         if self.__com is None:
             self.__com = self.compute_com()
+        if self.__com_box is not None:
+            self.__com_box.set_pos(self.__com)
         return self.__com
 
     @property
@@ -238,6 +242,14 @@ class Humanoid(Robot):
             H_com += m * self.rave.ComputeHessianTranslation(index, c)
         H_com /= self.mass
         return H_com
+
+    def show_com(self):
+        if self.__com_box is None:
+            self.__com_box = PointMass(self.com, self.mass)
+        self.__com_box.show()
+
+    def hide_com(self):
+        self.__com_box.hide()
 
     """
     Angular Momentum
