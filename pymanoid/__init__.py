@@ -24,7 +24,6 @@ from body import Manipulator
 from body import Point
 from body import PointMass
 from contact import Contact
-from contact import ContactSet
 from draw import draw_2d_cone
 from draw import draw_arrow
 from draw import draw_force
@@ -41,6 +40,7 @@ from polyhedra import Cone3D
 from robot import Robot
 from sim import Process
 from sim import Simulation
+from stance import Stance
 
 import robots
 
@@ -49,7 +49,6 @@ __all__ = [
     'Cone',
     'Cone3D',
     'Contact',
-    'ContactSet',
     'Cube',
     'Humanoid',
     'Manipulator',
@@ -58,6 +57,7 @@ __all__ = [
     'Process',
     'Robot',
     'Simulation',
+    'Stance',
     'draw_2d_cone',
     'draw_arrow',
     'draw_force',

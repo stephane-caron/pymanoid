@@ -22,9 +22,9 @@ from numpy import array, cross, dot, zeros, tensordot
 from os.path import basename, splitext
 
 from body import PointMass
-from contact import ContactSet
 from robot import Robot
 from rotations import crossmat, rpy_from_quat
+from stance import Stance
 from tasks import COMTask, ContactTask, PostureTask, MinAccelerationTask
 
 
@@ -515,7 +515,7 @@ class Humanoid(Robot):
     def generate_posture(self, contacts, *args, **kwargs):
         assert self.ik is not None, \
             "Initialize the IK before generating posture"
-        if type(contacts) is ContactSet:
+        if type(contacts) is Stance:
             return self.generate_posture_from_contacts(
                 contacts, *args, **kwargs)
         else:  # type(contacts) is Stance:

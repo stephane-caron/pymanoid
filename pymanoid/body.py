@@ -21,10 +21,9 @@
 import openravepy
 import uuid
 
-from numpy import array, zeros
+from numpy import array, dot, zeros
 
-from rotations import rotation_matrix_from_rpy
-from rotations import rpy_from_quat
+from rotations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 from sim import get_openrave_env
 
 
@@ -267,6 +266,19 @@ class Body(object):
     def __del__(self):
         """Add body removal to garbage collection step (effective)."""
         self.remove()
+
+    def apply_twist(self, v, omega, dt):
+        """
+        Apply a twist [v, omega] defined in the local coordinate frame.
+
+        INPUT:
+
+        - ``v`` -- linear velocity in local frame
+        - ``omega`` -- angular velocity in local frame
+        - ``dt`` -- duration of twist application
+        """
+        self.set_pos(self.p + v * dt)
+        self.set_rotation_matrix(self.R + dot(crossmat(omega), self.R) * dt)
 
 
 class Box(Body):
