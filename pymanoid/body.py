@@ -361,7 +361,7 @@ class PointMass(Point):
 
     def __init__(self, pos, mass, *args, **kwargs):
         """
-        A point-mass is a simple cubes with size proportional to its mass.
+        A point-mass is a simple cube with size proportional to its mass.
 
         INPUT:
 

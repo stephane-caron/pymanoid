@@ -40,7 +40,7 @@ class Contact(Box):
     THICKNESS = 0.01
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 pose=None, visible=True, name=None, mode="fixed"):
+                 pose=None, visible=True, name=None):
         """
         Create a new rectangular contact.
 
@@ -56,9 +56,7 @@ class Contact(Box):
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
-        assert mode in ["fixed", "sliding"]
         self.friction = friction
-        self.mode = mode
         self.thetad = 0.
         self.vx = 0.
         self.vy = 0.
@@ -86,6 +84,12 @@ class Contact(Box):
 
     Used for sliding contacts.
     """
+
+    @property
+    def is_sliding(self):
+        return abs(self.vx) > 1e-3 \
+            or abs(self.vy) > 1e-3 \
+            or abs(self.thetad) > 1e-3
 
     @property
     def omega(self):
@@ -142,8 +146,7 @@ class Contact(Box):
         """
         Span matrix of the contact-force friction cone in world frame.
         """
-        S = array(self.force_rays).T
-        return S
+        return array(self.force_rays).T
 
     """
     Wrench Friction Cone
