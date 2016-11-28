@@ -362,8 +362,7 @@ class Humanoid(Robot):
 
     def compute_cam(self):
         """Compute the centroidal angular momentum."""
-        p_G = self.compute_com()
-        return self.compute_angular_momentum(p_G)
+        return self.compute_angular_momentum(self.com)
 
     def compute_cam_jacobian(self):
         """
@@ -371,7 +370,7 @@ class Humanoid(Robot):
 
             L_G(q, qd) = J(q) * qd
         """
-        return self.compute_angular_momentum_jacobian(self.compute_com())
+        return self.compute_angular_momentum_jacobian(self.com)
 
     def compute_cam_rate(self, qdd):
         """Compute the time-derivative of the CAM. """
@@ -386,8 +385,7 @@ class Humanoid(Robot):
 
             Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd))
         """
-        p_G = self.compute_com()
-        return self.compute_angular_momentum_hessian(p_G)
+        return self.compute_angular_momentum_hessian(self.com)
 
     """
     Whole-body wrench
@@ -441,15 +439,16 @@ class Humanoid(Robot):
         """
         Compute the Zero-tilting Moment Point (ZMP).
 
-        The best introduction I know to this concept is:
-
-            P. Sardain and G. Bessonnet, “Forces acting on a biped robot. center
-            of pressure-zero moment point”
-            <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
-
         INPUT:
 
         ``qdd`` -- vector of joint accelerations
+
+        .. NOTE::
+
+            For an excellent introduction to the concepts of ZMP and center of
+            pressure, see “Forces acting on a biped robot. center of
+            pressure-zero moment point” by P. Sardain and G. Bessonnet
+            <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
         """
         O, n = zeros(3), array([0, 0, 1])
         f_gi, tau_gi = self.compute_gravito_inertial_wrench(qdd, O)
