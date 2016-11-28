@@ -64,7 +64,6 @@ class Robot(object):
         qd_max = +qd_lim * ones(nb_dofs)
         qd_min = -qd_lim * ones(nb_dofs)
 
-        self.active_dofs = None
         self.has_free_flyer = False
         self.ik = None  # created by self.init_ik()
         self.ik_process = None  # created by self.init_ik()
@@ -74,14 +73,10 @@ class Robot(object):
         self.nb_dofs = nb_dofs
         self.q_max = q_max
         self.q_max.flags.writeable = False
-        self.q_max_active = None
         self.q_min = q_min
         self.q_min.flags.writeable = False
-        self.q_min_active = None
         self.qd_max = qd_max
-        self.qd_max_active = None
         self.qd_min = qd_min
-        self.qd_min_active = None
         self.qdd_max = None  # set in child class
         self.rave = rave
         self.tau_max = None  # set by hand in child robot class
@@ -168,6 +163,8 @@ class Robot(object):
         return self.rave.GetDOFVelocities()
 
     def set_dof_limits(self, q_min, q_max, dof_indices=None):
+        if self.ik is not None:
+            warn("DOF limit updates will not be forwarded to ongoing IK")
         self.rave.SetDOFLimits(q_min, q_max, dof_indices)
         self.q_max.flags.writeable = True
         self.q_min.flags.writeable = True
@@ -179,13 +176,12 @@ class Robot(object):
             assert len(q_min) == len(q_max) == self.nb_dofs
             self.q_max = q_max
             self.q_min = q_min
-        if self.active_dofs:
-            self.q_max_active = self.q_max[self.active_dofs]
-            self.q_min_active = self.q_min[self.active_dofs]
         self.q_max.flags.writeable = False
         self.q_min.flags.writeable = False
 
-    def set_dof_values(self, q, dof_indices=None):
+    def set_dof_values(self, q, dof_indices=None, clamp=False):
+        if clamp:
+            q = minimum(maximum(self.q_min, q), self.q_max)
         if dof_indices is not None:
             return self.rave.SetDOFValues(q, dof_indices)
         return self.rave.SetDOFValues(q)
@@ -195,42 +191,6 @@ class Robot(object):
         if dof_indices is not None:
             return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
         return self.rave.SetDOFVelocities(qd)
-
-    """
-    Active DOFs
-    ===========
-
-    We simply wrap around OpenRAVE here. Active DOFs are used with the IK.
-    """
-
-    @property
-    def nb_active_dofs(self):
-        return self.rave.GetActiveDOF()
-
-    @property
-    def q_active(self):
-        return self.rave.GetActiveDOFValues()
-
-    def get_active_dof_values(self):
-        return self.rave.GetActiveDOFValues()
-
-    def get_active_dof_velocities(self):
-        return self.rave.GetActiveDOFVelocities()
-
-    def set_active_dofs(self, active_dofs):
-        self.active_dofs = active_dofs
-        self.rave.SetActiveDOFs(active_dofs)
-        self.q_max_active = self.q_max[active_dofs]
-        self.q_min_active = self.q_min[active_dofs]
-        self.qd_max_active = self.qd_max[active_dofs]
-        self.qd_min_active = self.qd_min[active_dofs]
-
-    def set_active_dof_values(self, q_active):
-        return self.rave.SetActiveDOFValues(q_active)
-
-    def set_active_dof_velocities(self, qd_active):
-        check_dof_limits = 0  # CLA_Nothing
-        return self.rave.SetActiveDOFVelocities(qd_active, check_dof_limits)
 
     """
     Jacobians and Hessians
@@ -326,32 +286,26 @@ class Robot(object):
     ==================
     """
 
-    def init_ik(self, gains=None, weights=None):
+    def init_ik(self, active_dofs, doflim_gain=0.5):
         """
         Initialize the IK solver.
 
         INPUT:
 
-        - ``gains`` -- dictionary of default task gains
-        - ``weights`` -- dictionary of default task weights
+        - ``active_dofs`` -- list of DOFs used by the IK
+        - ``doflim_gain`` -- gain between 0 and 1 used for DOF limits
         """
         class IKProcess(Process):
             def on_tick(_, sim):
                 self.step_ik(sim.dt)
 
-        self.ik = VelocitySolver(
-            self, default_gains=gains, default_weights=weights)
+        self.ik = VelocitySolver(self, active_dofs, doflim_gain)
         self.ik_process = IKProcess()
 
     def step_ik(self, dt):
-        qd_active = self.ik.compute_velocity(dt)
-        q_active = minimum(
-            maximum(
-                self.q_min_active,
-                self.q_active + qd_active * dt),
-            self.q_max_active)
-        self.set_active_dof_values(q_active)
-        self.set_active_dof_velocities(qd_active)
+        qd = self.ik.compute_velocity(dt)
+        self.set_dof_values(self.q + qd * dt, clamp=True)
+        self.set_dof_velocities(qd)
 
     def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-2, debug=False):
         """

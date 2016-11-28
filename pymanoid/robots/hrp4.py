@@ -94,7 +94,7 @@ class HRP4(Humanoid):
     ROT_P = 54
     ROT_R = 55
 
-    # First-level DOF groups
+    # Joint DOF groups
     chest = [CHEST_P, CHEST_Y]
     free_pos = [TRANS_X, TRANS_Y, TRANS_Z]
     free_rpy = [ROT_R, ROT_P, ROT_Y]
@@ -114,16 +114,17 @@ class HRP4(Humanoid):
     right_thumb = [R_HAND_J0, R_HAND_J1]
     right_wrist = [R_WRIST_Y, R_WRIST_P, R_WRIST_R]
 
-    # Second-level DOF groups
-    free = free_pos + free_rpy
+    # Limb DOF groups
     left_arm = left_shoulder + left_elbow + left_wrist
     left_leg = left_hip + left_knee + left_ankle
     right_arm = right_shoulder + right_elbow + right_wrist
     right_leg = right_hip + right_knee + right_ankle
 
-    # Third-level DOF groups
+    # Compound DOF groups
     arms = left_arm + right_arm
+    free = free_pos + free_rpy
     legs = left_leg + right_leg
+    whole_body = arms + legs + chest + free
 
     # Custom half-sitting configuration
     q_halfsit = hstack([

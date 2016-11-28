@@ -24,6 +24,11 @@ from threading import Lock
 from warnings import warn
 
 
+class IKError(Exception):
+
+    pass
+
+
 class VelocitySolver(object):
 
     """
@@ -32,18 +37,15 @@ class VelocitySolver(object):
     See  for details.
     """
 
-    def __init__(self, robot, default_gains=None, default_weights=None,
-                 doflim_gain=0.5, dt=None):
+    def __init__(self, robot, active_dofs, doflim_gain):
         """
         Initialize the solver.
 
         INPUT:
 
         - ``robot`` -- upper DOF limit
-        - ``gains`` -- dictionary of default task gains
-        - ``weights`` -- dictionary of default task weights
-        - ``doflim_gain`` -- (optional, default: 0.5) gain used for DOF limits
-        - ``dt`` -- default time step
+        - ``active_dofs`` -- list of DOFs used by the IK
+        - ``doflim_gain`` -- gain between 0 and 1 used for DOF limits
 
         The ``doflim_gain`` is described in [Kanoun2012]. In this
         implementation, it should be between 0. and 1. [Caron2016]. One
@@ -57,20 +59,20 @@ class VelocitySolver(object):
         .. [Caron2016] <https://scaron.info/teaching/inverse-kinematics.html>
         .. [Kanoun2012] <http://www.roboticsproceedings.org/rss07/p21.pdf>
         """
-        self.default_gains = {}
-        self.default_weights = {}
+        nb_active_dofs = len(active_dofs)
+        qp_G = vstack([+eye(nb_active_dofs), -eye(nb_active_dofs)])
+        self.active_dofs = active_dofs
         self.doflim_gain = doflim_gain
-        self.gains = {}
-        self.jacobians = {}
-        self.residuals = {}
+        self.nb_active_dofs = len(active_dofs)
+        self.q_max = robot.q_max[active_dofs]
+        self.q_min = robot.q_min[active_dofs]
+        self.qd = zeros(robot.nb_dofs)
+        self.qd_max = robot.qd_max[active_dofs]
+        self.qd_min = robot.qd_min[active_dofs]
+        self.qp_G = qp_G
         self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
-        self.weights = {}
-        if default_gains is not None:
-            self.default_gains.update(default_gains)
-        if default_weights is not None:
-            self.default_weights.update(default_weights)
 
     def add_task(self, task):
         """
@@ -78,30 +80,26 @@ class VelocitySolver(object):
 
         INPUT:
 
-        ``task`` -- Task object
+        - ``task`` -- Task object
 
         .. NOTE::
 
             This function is not made to be called frequently.
-
         """
+        task.check()
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
-            if task.gain is None and task.task_type in self.default_gains:
-                task.gain = self.default_gains[task.task_type]
-            if task.weight is None and task.task_type in self.default_weights:
-                task.weight = self.default_weights[task.task_type]
-            if task.weight is None:
-                raise Exception("No weight supplied for task '%s' of type '%s'"
-                                % (task.name, task.task_type))
-            if task.gain is not None and task.gain > 1.:
-                raise Exception("Gains should be in (0, 1) (%f)" % task.gain)
-            if task.weight < 0.:
-                raise Exception("Weights should be positive (%f)" % task.weight)
 
     def remove_task(self, name):
+        """
+        Remove a task from the IK.
+
+        INPUT:
+
+        - ``name`` -- task name
+        """
         with self.tasks_lock:
             if name not in self.tasks:
                 warn("no task '%s' to remove" % name)
@@ -133,25 +131,30 @@ class VelocitySolver(object):
             attained for (J.T * J) * qd == (residual / dt), and we recognize the
             Gauss-Newton update rule.
         """
-        n = self.robot.nb_active_dofs
-        q = self.robot.q_active
-        q_max = self.robot.q_max[self.robot.active_dofs]
-        q_min = self.robot.q_min[self.robot.active_dofs]
-        qd_max = self.robot.qd_max[self.robot.active_dofs]
-        qd_min = self.robot.qd_min[self.robot.active_dofs]
-        E = eye(n)
+        n = self.nb_active_dofs
         qp_P = zeros((n, n))
         qp_q = zeros(n)
         with self.tasks_lock:
             for task in self.tasks.itervalues():
-                J = task.jacobian()[:, self.robot.active_dofs]
+                J = task.jacobian()[:, self.active_dofs]
                 r = task.residual(dt)
                 qp_P += task.weight * dot(J.T, J)
                 qp_q += task.weight * dot(-r.T, J)
-        qd_max_doflim = self.doflim_gain * (q_max - q) / dt
-        qd_min_doflim = self.doflim_gain * (q_min - q) / dt
-        qd_max = minimum(qd_max, qd_max_doflim)
-        qd_min = maximum(qd_min, qd_min_doflim)
-        qp_G = vstack([+E, -E])
+        q = self.robot.q[self.active_dofs]
+        qd_max_doflim = self.doflim_gain * (self.q_max - q) / dt
+        qd_min_doflim = self.doflim_gain * (self.q_min - q) / dt
+        qd_max = minimum(self.qd_max, qd_max_doflim)
+        qd_min = maximum(self.qd_min, qd_min_doflim)
+        # qp_G = vstack([+eye(n), -eye(n)])
+        qp_G = self.qp_G  # saved to avoid recomputations
         qp_h = hstack([qd_max, -qd_min])
-        return solve_qp(qp_P, qp_q, qp_G, qp_h)
+        try:
+            qd_active = solve_qp(qp_P, qp_q, qp_G, qp_h)
+            self.qd[self.active_dofs] = qd_active
+        except ValueError as e:
+            self.qd[self.active_dofs] = zeros(n)
+            if "matrix G is not positive definite" in e:
+                msg = "rank deficiency. Did you add a regularization task?"
+                raise IKError(msg)
+            raise
+        return self.qd

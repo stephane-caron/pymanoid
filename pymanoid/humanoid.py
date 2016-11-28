@@ -140,11 +140,12 @@ class Humanoid(Robot):
         self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
         self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
 
-    def set_dof_values(self, q, dof_indices=None):
+    def set_dof_values(self, q, dof_indices=None, clamp=False):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        super(Humanoid, self).set_dof_values(q, dof_indices=dof_indices)
+        super(Humanoid, self).set_dof_values(
+            q, dof_indices=dof_indices, clamp=clamp)
 
     def set_dof_velocities(self, qd, dof_indices=None):
         self.__cam = None
@@ -160,24 +161,6 @@ class Humanoid(Robot):
     def set_active_dof_velocities(self, qd_active):
         self.__cam = None
         super(Humanoid, self).set_active_dof_velocities(qd_active)
-
-    def init_ik(self, gains=None, weights=None):
-        """
-        Initialize the IK solver.
-
-        INPUT:
-
-        - ``gains`` -- dictionary of default task gains
-        - ``weights`` -- dictionary of default task weights
-        """
-        if weights is None:
-            weights = {
-                'com': 10.,
-                'contact': 10000.,
-                'link': 100.,
-                'posture': 1.,
-            }
-        super(Humanoid, self).init_ik(gains, weights)
 
     """
     Center Of Mass
