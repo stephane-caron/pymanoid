@@ -341,13 +341,13 @@ class Point(Cube):
         super(Point, self).__init__(size, pos=pos, *args, **kwargs)
         self.__pd = zeros(3)
 
-    def set_velocity(self, pd):
-        """Update the point-mass velocity."""
-        self.__pd = array(pd)
-
     @property
     def pd(self):
         return self.__pd.copy()
+
+    def set_velocity(self, pd):
+        """Update the point-mass velocity."""
+        self.__pd = array(pd)
 
     def integrate_acceleration(self, pdd, dt):
         """

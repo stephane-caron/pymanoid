@@ -40,7 +40,7 @@ class Contact(Box):
     THICKNESS = 0.01
 
     def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 pose=None, visible=True, name=None):
+                 pose=None, visible=True, name=None, mode="fixed"):
         """
         Create a new rectangular contact.
 
@@ -56,7 +56,12 @@ class Contact(Box):
         """
         if not name:
             name = "Contact-%s" % str(uuid.uuid1())[0:3]
+        assert mode in ["fixed", "sliding"]
         self.friction = friction
+        self.mode = mode
+        self.thetad = 0.
+        self.vx = 0.
+        self.vy = 0.
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, name=name)
@@ -74,6 +79,23 @@ class Contact(Box):
         c3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
         c4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         return [c1, c2, c3, c4]
+
+    """
+    Velocity
+    ========
+
+    Used for sliding contacts.
+    """
+
+    @property
+    def omega(self):
+        """Angular velocity."""
+        return self.thetad * self.n
+
+    @property
+    def pd(self):
+        """Linear velocity."""
+        return self.vx * self.t + self.vy * self.b
 
     """
     Force Friction Cone
