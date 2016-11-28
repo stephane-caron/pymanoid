@@ -152,7 +152,6 @@ class VelocitySolver(object):
             qd_active = solve_qp(qp_P, qp_q, qp_G, qp_h)
             self.qd[self.active_dofs] = qd_active
         except ValueError as e:
-            self.qd[self.active_dofs] = zeros(n)
             if "matrix G is not positive definite" in e:
                 msg = "rank deficiency. Did you add a regularization task?"
                 raise IKError(msg)
