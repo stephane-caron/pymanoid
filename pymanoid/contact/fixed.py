@@ -40,7 +40,7 @@ class FixedContact(Contact):
         """
         Face (H-rep) of the contact-force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.static_friction / sqrt(2)  # inner approximation
         local_cone = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
@@ -53,7 +53,7 @@ class FixedContact(Contact):
         """
         Rays (V-rep) of the contact-force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.static_friction / sqrt(2)  # inner approximation
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
@@ -85,7 +85,7 @@ class FixedContact(Contact):
 
         """
         X, Y = self.X, self.Y
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.static_friction / sqrt(2)  # inner approximation
         local_cone = array([
             # fx fy             fz taux tauy tauz
             [-1,  0,           -mu,   0,   0,   0],

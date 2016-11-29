@@ -31,7 +31,7 @@ class Contact(Box):
 
     THICKNESS = 0.01
 
-    def __init__(self, X, Y, pos=None, rpy=None, pose=None,
+    def __init__(self, shape, pos=None, rpy=None, pose=None,
                  static_friction=None, kinetic_friction=None, visible=True,
                  name=None):
         """
@@ -39,8 +39,7 @@ class Contact(Box):
 
         INPUT:
 
-        - ``X`` -- half-length of the contact surface
-        - ``Y`` -- half-width of the contact surface
+        - ``shape`` -- pair (half-length, half-width) of the surface patch
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
         - ``pose`` -- initial pose (supersedes pos and rpy)
@@ -49,6 +48,7 @@ class Contact(Box):
         - ``visible`` -- initial box visibility
         - ``name`` -- (optional) name in OpenRAVE scope
         """
+        X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, name=name)

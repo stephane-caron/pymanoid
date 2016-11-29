@@ -28,7 +28,7 @@ from pymanoid.sim import Process
 
 class SlidingContact(Contact):
 
-    def __init__(self, X, Y, pos=None, rpy=None, pose=None,
+    def __init__(self, shape, pos=None, rpy=None, pose=None,
                  static_friction=None, kinetic_friction=None, visible=True,
                  name=None):
         """
@@ -36,8 +36,7 @@ class SlidingContact(Contact):
 
         INPUT:
 
-        - ``X`` -- half-length of the contact surface
-        - ``Y`` -- half-width of the contact surface
+        - ``shape`` -- pair (half-length, half-width) of the surface patch
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
         - ``pose`` -- initial pose (supersedes pos and rpy)
@@ -46,11 +45,10 @@ class SlidingContact(Contact):
         - ``visible`` -- initial box visibility
         - ``name`` -- (optional) name in OpenRAVE scope
         """
-        if not name:
-            name = "SlidingContact-%s" % str(uuid.uuid1())[0:3]
         super(SlidingContact, self).__init__(
-            X, Y, pos, rpy, pose, static_friction, kinetic_friction, visible,
-            name)
+            shape=shape, pos=pos, rpy=rpy, pose=pose,
+            static_friction=static_friction, kinetic_friction=kinetic_friction,
+            visible=visible, name=name)
         self.v = zeros(3)
 
     """
@@ -66,7 +64,7 @@ class SlidingContact(Contact):
         """
         Face (H-rep) of the contact-force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.kinetic_friction / sqrt(2)  # inner approximation
         nv = norm(self.v)
         vx, vy, _ = self.v
         local_cone = array([
@@ -81,7 +79,7 @@ class SlidingContact(Contact):
         """
         Rays (V-rep) of the contact-force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.kinetic_friction / sqrt(2)  # inner approximation
         nv = norm(self.v)
         vx, vy, _ = self.v
         return dot(self.R, [-mu * vx / nv, -mu * vy / nv, +1])
