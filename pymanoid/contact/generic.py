@@ -19,9 +19,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
-import uuid
 
-from numpy import array, dot, zeros
+from numpy import array, dot
 
 from pymanoid.body import Box
 from pymanoid.polyhedra import Cone, Cone3D
@@ -32,8 +31,9 @@ class Contact(Box):
 
     THICKNESS = 0.01
 
-    def __init__(self, X, Y, pos=None, rpy=None, friction=None,
-                 pose=None, visible=True, name=None):
+    def __init__(self, X, Y, pos=None, rpy=None, pose=None,
+                 static_friction=None, kinetic_friction=None, visible=True,
+                 name=None):
         """
         Create a new rectangular contact.
 
@@ -43,17 +43,17 @@ class Contact(Box):
         - ``Y`` -- half-width of the contact surface
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
-        - ``friction`` -- friction coefficient
         - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``static_friction`` -- static friction coefficient
+        - ``kinetic_friction`` -- kinetic friction coefficient
         - ``visible`` -- initial box visibility
+        - ``name`` -- (optional) name in OpenRAVE scope
         """
-        if not name:
-            name = "Contact-%s" % str(uuid.uuid1())[0:3]
-        self.friction = friction
-        self.v = zeros(3)
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, name=name)
+        self.kinetic_friction = kinetic_friction
+        self.static_friction = static_friction
 
     @property
     def dict_repr(self):

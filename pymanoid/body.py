@@ -19,7 +19,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import openravepy
-import uuid
 
 from numpy import array, dot, zeros
 
@@ -29,36 +28,41 @@ from sim import get_openrave_env
 
 class Body(object):
 
+    count = 0  # counter for anonymous bodies
+
     """
     Wrapper around OpenRAVE KinBody.
     """
 
-    def __init__(self, rave_body, pos=None, rpy=None, color=None, name=None,
-                 pose=None, visible=True):
+    def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
+                 visible=True, name=None):
         """
         Create body from an OpenRAVE KinBody.
 
         INPUT:
 
-        - ``rave_body`` -- KinBody object to wrap
-        - ``pos`` -- initial position in inertial frame
-        - ``rpy`` -- initial orientation in inertial frame
-        - ``color`` -- color applied to all links (if any) in the object
-        - ``name`` -- object's name (optional)
-        - ``pose`` -- initial pose (supersedes pos and rpy)
-        - ``visible`` -- initial visibility
+        - ``kinbody`` -- KinBody object to wrap
+        - ``pos`` -- (optional) initial position in inertial frame
+        - ``rpy`` -- (optional) initial orientation in inertial frame
+        - ``pose`` -- (optional) initial pose, supersedes ``pos`` and ``rpy``
+        - ``color`` -- (optional) color applied to all links of the KinBody
+        - ``visible`` -- (optional) initial visibility
+        - ``name`` -- (optional) body name in OpenRAVE scope
         """
-        self.rave = rave_body
-        if color is not None:
-            self.set_color(color)
-        if name is not None:
-            self.rave.SetName(name)
+        if not kinbody.GetName():
+            if name is None:
+                name = "%s%s" % (type(self).__name__, Body.count)
+                Body.count += 1
+            kinbody.SetName(name)
+        self.rave = kinbody
         if pos is not None:
             self.set_pos(pos)
         if rpy is not None:
             self.set_rpy(rpy)
         if pose is not None:
             self.set_pose(pose)
+        if color is not None:
+            self.set_color(color)
         if not visible:
             self.set_visible(False)
         self.is_visible = visible
@@ -283,8 +287,8 @@ class Body(object):
 
 class Box(Body):
 
-    def __init__(self, X, Y, Z, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True, dZ=0.):
+    def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
+                 visible=True, name=None, dZ=0.):
         """
         Create a new rectangular box.
 
@@ -301,8 +305,6 @@ class Box(Body):
         - ``visible`` -- initial box visibility
         - ``dZ`` -- special value used to make Contact slabs
         """
-        if not name:
-            name = "Box-%s" % str(uuid.uuid1())[0:3]
         self.X = X
         self.Y = Y
         self.Z = Z
@@ -312,15 +314,15 @@ class Box(Body):
             box = openravepy.RaveCreateKinBody(env, '')
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
-                box, pos=pos, rpy=rpy, color=color, name=name, pose=pose,
-                visible=visible)
+                box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
+                name=name)
             env.Add(box, True)
 
 
 class Cube(Box):
 
-    def __init__(self, size, pos=None, rpy=None, color='r', name=None,
-                 pose=None, visible=True):
+    def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
+                 visible=True, name=None):
         """
         Create a new cube.
 

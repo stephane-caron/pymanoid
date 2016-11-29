@@ -28,6 +28,31 @@ from pymanoid.sim import Process
 
 class SlidingContact(Contact):
 
+    def __init__(self, X, Y, pos=None, rpy=None, pose=None,
+                 static_friction=None, kinetic_friction=None, visible=True,
+                 name=None):
+        """
+        Create a new rectangular contact in sliding contact mode.
+
+        INPUT:
+
+        - ``X`` -- half-length of the contact surface
+        - ``Y`` -- half-width of the contact surface
+        - ``pos`` -- contact position in world frame
+        - ``rpy`` -- contact orientation in world frame
+        - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``static_friction`` -- (optional) static friction coefficient
+        - ``kinetic_friction`` -- kinetic friction coefficient
+        - ``visible`` -- initial box visibility
+        - ``name`` -- (optional) name in OpenRAVE scope
+        """
+        if not name:
+            name = "SlidingContact-%s" % str(uuid.uuid1())[0:3]
+        super(SlidingContact, self).__init__(
+            X, Y, pos, rpy, pose, static_friction, kinetic_friction, visible,
+            name)
+        self.v = zeros(3)
+
     """
     Force Friction Cone
     ===================
