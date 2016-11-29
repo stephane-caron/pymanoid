@@ -97,17 +97,6 @@ class SlidingContact(Contact):
         return S
 
     """
-    Velocity
-    ========
-
-    Used for sliding contacts.
-    """
-
-    @property
-    def is_sliding(self):
-        return norm(self.v) > 1e-3
-
-    """
     Forward Dynamics
     ================
     """
