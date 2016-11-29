@@ -20,10 +20,9 @@
 
 from generic import Contact
 
-from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
+from numpy import array, dot, sqrt, zeros
 
 from pymanoid.misc import norm
-from pymanoid.rotations import crossmat
 from pymanoid.sim import Process
 
 
@@ -69,32 +68,15 @@ class SlidingContact(Contact):
 
     @property
     def wrench_face(self):
-        # X, Y = self.X, self.Y
-        # mu = self.friction / sqrt(2)  # inner approximation
-        # return dot(local_cone, block_diag(self.R.T, self.R.T))
         raise NotImplementedError()
 
     @property
     def wrench_rays(self):
         raise NotImplementedError()
-        rays = []
-        for v in self.vertices:
-            x, y, z = v - self.p
-            for f in self.force_rays:
-                rays.append(hstack([f, cross(v - self.p, f)]))
-        return rays
 
     @property
     def wrench_span(self):
         raise NotImplementedError()
-        span_blocks = []
-        for (i, v) in enumerate(self.vertices):
-            x, y, z = v - self.p
-            Gi = vstack([eye(3), crossmat(v - self.p)])
-            span_blocks.append(dot(Gi, self.force_span))
-        S = hstack(span_blocks)
-        assert S.shape == (6, 16)
-        return S
 
     """
     Forward Dynamics
