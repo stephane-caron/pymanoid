@@ -68,20 +68,21 @@ class FixedContact(Contact):
     @property
     def wrench_face(self):
         """
-        Compute the matrix F of friction inequalities derived in [Caron2015]_.
+        Compute the matrix F of friction inequalities.
 
         This matrix describes the linearized Coulomb friction model by:
 
             F * w <= 0
 
         where w is the contact wrench at the contact point (self.p) in the
-        world frame.
+        world frame. See [Caron2015]_ for details.
 
         REFERENCES:
 
-        .. [Caron2015] S. Caron, Q.-C. Pham, Y. Nakamura. Stability of Surface
+        .. [Caron2015] S. Caron, Q.-C. Pham, Y. Nakamura. "Stability of Surface
            Contacts for Humanoid Robots Closed-Form Formulae of the Contact
-           Wrench Cone for Rectangular Support Areas. ICRA 2015.
+           Wrench Cone for Rectangular Support Areas". ICRA 2015.
+           <https://scaron.info/papers/conf/caron-icra-2015.pdf>
 
         """
         X, Y = self.X, self.Y

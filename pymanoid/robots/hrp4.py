@@ -18,15 +18,17 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, hstack, pi
+from numpy import array, pi
 from os.path import isfile
-from pymanoid import Humanoid, Manipulator
+
+from pymanoid.body import Manipulator
+from pymanoid.robot import Humanoid
 
 
 class HRP4(Humanoid):
 
     """
-    Class for the HRP-4 (HRP4R) humanoid robot.
+    HRP-4 (HRP4R) humanoid robot.
 
     This file only includes information that is publicly released in
     <http://dx.doi.org/10.1109/IROS.2011.6094465> or over the Web (total mass
@@ -94,7 +96,7 @@ class HRP4(Humanoid):
     ROT_P = 54
     ROT_R = 55
 
-    # Joint DOF groups
+    # Joints
     chest = [CHEST_P, CHEST_Y]
     free_pos = [TRANS_X, TRANS_Y, TRANS_Z]
     free_rpy = [ROT_R, ROT_P, ROT_Y]
@@ -114,31 +116,25 @@ class HRP4(Humanoid):
     right_thumb = [R_HAND_J0, R_HAND_J1]
     right_wrist = [R_WRIST_Y, R_WRIST_P, R_WRIST_R]
 
-    # Limb DOF groups
+    # Limbs
     left_arm = left_shoulder + left_elbow + left_wrist
     left_leg = left_hip + left_knee + left_ankle
     right_arm = right_shoulder + right_elbow + right_wrist
     right_leg = right_hip + right_knee + right_ankle
 
-    # Compound DOF groups
+    # Body
     arms = left_arm + right_arm
     free = free_pos + free_rpy
     legs = left_leg + right_leg
     whole_body = arms + legs + chest + free
 
-    # Custom half-sitting configuration
-    q_halfsit = hstack([
-        # Actuated joint angles [deg]
-        pi / 180 * array(
-            [0., 0., 0., 0., 0., 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0.,
-             0., 0., -0.76, -22.02, 41.29, -18.75, -0.45, 0., 1.15, -21.89,
-             41.21, -18.74, -1.10, 8., 0., 0., 0., -3., -10., 0., -30., 0.,
-             0., 0., 0., 0., -3., 10., 0., -30., 0., 0., 0., 0.,  0.]),
-        # Translation of the unactuated free-flyer [m]
-        array([0., 0., -0.0387]),
-        # Orientation (roll, pitch, yaw) of the unactuated free-flyer [rad]
-        array([0., 0., 0.])
-    ])
+    # Half-sitting posture
+    q_halfsit = pi / 180 * array(
+        [0., 0., 0., 0., 0., 0., 0., 0., 0.,  0., 0., 0., 0., 0., 0.,
+         0., 0., -0.76, -22.02, 41.29, -18.75, -0.45, 0., 1.15, -21.89,
+         41.21, -18.74, -1.10, 8., 0., 0., 0., -3., -10., 0., -30., 0.,
+         0., 0., 0., 0., -3., 10., 0., -30., 0., 0., 0., 0.,  0., 0., 0., 0.,
+         0., 0., 0.])
 
     def __init__(self, path='HRP4R.dae', root_body='BODY', qd_lim=None,
                  download_if_needed=False):

@@ -23,7 +23,7 @@ from generic import Contact
 from numpy import array, dot, sqrt, zeros
 
 from pymanoid.misc import norm
-from pymanoid.sim import Process
+from pymanoid.process import Process
 
 
 class SlidingContact(Contact):

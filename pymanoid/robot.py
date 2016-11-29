@@ -18,12 +18,15 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import concatenate, eye, maximum, minimum, ones, vstack, zeros
+from numpy import array, cross, dot, tensordot, zeros
+from numpy import concatenate, eye, maximum, minimum, ones, vstack
 from os.path import basename, splitext
 from warnings import warn
 
-from ik import VelocitySolver
-from sim import get_openrave_env, Process
+from body import PointMass
+from process import Process
+from rotations import crossmat, rpy_from_quat
+from sim import get_openrave_env
 
 
 class Robot(object):
@@ -295,6 +298,8 @@ class Robot(object):
         - ``active_dofs`` -- list of DOFs used by the IK
         - ``doflim_gain`` -- gain between 0 and 1 used for DOF limits
         """
+        from ik import VelocitySolver
+
         class IKProcess(Process):
             def on_tick(_, sim):
                 self.step_ik(sim.dt)
@@ -412,3 +417,454 @@ class Robot(object):
         tm, tc, tg = self.rave.ComputeInverseDynamics(
             qdd, external_torque, returncomponents=True)
         return tm, tc, tg
+
+
+class Humanoid(Robot):
+
+    """
+    Humanoid robots add a free base and centroidal computations.
+    """
+
+    __free_flyer_xml = """
+    <environment>
+        <robot>
+            <kinbody>
+                <body name="FLYER_TX_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_TY_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_TZ_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_ROLL_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_PITCH_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <kinbody>
+                <body name="FLYER_YAW_LINK">
+                    <mass type="mimicgeom">
+                        <total>0</total>
+                    </mass>
+                </body>
+            </kinbody>
+            <robot file="%s" name="%s">
+                <kinbody>
+                    <joint name="FLYER_TX" type="slider">
+                        <body>FLYER_TX_LINK</body>
+                        <body>FLYER_TY_LINK</body>
+                        <axis>1 0 0</axis>
+                    </joint>
+                    <joint name="FLYER_TY" type="slider">
+                        <body>FLYER_TY_LINK</body>
+                        <body>FLYER_TZ_LINK</body>
+                        <axis>0 1 0</axis>
+                    </joint>
+                    <joint name="FLYER_TZ" type="slider">
+                        <body>FLYER_TZ_LINK</body>
+                        <body>FLYER_YAW_LINK</body>
+                        <axis>0 0 1</axis>
+                    </joint>
+                    <joint name="FLYER_YAW" type="hinge" circular="true">
+                        <body>FLYER_YAW_LINK</body>
+                        <body>FLYER_PITCH_LINK</body>
+                        <axis>0 0 1</axis>
+                    </joint>
+                    <joint name="FLYER_PITCH" type="hinge" circular="true">
+                        <body>FLYER_PITCH_LINK</body>
+                        <body>FLYER_ROLL_LINK</body>
+                        <axis>0 1 0</axis>
+                    </joint>
+                    <joint name="FLYER_ROLL" type="hinge" circular="true">
+                        <body>FLYER_ROLL_LINK</body>
+                        <body>%s</body>
+                        <axis>1 0 0</axis>
+                    </joint>
+                </kinbody>
+            </robot>
+        </robot>
+    </environment>
+    """
+
+    def __init__(self, path, root_body, qd_lim=None):
+        """
+        Create a new humanoid robot model.
+
+        INPUT:
+
+        - ``path`` -- path to the COLLADA model of the robot
+        - ``root_body`` -- name of the root (first) body in the model
+        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
+        """
+        name = basename(splitext(path)[0])
+        xml = Humanoid.__free_flyer_xml % (path, name, root_body)
+        super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
+        self.has_free_flyer = True
+        self.__cam = None
+        self.__com = None
+        self.__com_box = None
+        self.__comd = None
+
+    def set_free_flyer(self, pos, rpy=None, quat=None):
+        if rpy is None and quat is not None:
+            rpy = rpy_from_quat(quat)
+        self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
+        self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
+
+    def set_dof_values(self, q, dof_indices=None, clamp=False):
+        self.__cam = None
+        self.__com = None
+        self.__comd = None
+        super(Humanoid, self).set_dof_values(
+            q, dof_indices=dof_indices, clamp=clamp)
+
+    def set_dof_velocities(self, qd, dof_indices=None):
+        self.__cam = None
+        self.__comd = None
+        super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
+
+    def set_active_dof_values(self, q_active):
+        self.__cam = None
+        self.__com = None
+        self.__comd = None
+        super(Humanoid, self).set_active_dof_values(q_active)
+
+    def set_active_dof_velocities(self, qd_active):
+        self.__cam = None
+        super(Humanoid, self).set_active_dof_velocities(qd_active)
+
+    """
+    Center Of Mass
+    ==============
+    """
+
+    @property
+    def com(self):
+        if self.__com is None:
+            self.__com = self.compute_com()
+        if self.__com_box is not None:
+            self.__com_box.set_pos(self.__com)
+        return self.__com
+
+    @property
+    def comd(self):
+        if self.__comd is None:
+            self.__comd = self.compute_com_velocity()
+        return self.__comd
+
+    def compute_com(self):
+        total = zeros(3)
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            c = link.GetGlobalCOM()
+            total += m * c
+        return total / self.mass
+
+    def compute_com_velocity(self):
+        total = zeros(3)
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            R = link.GetTransform()[0:3, 0:3]
+            c_local = link.GetLocalCOM()
+            v = link.GetVelocity()
+            rd, omega = v[:3], v[3:]
+            cd = rd + cross(omega, dot(R, c_local))
+            total += m * cd
+        return total / self.mass
+
+    def compute_com_jacobian(self):
+        """
+        Compute the jacobian matrix J(q) of the position of the center of mass G
+        of the robot, i.e. the velocity of the G is given by:
+
+                pd_G(q, qd) = J(q) * qd
+
+        q -- vector of joint angles
+        qd -- vector of joint velocities
+        pd_G -- velocity of the center of mass G
+        """
+        J_com = zeros((3, self.nb_dofs))
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            if m < 1e-4:
+                continue
+            index = link.GetIndex()
+            c = link.GetGlobalCOM()
+            J_com += m * self.rave.ComputeJacobianTranslation(index, c)
+        J_com /= self.mass
+        return J_com
+
+    def compute_com_acceleration(self, qdd):
+        qd = self.qd
+        J = self.compute_com_jacobian()
+        H = self.compute_com_hessian()
+        return dot(J, qdd) + dot(qd, dot(H, qdd))
+
+    def compute_com_hessian(self):
+        H_com = zeros((self.nb_dofs, 3, self.nb_dofs))
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            if m < 1e-4:
+                continue
+            index = link.GetIndex()
+            c = link.GetGlobalCOM()
+            H_com += m * self.rave.ComputeHessianTranslation(index, c)
+        H_com /= self.mass
+        return H_com
+
+    def show_com(self):
+        if self.__com_box is None:
+            self.__com_box = PointMass(self.com, self.mass)
+        self.__com_box.show()
+
+    def hide_com(self):
+        self.__com_box.hide()
+
+    """
+    Angular Momentum
+    ================
+    """
+
+    def compute_angular_momentum(self, p):
+        """
+        Compute the angular momentum with respect to point p.
+
+        INPUT:
+
+        - ``p`` -- application point in world coordinates
+        """
+        am = zeros(3)
+        for link in self.rave.GetLinks():
+            # TODO: replace by newer link.GetGlobalInertia()
+            T = link.GetTransform()
+            m = link.GetMass()
+            v = link.GetVelocity()
+            c = link.GetGlobalCOM()
+            R, r = T[0:3, 0:3], T[0:3, 3]
+            I = dot(R, dot(link.GetLocalInertia(), R.T))
+            rd, omega = v[:3], v[3:]
+            cd = rd + cross(r - c, omega)
+            am += cross(c - p, m * cd) + dot(I, omega)
+        return am
+
+    def compute_angular_momentum_jacobian(self, p):
+        """
+        Compute the jacobian matrix J(q) such that the angular momentum of the
+        robot at p is given by:
+
+            L_p(q, qd) = J(q) * qd
+
+        INPUT:
+
+        - ``p`` -- application point in world coordinates
+        """
+        J_am = zeros((3, self.nb_dofs))
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            i = link.GetIndex()
+            c = link.GetGlobalCOM()
+            R = link.GetTransform()[0:3, 0:3]
+            I = dot(R, dot(link.GetLocalInertia(), R.T))
+            J_trans = self.rave.ComputeJacobianTranslation(i, c)
+            J_rot = self.rave.ComputeJacobianAxisAngle(i)
+            J_am += dot(crossmat(c - p), m * J_trans) + dot(I, J_rot)
+        return J_am
+
+    def compute_angular_momentum_hessian(self, p):
+        """
+        Returns a matrix H(q) such that the rate of change of the angular
+        momentum with respect to point p is
+
+            Ld_p(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
+
+        where J(q) is the angular-momentum jacobian.
+
+        p -- application point in world coordinates
+        """
+        def crosstens(M):
+            assert M.shape[0] == 3
+            Z = zeros(M.shape[1])
+            T = array([[Z, -M[2, :], M[1, :]],
+                       [M[2, :], Z, -M[0, :]],
+                       [-M[1, :], M[0, :], Z]])
+            return T.transpose([2, 0, 1])  # T.shape == (M.shape[1], 3, 3)
+
+        def middot(M, T):
+            """
+            Dot product of a matrix with the mid-coordinate of a 3D tensor.
+
+            M -- matrix with shape (n, m)
+            T -- tensor with shape (a, m, b)
+
+            Outputs a tensor of shape (a, n, b).
+            """
+            return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
+
+        H = zeros((self.nb_dofs, 3, self.nb_dofs))
+        for link in self.rave.GetLinks():
+            m = link.GetMass()
+            i = link.GetIndex()
+            c = link.GetGlobalCOM()
+            R = link.GetTransform()[0:3, 0:3]
+            # J_trans = self.rave.ComputeJacobianTranslation(i, c)
+            J_rot = self.rave.ComputeJacobianAxisAngle(i)
+            H_trans = self.rave.ComputeHessianTranslation(i, c)
+            H_rot = self.rave.ComputeHessianAxisAngle(i)
+            I = dot(R, dot(link.GetLocalInertia(), R.T))
+            H += middot(crossmat(c - p), m * H_trans) \
+                + middot(I, H_rot) \
+                - dot(crosstens(dot(I, J_rot)), J_rot)
+        return H
+
+    """
+    Centroidal Angular Momentum (CAM)
+    =================================
+
+    It is simply the angular momentum taken at the center of mass.
+    """
+
+    @property
+    def cam(self):
+        if self.__cam is None:
+            self.__cam = self.compute_cam()
+        return self.__cam
+
+    def compute_cam(self):
+        """Compute the centroidal angular momentum."""
+        return self.compute_angular_momentum(self.com)
+
+    def compute_cam_jacobian(self):
+        """
+        Compute the jacobian matrix J(q) such that the CAM is given by:
+
+            L_G(q, qd) = J(q) * qd
+        """
+        return self.compute_angular_momentum_jacobian(self.com)
+
+    def compute_cam_rate(self, qdd):
+        """Compute the time-derivative of the CAM. """
+        qd = self.qd
+        J = self.compute_cam_jacobian()
+        H = self.compute_cam_hessian()
+        return dot(J, qdd) + dot(qd, dot(H, qd))
+
+    def compute_cam_hessian(self, q):
+        """
+        Compute the matrix H(q) such that the rate of change of the CAM is
+
+            Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd))
+        """
+        return self.compute_angular_momentum_hessian(self.com)
+
+    """
+    Whole-body wrench
+    =================
+    """
+
+    def compute_gravito_inertial_wrench(self, qdd, p):
+        """
+        Compute the gravito-inertial wrench:
+
+            w(p) = [ f      ] = [ m (g - pdd_G)                    ]
+                   [ tau(p) ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
+
+        with m the robot mass, g the gravity vector, G the COM, pdd_G the
+        acceleration of the COM, and Ld_GG the rate of change of the angular
+        momentum (taken at the COM).
+
+        INPUT:
+
+        - ``qdd`` -- array of DOF accelerations
+        - ``p`` -- reference point at which the wrench is taken
+        """
+        g = array([0, 0, -9.81])
+        f_gi = self.mass * g
+        tau_gi = zeros(3)
+        link_velocities = self.rave.GetLinkVelocities()
+        link_accelerations = self.rave.GetLinkAccelerations(qdd)
+        for link in self.rave.GetLinks():
+            mi = link.GetMass()
+            ci = link.GetGlobalCOM()
+            I_ci = link.GetLocalInertia()
+            Ri = link.GetTransform()[0:3, 0:3]
+            ri = dot(Ri, link.GetLocalCOM())
+            angvel = link_velocities[link.GetIndex()][3:]
+            linacc = link_accelerations[link.GetIndex()][:3]
+            angacc = link_accelerations[link.GetIndex()][3:]
+            ci_ddot = linacc \
+                + cross(angvel, cross(angvel, ri)) \
+                + cross(angacc, ri)
+            angmmt = dot(I_ci, angacc) - cross(dot(I_ci, angvel), angvel)
+            f_gi -= mi * ci_ddot[2]
+            tau_gi += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
+        return f_gi, tau_gi
+
+    """
+    Zero-tilting Moment Point
+    =========================
+    """
+
+    def compute_zmp(self, qdd):
+        """
+        Compute the Zero-tilting Moment Point (ZMP).
+
+        INPUT:
+
+        ``qdd`` -- vector of joint accelerations
+
+        .. NOTE::
+
+            For an excellent introduction to the concepts of ZMP and center of
+            pressure, see “Forces acting on a biped robot. center of
+            pressure-zero moment point” by P. Sardain and G. Bessonnet
+            <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
+        """
+        O, n = zeros(3), array([0, 0, 1])
+        f_gi, tau_gi = self.compute_gravito_inertial_wrench(qdd, O)
+        return cross(n, tau_gi) * 1. / dot(n, f_gi)
+
+    """
+    Posture generation
+    ==================
+    """
+
+    def generate_posture(self, stance):
+        from tasks import COMTask, ContactTask, PostureTask
+        if hasattr(stance, 'com'):
+            self.ik.add_task(COMTask(self, stance.com))
+        if hasattr(stance, 'left_foot'):
+            self.ik.add_task(
+                ContactTask(self, self.left_foot, stance.left_foot))
+        if hasattr(stance, 'right_foot'):
+            self.ik.add_task(
+                ContactTask(self, self.right_foot, stance.right_foot))
+        if hasattr(stance, 'left_hand'):
+            self.ik.add_task(
+                ContactTask(self, self.left_hand, stance.left_hand))
+        if hasattr(stance, 'right_hand'):
+            self.ik.add_task(
+                ContactTask(self, self.right_hand, stance.right_hand))
+        self.ik.add_task(PostureTask(self, self.q_halfsit))
+        self.solve_ik()

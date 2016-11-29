@@ -237,21 +237,3 @@ class Simulation(object):
             if key not in self.comp_times:
                 self.comp_times[key] = AvgStdEstimator()
             self.comp_times[key].add(value)
-
-
-class Process(object):
-
-    """Processes implement the ``on_tick`` method called by the Simulation."""
-
-    def __init__(self):
-        self.paused = False
-
-    def on_tick(self, sim):
-        """Function called by the Simulation parent after each clock tick."""
-        raise NotImplementedError
-
-    def pause(self):
-        self.paused = True
-
-    def resume(self):
-        self.paused = False

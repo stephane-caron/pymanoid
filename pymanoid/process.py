@@ -18,13 +18,29 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import time
-
 from numpy import hstack, zeros
+from time import time
 
 from draw import draw_force, draw_line, draw_polygon
 from misc import norm
-from sim import Process
+
+
+class Process(object):
+
+    """Processes implement the ``on_tick`` method called by the Simulation."""
+
+    def __init__(self):
+        self.paused = False
+
+    def on_tick(self, sim):
+        """Function called by the Simulation parent after each clock tick."""
+        raise NotImplementedError
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
 
 
 class COMForceDrawer(Process):
@@ -49,12 +65,12 @@ class COMForceDrawer(Process):
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)
-            self.last_bkgnd_switch = time.time()
+            self.last_bkgnd_switch = time()
         else:
             self.handles = [
                 draw_force(c, fc, self.force_scale) for (c, fc) in support]
         if self.last_bkgnd_switch is not None \
-                and time.time() - self.last_bkgnd_switch > 0.2:
+                and time() - self.last_bkgnd_switch > 0.2:
             # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor(self.OK_COLOR)
             self.last_bkgnd_switch = None
@@ -115,12 +131,12 @@ class StaticForceDrawer(Process):
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)
-            self.last_bkgnd_switch = time.time()
+            self.last_bkgnd_switch = time()
         else:
             self.handles = [
                 draw_force(c, fc, self.force_scale) for (c, fc) in support]
         if self.last_bkgnd_switch is not None \
-                and time.time() - self.last_bkgnd_switch > 0.2:
+                and time() - self.last_bkgnd_switch > 0.2:
             # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor(self.OK_COLOR)
             self.last_bkgnd_switch = None

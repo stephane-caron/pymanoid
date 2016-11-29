@@ -21,16 +21,17 @@
 from numpy import array
 from os import system
 from os.path import isfile
-from pymanoid import Humanoid, Manipulator
+
+from pymanoid.body import Manipulator
+from pymanoid.robot import Humanoid
 
 
 class JVRC1(Humanoid):
 
     """
-    Helper class for the JVRC-1 robot model.
+    JVRC-1 robot model.
 
-    See https://github.com/stephane-caron/jvrc_models/tree/openrave/JVRC-1 for
-    an OpenRAVE-compatible Collada model (JVRC-1.dae) and environment XML file.
+    See <https://github.com/stephane-caron/jvrc_models/tree/openrave/JVRC-1>.
     """
 
     MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
@@ -94,7 +95,7 @@ class JVRC1(Humanoid):
     ROT_P = 48
     ROT_R = 49
 
-    # First-level DOF groups
+    # Joints
     chest = [WAIST_Y, WAIST_P, WAIST_R]
     free_pos = [TRANS_X, TRANS_Y, TRANS_Z]
     free_rpy = [ROT_R, ROT_P, ROT_Y]
@@ -118,8 +119,7 @@ class JVRC1(Humanoid):
     right_thumb = [R_UTHUMB, R_LTHUMB]
     right_wrist = [R_WRIST_R, R_WRIST_Y]
 
-    # Second-level DOF groups
-    free = free_pos + free_rpy
+    # Limbs
     left_arm = left_shoulder + left_elbow + left_wrist
     left_hand = left_thumb + left_index + left_little
     left_leg = left_hip + left_knee + left_ankle
@@ -127,9 +127,11 @@ class JVRC1(Humanoid):
     right_hand = right_thumb + right_index + right_little
     right_leg = right_hip + right_knee + right_ankle
 
-    # Third-level DOF groups
-    legs = left_leg + right_leg
+    # Body
     arms = left_arm + right_arm
+    free = free_pos + free_rpy
+    legs = left_leg + right_leg
+    whole_body = arms + legs + chest + free
 
     # Half-sitting posture
     q_halfsit = array([
