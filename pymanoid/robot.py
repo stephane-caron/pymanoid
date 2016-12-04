@@ -35,6 +35,8 @@ class Robot(object):
     Robot with a fixed base. This class wraps OpenRAVE's Robot type.
     """
 
+    __default_qd_lim = 10.  # [rad] / [s]; this is already quite fast
+
     __default_xml = """
     <environment>
         <robot file="%s" name="%s" />
@@ -63,7 +65,7 @@ class Robot(object):
         rave.SetDOFVelocities([0] * nb_dofs)
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)
         if qd_lim is None:
-            qd_lim = 10.  # [rad] / [s]; this is already quite fast
+            qd_lim = self.__default_qd_lim
         qd_max = +qd_lim * ones(nb_dofs)
         qd_min = -qd_lim * ones(nb_dofs)
 
