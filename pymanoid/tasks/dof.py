@@ -37,6 +37,16 @@ class DOFTask(Task):
         INPUT:
 
         - ``robot`` -- a Robot object
+        - ``dof_id`` -- DOF index or string of DOF identifier
+        - ``dof_ref`` -- reference DOF value
+        - ``gain`` -- (optional) residual gain between 0 and 1
+        - ``weight`` -- task weight used in IK cost function
+        - ``exclude_dofs`` -- (optional) DOFs not used by task
+
+        .. NOTE::
+
+            When ``dof_id`` is a string "x", the numerical DOF index will be
+            searched as the field ``robot.x`` in the Robot object.
         """
         J = zeros((1, robot.nb_dofs))
         J[0, dof_id] = 1.
@@ -47,7 +57,11 @@ class DOFTask(Task):
         def jacobian():
             return J
 
-        self.dof_id = dof_id
+        if type(dof_id) is str:
+            self.dof_id = robot.__dict__[dof_id]
+        else:  # DOF index is provided directly
+            self.dof_id = dof_id
+
         super(DOFTask, self).__init__(
             jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
             exclude_dofs=exclude_dofs)
