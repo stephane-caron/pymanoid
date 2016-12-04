@@ -417,9 +417,13 @@ class Robot(object):
 
         INPUT:
 
-        ``qdd`` -- vector of joint accelerations (optional; if not present, the
-                   return value for tm will be None)
-        ``external_torque`` -- vector of external joint torques (optional)
+        ``qdd`` -- (optional) vector of joint accelerations
+        ``external_torque`` -- (optional) vector of external joint torques
+
+        .. NOTE::
+
+            When ``qdd`` is not provided, the value returned for ``tm`` is
+            ``None``.
         """
         if qdd is None:
             _, tc, tg = self.rave.ComputeInverseDynamics(
@@ -428,6 +432,21 @@ class Robot(object):
         tm, tc, tg = self.rave.ComputeInverseDynamics(
             qdd, external_torque, returncomponents=True)
         return tm, tc, tg
+
+    def compute_static_torques(self, external_torque=None):
+        """
+        Compute static-equilibrium torques for the manipulator.
+
+        INPUT:
+
+        ``external_torque`` -- (optional) vector of external joint torques
+        """
+        qd = self.qd
+        qz = zeros(self.nb_dofs)
+        self.set_dof_velocities(qz)
+        tg = self.rave.ComputeInverseDynamics(qz, external_torque)
+        self.set_dof_velocities(qd)
+        return tg
 
 
 class Humanoid(Robot):
