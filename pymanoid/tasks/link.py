@@ -44,6 +44,8 @@ class LinkPosTask(Task):
         - ``weight`` -- task weight used in IK cost function
         - ``exclude_dofs`` -- (optional) DOFs not used by task
         """
+        if type(link) is str:
+            link = robot.__dict__[link]
         if type(target) is list:
             target = array(target)
 
@@ -87,6 +89,8 @@ class LinkPoseTask(Task):
         - ``weight`` -- task weight used in IK cost function
         - ``exclude_dofs`` -- (optional) DOFs not used by task
         """
+        if type(link) is str:
+            link = robot.__dict__[link]
         if type(target) is list:
             target = array(target)
 
