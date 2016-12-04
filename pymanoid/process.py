@@ -31,6 +31,17 @@ class Process(object):
 
     def __init__(self):
         self.paused = False
+        self._log_comp_times = False
+
+    def log_comp_times(self, active=True):
+        """
+        Log average computation times for each tick.
+
+        INPUT:
+
+        - ``active`` -- set to True to activate logging (default: True)
+        """
+        self._log_comp_times = active
 
     def on_tick(self, sim):
         """Function called by the Simulation parent after each clock tick."""

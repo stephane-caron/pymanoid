@@ -90,8 +90,17 @@ class Simulation(object):
             t0 = time.time()
             for process in self.processes:
                 if not process.paused:
-                    process.on_tick(self)
+                    if process._log_comp_times:
+                        t0i = time.time()
+                        process.on_tick(self)
+                        pname = type(process).__name__
+                        self.log_comp_time(pname, time.time() - t0i)
+                    else:  # just do the thing
+                        process.on_tick(self)
             rem_time = self.dt - (time.time() - t0)
+            if rem_time < 0.:
+                print "sim.step(%d): warning: cycle time budget" % n,
+                print "(%.1f ms) depleted!" % (self.dt * 1000.)
             if self.extras:
                 for process in self.extras:
                     if not process.paused:
@@ -221,6 +230,19 @@ class Simulation(object):
         self.bodies.append(body)
         return body
 
+    def log_comp_time(self, pname, ctime):
+        """
+        Log computation time for a given process.
+
+        INPUT:
+
+        - ``pname`` -- Process name
+        - ``ctime`` -- computation time to log
+        """
+        if pname not in self.comp_times:
+            self.comp_times[pname] = AvgStdEstimator()
+        self.comp_times[pname].add(ctime)
+
     def print_comp_times(self):
         total_avg, total_std = 0., 0.
         for (key, estimator) in self.comp_times.iteritems():
@@ -233,9 +255,3 @@ class Simulation(object):
             total_std += std
         print "%20s  ----------------------------------" % ''
         print "%20s: %.1f ms +/- %.1f ms" % ("total", total_avg, total_std)
-
-    def report_comp_times(self, d):
-        for (key, value) in d.iteritems():
-            if key not in self.comp_times:
-                self.comp_times[key] = AvgStdEstimator()
-            self.comp_times[key].add(value)
