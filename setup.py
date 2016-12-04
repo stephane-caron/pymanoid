@@ -35,5 +35,9 @@ setup(
         'Topic :: Scientific/Engineering :: Mathematics',
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Programming Language :: Python :: 2.7'],
-    packages=['pymanoid', 'pymanoid.robots', 'pymanoid.tasks']
+    packages=[
+        'pymanoid',
+        'pymanoid.contact',
+        'pymanoid.robots',
+        'pymanoid.tasks']
 )

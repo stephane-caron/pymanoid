@@ -23,6 +23,10 @@ from numpy import dot
 
 class Task(object):
 
+    # NB: a proportional gain of 1. can cause oscillations
+    # when some tasks are unfeasible
+    DEFAULT_GAIN = 0.85
+
     task_type = 'generic'
 
     def __init__(self, jacobian, pos_residual=None, vel_residual=None,
@@ -46,7 +50,7 @@ class Task(object):
         assert pos_residual or vel_residual
         self.__jacobian = jacobian
         self.__exclude_dofs = exclude_dofs
-        self.gain = gain if gain is not None else 1.
+        self.gain = gain if gain is not None else self.DEFAULT_GAIN
         self.pos_residual = pos_residual
         self.vel_residual = vel_residual
         self.weight = weight

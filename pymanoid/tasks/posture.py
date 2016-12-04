@@ -32,13 +32,17 @@ class PostureTask(Task):
 
     task_type = 'posture'
 
-    def __init__(self, robot, q_ref, exclude_dofs=None, **kwargs):
+    def __init__(self, robot, q_ref, gain=None, weight=None, exclude_dofs=None):
         """
         Create task.
 
         INPUT:
 
         - ``robot`` -- a Robot object
+        - ``q_ref`` -- vector of reference joint angles
+        - ``gain`` -- (optional) residual gain between 0 and 1
+        - ``weight`` -- task weight used in IK cost function
+        - ``exclude_dofs`` -- (optional) DOFs not used by task
         """
         assert len(q_ref) == robot.nb_dofs
 
@@ -60,4 +64,6 @@ class PostureTask(Task):
         def jacobian():
             return J_posture
 
-        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)

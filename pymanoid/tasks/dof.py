@@ -29,7 +29,8 @@ class DOFTask(Task):
 
     task_type = 'dof'
 
-    def __init__(self, robot, dof_id, dof_ref, **kwargs):
+    def __init__(self, robot, dof_id, dof_ref, gain=None, weight=None,
+                 exclude_dofs=None):
         """
         Create task.
 
@@ -48,7 +49,8 @@ class DOFTask(Task):
 
         self.dof_id = dof_id
         super(DOFTask, self).__init__(
-            jacobian, pos_residual=pos_residual, **kwargs)
+            jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)
 
     @property
     def name(self):

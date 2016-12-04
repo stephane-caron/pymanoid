@@ -27,7 +27,8 @@ class COMTask(Task):
 
     task_type = 'com'
 
-    def __init__(self, robot, target, **kwargs):
+    def __init__(self, robot, target, gain=None, weight=None,
+                 exclude_dofs=None):
         """
         Add a COM tracking task.
 
@@ -39,7 +40,9 @@ class COMTask(Task):
         self.robot = robot
         jacobian = self.robot.compute_com_jacobian
         pos_residual = self.compute_pos_residual(target)
-        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)
 
     def compute_pos_residual(self, target):
         if type(target) is list:

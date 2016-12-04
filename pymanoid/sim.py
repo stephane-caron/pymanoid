@@ -214,7 +214,9 @@ class Simulation(object):
         """
         from body import Body
         assert path.endswith('.dae') or path.endswith('.wrl')
-        rave_body = self.env.Load(path)
+        if not self.env.Load(path):
+            raise Exception("failed to load %s" % path)
+        rave_body = self.env.GetBodies()[-1]
         body = Body(rave_body, *args, **kwargs)
         self.bodies.append(body)
         return body

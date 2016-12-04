@@ -29,13 +29,16 @@ class MinVelocityTask(Task):
 
     task_type = 'minvel'
 
-    def __init__(self, robot, **kwargs):
+    def __init__(self, robot, gain=None, weight=None, exclude_dofs=None):
         """
         Create task.
 
         INPUT:
 
         - ``robot`` -- a Robot object
+        - ``gain`` -- (optional) residual gain between 0 and 1
+        - ``weight`` -- task weight used in IK cost function
+        - ``exclude_dofs`` -- (optional) DOFs not used by task
         """
         E = eye(robot.nb_dofs)
 
@@ -45,4 +48,6 @@ class MinVelocityTask(Task):
         def jacobian():
             return E
 
-        Task.__init__(self, jacobian, vel_residual=vel_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, vel_residual=vel_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)

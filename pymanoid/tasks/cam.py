@@ -27,7 +27,7 @@ class ConstantCAMTask(Task):
 
     task_type = 'constantcam'
 
-    def __init__(self, robot, **kwargs):
+    def __init__(self, robot, gain=None, weight=None, exclude_dofs=None):
         """
         Try to keep the centroidal angular momentum constant.
 
@@ -64,7 +64,9 @@ class ConstantCAMTask(Task):
             return dot(J_cam, qd) - dt * dot(qd, dot(H_cam, qd))
 
         jacobian = robot.compute_cam_jacobian
-        Task.__init__(self, jacobian, vel_residual=vel_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, vel_residual=vel_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)
 
 
 class MinCAMTask(Task):

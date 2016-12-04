@@ -183,6 +183,15 @@ class Robot(object):
         self.q_min.flags.writeable = False
 
     def set_dof_values(self, q, dof_indices=None, clamp=False):
+        """
+        Set the joint values of the robot.
+
+        INPUT:
+
+        - ``q`` -- vector of joint angle values (ordered by DOF indices)
+        - ``dof_indices`` -- (optional) list of DOF indices to update
+        - ``clamp`` -- correct ``q`` if it exceeds joint limits
+        """
         if clamp:
             q = minimum(maximum(self.q_min, q), self.q_max)
         if dof_indices is not None:
@@ -527,13 +536,62 @@ class Humanoid(Robot):
         self.__com_box = None
         self.__comd = None
 
-    def set_free_flyer(self, pos, rpy=None, quat=None):
-        if rpy is None and quat is not None:
-            rpy = rpy_from_quat(quat)
+    """
+    Kinematics
+    ==========
+    """
+
+    def set_ff_pos(self, pos):
+        """
+        Update the position of the free-flying frame.
+
+        INPUT:
+
+        - ``pos`` -- position in world frame
+        """
         self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
+
+    def set_ff_rpy(self, rpy):
+        """
+        Update the orientation of the free-flying frame.
+
+        INPUT:
+
+        - ``rpy`` -- Euler angles (Euler sequence (1, 2, 3))
+        """
         self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
 
+    def set_ff_quat(self, quat):
+        """
+        Update the orientation of the free-flying frame.
+
+        INPUT:
+
+        - ``quat`` -- quaternion vector (w, x, y, z)
+        """
+        return self.set_ff_rpy(rpy_from_quat(quat))
+
+    def set_ff_pose(self, pose):
+        """
+        Update the pose of the free-flying frame.
+
+        INPUT:
+
+        - ``pose`` -- frame pose in OpenRAVE format (qw, qx, qy, qz, x, y, z)
+        """
+        self.set_ff_quat(pose[:4])
+        self.set_ff_pos(pose[4:])
+
     def set_dof_values(self, q, dof_indices=None, clamp=False):
+        """
+        Set the joint values of the robot.
+
+        INPUT:
+
+        - ``q`` -- vector of joint angle values (ordered by DOF indices)
+        - ``dof_indices`` -- (optional) list of DOF indices to update
+        - ``clamp`` -- correct ``q`` if it exceeds joint limits
+        """
         self.__cam = None
         self.__com = None
         self.__comd = None

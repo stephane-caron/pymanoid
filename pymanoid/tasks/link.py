@@ -30,7 +30,20 @@ class LinkPosTask(Task):
 
     task_type = 'link_pos'
 
-    def __init__(self, robot, link, target, **kwargs):
+    def __init__(self, robot, link, target, gain=None, weight=None,
+                 exclude_dofs=None):
+        """
+        Create a new position task for a given link.
+
+        INPUT:
+
+        - ``robot`` -- a Robot object
+        - ``link`` -- one of the Link objects in the robot
+        - ``target`` -- numpy.array or pymanoid.Body for position coordinates
+        - ``gain`` -- (optional) residual gain between 0 and 1
+        - ``weight`` -- task weight used in IK cost function
+        - ``exclude_dofs`` -- (optional) DOFs not used by task
+        """
         if type(target) is list:
             target = array(target)
 
@@ -47,7 +60,9 @@ class LinkPosTask(Task):
             return robot.compute_link_pos_jacobian(link)
 
         self.link = link
-        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)
 
     @property
     def name(self):
@@ -58,7 +73,20 @@ class LinkPoseTask(Task):
 
     task_type = 'link_pose'
 
-    def __init__(self, robot, link, target, **kwargs):
+    def __init__(self, robot, link, target, gain=None, weight=None,
+                 exclude_dofs=None):
+        """
+        Create a new pose task for a given link.
+
+        INPUT:
+
+        - ``robot`` -- a Robot object
+        - ``link`` -- one of the Link objects in the robot
+        - ``target`` -- numpy.array or pymanoid.Body for pose coordinates
+        - ``gain`` -- (optional) residual gain between 0 and 1
+        - ``weight`` -- task weight used in IK cost function
+        - ``exclude_dofs`` -- (optional) DOFs not used by task
+        """
         if type(target) is list:
             target = array(target)
 
@@ -81,7 +109,9 @@ class LinkPoseTask(Task):
             return robot.compute_link_pose_jacobian(link)
 
         self.link = link
-        Task.__init__(self, jacobian, pos_residual=pos_residual, **kwargs)
+        Task.__init__(
+            self, jacobian, pos_residual=pos_residual, gain=gain, weight=weight,
+            exclude_dofs=exclude_dofs)
 
     @property
     def name(self):

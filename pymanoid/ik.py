@@ -59,6 +59,7 @@ class VelocitySolver(object):
         .. [Caron2016] <https://scaron.info/teaching/inverse-kinematics.html>
         .. [Kanoun2012] <http://www.roboticsproceedings.org/rss07/p21.pdf>
         """
+        assert 0. <= doflim_gain <= 1.
         nb_active_dofs = len(active_dofs)
         qp_G = vstack([+eye(nb_active_dofs), -eye(nb_active_dofs)])
         self.active_dofs = active_dofs
