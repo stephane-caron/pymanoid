@@ -19,6 +19,50 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 
+from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import TransformStamped
+
+
+def PointStamped_from_pos(p, seq=None):
+    """
+    Create a geometry_msgs/PointStamped from position coordinates.
+
+    INPUT:
+
+    - ``pos`` -- coordinates in world frame
+    - ``seq`` -- (optional) sequence number for transform's header
+    """
+    ps = PointStamped()
+    if seq is not None:
+        ps.header.seq = seq
+    ps.point.x = p[0]
+    ps.point.y = p[1]
+    ps.point.z = p[2]
+    return ps
+
+
+def TransformStamped_from_pose(pose, seq=None):
+    """
+    Create a geometry_msgs/TransformStamped from a given pose.
+
+    INPUT:
+
+    - ``pose`` -- pose in OpenRAVE format (7 coordinates)
+    - ``seq`` -- (optional) sequence number for transform's header
+    """
+    ts = TransformStamped()
+    if seq is not None:
+        ts.header.seq = seq
+    ts.transform.rotation.w = pose[0]
+    ts.transform.rotation.x = pose[1]
+    ts.transform.rotation.y = pose[2]
+    ts.transform.rotation.z = pose[3]
+    ts.transform.translation.x = pose[4]
+    ts.transform.translation.y = pose[5]
+    ts.transform.translation.z = pose[6]
+    return ts
+
+
 class ROSWrapper(object):
 
     """
