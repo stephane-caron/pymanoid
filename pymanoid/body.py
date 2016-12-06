@@ -35,7 +35,7 @@ class Body(object):
     """
 
     def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
-                 visible=True, name=None):
+                 visible=True, transparency=None, name=None):
         """
         Create body from an OpenRAVE KinBody.
 
@@ -47,6 +47,7 @@ class Body(object):
         - ``pose`` -- (optional) initial pose, supersedes ``pos`` and ``rpy``
         - ``color`` -- (optional) color applied to all links of the KinBody
         - ``visible`` -- (optional) initial visibility
+        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
         - ``name`` -- (optional) body name in OpenRAVE scope
         """
         if not kinbody.GetName():
@@ -65,6 +66,8 @@ class Body(object):
             self.set_color(color)
         if not visible:
             self.set_visible(False)
+        if transparency is not None:
+            self.set_transparency(transparency)
         self.is_visible = visible
 
     def __str__(self):
@@ -140,10 +143,6 @@ class Body(object):
             pose[:4] *= -1
         return pose
 
-    #
-    # All other properties are derived from self.pose and self.T
-    #
-
     @property
     def R(self):
         """Rotation matrix"""
@@ -202,10 +201,6 @@ class Body(object):
     def yaw(self):
         return self.rpy[2]
 
-    #
-    # Setters
-    #
-
     def set_transform(self, T):
         self.rave.SetTransform(T)
 
@@ -257,10 +252,6 @@ class Body(object):
         pose[0:4] = quat
         self.set_pose(pose)
 
-    #
-    # Others
-    #
-
     def remove(self):
         """Remove body from OpenRAVE environment."""
         env = get_openrave_env()
@@ -288,7 +279,7 @@ class Body(object):
 class Box(Body):
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, name=None, dZ=0.):
+                 visible=True, transparency=None, name=None, dZ=0.):
         """
         Create a new rectangular box.
 
@@ -303,6 +294,7 @@ class Box(Body):
         - ``name`` -- object's name (optional)
         - ``pose`` -- initial pose (supersedes pos and rpy)
         - ``visible`` -- initial box visibility
+        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
         - ``dZ`` -- special value used to make Contact slabs
         """
         self.X = X
@@ -315,28 +307,31 @@ class Box(Body):
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
                 box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
-                name=name)
+                transparency=transparency, name=name)
             env.Add(box, True)
 
 
 class Cube(Box):
 
     def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, name=None):
+                 visible=True, transparency=None, name=None):
         """
         Create a new cube.
 
-        size -- half-length of a side of the cube
-        pos -- initial position in inertial frame
-        rpy -- initial orientation in inertial frame
-        color -- color letter in matplotlib format ('r', 'g', 'b', 'm', etc.)
-        name -- object's name (optional)
-        pose -- initial pose (supersedes pos and rpy)
-        visible -- initial box visibility
+        INPUT:
+
+        - ``size`` -- half-length of a side of the cube
+        - ``pos`` -- initial position in inertial frame
+        - ``rpy`` -- initial orientation in inertial frame
+        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
+        - ``name`` -- object's name (optional)
+        - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``visible`` -- initial box visibility
+        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
         """
         super(Cube, self).__init__(
             size, size, size, pos=pos, rpy=rpy, color=color, name=name,
-            pose=pose, visible=visible)
+            pose=pose, visible=visible, transparency=transparency)
 
 
 class Point(Cube):
@@ -389,8 +384,8 @@ class PointMass(Point):
 
 class Manipulator(Body):
 
-    def __init__(self, rave_manipulator, color=None, pos=None,
-                 rpy=None, pose=None, visible=True):
+    def __init__(self, rave_manipulator, color=None, pos=None, rpy=None,
+                 pose=None, visible=True, transparency=None):
         super(Manipulator, self).__init__(
             rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
             visible=visible)
