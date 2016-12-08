@@ -323,7 +323,7 @@ class Robot(object):
         self.set_dof_values(self.q + qd * dt, clamp=True)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-2, debug=False):
+    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-3, debug=False):
         """
         Compute joint-angles q satisfying all kinematic constraints at best.
 
@@ -349,10 +349,6 @@ class Robot(object):
             if debug:
                 print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_relvar)
             if cost_relvar < conv_tol:
-                if abs(cost) > 0.1:
-                    warn("IK did not converge to solution. "
-                         "Is the problem feasible? "
-                         "If so, try restarting from a random guess.")
                 break
             self.step_ik(dt)
         return itnum, cost
