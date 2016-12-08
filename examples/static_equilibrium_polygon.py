@@ -29,11 +29,11 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
-from pymanoid.drawers import StaticForceDrawer, SEPDrawer
-from pymanoid.sim import Process
+from pymanoid import PointMass, Stance
+from pymanoid.contact import FixedContact
+from pymanoid.process import Process, SEPDrawer, StaticForceDrawer
 
 com_height = 0.9  # [m]
-dt = 3e-2  # [s]
 polygon_handle = None
 z_polygon = 2.
 
@@ -49,7 +49,7 @@ class COMSync(Process):
 
 
 if __name__ == "__main__":
-    sim = pymanoid.Simulation()
+    sim = pymanoid.Simulation(dt=0.03)
     robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
     sim.set_viewer()
     sim.viewer.SetCamera([
@@ -59,38 +59,32 @@ if __name__ == "__main__":
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.25)
 
-    contacts = pymanoid.ContactSet({
-        'left_foot': pymanoid.Contact(
-            X=0.2,
-            Y=0.1,
-            pos=[0.20, 0.15, 0.1],
-            rpy=[0, 0, 0],
-            friction=0.5,
-            visible=True),
-        'right_foot': pymanoid.Contact(
-            X=0.2,
-            Y=0.1,
-            pos=[-0.2, -0.195, 0.],
-            rpy=[0, 0, 0],
-            friction=0.5,
-            visible=True),
-        'left_hand': pymanoid.Contact(
-            X=0.2,
-            Y=0.1,
-            pos=[0.45, 0.46, 0.96],
-            rpy=[0., -0.8, 0.5],
-            friction=0.5,
-            visible=True)
-    })
-
-    com_target = pymanoid.PointMass(
+    com_target = PointMass(
         pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    active_dofs = robot.chest + robot.free + robot.left_arm + \
-        robot.right_arm + robot.left_leg + robot.right_leg
-    robot.set_active_dofs(active_dofs)
-    robot.init_ik()
+    stance = Stance(
+        com=com_target,
+        left_foot=FixedContact(
+            shape=robot.sole_shape,
+            pos=[0.20, 0.15, 0.1],
+            rpy=[0, 0, 0],
+            static_friction=0.5,
+            visible=True),
+        right_foot=FixedContact(
+            shape=robot.sole_shape,
+            pos=[-0.2, -0.195, 0.],
+            rpy=[0, 0, 0],
+            static_friction=0.5,
+            visible=True),
+        left_hand=FixedContact(
+            shape=robot.sole_shape,
+            pos=[0.45, 0.46, 0.96],
+            rpy=[0., -0.8, 0.5],
+            static_friction=0.5,
+            visible=True))
+
+    robot.init_ik(active_dofs=robot.whole_body)
     robot.set_dof_values([
         3.53863816e-02,   2.57657518e-02,   7.75586039e-02,
         6.35909636e-01,   7.38580762e-02,  -5.34226902e-01,
@@ -109,18 +103,14 @@ if __name__ == "__main__":
         -3.17943723e-15,  -6.28036983e-16,  -6.88979202e-02,
         -4.90099381e-02,   8.17415141e-01,  -8.71841480e-02,
         -1.36966665e-01,  -4.26226421e-02])
-    robot.generate_posture(contacts, com_target)
+    robot.generate_posture(stance, debug=True)
 
     print ""
     print "In this example, we display the static-equilibrium COM polygon"
     print "(in magenta) for a given set of contacts."
     print ""
     print "You can move contacts by selecting them in the OpenRAVE GUI."
-    print "The robot IK is servoed to their positions. Type:"
-    print ""
-    print "    recompute_polygon()"
-    print ""
-    print "to recompute the COM polygon after moving contacts."
+    print "The robot IK is servoed to their positions."
     print ""
     print "To illustrate the validity of this polygon, contact forces are"
     print "computed that support the equilibrium position represented by"
@@ -128,8 +118,8 @@ if __name__ == "__main__":
     print "box around, and see what happens when it exits the polygon."
     print ""
 
-    force_drawer = StaticForceDrawer(com_target, contacts)
-    sep_drawer = SEPDrawer(contacts, z_polygon)
+    force_drawer = StaticForceDrawer(com_target, stance)
+    sep_drawer = SEPDrawer(stance, z_polygon)
 
     sim.schedule(robot.ik_process)
     sim.schedule(force_drawer)
