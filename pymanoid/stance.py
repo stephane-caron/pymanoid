@@ -26,16 +26,18 @@ from numpy import array, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from warnings import warn
 
+from contact import Contact
 from draw import draw_force
 from optim import solve_relaxed_qp
+from polyhedra import Cone, Polytope
 from rotations import crossmat
 
 
-class Stance(object):
+class ContactSet(object):
 
     def __init__(self, contacts=None):
         """
-        Create new stance.
+        Create a new contact set.
 
         INPUT:
 
@@ -487,3 +489,56 @@ class Stance(object):
                 r_out = (z_out - z_in) * f_gi / (- mass * 9.81)
                 rays.append(r_out)
         return vertices, rays
+
+
+class Stance(ContactSet):
+
+    """
+    Stances extend contact sets with COM locations.
+    """
+
+    def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
+                 right_hand=None, ref_velocity=0.4, leg_length=0.8):
+        """
+        Create a new stance.
+
+        INPUT:
+
+        - ``com`` -- PointMass object
+        - ``left_foot`` -- (optional) left foot Contact
+        - ``right_foot`` -- (optional) right foot Contact
+        - ``left_hand`` -- (optional) left hand Contact
+        - ``right_hand`` -- (optional) right hand Contact
+        - ``ref_velocity`` -- (default: 0.4 m/s) target forward COM velocity
+        """
+        contacts = {}
+        if left_foot:
+            contacts['left_foot'] = left_foot
+        if left_hand:
+            contacts['left_hand'] = left_hand
+        if right_foot:
+            contacts['right_foot'] = right_foot
+        if right_hand:
+            contacts['right_hand'] = right_hand
+        self.com = com
+        self.left_foot = left_foot
+        self.left_hand = left_hand
+        self.right_foot = right_foot
+        self.right_hand = right_hand
+        super(Stance, self).__init__(contacts)
+        self.compute_stability_criteria()
+
+    def compute_stability_criteria(self):
+        self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
+        # self.cwc = compute_cwc_pyparma(self, [0, 0, 0])
+        # m = RobotModel.mass  # however, the SEP does not depend on this
+        self.sep = self.compute_static_equilibrium_polygon()
+        self.sep_hrep = Polytope.hrep(self.sep)
+
+    def dist_to_sep_edge(self, com):
+        """
+        Algebraic distance to the edge of the static-equilibrium polygon
+        (positive inside, negative outside).
+        """
+        A, b = self.sep_hrep
+        return min(b - dot(A, com[:2]))

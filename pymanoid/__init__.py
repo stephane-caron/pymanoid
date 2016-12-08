@@ -42,6 +42,7 @@ from process import Process
 from robot import Humanoid
 from robot import Robot
 from sim import Simulation
+from stance import ContactSet
 from stance import Stance
 
 import robots
@@ -51,6 +52,7 @@ __all__ = [
     'Cone',
     'Cone3D',
     'Contact',
+    'ContactSet',
     'Cube',
     'FixedContact',
     'Humanoid',
