@@ -94,7 +94,7 @@ class ROSWrapper(object):
             dof = self.dof_mapping[joint_name]
             if dof not in self.ignore_dofs:
                 q[dof] = msg.position[i]
-        self.robot.set_dof_values(q)
+        self.robot.set_dof_values(q, clamp=True)
         if self.tf_listener is not None:
             self.update_free_flyer()
 

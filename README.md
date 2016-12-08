@@ -1,16 +1,16 @@
 # pymanoid
 
-Python library for humanoid robotics. Extends OpenRAVE with:
+Python library for humanoid robotics. Extends
+[OpenRAVE](https://github.com/rdiankov/openrave) with:
 
-- Primitives for contacts, stances, point-mass systems, etc.
-- Jacobians and hessians for contacts, center of mass and angular momentum
 - **Whole-body Inverse Kinematics** based on the [weight-prioritized
   multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- **Contact stability criteria:** [Contact Wrench
-  Cone](http://www.roboticsproceedings.org/rss11/p28.pdf), stability polygons,
-  computation of supporting contact forces, etc.
+- **Contact-stability criteria:** [Contact Wrench
+  Cone](http://www.roboticsproceedings.org/rss11/p28.pdf), [Generalized ZMP
+  Support Areas](https://scaron.info/research/tro-2016.html), etc.
+- Jacobians and Hessians for center of mass (COM) and angular momentum
 - Backends for Linear Programming and Quadratic Programming (QP) solvers
-- Drawing primitives for 2D and 3D polyhedra (polygons, polytopes, cones, ...)
+- Drawing primitives for 2D and 3D polyhedra
 
 <img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
@@ -44,5 +44,4 @@ programming. If any of these is not available, the library will try to use
 
 ## Usage
 
-See the [examples](/examples) folder for some sample test cases. For a more
-elaborate use case, see [3d-mpc](https://github.com/stephane-caron/3d-mpc).
+See the [examples](/examples) folder for some sample test cases.
