@@ -60,6 +60,7 @@ class COMForceDrawer(Process):
     OK_COLOR = [1., 1., 1.]
 
     def __init__(self, com, contact_set, force_scale=0.0025):
+        super(COMForceDrawer, self).__init__()
         self.contact_set = contact_set
         self.force_scale = force_scale
         self.handles = []
@@ -92,6 +93,7 @@ class SEPDrawer(Process):
     """Draw the static-equilibrium polygon of a contact set."""
 
     def __init__(self, contact_set, z=0.):
+        super(SEPDrawer, self).__init__()
         contact_dict = contact_set.contact_dict
         self.contact_dict = contact_dict
         self.contact_poses = {}
@@ -129,6 +131,7 @@ class StaticForceDrawer(Process):
     OK_COLOR = [1., 1., 1.]
 
     def __init__(self, com, contact_set, force_scale=0.0025):
+        super(StaticForceDrawer, self).__init__()
         self.com = com
         self.contact_set = contact_set
         self.force_scale = force_scale
@@ -157,6 +160,7 @@ class TrajectoryDrawer(Process):
 
     def __init__(self, body, combined='b-', color=None, linewidth=3,
                  linestyle=None):
+        super(TrajectoryDrawer, self).__init__()
         color = color if color is not None else combined[0]
         linestyle = linestyle if linestyle is not None else combined[1]
         assert linestyle in ['-', '.']
