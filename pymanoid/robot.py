@@ -925,21 +925,33 @@ class Humanoid(Robot):
     ==================
     """
 
-    def generate_posture(self, stance):
+    def generate_posture(self, stance, debug=False):
+        """
+        Generate robot posture (joint-angles + free-flyer) for a given Stance.
+
+        INPUT:
+
+        - ``stance`` -- Stance object
+        - ``debug`` -- (optional) flag passed to IK solver
+        """
         from tasks import COMTask, ContactTask, PostureTask
-        if hasattr(stance, 'com'):
-            self.ik.add_task(COMTask(self, stance.com))
-        if hasattr(stance, 'left_foot'):
+        if stance.left_foot is not None:
             self.ik.add_task(
-                ContactTask(self, self.left_foot, stance.left_foot))
-        if hasattr(stance, 'right_foot'):
+                ContactTask(
+                    self, self.left_foot, stance.left_foot, weight=1000))
+        if stance.right_foot is not None:
             self.ik.add_task(
-                ContactTask(self, self.right_foot, stance.right_foot))
-        if hasattr(stance, 'left_hand'):
+                ContactTask(
+                    self, self.right_foot, stance.right_foot, weight=1000))
+        if stance.left_hand is not None:
             self.ik.add_task(
-                ContactTask(self, self.left_hand, stance.left_hand))
-        if hasattr(stance, 'right_hand'):
+                ContactTask(
+                    self, self.left_hand, stance.left_hand, weight=1000))
+        if stance.right_hand is not None:
             self.ik.add_task(
-                ContactTask(self, self.right_hand, stance.right_hand))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
-        self.solve_ik()
+                ContactTask(
+                    self, self.right_hand, stance.right_hand, weight=1000))
+        com_task = COMTask(self, stance.com, weight=10)
+        self.ik.add_task(com_task)
+        self.ik.add_task(PostureTask(self, self.q_halfsit, weight=0.1))
+        self.solve_ik(debug=debug)
