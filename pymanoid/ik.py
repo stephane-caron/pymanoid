@@ -93,6 +93,10 @@ class VelocitySolver(object):
         with self.tasks_lock:
             self.tasks[task.name] = task
 
+    def add_tasks(self, tasks):
+        for task in tasks:
+            self.add_task(task)
+
     def remove_task(self, name):
         """
         Remove a task from the IK.

@@ -37,8 +37,9 @@ class JVRC1(Humanoid):
     MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
         'openrave_models/master/JVRC-1/JVRC-1.dae'
 
-    leg_length = 0.85  # [m] (for a stretched leg)
-    mass = 62.         # [kg]
+    sole_shape = (0.11, 0.05)  # (half-length [m], half-width [m]) of foot sole
+    leg_length = 0.85         # [m] (for a stretched leg)
+    mass = 62.                # [kg]
 
     # DOF indices
     R_HIP_P = 0

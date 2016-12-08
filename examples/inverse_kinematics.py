@@ -37,7 +37,7 @@ from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 
 
 if __name__ == '__main__':
-    sim = pymanoid.Simulation()
+    sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
     sim.set_viewer()
     sim.viewer.SetCamera([
@@ -58,26 +58,22 @@ if __name__ == '__main__':
     robot.set_dof_values([-1], [robot.R_SHOULDER_P])
     robot.set_dof_values([-1], [robot.L_SHOULDER_P])
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
+    init_com = robot.com.copy()
 
-    # set active DOFs for the IK
-    active_dofs = robot.chest + robot.free + robot.left_arm + \
-        robot.right_arm + robot.left_leg + robot.right_leg
-    robot.set_active_dofs(active_dofs)
-
-    # IK targets: COM and foot poses
+    # IK targets
     com = Cube(0.05, pos=robot.com, color='g')
-    init_com = com.p.copy()
-    left_foot_target = Contact(0.112, Y=0.065, pos=[0, 0.3, 0], visible=True)
-    right_foot_target = Contact(0.112, 0.065, pos=[0, -0.3, 0], visible=True)
+    lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0], visible=True)
+    rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0], visible=True)
 
-    # Initialize the IK
-    robot.init_ik()
-    robot.ik.add_task(
-        ContactTask(robot, robot.left_foot, left_foot_target))
-    robot.ik.add_task(
-        ContactTask(robot, robot.right_foot, right_foot_target))
-    robot.ik.add_task(COMTask(robot, com))
-    robot.ik.add_task(PostureTask(robot, robot.q))
+    # IK tasks
+    lf_task = ContactTask(robot, robot.left_foot, lf_target, weight=1000)
+    rf_task = ContactTask(robot, robot.right_foot, rf_target, weight=1000)
+    com_task = COMTask(robot, com, weight=10)
+    reg_task = PostureTask(robot, robot.q, weight=0.1)  # regularization task
+
+    # IK setup
+    robot.init_ik(active_dofs=robot.whole_body)
+    robot.ik.add_tasks([lf_task, rf_task, com_task, reg_task])
     for (dof_id, dof_ref) in dof_targets:
         robot.ik.add_task(
             DOFTask(robot, dof_id, dof_ref, gain=0.5, weight=0.1))
