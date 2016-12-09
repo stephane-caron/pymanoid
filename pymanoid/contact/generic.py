@@ -55,18 +55,6 @@ class Contact(Box):
         self.kinetic_friction = kinetic_friction
         self.static_friction = static_friction
 
-    @property
-    def dict_repr(self):
-        return {
-            'X': self.X,
-            'Y': self.Y,
-            'Z': self.Z,
-            'pos': list(self.p),
-            'rpy': list(self.rpy),
-            'friction': self.friction,
-            'visible': self.is_visible,
-        }
-
     def draw_force_lines(self, length=0.25):
         env = get_openrave_env()
         handles = []

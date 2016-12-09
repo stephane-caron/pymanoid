@@ -20,13 +20,11 @@
 
 import cdd
 import numpy
-import simplejson
 
 from numpy import array, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from warnings import warn
 
-from contact import Contact
 from draw import draw_force
 from optim import solve_relaxed_qp
 from polyhedra import Cone, Polytope
@@ -55,20 +53,6 @@ class ContactSet(object):
     @property
     def nb_contacts(self):
         return len(self.contact_dict)
-
-    @staticmethod
-    def from_json(path):
-        with open(path, 'r') as fp:
-            d = simplejson.load(fp)
-        contacts = {
-            name: Contact(**kwargs) for (name, kwargs) in d.iteritems()}
-        return ContactSet(contacts)
-
-    def save_json(self, path):
-        d = {name: contact.dict_repr
-             for (name, contact) in self.contact_dict.iteritems()}
-        with open(path, 'w') as fp:
-            simplejson.dump(d, fp, indent=4, sort_keys=True)
 
     def __contains__(self, name):
         """Check whether a named contact is present."""
