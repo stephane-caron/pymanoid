@@ -144,11 +144,9 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     INPUT:
 
     - ``points`` -- list of 3D points
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
-      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
     - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
-      draw: use '.' for vertices, '-' for edges and '#' for facets
+    - ``faces`` -- string indicating the faces of the polyhedron to draw
     - ``hull`` -- used in the 2D case where the hull has zero volume
     - ``linewidth`` -- line thickness in meters
     - ``pointsize`` -- point size in meters
@@ -157,6 +155,11 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
 
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
+
+    .. NOTE::
+
+        In the ``faces`` or ``combined`` strings, use '.' for vertices, '-' for
+        edges and '#' for facets.
     """
     is_2d = hull is not None
     if color is None:
@@ -211,11 +214,9 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
 
     - ``points`` -- list of coplanar 3D points
     - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
-      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
     - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
-      draw: use '.' for vertices, '-' for edges and '#' for facets
+    - ``faces`` -- string indicating the faces of the polyhedron to draw
     - ``linewidth`` -- (default: 1.) thickness of drawn line
     - ``pointsize`` -- (default: 0.02) vertex size
 
@@ -300,11 +301,9 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
     - ``vertices`` -- list of 3D points
     - ``rays`` -- list of 3D vectors
     - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion: color
-      letter followed by faces to draw (see ``color`` and ``faces``)
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
     - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string of symbols indicating the faces of the polyhedron to
-      draw: use '.' for vertices, '-' for edges and '#' for facets
+    - ``faces`` -- string indicating the faces of the polyhedron to draw
 
     OUTPUT:
 

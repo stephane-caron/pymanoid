@@ -39,7 +39,7 @@ class Contact(Box):
 
         INPUT:
 
-        - ``shape`` -- pair (half-length, half-width) of the surface patch
+        - ``shape`` -- surface dimensions (half-length, half-width) in [m]
         - ``pos`` -- contact position in world frame
         - ``rpy`` -- contact orientation in world frame
         - ``pose`` -- initial pose (supersedes pos and rpy)
@@ -56,6 +56,17 @@ class Contact(Box):
         self.static_friction = static_friction
 
     def draw_force_lines(self, length=0.25):
+        """
+        Draw friction cones from each vertex of the surface patch.
+
+        INPUT:
+
+        - ``length`` -- (optional) length of friction rays in [m]
+
+        OUTPUT:
+
+        A list of OpenRAVE GUI handles.
+        """
         env = get_openrave_env()
         handles = []
         for c in self.vertices:
@@ -70,35 +81,13 @@ class Contact(Box):
                 linewidth=5, colors=color))
         return handles
 
-    @property
-    def force_cone(self):
-        """
-        Contact-force friction cone.
-        """
-        return Cone3D(face=self.force_face, rays=self.force_rays)
-
-    @property
-    def force_face(self):
-        raise NotImplementedError("contact mode not instantiated")
-
-    @property
-    def force_rays(self):
-        raise NotImplementedError("contact mode not instantiated")
-
-    @property
-    def force_span(self):
-        """
-        Span matrix of the contact-force friction cone in world frame.
-        """
-        return array(self.force_rays).T
-
     def grasp_matrix(self, p):
         """
-        Compute the grasp matrix from contact point to ``p`` in the world frame.
+        Compute the grasp matrix from contact point ``self.p`` to a point ``p``.
 
         INPUT:
 
-        - ``p`` -- end point where the resultant wrench is taken
+        - ``p`` -- point (world frame coordinates) where the wrench is taken
 
         OUTPUT:
 
@@ -128,22 +117,53 @@ class Contact(Box):
         c4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         return [c1, c2, c3, c4]
 
+    """
+    Force Friction Cone
+    ===================
+    """
+
+    @property
+    def force_cone(self):
+        """Contact force friction cone."""
+        return Cone3D(face=self.force_face, rays=self.force_rays)
+
+    @property
+    def force_face(self):
+        """Face matrix of the force friction cone."""
+        raise NotImplementedError("contact mode not instantiated")
+
+    @property
+    def force_rays(self):
+        """Rays of the force friction cone."""
+        raise NotImplementedError("contact mode not instantiated")
+
+    @property
+    def force_span(self):
+        """Span matrix of the force friction cone in world frame."""
+        return array(self.force_rays).T
+
+    """
+    Wrench Friction Cone
+    ====================
+    """
+
     @property
     def wrench_cone(self):
-        """
-        Contact-wrench friction cone.
-        """
+        """Contact wrench friction cone."""
         wrench_cone = Cone(face=self.wrench_face, rays=self.wrench_rays)
         return wrench_cone
 
     @property
     def wrench_face(self):
+        """Face matrix of the wrench friction cone."""
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def wrench_rays(self):
+        """Rays of the wrench friction cone."""
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def wrench_span(self):
+        """Span matrix of the wrench friction cone in world frame."""
         raise NotImplementedError("contact mode not instantiated")
