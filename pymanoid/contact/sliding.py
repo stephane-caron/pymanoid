@@ -62,7 +62,7 @@ class SlidingContact(Contact):
     @property
     def force_face(self):
         """
-        Face (H-rep) of the contact-force friction cone in world frame.
+        Face (H-rep) of the force friction cone in world frame.
         """
         mu = self.kinetic_friction / sqrt(2)  # inner approximation
         nv = norm(self.v)
@@ -77,7 +77,7 @@ class SlidingContact(Contact):
     @property
     def force_rays(self):
         """
-        Rays (V-rep) of the contact-force friction cone in world frame.
+        Rays (V-rep) of the force friction cone in world frame.
         """
         mu = self.kinetic_friction / sqrt(2)  # inner approximation
         nv = norm(self.v)
@@ -91,14 +91,23 @@ class SlidingContact(Contact):
 
     @property
     def wrench_face(self):
+        """
+        Face (H-rep) of the wrench friction cone in world frame.
+        """
         raise NotImplementedError()
 
     @property
     def wrench_rays(self):
+        """
+        Rays (V-rep) of the wrench friction cone in world frame.
+        """
         raise NotImplementedError()
 
     @property
     def wrench_span(self):
+        """
+        Span matrix of the wrench friction cone in world frame.
+        """
         raise NotImplementedError()
 
     """

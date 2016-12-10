@@ -124,22 +124,30 @@ class Contact(Box):
 
     @property
     def force_cone(self):
-        """Contact force friction cone."""
+        """
+        Contact force friction cone.
+        """
         return Cone3D(face=self.force_face, rays=self.force_rays)
 
     @property
     def force_face(self):
-        """Face matrix of the force friction cone."""
+        """
+        Face (H-rep) of the force friction cone in world frame.
+        """
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def force_rays(self):
-        """Rays of the force friction cone."""
+        """
+        Rays (V-rep) of the force friction cone in world frame.
+        """
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def force_span(self):
-        """Span matrix of the force friction cone in world frame."""
+        """
+        Span matrix of the force friction cone in world frame.
+        """
         return array(self.force_rays).T
 
     """
@@ -149,21 +157,29 @@ class Contact(Box):
 
     @property
     def wrench_cone(self):
-        """Contact wrench friction cone."""
+        """
+        Contact wrench friction cone (CWC).
+        """
         wrench_cone = Cone(face=self.wrench_face, rays=self.wrench_rays)
         return wrench_cone
 
     @property
     def wrench_face(self):
-        """Face matrix of the wrench friction cone."""
+        """
+        Face (H-rep) of the wrench friction cone in world frame.
+        """
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def wrench_rays(self):
-        """Rays of the wrench friction cone."""
+        """
+        Rays (V-rep) of the wrench friction cone in world frame.
+        """
         raise NotImplementedError("contact mode not instantiated")
 
     @property
     def wrench_span(self):
-        """Span matrix of the wrench friction cone in world frame."""
+        """
+        Span matrix of the wrench friction cone in world frame.
+        """
         raise NotImplementedError("contact mode not instantiated")

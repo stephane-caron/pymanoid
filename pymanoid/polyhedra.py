@@ -123,8 +123,14 @@ class Cone(Polyhedron):
 
     def rays(self):
         """
-        Rays {r_1, ..., r_k} such that the cone is defined by
-        x = nonneg(r_1, ..., r_k).
+        Rays, also known as positive generators of the cone.
+
+        .. NOTE::
+
+            Steel on the skyline
+            Sky made of glass
+            Made for a real world
+            All things must pass
         """
         if self.__rays is not None:
             return self.__rays
@@ -150,7 +156,7 @@ class Cone(Polyhedron):
     """
 
     @staticmethod
-    def span_of_face(F):  # TODO: remove
+    def span_of_face(F):
         b, A = zeros((F.shape[0], 1)), F
         # H-representation: b - A x >= 0
         # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
@@ -169,7 +175,7 @@ class Cone(Polyhedron):
         return array(rays).T
 
     @staticmethod
-    def face_of_span(S):  # TODO: remove
+    def face_of_span(S):
         V = vstack([
             hstack([zeros((S.shape[1], 1)), S.T]),
             hstack([1, zeros(S.shape[0])])])
