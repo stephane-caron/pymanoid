@@ -26,6 +26,7 @@ from body import PointMass
 from contact import Contact
 from contact import FixedContact
 from contact import SlidingContact
+from contact_set import ContactSet
 from draw import draw_2d_cone
 from draw import draw_arrow
 from draw import draw_force
@@ -42,7 +43,6 @@ from process import Process
 from robot import Humanoid
 from robot import Robot
 from sim import Simulation
-from stance import ContactSet
 from stance import Stance
 
 import robots
