@@ -51,13 +51,13 @@ def compute_bretl_polygon(lp):
     d1 = array([cos(theta), sin(theta)])
     d2 = array([cos(theta + 2 * pi / 3), sin(theta + 2 * pi / 3)])
     d3 = array([cos(theta + 4 * pi / 3), sin(theta + 4 * pi / 3)])
-    res, z1 = __optimize_direction(d1, lp)
+    res, z1 = optimize_direction(d1, lp)
     if not res:
         raise BretlException(d1)
-    res, z2 = __optimize_direction(d2, lp)
+    res, z2 = optimize_direction(d2, lp)
     if not res:
         raise BretlException(d2)
-    res, z3 = __optimize_direction(d3, lp)
+    res, z3 = optimize_direction(d3, lp)
     if not res:
         raise BretlException(d3)
     v1 = Vertex(z1)
@@ -69,7 +69,7 @@ def compute_bretl_polygon(lp):
     return P0
 
 
-def __optimize_direction(vdir, lp):
+def optimize_direction(vdir, lp):
     """
     Optimize in one direction.
 
@@ -133,7 +133,7 @@ class Vertex:
         v2 = self.next
         v = array([v2.y - v1.y, v1.x - v2.x])  # orthogonal direction to edge
         v = 1 / norm(v) * v
-        res, z = __optimize_direction(v, lp)
+        res, z = optimize_direction(v, lp)
         if not res:
             self.expanded = True
             return False, None
