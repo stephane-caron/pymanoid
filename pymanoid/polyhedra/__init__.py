@@ -20,17 +20,19 @@
 
 import polygon
 
-from bretl import compute_bretl_projection
 from cone import Cone
 from cone import Cone3D
 from polyhedron import Polyhedron
 from polytope import Polytope
+from projection import project_polytope_bretl
+from projection import project_polytope_cdd
 
 __all__ = [
     'Cone',
     'Cone3D',
     'Polyhedron',
     'Polytope',
-    'compute_bretl_projection',
+    'project_polytope_bretl',
+    'project_polytope_cdd',
     'polygon'
 ]
