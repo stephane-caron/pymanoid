@@ -613,7 +613,7 @@ class ContactSet(object):
                 G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
         return G
 
-    def compute_static_equilibrium_polygon(self, method='cdd'):
+    def compute_static_equilibrium_polygon(self, method='hull'):
         """
         Compute the static-equilibrium polygon of the center of mass.
 
