@@ -20,12 +20,14 @@
 
 from static_equilibrium import compute_sep_bretl
 from static_equilibrium import compute_sep_cdd
+from static_equilibrium import compute_sep_hull
 from zmp_support_areas import compute_zmp_area_bretl
 from zmp_support_areas import compute_zmp_area_cdd
 
 __all__ = [
     'compute_sep_bretl',
     'compute_sep_cdd',
+    'compute_sep_hull',
     'compute_zmp_area_bretl',
     'compute_zmp_area_cdd'
 ]
