@@ -55,7 +55,7 @@ def compute_sep_bretl(contact_set):
     # <https://hal.archives-ouvertes.fr/hal-01349880> for details
 
     G = contact_set.compute_grasp_matrix(zeros(3))
-    F = -contact_set.compute_stacked_wrench_cones()
+    F = -contact_set.compute_stacked_wrench_faces()
 
     # Inequality constraints on [f_all, u, v]
     lp_G = zeros((F.shape[0]+4, F.shape[1]+2))
