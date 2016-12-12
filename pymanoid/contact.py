@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import cdd
 import numpy
 import simplejson
 import uuid
@@ -33,6 +32,12 @@ from optim import solve_relaxed_qp
 from polyhedra import Cone, Cone3D
 from rotations import crossmat
 from sim import get_openrave_env
+
+from contact_stability import \
+    compute_sep_bretl as __compute_sep_bretl, \
+    compute_sep_cdd as __compute_sep_cdd, \
+    compute_zmp_area_bretl as __compute_zmp_area_bretl, \
+    compute_zmp_area_cdd as __compute_zmp_area_cdd
 
 
 class Contact(Box):
@@ -607,123 +612,53 @@ class ContactSet(object):
                 G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
         return G
 
-    def compute_static_equilibrium_polygon(self):
+    def compute_static_equilibrium_polygon(self, method='cdd'):
         """
         Compute the static-equilibrium polygon of the center of mass.
 
+        INPUT:
+
+        - ``method`` -- (optional) choice between 'bretl' or 'cdd'
+
+        OUTPUT:
+
+        List of vertices of the static-equilibrium polygon.
+
         .. NOTE::
 
-            The static-equilibrium polygon was introduced in
-            <http://dx.doi.org/10.1109/TRO.2008.2001360>. Here, we compute it
-            with the double-description method as described in
-            <http://arxiv.org/abs/1510.03232> rather than the original
-            algorithm.
+            The method 'bretl' is adapted from in [BL08] where the
+            static-equilibrium polygon was introduced. The method 'cdd'
+            corresponds to the double-description approach described in [CPN16].
+            See the Appendix from [CK16] for a performance comparison.
 
-        .. NOTE::
+        REFERENCES:
 
-            Regarding performances, the double-description method is the
-            fastest known solution for contact sets with one or two contacts.
-            For three contacts or more, it is best to do the final reduction
-            with a 2D convex-hull algorithm. See Section IV.B and the Appendix
-            from <https://hal.archives-ouvertes.fr/hal-01349880> for details.
+        .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
+        .. [CPN16] https://dx.doi.org/10.1109/TRO.2016.2623338
+        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
-        mass = 42.  # [kg]
-        # mass has no effect on the output polygon, see Section IV.B in
-        # <https://hal.archives-ouvertes.fr/hal-01349880> for details
+        if method == 'cdd':
+            return __compute_sep_cdd(self)
+        elif method == 'bretl':
+            return __compute_sep_bretl(self)
+        return Exception("invalid ``method`` argument")
 
-        G = self.compute_grasp_matrix([0, 0, 0])
-        A = self.compute_stacked_wrench_faces()
-        b = zeros((A.shape[0], 1))
-        # the input [b, -A] to cdd.Matrix represents (b - A x >= 0)
-        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M = cdd.Matrix(hstack([b, -A]), number_type='float')
-        M.rep_type = cdd.RepType.INEQUALITY
-
-        # Equalities:  C [GAW_1 GAW_2 ...] + d == 0
-        C = G[(0, 1, 2, 5), :]
-        d = array([0, 0, mass * 9.81, 0]).reshape((4, 1))
-        # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
-        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M.extend(hstack([d, -C]), linear=True)
-
-        # Convert from H- to V-representation
-        P = cdd.Polyhedron(M)
-        V = array(P.get_generators())
-        if V.shape[0] < 1:
-            return [], []
-
-        # COM position from GAW:  [pGx, pGy] = D * [GAW_1 GAW_2 ...]
-        D = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
-        vertices = []
-        for i in xrange(V.shape[0]):
-            # assert V[i, 0] == 1, "There should be no ray in this polygon"
-            p = dot(D, V[i, 1:])
-            vertices.append([p[0], p[1]])
-        return vertices
-
-    def compute_zmp_support_area(self, com, plane):
+    def compute_zmp_support_area(self, com, plane, method='bretl'):
         """
         Compute the (pendular) ZMP support area for a given COM position.
 
         INPUT:
 
         - ``com`` -- COM position
-        - ``plane`` -- position of horizontal plane
+        - ``plane`` -- origin (in world frame) of the virtual plane
+        - ``method`` -- (optional) choice between 'bretl' or 'cdd'
 
         OUTPUT:
 
-        List of vertices of the area.
-
-        ALGORITHM:
-
-        This method implements the double-description version of the algorithm
-        (with a vertical plane normal) <https://arxiv.org/pdf/1510.03232.pdf>
-
-        Two better alternatives are available:
-
-        1) the raycasting method (Bretl algorithm), available in
-            <https://github.com/stephane-caron/contact_stability>
-
-        2) the more recent convex-hull reduction, described in
-            <https://scaron.info/research/humanoids-2016.html>
-
+        List of vertices of the ZMP support area.
         """
-        mass = 42.  # [kg]
-        # mass has no effect on the output polygon, c.f. Section IV.C in
-        # <https://hal.archives-ouvertes.fr/hal-01349880>
-        n = [0, 0, 1]
-        z_in, z_out = com[2], plane[2]
-
-        G = self.compute_grasp_matrix([0, 0, 0])
-        F = -self.compute_stacked_wrench_faces()
-        b = zeros((F.shape[0], 1))
-        # the input [b, -F] to cdd.Matrix represents (b - F x >= 0)
-        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M = cdd.Matrix(hstack([b, -F]), number_type='float')
-        M.rep_type = cdd.RepType.INEQUALITY
-
-        B = vstack([
-            hstack([z_in * eye(3), crossmat(n)]),
-            hstack([zeros(3), com])])  # hstack([-(cross(n, p_in)), n])])
-        C = 1. / (- mass * 9.81) * dot(B, G)
-        d = hstack([com, [0]])
-        # the input [d, -C] to cdd.Matrix.extend represents (d - C x == 0)
-        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        M.extend(hstack([d.reshape((4, 1)), -C]), linear=True)
-
-        # Convert from H- to V-representation
-        # M.canonicalize()
-        P = cdd.Polyhedron(M)
-        V = array(P.get_generators())
-
-        # Project output wrenches to 2D set
-        vertices, rays = [], []
-        for i in xrange(V.shape[0]):
-            f_gi = dot(G, V[i, 1:])[:3]
-            if V[i, 0] == 1:  # 1 = vertex, 0 = ray
-                p_out = (z_out - z_in) * f_gi / (- mass * 9.81) + com
-                vertices.append(p_out)
-            else:
-                r_out = (z_out - z_in) * f_gi / (- mass * 9.81)
-                rays.append(r_out)
-        return vertices, rays
+        if method == 'cdd':
+            return __compute_zmp_area_cdd(self)
+        elif method == 'bretl':
+            return __compute_zmp_area_bretl(self)
+        return Exception("invalid ``method`` argument")
