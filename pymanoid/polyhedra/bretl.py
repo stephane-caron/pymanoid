@@ -42,7 +42,7 @@ class ExpansionError(Exception):
         self.vdir = vdir
 
 
-def compute_bretl_polygon(lp, solver='glpk'):
+def compute_bretl_projection(lp, solver='glpk'):
     """
     Expand a polygon iteratively using Bretl & Lall's algorithm [BL08].
 

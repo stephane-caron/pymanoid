@@ -20,10 +20,15 @@
 
 import cdd
 import cvxopt
+import os
+import sys
 
 from numpy import array, dot, eye, hstack, vstack, zeros
 
-from bretl_projection import compute_bretl_polygon
+script_path = os.path.realpath(__file__)
+sys.path.append(os.path.dirname(script_path) + '/..')
+
+from polyhedra import compute_bretl_projection
 
 
 BB_SIZE = 50  # [m], bounding box size
@@ -93,7 +98,7 @@ def compute_zmp_area_bretl(contact_set, com, plane):
 
     lp = lp_q, lp_G, lp_h, lp_A, lp_b
 
-    res, P = compute_bretl_polygon(lp)
+    P = compute_bretl_projection(lp)
     P.sort_vertices()
     vertices_list = P.export_vertices()
     vertices = [array([v.x, v.y]) for v in vertices_list]
