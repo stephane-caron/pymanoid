@@ -369,12 +369,12 @@ class ContactSet(object):
 
         List of vertices of the static-equilibrium polygon.
 
-        .. NOTE::
+        ALGORITHM:
 
-            The method 'bretl' is adapted from in [BL08] where the
-            static-equilibrium polygon was introduced. The method 'cdd'
-            corresponds to the double-description approach described in [CPN16].
-            See the Appendix from [CK16] for a performance comparison.
+        The method 'bretl' is adapted from in [BL08] where the
+        static-equilibrium polygon was introduced. The method 'cdd' corresponds
+        to the double-description approach described in [CPN16]. See the
+        Appendix from [CK16] for a performance comparison.
 
         REFERENCES:
 
@@ -401,6 +401,19 @@ class ContactSet(object):
         OUTPUT:
 
         List of vertices of the ZMP support area.
+
+        ALGORITHM:
+
+        The method 'bretl' is adapted from in [BL08] where the
+        static-equilibrium polygon was introduced. The method 'cdd' corresponds
+        to the double-description approach described in [CPN16]. See the
+        Appendix from [CK16] for a performance comparison.
+
+        REFERENCES:
+
+        .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
+        .. [CPN16] https://dx.doi.org/10.1109/TRO.2016.2623338
+        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
         if method == 'cdd':
             return _compute_zmp_area_cdd(self)

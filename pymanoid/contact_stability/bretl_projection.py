@@ -26,22 +26,30 @@ from scipy.linalg import norm
 from warnings import warn
 
 
+# STFU GLPK:
 cvxopt.solvers.options['show_progress'] = False
+cvxopt.solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}  # cvxopt 1.1.8
+cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
+cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
+
+# GLPK is the fastest LP solver we could find so far,
+# see <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
 
 
-class BretlException(Exception):
+class ExpansionError(Exception):
 
-    def __init__(self, fail_dir):
-        self.fail_dir = fail_dir
+    def __init__(self, vdir):
+        self.vdir = vdir
 
 
-def compute_bretl_polygon(lp):
+def compute_bretl_polygon(lp, solver='glpk'):
     """
     Expand a polygon iteratively using Bretl & Lall's algorithm [BL08].
 
     INPUT:
 
     - ``lp`` -- tuple (q, G, h, A, b) of LP matrices
+    - ``solver`` -- (optional) LP backend for CVXOPT
 
     REFERENCES:
 
@@ -51,15 +59,15 @@ def compute_bretl_polygon(lp):
     d1 = array([cos(theta), sin(theta)])
     d2 = array([cos(theta + 2 * pi / 3), sin(theta + 2 * pi / 3)])
     d3 = array([cos(theta + 4 * pi / 3), sin(theta + 4 * pi / 3)])
-    res, z1 = optimize_direction(d1, lp)
+    res, z1 = optimize_direction(d1, lp, solver=solver)
     if not res:
-        raise BretlException(d1)
-    res, z2 = optimize_direction(d2, lp)
+        raise ExpansionError(d1)
+    res, z2 = optimize_direction(d2, lp, solver=solver)
     if not res:
-        raise BretlException(d2)
-    res, z3 = optimize_direction(d3, lp)
+        raise ExpansionError(d2)
+    res, z3 = optimize_direction(d3, lp, solver=solver)
     if not res:
-        raise BretlException(d3)
+        raise ExpansionError(d3)
     v1 = Vertex(z1)
     v2 = Vertex(z2)
     v3 = Vertex(z3)
@@ -69,7 +77,7 @@ def compute_bretl_polygon(lp):
     return P0
 
 
-def optimize_direction(vdir, lp):
+def optimize_direction(vdir, lp, solver='glpk'):
     """
     Optimize in one direction.
 
@@ -77,6 +85,7 @@ def optimize_direction(vdir, lp):
 
     - ``vdir`` -- direction in which to optimize
     - ``lp`` -- tuple (q, G, h, A, b) of LP matrices
+    - ``solver`` -- (optional) LP backend for CVXOPT
 
     OUTPUT:
 
@@ -87,7 +96,8 @@ def optimize_direction(vdir, lp):
     lp_q[-2] = -vdir[0]
     lp_q[-1] = -vdir[1]
     try:
-        sol = cvxopt.solvers.lp(lp_q, lp_Gextended, lp_hextended, lp_A, lp_b)
+        sol = cvxopt.solvers.lp(
+            lp_q, lp_Gextended, lp_hextended, lp_A, lp_b, solver=solver)
         if sol['status'] == 'optimal':
             z = sol['x']
             z = array(z).reshape((lp_q.size[0], ))
