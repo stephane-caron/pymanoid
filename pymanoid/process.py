@@ -88,12 +88,12 @@ class COMForceDrawer(Process):
             self.last_bkgnd_switch = None
 
 
-class SEPDrawer(Process):
+class SupportAreaDrawer(Process):
 
-    """Draw the static-equilibrium polygon of a contact set."""
+    """Draw a given support area of a contact set."""
 
     def __init__(self, contact_set, z=0.):
-        super(SEPDrawer, self).__init__()
+        super(SupportAreaDrawer, self).__init__()
         contact_dict = contact_set.contact_dict
         self.contact_dict = contact_dict
         self.contact_poses = {}
@@ -115,14 +115,20 @@ class SEPDrawer(Process):
             self.contact_poses[k] = c.pose
 
     def update_polygon(self):
+        raise NotImplementedError
+
+
+class SEPDrawer(SupportAreaDrawer):
+
+    def update_polygon(self):
         self.handle = None
         try:
             vertices = self.contact_set.compute_static_equilibrium_polygon()
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))
-        except:
-            pass
+        except Exception as e:
+            print "SEPDrawer:", e
 
 
 class StaticForceDrawer(Process):
@@ -182,3 +188,32 @@ class TrajectoryDrawer(Process):
         for i in xrange(len(self.handles)):
             if i % 2 == 0:
                 self.handles[i] = None
+
+
+class ZMPSupportAreaDrawer(SupportAreaDrawer):
+
+    """Draw the pendular ZMP support area of a contact set."""
+
+    def __init__(self, stance, z=0.):
+        self.last_com = stance.com.p
+        self.method = 'cdd'
+        self.stance = stance
+        super(ZMPSupportAreaDrawer, self).__init__(stance, z)
+
+    def on_tick(self, sim):
+        super(ZMPSupportAreaDrawer, self).on_tick(sim)
+        if norm(self.stance.com.p - self.last_com) > 1e-10:
+            self.update_contact_poses()
+            self.update_polygon()
+            self.last_com = self.stance.com.p
+
+    def update_polygon(self):
+        self.handle = None
+        try:
+            vertices = self.contact_set.compute_zmp_support_area(
+                self.stance.com.p, [0, 0, self.z], method=self.method)
+            self.handle = draw_polygon(
+                [(x[0], x[1], self.z) for x in vertices],
+                normal=[0, 0, 1], color=(0.0, 0.5, 0.5, 0.5))
+        except Exception as e:
+            print "ZMPSupportAreaDrawer:", e

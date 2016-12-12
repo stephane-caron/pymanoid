@@ -419,9 +419,9 @@ class ContactSet(object):
         .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
         if method == 'cdd':
-            return _compute_zmp_area_cdd(self)
+            return _compute_zmp_area_cdd(self, com, plane)
         elif method == 'bretl':
-            return _compute_zmp_area_bretl(self)
+            return _compute_zmp_area_bretl(self, com, plane)
         return Exception("invalid ``method`` argument")
 
 

@@ -111,11 +111,10 @@ def project_polytope_cdd(A, b, C, d, E, f):
     linsys = cdd.Matrix(hstack([b, -A]), number_type='float')
     linsys.rep_type = cdd.RepType.INEQUALITY
 
-    if C and d:
-        # the input [d, -C] to cdd.Matrix.extend represents (d - C * x == 0)
-        # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        d = d.reshape((d.shape[0], 1))
-        linsys.extend(hstack([d, -C]), linear=True)
+    # the input [d, -C] to cdd.Matrix.extend represents (d - C * x == 0)
+    # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+    d = d.reshape((d.shape[0], 1))
+    linsys.extend(hstack([d, -C]), linear=True)
 
     # Convert from H- to V-representation
     linsys.canonicalize()
