@@ -33,12 +33,11 @@ from pymanoid import PointMass, Stance
 from pymanoid.contact import FixedContact
 from pymanoid.process import Process, SEPDrawer, StaticForceDrawer
 
+K_doflim = 5.
 com_height = 0.9  # [m]
 polygon_handle = None
-z_polygon = 2.
-
 qd_lim = 10.
-K_doflim = 5.
+z_polygon = 2.
 
 
 class COMSync(Process):

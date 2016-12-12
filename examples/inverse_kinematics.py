@@ -36,6 +36,17 @@ from pymanoid.robots import JVRC1
 from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 
 
+def move_com_back_and_forth(duration, dt=1e-2):
+    for t in numpy.arange(0, duration, dt):
+        loop_start = time.time()
+        com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
+        com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
+        robot.step_ik(dt)
+        rem_time = dt - (time.time() - loop_start)
+        if rem_time > 0:
+            time.sleep(rem_time)
+
+
 if __name__ == '__main__':
     sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
@@ -78,33 +89,16 @@ if __name__ == '__main__':
         robot.ik.add_task(
             DOFTask(robot, dof_id, dof_ref, gain=0.5, weight=0.1))
 
-    print ""
-    print "First, we solve for an initial posture, enforcing foot contacts"
-    print "while keeping the center of mass (COM) at its current position."
-    print "The numbers below show the objective value at each iteration:"
-    print ""
+    # First, generate an initial posture
     robot.solve_ik(max_it=100, conv_tol=1e-4, debug=True)
 
-    print ""
-    print "Now, we move the target COM (green box) back and forth, and"
-    print "have the robot follow it using the step_ik() function."
-    print ""
+    # Next, we move the COM back and forth for 10 seconds
+    move_com_back_and_forth(10)
 
-    dt = 1e-2  # [s]
-    for t in numpy.arange(0, 10, 1e-2):
-        loop_start = time.time()
-        com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
-        com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
-        robot.step_ik(dt)
-        rem_time = dt - (time.time() - loop_start)
-        if rem_time > 0:
-            time.sleep(rem_time)
-
-    print "Finally, we start the simulation. Try moving the green box!"
-    print ""
-
+    # Finally, we start the simulation with the IK on
     sim.schedule(robot.ik_process)
     sim.start()
 
+    # Don't forget to give the user a prompt
     if IPython.get_ipython() is None:
         IPython.embed()
