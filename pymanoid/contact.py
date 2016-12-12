@@ -36,6 +36,7 @@ from sim import get_openrave_env
 from contact_stability import \
     compute_sep_bretl as _compute_sep_bretl, \
     compute_sep_cdd as _compute_sep_cdd, \
+    compute_sep_hull as _compute_sep_hull, \
     compute_zmp_area_bretl as _compute_zmp_area_bretl, \
     compute_zmp_area_cdd as _compute_zmp_area_cdd
 
@@ -618,7 +619,7 @@ class ContactSet(object):
 
         INPUT:
 
-        - ``method`` -- (optional) choice between 'bretl' or 'cdd'
+        - ``method`` -- (optional) choice between 'bretl', 'cdd' or 'hull'
 
         OUTPUT:
 
@@ -637,10 +638,12 @@ class ContactSet(object):
         .. [CPN16] https://dx.doi.org/10.1109/TRO.2016.2623338
         .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
-        if method == 'cdd':
-            return _compute_sep_cdd(self)
-        elif method == 'bretl':
+        if method == 'bretl':
             return _compute_sep_bretl(self)
+        elif method == 'cdd':
+            return _compute_sep_cdd(self)
+        elif method == 'hull':
+            return _compute_sep_hull(self)
         return Exception("invalid ``method`` argument")
 
     def compute_zmp_support_area(self, com, plane, method='bretl'):

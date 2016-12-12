@@ -19,11 +19,17 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import cdd
+import os
 import cvxopt
+import sys
 
 from numpy import array, dot, hstack, vstack, zeros
 
-from bretl_projection import compute_bretl_polygon
+script_path = os.path.realpath(__file__)
+sys.path.append(os.path.dirname(script_path) + '/..')
+
+from polyhedra import compute_bretl_projection
+from polyhedra.polygon import compute_polar_polygon
 
 
 BB_SIZE = 50  # [m], bounding box size
@@ -31,12 +37,12 @@ BB_SIZE = 50  # [m], bounding box size
 
 def compute_sep_bretl(contact_set):
     """
-    Compute the static-equilibrium polygon of the COM.
+    Compute the static-equilibrium polygon of the COM using Bretl & Lall's
+    projection method.
 
     INPUT:
 
     - ``contact_set`` -- a ContactSet instance
-    - ``z_out`` -- vertical coordinate for output vertices
 
     OUTPUT:
 
@@ -48,7 +54,7 @@ def compute_sep_bretl(contact_set):
 
     REFERENCES:
 
-    .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
+    .. [BL08] https://dx.doi.org/10.1109/TRO.2008.2001360
     """
     mass = 42.  # [kg]
     # mass has no effect on the output polygon, see Section IV.B in
@@ -86,7 +92,7 @@ def compute_sep_bretl(contact_set):
 
     lp = lp_q, lp_G, lp_h, lp_A, lp_b
 
-    P = compute_bretl_polygon(lp)
+    P = compute_bretl_projection(lp)
     P.sort_vertices()
     vertices_list = P.export_vertices()
     vertices = [array([v.x, v.y]) for v in vertices_list]
@@ -95,7 +101,8 @@ def compute_sep_bretl(contact_set):
 
 def compute_sep_cdd(contact_set):
     """
-    Compute the static-equilibrium polygon of the COM.
+    Compute the static-equilibrium polygon of the COM using the
+    double-description method.
 
     INPUT:
 
@@ -146,3 +153,30 @@ def compute_sep_cdd(contact_set):
         p = dot(D, V[i, 1:])
         vertices.append([p[0], p[1]])
     return vertices
+
+
+def compute_sep_hull(contact_set):
+    """
+    Compute the static-equilibrium polygon of the COM using a convex-hull
+    reduction method.
+
+    INPUT:
+
+    - ``contact_set`` -- a ContactSet instance
+
+    OUTPUT:
+
+    List of vertices of the static-equilibrium polygon.
+
+    ALGORITHM:
+
+    This projection method is described in [CK16].
+
+    REFERENCES:
+
+    .. [CK16] https://hal.archives-ouvertes.fr/hal-01349880
+    """
+    A_O = contact_set.compute_wrench_face([0, 0, 0])
+    k, a_Oz, a_x, a_y = A_O.shape[0], A_O[:, 2], A_O[:, 3], A_O[:, 4]
+    B, c = hstack([-a_y.reshape((k, 1)), +a_x.reshape((k, 1))]), -a_Oz
+    return compute_polar_polygon(B, c)
