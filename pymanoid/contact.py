@@ -34,10 +34,10 @@ from rotations import crossmat
 from sim import get_openrave_env
 
 from contact_stability import \
-    compute_sep_bretl as __compute_sep_bretl, \
-    compute_sep_cdd as __compute_sep_cdd, \
-    compute_zmp_area_bretl as __compute_zmp_area_bretl, \
-    compute_zmp_area_cdd as __compute_zmp_area_cdd
+    compute_sep_bretl as _compute_sep_bretl, \
+    compute_sep_cdd as _compute_sep_cdd, \
+    compute_zmp_area_bretl as _compute_zmp_area_bretl, \
+    compute_zmp_area_cdd as _compute_zmp_area_cdd
 
 
 class Contact(Box):
@@ -638,9 +638,9 @@ class ContactSet(object):
         .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
         if method == 'cdd':
-            return __compute_sep_cdd(self)
+            return _compute_sep_cdd(self)
         elif method == 'bretl':
-            return __compute_sep_bretl(self)
+            return _compute_sep_bretl(self)
         return Exception("invalid ``method`` argument")
 
     def compute_zmp_support_area(self, com, plane, method='bretl'):
@@ -658,7 +658,7 @@ class ContactSet(object):
         List of vertices of the ZMP support area.
         """
         if method == 'cdd':
-            return __compute_zmp_area_cdd(self)
+            return _compute_zmp_area_cdd(self)
         elif method == 'bretl':
-            return __compute_zmp_area_bretl(self)
+            return _compute_zmp_area_bretl(self)
         return Exception("invalid ``method`` argument")
