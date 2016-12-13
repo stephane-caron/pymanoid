@@ -78,7 +78,7 @@ class PolyhedronProjector(object):
         self.E = E
         self.f = f
 
-    def __prepare(self):
+    def _prepare(self):
         assert self.A is not None and self.b is not None
         assert self.C is not None and self.d is not None
         assert self.E is not None and self.f is not None
@@ -87,10 +87,6 @@ class PolyhedronProjector(object):
     def project(self):
         """
         Project polyhedron.
-
-        INPUT:
-
-        - ``method`` -- algorithm to use, to choose between 'bretl' and 'cdd'
 
         OUTPUT:
 
@@ -106,9 +102,9 @@ class PolyhedronProjector(object):
         OUTPUT:
 
         Pair ``(v, r)`` where ``v`` is the list of vertices and ``r`` the list
-        of rays (should be empty) of the projected polytope.
+        of rays of the projected polyhedron.
         """
-        A, b, C, d, E, f = self.__prepare()
+        A, b, C, d, E, f = self._prepare()
         b = b.reshape((b.shape[0], 1))
 
         # the input [b, -A] to cdd.Matrix represents (b - A * x >= 0)
@@ -174,20 +170,16 @@ class PolytopeProjector(PolyhedronProjector):
 
         OUTPUT:
 
-        Pair ``(v, r)`` where ``v`` is a list of vertices and ``r`` should be
-        empty.
+        List of vertices.
 
         REFERENCES:
 
         .. [BL08] http://dx.doi.org/10.1109/TRO.2008.2001360
         """
-        A, b, C, d, E, f = self.__prepare()
+        A, b, C, d, E, f = self._prepare()
 
-        # Inequality constraints:
-        #
-        #     A_ext * [ x  u  v ] <= b_ext  <=>  {    A * x <= b
-        #                                        { |u|, |v| <= box_size
-        #
+        # Inequality constraints: A_ext * [ x  u  v ] <= b_ext iff
+        # (1) A * x <= b and (2) |u|, |v| <= box_size
         A_ext = zeros((A.shape[0] + 4, A.shape[1] + 2))
         A_ext[:-4, :-2] = A
         A_ext[-4, -2] = 1
@@ -201,11 +193,8 @@ class PolytopeProjector(PolyhedronProjector):
         b_ext[-4:] = array([self.box_size] * 4)
         b_ext = cvxopt.matrix(b_ext)
 
-        # Equality constraints:
-        #
-        #     C_ext * [ x  u  v ] == d_ext  <=>  {    C * x == d
-        #                                        { [ u  v ] == E * x + f
-        #
+        # Equality constraints: C_ext * [ x  u  v ] == d_ext iff
+        # (1) C * x == d and (2) [ u  v ] == E * x + f
         C_ext = zeros((C.shape[0] + 2, C.shape[1] + 2))
         C_ext[:-2, :-2] = C
         C_ext[-2:, :-2] = E[:2]
