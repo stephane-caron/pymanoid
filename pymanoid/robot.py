@@ -323,7 +323,7 @@ class Robot(object):
         self.set_dof_values(self.q + qd * dt, clamp=True)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=1e-3, debug=False):
+    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=5e-3, debug=False):
         """
         Compute joint-angles q satisfying all kinematic constraints at best.
 

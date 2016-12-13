@@ -35,8 +35,9 @@ class HRP4(Humanoid):
     and kinematic chain). All other information is read from the COLLADA model.
     """
 
-    leg_length = 0.8  # [m]   (roughly, for a strechted leg)
-    mass = 39.        # [kg]  (includes batteries)
+    leg_length = 0.8           # [m]   (roughly, for a strechted leg)
+    mass = 39.                 # [kg]  (includes batteries)
+    sole_shape = (0.11, 0.05)  # (half-length [m], half-width [m]) of foot sole
 
     # DOF indexes with respect to COLLADA model
     L_F53 = 0

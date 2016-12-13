@@ -24,15 +24,15 @@ from cone import Cone
 from cone import Cone3D
 from polyhedron import Polyhedron
 from polytope import Polytope
-from projection import project_polytope_bretl
-from projection import project_polytope_cdd
+from projection import PolyhedronProjector
+from projection import PolytopeProjector
 
 __all__ = [
     'Cone',
     'Cone3D',
     'Polyhedron',
+    'PolyhedronProjector',
     'Polytope',
-    'project_polytope_bretl',
-    'project_polytope_cdd',
+    'PolytopeProjector',
     'polygon'
 ]

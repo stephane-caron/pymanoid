@@ -28,8 +28,7 @@ from draw import draw_force
 from optim import solve_relaxed_qp
 from polyhedra import Cone
 from polyhedra.polygon import compute_polar_polygon
-from polyhedra.projection import project_polytope_bretl
-from polyhedra.projection import project_polytope_cdd
+from polyhedra import PolytopeProjector
 
 
 class ContactSet(object):
@@ -390,19 +389,17 @@ class ContactSet(object):
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, see Section IV.B in
         # <https://hal.archives-ouvertes.fr/hal-01349880> for details
-        A = F
-        b = zeros(A.shape[0])
-        C = G[(0, 1, 2, 5), :]
-        d = array([0, 0, mass * 9.81, 0])
-        E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
-        f = array([p[0], p[1]])
-        if method == 'cdd':
-            vertices, _ = project_polytope_cdd(A, b, C, d, E, f)
-            return vertices
-        elif method == 'bretl':
-            vertices, _ = project_polytope_bretl(A, b, C, d, E, f)
-            return vertices
-        raise Exception("invalid method name")
+        pp = PolytopeProjector()
+        pp.set_inequality(
+            F,
+            zeros(F.shape[0]))
+        pp.set_equality(
+            G[(0, 1, 2, 5), :],
+            array([0, 0, mass * 9.81, 0]))
+        pp.set_output(
+            1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]]),
+            array([p[0], p[1]]))
+        return pp.project(method)
 
     def compute_zmp_support_area(self, com, plane, method='bretl'):
         """
@@ -438,19 +435,17 @@ class ContactSet(object):
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, c.f. Section IV.C in
         # <https://hal.archives-ouvertes.fr/hal-01349880>
-        A = F
-        b = zeros(A.shape[0])
+        pp = PolytopeProjector()
+        pp.set_inequality(
+            F,
+            zeros(F.shape[0]))
         B = vstack([
             hstack([z_com * eye(3), crossmat_n]),
             hstack([zeros(3), com])])  # \sim hstack([-(cross(n, p_in)), n])])
-        C = 1. / (mass * 9.81) * dot(B, G)
-        d = hstack([com, [0]])
-        E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
-        f = array([com[0], com[1]])
-        if method == 'cdd':
-            vertices, _ = project_polytope_cdd(A, b, C, d, E, f)
-            return vertices
-        elif method == 'bretl':
-            vertices, _ = project_polytope_bretl(A, b, C, d, E, f)
-            return vertices
-        raise Exception("invalid method name")
+        pp.set_equality(
+            1. / (mass * 9.81) * dot(B, G),
+            hstack([com, [0]]))
+        pp.set_output(
+            (z_zmp - z_com) / (mass * 9.81) * G[:2, :],
+            array([com[0], com[1]]))
+        return pp.project(method)
