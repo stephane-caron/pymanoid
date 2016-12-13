@@ -37,7 +37,7 @@ setup(
         'Programming Language :: Python :: 2.7'],
     packages=[
         'pymanoid',
-        'pymanoid.contact',
+        'pymanoid.polyhedra',
         'pymanoid.robots',
         'pymanoid.tasks']
 )
