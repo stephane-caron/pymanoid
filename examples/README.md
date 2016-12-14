@@ -37,3 +37,15 @@ The definition and calculation of these support areas is detailed in [this
 paper](https://scaron.info/research/tro-2016.html). They depend both on contact
 locations and on the position of the center of mass, so when you move it or its
 projection (blue box) you will see the area change as well.
+
+## COM Acceleration Cone
+
+<img align="right" src="images/com_accel_cone.png" width="250" />
+
+In this example, we display the pendular COM acceleration cone of the robot in
+a double-support configuration with titled contacts.
+
+The definition and calculation of this cone is detailed in [this
+paper](https://scaron.info/research/humanoids-2016.html). It depends both on
+contact locations and on the position of the center of mass, so when you move
+it or its projection (blue box) you will see its shape change as well.
