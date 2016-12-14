@@ -34,7 +34,7 @@ def norm(v):
     return sqrt(dot(v, v))
 
 
-def __compute_polar_polygon(B, c):
+def __compute_polygon_hull(B, c):
     """
     Compute the vertex representation of a polygon defined by:
 
@@ -95,7 +95,7 @@ def __compute_polar_polygon(B, c):
     return vertices
 
 
-def compute_polar_polygon(B, c):
+def compute_polygon_hull(B, c):
     """
     Compute the vertex representation of a polygon defined by:
 
@@ -116,7 +116,7 @@ def compute_polar_polygon(B, c):
     if not all(c > 0):
         x = Polytope.compute_chebyshev_center(B, c)
         c = c - dot(B, x)
-    vertices = __compute_polar_polygon(B, c)
+    vertices = __compute_polygon_hull(B, c)
     if x is not None:
         vertices = [v + x for v in vertices]
     return vertices

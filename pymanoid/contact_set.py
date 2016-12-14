@@ -20,15 +20,17 @@
 
 import numpy
 
-from numpy import array, dot, eye, hstack, vstack, zeros
+from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
+from scipy.spatial.qhull import QhullError
 from warnings import warn
 
 from draw import draw_force
 from optim import solve_relaxed_qp
 from polyhedra import Cone
-from polyhedra.polygon import compute_polar_polygon
-from polyhedra import PolytopeProjector
+from polyhedra.polygon import compute_polygon_hull
+from polyhedra import Polytope, PolytopeProjector
+from sim import gravity
 
 
 class ContactSet(object):
@@ -363,7 +365,7 @@ class ContactSet(object):
 
         OUTPUT:
 
-        List of vertices of the static-equilibrium polygon.
+        List of 2D vertices of the static-equilibrium polygon.
 
         ALGORITHM:
 
@@ -382,7 +384,7 @@ class ContactSet(object):
             A_O = self.compute_wrench_face([0, 0, 0])
             k, a_Oz, a_x, a_y = A_O.shape[0], A_O[:, 2], A_O[:, 3], A_O[:, 4]
             B, c = hstack([-a_y.reshape((k, 1)), +a_x.reshape((k, 1))]), -a_Oz
-            return compute_polar_polygon(B, c)
+            return compute_polygon_hull(B, c)
         p = [0, 0, 0]  # point where contact wrench is taken at
         G = self.compute_grasp_matrix(p)
         F = self.compute_stacked_wrench_faces()
@@ -449,3 +451,59 @@ class ContactSet(object):
             (z_zmp - z_com) / (mass * 9.81) * G[:2, :],
             array([com[0], com[1]]))
         return pp.project(method)
+
+    def compute_pendular_accel_cone(self, com, zdd_max=None):
+        """
+        Compute the (pendular) COM acceleration cone for a given COM position.
+
+        This pendular cone is the reduction of the Contact Wrench Cone when the
+        angular momentum at the COM is zero.
+
+        INPUT:
+
+        - ``com`` -- COM position, or list of COM vertices
+        - ``zdd_max`` -- (optional) maximum vertical acceleration in output cone
+
+        OUTPUT:
+
+        List of vertices of the (truncated) COM acceleration cone.
+
+        When ``com`` is a list of vertices, the returned cone corresponds to COM
+        accelerations that are feasible from *all* COM located inside the
+        polytope. See [CK16] for details on this conservative criterion.
+
+        ALGORITHM:
+
+        The method is based on a rewriting of the cone formula, followed by a 2D
+        convex hull on dual vertices. Technical details are given in [CK16].
+
+        REFERENCES:
+
+        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
+        """
+        com_vertices = [com] if type(com) is not list else com
+        CWC_O = self.compute_wrench_face([0., 0., 0.])
+        B_list, c_list = [], []
+        for (i, v) in enumerate(com_vertices):
+            B = CWC_O[:, :3] + cross(CWC_O[:, 3:], v)
+            c = dot(B, gravity)
+            B_list.append(B)
+            c_list.append(c)
+        B = vstack(B_list)
+        c = hstack(c_list)
+        try:
+            g = -gravity[2]  # gravity constant (positive)
+            check = c / B[:, 2]
+            assert max(check) - min(check) < 1e-10, \
+                "max - min failed (%.1e)" % ((max(check) - min(check)))
+            assert abs(check[0] - (-g)) < 1e-10, "check is not -g?"
+            B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
+            sigma = c / g  # see Equation (30) in [CK16]
+            hull_2d = compute_polygon_hull(B_2d, sigma)
+            zdd = +g if zdd_max is None else zdd_max
+            vertices_at_zdd = [
+                array([a * (g + zdd), b * (g + zdd), zdd])
+                for (a, b) in hull_2d]
+            return Polytope(vertices=[gravity] + vertices_at_zdd)
+        except QhullError:
+            raise Exception("Cannot compute 2D polar for acceleration cone")

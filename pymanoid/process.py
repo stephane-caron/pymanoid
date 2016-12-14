@@ -21,7 +21,7 @@
 from numpy import hstack, zeros
 from time import time
 
-from draw import draw_force, draw_line, draw_polygon
+from draw import draw_force, draw_line, draw_polygon, draw_polyhedron
 from misc import norm
 
 
@@ -217,3 +217,16 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
                 normal=[0, 0, 1], color=(0.0, 0.5, 0.5, 0.5))
         except Exception as e:
             print "ZMPSupportAreaDrawer:", e
+
+
+class COMAccelConeDrawer(ZMPSupportAreaDrawer):
+
+    def update_polygon(self):
+        self.handle = None
+        try:
+            cone = self.contact_set.compute_pendular_accel_cone(
+                self.stance.com.p)
+            vscale = [self.stance.com.p + 0.1 * acc for acc in cone.vertices]
+            self.handle = draw_polyhedron(vscale, 'r.-#')
+        except Exception as e:
+            print "COMAccelConeDrawer:", e

@@ -35,9 +35,22 @@ def norm(v):
     return sqrt(dot(v, v))
 
 
+class EmptyPolytope(Exception):
+
+    pass
+
+
 class Polytope(Polyhedron):
 
     """Polytopes are bounded polyhedra, i.e., with only vertices and no ray."""
+
+    def __init__(self, hrep=None, vrep=None, vertices=None):
+        if vrep is None:
+            if vertices is not None:
+                V = vstack(vertices)
+                t = ones((V.shape[0], 1))  # first column is 1 for vertices
+                vrep = hstack([t, V])
+        super(Polytope, self).__init__(hrep, vrep)
 
     @staticmethod
     def hrep(vertices):
@@ -108,7 +121,8 @@ class Polytope(Polyhedron):
         a_cheby = array([norm(A[i, :]) for i in xrange(A.shape[0])])
         A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
         z = solve_lp(cost, A_cheby, b)
-        assert z[-1] > 0  # last coordinate is distance to boundaries
+        if z[-1] < -1e-10:  # last coordinate is distance to boundaries
+            raise EmptyPolytope("polytope has no Chebyshev center")
         return z[:-1]
 
 

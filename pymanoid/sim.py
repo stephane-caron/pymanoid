@@ -30,6 +30,7 @@ from misc import AvgStdEstimator
 
 
 env = None  # global OpenRAVE environment
+gravity = array([0, 0, -9.80665])  # gravity in world frame (ISO 80000-3)
 
 
 def get_openrave_env():
@@ -50,11 +51,10 @@ class Simulation(object):
         - ``env_path`` -- (optional) load environment from XML/DAE file
         - ``env_xml`` -- (optional) load environment from XML string
         """
-        global env
+        global env, gravity
         if env is not None:
             raise Exception("an OpenRAVE environment already exists")
         env = openravepy.Environment()
-        gravity = array([0, 0, -9.80665])  # ISO 80000-3
         if env_path:
             env.Load(env_path)
         elif env_xml:
