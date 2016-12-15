@@ -27,14 +27,6 @@ from contact import Contact
 from contact import FixedContact
 from contact import SlidingContact
 from contact_set import ContactSet
-from draw import draw_2d_cone
-from draw import draw_arrow
-from draw import draw_force
-from draw import draw_line
-from draw import draw_point
-from draw import draw_points
-from draw import draw_polygon
-from draw import draw_polyhedron
 from optim import solve_lp
 from optim import solve_qp
 from polyhedra import Cone
@@ -63,14 +55,6 @@ __all__ = [
     'Simulation',
     'SlidingContact',
     'Stance',
-    'draw_2d_cone',
-    'draw_arrow',
-    'draw_force',
-    'draw_line',
-    'draw_point',
-    'draw_points',
-    'draw_polygon',
-    'draw_polyhedron',
     'robots',
     'solve_lp',
     'solve_qp',
