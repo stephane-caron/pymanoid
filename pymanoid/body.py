@@ -323,11 +323,11 @@ class Cube(Box):
         - ``size`` -- half-length of a side of the cube
         - ``pos`` -- initial position in inertial frame
         - ``rpy`` -- initial orientation in inertial frame
-        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
-        - ``name`` -- object's name (optional)
         - ``pose`` -- initial pose (supersedes pos and rpy)
+        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
         - ``visible`` -- initial box visibility
         - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
+        - ``name`` -- object's name (optional)
         """
         super(Cube, self).__init__(
             size, size, size, pos=pos, rpy=rpy, color=color, name=name,
@@ -336,7 +336,8 @@ class Cube(Box):
 
 class Point(Cube):
 
-    def __init__(self, pos=None, size=0.01, *args, **kwargs):
+    def __init__(self, pos=None, size=0.01, color='r', visible=True,
+                 transparency=None, name=None):
         """
         Points are simply cubes with a default size.
 
@@ -344,10 +345,16 @@ class Point(Cube):
 
         - ``pos`` -- (optional) initial position in inertial frame
         - ``size`` -- (optional) cube size, defaults to 1 cm
+        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
+        - ``visible`` -- initial box visibility
+        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
+        - ``name`` -- object's name (optional)
         """
         if pos is None:
             pos = [0., 0., 0.]
-        super(Point, self).__init__(size, pos=pos, *args, **kwargs)
+        super(Point, self).__init__(
+            size, pos=pos, color=color, visible=visible,
+            transparency=transparency, name=name)
         self.__pd = zeros(3)
 
     @property

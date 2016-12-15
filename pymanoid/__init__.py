@@ -24,8 +24,6 @@ from body import Manipulator
 from body import Point
 from body import PointMass
 from contact import Contact
-from contact import FixedContact
-from contact import SlidingContact
 from contact_set import ContactSet
 from optim import solve_lp
 from optim import solve_qp
@@ -46,7 +44,6 @@ __all__ = [
     'Contact',
     'ContactSet',
     'Cube',
-    'FixedContact',
     'Humanoid',
     'Humanoid',
     'Manipulator',
@@ -57,7 +54,6 @@ __all__ = [
     'Process',
     'Robot',
     'Simulation',
-    'SlidingContact',
     'Stance',
     'robots',
     'solve_lp',

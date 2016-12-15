@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy
-
 from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 
@@ -27,7 +25,6 @@ from body import Box
 from misc import norm
 from polyhedra import Cone
 from rotations import crossmat
-from sim import get_openrave_env
 
 
 class Contact(Box):
@@ -36,7 +33,7 @@ class Contact(Box):
 
     def __init__(self, shape, pos=None, rpy=None, pose=None,
                  static_friction=None, kinetic_friction=None, visible=True,
-                 name=None):
+                 name=None, color='r'):
         """
         Create a new rectangular contact.
 
@@ -55,38 +52,20 @@ class Contact(Box):
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, name=name)
+        if kinetic_friction is None and static_friction is not None:
+            kinetic_friction = static_friction
         self.kinetic_friction = kinetic_friction
         self.static_friction = static_friction
+        self.vel = zeros(3)
 
-    def draw_force_lines(self, length=0.25):
-        """
-        Draw friction cones from each vertex of the surface patch.
-
-        INPUT:
-
-        - ``length`` -- (optional) length of friction rays in [m]
-
-        OUTPUT:
-
-        A list of OpenRAVE GUI handles.
-        """
-        env = get_openrave_env()
-        handles = []
-        for c in self.vertices:
-            color = [0.1, 0.1, 0.1]
-            color[numpy.random.randint(3)] += 0.2
-            for f in self.force_rays:
-                handles.append(env.drawlinelist(
-                    array([c, c + length * f]),
-                    linewidth=1, colors=color))
-            handles.append(env.drawlinelist(
-                array([c, c + length * self.n]),
-                linewidth=5, colors=color))
-        return handles
+    @property
+    def is_sliding(self):
+        return dot(self.vel, self.vel) > 1e-6
 
     def grasp_matrix(self, p):
         """
-        Compute the grasp matrix from contact point ``self.p`` to a point ``p``.
+        Compute the grasp matrix from the origin of the contact frame (in world
+        coordinates) to a given point.
 
         INPUT:
 
@@ -123,6 +102,9 @@ class Contact(Box):
     """
     Force Friction Cone
     ===================
+
+    All linearized friction cones in pymanoid use the inner (conservative)
+    approximation. See <https://scaron.info/teaching/friction-model.html>
     """
 
     @property
@@ -137,14 +119,41 @@ class Contact(Box):
         """
         Face (H-rep) of the force friction cone in world frame.
         """
-        raise NotImplementedError("contact mode not instantiated")
+        if self.is_sliding:
+            mu = self.kinetic_friction / sqrt(2)  # inner approximation
+            nv = norm(self.vel)
+            vx, vy, _ = self.vel
+            local_cone = array([
+                [-1, 0, -mu * vx / nv],
+                [+1, 0, +mu * vx / nv],
+                [0, -1, -mu * vy / nv],
+                [0, +1, -mu * vy / nv]])
+        else:  # fixed contact mode
+            mu = self.static_friction / sqrt(2)  # inner approximation
+            local_cone = array([
+                [-1, 0, -mu],
+                [+1, 0, -mu],
+                [0, -1, -mu],
+                [0, +1, -mu]])
+        return dot(local_cone, self.R.T)
 
     @property
     def force_rays(self):
         """
         Rays (V-rep) of the force friction cone in world frame.
         """
-        raise NotImplementedError("contact mode not instantiated")
+        if self.is_sliding:
+            mu = self.kinetic_friction / sqrt(2)  # inner approximation
+            nv = norm(self.v)
+            vx, vy, _ = self.v
+            return dot(self.R, [-mu * vx / nv, -mu * vy / nv, +1])
+        else:  # fixed contact mode
+            mu = self.static_friction / sqrt(2)  # inner approximation
+            f1 = dot(self.R, [+mu, +mu, +1])
+            f2 = dot(self.R, [+mu, -mu, +1])
+            f3 = dot(self.R, [-mu, +mu, +1])
+            f4 = dot(self.R, [-mu, -mu, +1])
+            return [f1, f2, f3, f4]
 
     @property
     def force_span(self):
@@ -163,70 +172,7 @@ class Contact(Box):
         """
         Contact wrench friction cone (CWC).
         """
-        wrench_cone = Cone(face=self.wrench_face, rays=self.wrench_rays)
-        return wrench_cone
-
-    @property
-    def wrench_face(self):
-        """
-        Face (H-rep) of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError("contact mode not instantiated")
-
-    @property
-    def wrench_rays(self):
-        """
-        Rays (V-rep) of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError("contact mode not instantiated")
-
-    @property
-    def wrench_span(self):
-        """
-        Span matrix of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError("contact mode not instantiated")
-
-
-class FixedContact(Contact):
-
-    """
-    Force Friction Cone
-    ===================
-
-    All linearized friction cones in pymanoid use the inner (conservative)
-    approximation. See <https://scaron.info/teaching/friction-model.html>
-    """
-
-    @property
-    def force_face(self):
-        """
-        Face (H-rep) of the contact-force friction cone in world frame.
-        """
-        mu = self.static_friction / sqrt(2)  # inner approximation
-        local_cone = array([
-            [-1, 0, -mu],
-            [+1, 0, -mu],
-            [0, -1, -mu],
-            [0, +1, -mu]])
-        return dot(local_cone, self.R.T)
-
-    @property
-    def force_rays(self):
-        """
-        Rays (V-rep) of the contact-force friction cone in world frame.
-        """
-        mu = self.static_friction / sqrt(2)  # inner approximation
-        f1 = dot(self.R, [+mu, +mu, +1])
-        f2 = dot(self.R, [+mu, -mu, +1])
-        f3 = dot(self.R, [-mu, +mu, +1])
-        f4 = dot(self.R, [-mu, -mu, +1])
-        return [f1, f2, f3, f4]
-
-    """
-    Wrench Friction Cone
-    ====================
-    """
+        return Cone(face=self.wrench_face, rays=self.wrench_rays)
 
     @property
     def wrench_face(self):
@@ -248,26 +194,29 @@ class FixedContact(Contact):
            <https://scaron.info/papers/conf/caron-icra-2015.pdf>
 
         """
-        X, Y = self.X, self.Y
-        mu = self.static_friction / sqrt(2)  # inner approximation
-        local_cone = array([
-            # fx fy             fz taux tauy tauz
-            [-1,  0,           -mu,   0,   0,   0],
-            [+1,  0,           -mu,   0,   0,   0],
-            [0,  -1,           -mu,   0,   0,   0],
-            [0,  +1,           -mu,   0,   0,   0],
-            [0,   0,            -Y,  -1,   0,   0],
-            [0,   0,            -Y,  +1,   0,   0],
-            [0,   0,            -X,   0,  -1,   0],
-            [0,   0,            -X,   0,  +1,   0],
-            [-Y, -X, -(X + Y) * mu, +mu, +mu,  -1],
-            [-Y, +X, -(X + Y) * mu, +mu, -mu,  -1],
-            [+Y, -X, -(X + Y) * mu, -mu, +mu,  -1],
-            [+Y, +X, -(X + Y) * mu, -mu, -mu,  -1],
-            [+Y, +X, -(X + Y) * mu, +mu, +mu,  +1],
-            [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
-            [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
-            [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
+        if self.is_sliding:
+            raise NotImplementedError
+        else:  # fixed contact mode
+            X, Y = self.X, self.Y
+            mu = self.static_friction / sqrt(2)  # inner approximation
+            local_cone = array([
+                # fx fy             fz taux tauy tauz
+                [-1,  0,           -mu,   0,   0,   0],
+                [+1,  0,           -mu,   0,   0,   0],
+                [0,  -1,           -mu,   0,   0,   0],
+                [0,  +1,           -mu,   0,   0,   0],
+                [0,   0,            -Y,  -1,   0,   0],
+                [0,   0,            -Y,  +1,   0,   0],
+                [0,   0,            -X,   0,  -1,   0],
+                [0,   0,            -X,   0,  +1,   0],
+                [-Y, -X, -(X + Y) * mu, +mu, +mu,  -1],
+                [-Y, +X, -(X + Y) * mu, +mu, -mu,  -1],
+                [+Y, -X, -(X + Y) * mu, -mu, +mu,  -1],
+                [+Y, +X, -(X + Y) * mu, -mu, -mu,  -1],
+                [+Y, +X, -(X + Y) * mu, +mu, +mu,  +1],
+                [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
+                [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
+                [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         return dot(local_cone, block_diag(self.R.T, self.R.T))
 
     @property
@@ -275,12 +224,15 @@ class FixedContact(Contact):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
         """
-        rays = []
-        for v in self.vertices:
-            x, y, z = v - self.p
-            for f in self.force_rays:
-                rays.append(hstack([f, cross(v - self.p, f)]))
-        return rays
+        if self.is_sliding:
+            raise NotImplementedError
+        else:  # fixed contact mode
+            rays = []
+            for v in self.vertices:
+                x, y, z = v - self.p
+                for f in self.force_rays:
+                    rays.append(hstack([f, cross(v - self.p, f)]))
+            return rays
 
     @property
     def wrench_span(self):
@@ -295,96 +247,14 @@ class FixedContact(Contact):
         coordinates. Note that the contact wrench w is taken at the contact
         point (self.p) and in the world frame.
         """
-        span_blocks = []
-        for (i, v) in enumerate(self.vertices):
-            x, y, z = v - self.p
-            Gi = vstack([eye(3), crossmat(v - self.p)])
-            span_blocks.append(dot(Gi, self.force_span))
-        S = hstack(span_blocks)
-        assert S.shape == (6, 16)
-        return S
-
-
-class SlidingContact(Contact):
-
-    def __init__(self, shape, pos=None, rpy=None, pose=None,
-                 static_friction=None, kinetic_friction=None, visible=True,
-                 name=None):
-        """
-        Create a new rectangular contact in sliding contact mode.
-
-        INPUT:
-
-        - ``shape`` -- pair (half-length, half-width) of the surface patch
-        - ``pos`` -- contact position in world frame
-        - ``rpy`` -- contact orientation in world frame
-        - ``pose`` -- initial pose (supersedes pos and rpy)
-        - ``static_friction`` -- (optional) static friction coefficient
-        - ``kinetic_friction`` -- kinetic friction coefficient
-        - ``visible`` -- initial box visibility
-        - ``name`` -- (optional) name in OpenRAVE scope
-        """
-        super(SlidingContact, self).__init__(
-            shape=shape, pos=pos, rpy=rpy, pose=pose,
-            static_friction=static_friction, kinetic_friction=kinetic_friction,
-            visible=visible, name=name)
-        self.v = zeros(3)
-
-    """
-    Force Friction Cone
-    ===================
-
-    All linearized friction cones in pymanoid use the inner (conservative)
-    approximation. See <https://scaron.info/teaching/friction-model.html>
-    """
-
-    @property
-    def force_face(self):
-        """
-        Face (H-rep) of the force friction cone in world frame.
-        """
-        mu = self.kinetic_friction / sqrt(2)  # inner approximation
-        nv = norm(self.v)
-        vx, vy, _ = self.v
-        local_cone = array([
-            [-1, 0, -mu * vx / nv],
-            [+1, 0, +mu * vx / nv],
-            [0, -1, -mu * vy / nv],
-            [0, +1, -mu * vy / nv]])
-        return dot(local_cone, self.R.T)
-
-    @property
-    def force_rays(self):
-        """
-        Rays (V-rep) of the force friction cone in world frame.
-        """
-        mu = self.kinetic_friction / sqrt(2)  # inner approximation
-        nv = norm(self.v)
-        vx, vy, _ = self.v
-        return dot(self.R, [-mu * vx / nv, -mu * vy / nv, +1])
-
-    """
-    Wrench Friction Cone
-    ====================
-    """
-
-    @property
-    def wrench_face(self):
-        """
-        Face (H-rep) of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError()
-
-    @property
-    def wrench_rays(self):
-        """
-        Rays (V-rep) of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError()
-
-    @property
-    def wrench_span(self):
-        """
-        Span matrix of the wrench friction cone in world frame.
-        """
-        raise NotImplementedError()
+        if self.is_sliding:
+            raise NotImplementedError
+        else:  # fixed contact mode
+            span_blocks = []
+            for (i, v) in enumerate(self.vertices):
+                x, y, z = v - self.p
+                Gi = vstack([eye(3), crossmat(v - self.p)])
+                span_blocks.append(dot(Gi, self.force_span))
+            S = hstack(span_blocks)
+            assert S.shape == (6, 16)
+            return S
