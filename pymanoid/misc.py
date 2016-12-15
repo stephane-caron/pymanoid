@@ -18,11 +18,9 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib
-import pylab
+from numpy import array, dot, hstack, sqrt
 
-from scipy.spatial import ConvexHull
-from numpy import array, dot, sqrt
+from rotations import quat_slerp
 
 
 class AvgStdEstimator(object):
@@ -68,19 +66,54 @@ def normalize(v):
     return v / norm(v)
 
 
-def plot_polygon(poly, alpha=.4, color='g', linestyle='solid', fill=True,
-                 linewidth=None, **kwargs):
-    if type(poly) is list:
-        poly = array(poly)
-    ax = pylab.gca()
-    hull = ConvexHull(poly)
-    poly = poly[hull.vertices, :]
-    xmin1, xmax1, ymin1, ymax1 = pylab.axis()
-    xmin2, ymin2 = 1.5 * poly.min(axis=0)
-    xmax2, ymax2 = 1.5 * poly.max(axis=0)
-    pylab.axis((min(xmin1, xmin2), max(xmax1, xmax2),
-                min(ymin1, ymin2), max(ymax1, ymax2)))
-    patch = matplotlib.patches.Polygon(
-        poly, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
-        linewidth=linewidth, **kwargs)
+def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
+                 linewidth=None):
+    """
+    Plot a polygon in matplotlib.
+
+    INPUT:
+
+    - ``points`` -- list of points
+    - ``alpha`` -- (optional) transparency
+    - ``color`` -- (optional) color in matplotlib format
+    - ``linestyle`` -- (optional) line style in matplotlib format
+    - ``fill`` -- (optional) when ``True``, fills the area inside the polygon
+    - ``linewidth`` (optional) line width in matplotlib format
+    """
+    from matplotlib.patches import Polygon
+    from pylab import axis, gca
+    from scipy.spatial import ConvexHull
+    if type(points) is list:
+        points = array(points)
+    ax = gca()
+    hull = ConvexHull(points)
+    points = points[hull.vertices, :]
+    xmin1, xmax1, ymin1, ymax1 = axis()
+    xmin2, ymin2 = 1.5 * points.min(axis=0)
+    xmax2, ymax2 = 1.5 * points.max(axis=0)
+    axis((min(xmin1, xmin2), max(xmax1, xmax2),
+          min(ymin1, ymin2), max(ymax1, ymax2)))
+    patch = Polygon(
+        points, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
+        linewidth=linewidth)
     ax.add_patch(patch)
+
+
+def interpolate_pose_linear(pose0, pose1, t):
+    """
+    Linear pose interpolation.
+
+    INPUT:
+
+    - ``pose0`` -- first pose
+    - ``pose1`` -- end pose
+    - ``t`` -- floating number between 0. and 1.
+
+    OUTPUT:
+
+    Pose linearly interpolated between ``pose0`` (with weight ``t``) and
+    ``pose1`` (with weight ``1 - t``).
+    """
+    pos = pose0[4:] + t * (pose1[4:] - pose0[4:])
+    quat = quat_slerp(pose0[:4], pose1[:4], t)
+    return hstack([quat, pos])
