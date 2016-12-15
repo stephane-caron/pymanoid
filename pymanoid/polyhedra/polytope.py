@@ -122,5 +122,5 @@ class Polytope(Polyhedron):
         A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
         z = solve_lp(cost, A_cheby, b)
         if z[-1] < -1e-10:  # last coordinate is distance to boundaries
-            raise EmptyPolytope("polytope has no Chebyshev center")
+            raise EmptyPolytope("Chebyshev center violation by %.1f" % z[-1])
         return z[:-1]
