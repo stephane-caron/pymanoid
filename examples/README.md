@@ -11,7 +11,12 @@ model, then generates a posture where the robot has its two feet on pre-defined
 contacts. Next, it tracks a reference COM motion given by the green virtual
 box, which you can manipulate directly in the OpenRAVE GUI.
 
-## Static-equilibrium Polygon
+## Contact-stability
+
+Contact-stability areas and volumes are conditions used to prevent contacts
+from slipping or detaching during motion.
+
+### Static-equilibrium Polygon
 
 <img align="right" src="images/static_equilibrium_polygon.png" width="250" />
 
@@ -26,7 +31,7 @@ support the equilibrium position represented by the blue box (which acts like a
 COM position). Try moving this box around, and see what happens when it exits
 the polygon.
 
-## ZMP Support Area
+### ZMP Support Area
 
 <img align="right" src="images/zmp_support_area.png" width="250" />
 
@@ -38,7 +43,7 @@ paper](https://scaron.info/research/tro-2016.html). They depend both on contact
 locations and on the position of the center of mass, so when you move it or its
 projection (blue box) you will see the area change as well.
 
-## COM Acceleration Cone
+### COM Acceleration Cone
 
 <img align="right" src="images/com_accel_cone.png" width="250" />
 
