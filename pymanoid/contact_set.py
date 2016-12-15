@@ -452,7 +452,7 @@ class ContactSet(object):
             array([com[0], com[1]]))
         return pp.project(method)
 
-    def compute_pendular_accel_cone(self, com, zdd_max=None):
+    def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
         """
         Compute the (pendular) COM acceleration cone for a given COM position.
 
@@ -463,10 +463,12 @@ class ContactSet(object):
 
         - ``com`` -- COM position, or list of COM vertices
         - ``zdd_max`` -- (optional) maximum vertical acceleration in output cone
+        - ``reduced`` -- (optional) if True, will return the 2D reduced form
 
         OUTPUT:
 
-        List of vertices of the (truncated) COM acceleration cone.
+        List of 3D vertices of the (truncated) COM acceleration cone, or of the
+        2D vertices of the reduced form if ``reduced`` is ``True``.
 
         When ``com`` is a list of vertices, the returned cone corresponds to COM
         accelerations that are feasible from *all* COM located inside the
@@ -475,7 +477,7 @@ class ContactSet(object):
         ALGORITHM:
 
         The method is based on a rewriting of the cone formula, followed by a 2D
-        convex hull on dual vertices. Technical details are given in [CK16].
+        convex hull on dual vertices. The algorithm is described in [CK16].
 
         REFERENCES:
 
@@ -499,11 +501,18 @@ class ContactSet(object):
             assert abs(check[0] - (-g)) < 1e-10, "check is not -g?"
             B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
             sigma = c / g  # see Equation (30) in [CK16]
-            hull_2d = compute_polygon_hull(B_2d, sigma)
-            zdd = +g if zdd_max is None else zdd_max
-            vertices_at_zdd = [
-                array([a * (g + zdd), b * (g + zdd), zdd])
-                for (a, b) in hull_2d]
-            return Polytope(vertices=[gravity] + vertices_at_zdd)
+            reduced_hull = compute_polygon_hull(B_2d, sigma)
+            if reduced:
+                return reduced_hull
+            return self._expand_reduced_pendular_cone(reduced_hull, zdd_max)
         except QhullError:
             raise Exception("Cannot compute 2D polar for acceleration cone")
+
+    @staticmethod
+    def _expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
+        g = -gravity[2]  # gravity constant (positive)
+        zdd = +g if zdd_max is None else zdd_max
+        vertices_at_zdd = [
+            array([a * (g + zdd), b * (g + zdd), zdd])
+            for (a, b) in reduced_hull]
+        return Polytope(vertices=[gravity] + vertices_at_zdd)

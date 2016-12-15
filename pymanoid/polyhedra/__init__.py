@@ -21,6 +21,7 @@
 import polygon
 
 from cone import Cone
+from polygon import intersect_polygons
 from polyhedron import Polyhedron
 from polytope import Polytope
 from projection import PolyhedronProjector
@@ -32,5 +33,6 @@ __all__ = [
     'PolyhedronProjector',
     'Polytope',
     'PolytopeProjector',
+    'intersect_polygons',
     'polygon'
 ]

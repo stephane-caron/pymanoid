@@ -30,6 +30,8 @@ from contact_set import ContactSet
 from optim import solve_lp
 from optim import solve_qp
 from polyhedra import Cone
+from polyhedra import Polyhedron
+from polyhedra import Polytope
 from process import Process
 from robot import Humanoid
 from robot import Robot
@@ -50,6 +52,8 @@ __all__ = [
     'Manipulator',
     'Point',
     'PointMass',
+    'Polyhedron',
+    'Polytope',
     'Process',
     'Robot',
     'Simulation',
