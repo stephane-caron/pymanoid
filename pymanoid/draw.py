@@ -21,6 +21,7 @@
 import itertools
 
 from numpy import array, cross, dot, int64, sqrt, vstack
+from numpy.random import randint
 from scipy.spatial import ConvexHull
 from scipy.spatial.qhull import QhullError
 from warnings import warn
@@ -314,3 +315,30 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
         return draw_polygon(vertices, normal, combined, color, faces)
     plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
     return draw_polygon(plot_vertices, normal, combined, color, faces)
+
+
+def draw_contact_force_lines(contact, length=0.25):
+    """
+    Draw friction cones from each vertex of the surface patch.
+
+    INPUT:
+
+    - ``length`` -- (optional) length of friction rays in [m]
+
+    OUTPUT:
+
+    A list of OpenRAVE GUI handles.
+    """
+    env = get_openrave_env()
+    handles = []
+    for c in contact.vertices:
+        color = [0.1, 0.1, 0.1]
+        color[randint(3)] += 0.2
+        for f in contact.force_rays:
+            handles.append(env.drawlinelist(
+                array([c, c + length * f]),
+                linewidth=1, colors=color))
+        handles.append(env.drawlinelist(
+            array([c, c + length * contact.n]),
+            linewidth=5, colors=color))
+    return handles

@@ -97,6 +97,20 @@ class VelocitySolver(object):
         for task in tasks:
             self.add_task(task)
 
+    def get_task(self, name):
+        """
+        Get an active task from its name.
+
+        INPUT:
+
+        - ``name`` -- task name
+        """
+        with self.tasks_lock:
+            if name not in self.tasks:
+                warn("no task with name '%s'" % name)
+                return
+            return self.tasks[name]
+
     def remove_task(self, name):
         """
         Remove a task from the IK.
