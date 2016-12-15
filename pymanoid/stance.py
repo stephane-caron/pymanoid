@@ -18,9 +18,11 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot
+from numpy import array, dot
 
+from body import Point
 from contact_set import ContactSet
+from misc import norm
 from polyhedra import Polytope
 
 
@@ -31,20 +33,23 @@ class Stance(ContactSet):
     """
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
-                 right_hand=None, ref_velocity=0.4, leg_length=0.8):
+                 right_hand=None, label=None, duration=None):
         """
         Create a new stance.
 
         INPUT:
 
-        - ``com`` -- PointMass object
+        - ``com`` -- coordinates or Point object
         - ``left_foot`` -- (optional) left foot Contact
         - ``right_foot`` -- (optional) right foot Contact
         - ``left_hand`` -- (optional) left hand Contact
         - ``right_hand`` -- (optional) right hand Contact
-        - ``ref_velocity`` -- (default: 0.4 m/s) target forward COM velocity
+        - ``label`` -- (optional) string label, e.g. phase in walking FSM
+        - ``duration`` -- (optional) timing information
         """
         contacts = {}
+        if type(com) is not Point:
+            com = Point(com, visible=False)
         if left_foot:
             contacts['left_foot'] = left_foot
         if left_hand:
@@ -54,6 +59,8 @@ class Stance(ContactSet):
         if right_hand:
             contacts['right_hand'] = right_hand
         self.com = com
+        self.duration = duration
+        self.label = label
         self.left_foot = left_foot
         self.left_hand = left_hand
         self.right_foot = right_foot
