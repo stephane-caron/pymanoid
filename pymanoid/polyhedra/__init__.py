@@ -21,6 +21,8 @@
 import polygon
 
 from cone import Cone
+from misc import is_positive_combination
+from misc import is_redundant
 from polygon import intersect_polygons
 from polyhedron import Polyhedron
 from polytope import Polytope
@@ -34,5 +36,7 @@ __all__ = [
     'Polytope',
     'PolytopeProjector',
     'intersect_polygons',
+    'is_positive_combination',
+    'is_redundant',
     'polygon'
 ]
