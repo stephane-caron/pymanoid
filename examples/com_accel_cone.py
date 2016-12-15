@@ -78,7 +78,7 @@ if __name__ == "__main__":
             static_friction=0.5,
             visible=True))
 
-    robot.init_ik(active_dofs=robot.whole_body)
+    robot.init_ik(robot.whole_body)
     robot.set_dof_values([
         3.53863816e-02,   2.57657518e-02,   7.75586039e-02,
         6.35909636e-01,   7.38580762e-02,  -5.34226902e-01,

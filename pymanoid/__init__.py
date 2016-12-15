@@ -38,7 +38,6 @@ from draw import draw_polyhedron
 from optim import solve_lp
 from optim import solve_qp
 from polyhedra import Cone
-from polyhedra import Cone3D
 from process import Process
 from robot import Humanoid
 from robot import Robot
@@ -50,7 +49,6 @@ import robots
 __all__ = [
     'Box',
     'Cone',
-    'Cone3D',
     'Contact',
     'ContactSet',
     'Cube',

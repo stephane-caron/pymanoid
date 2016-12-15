@@ -53,30 +53,26 @@ class Cone(Polyhedron):
                 hstack([[1], zeros(R.shape[1])])])
         if face is not None:
             hrep = hstack([zeros((face.shape[0], 1)), -face])
-        self.__face = face
-        self.__rays = rays
+        self.face = face
+        self.rays = rays
         super(Cone, self).__init__(hrep, vrep)
 
-    def face(self):
+    def compute_face(self):
         """
         Face matrix F such that the cone is defined by F * x <= 0.
         """
-        if self.__face is not None:
-            return self.__face
-        # A = []
-        H = self.hrep()  # H-rep is [b | -A]
-        for h in H:
+        if self.face is not None:
+            return self.face
+        bA = self.hrep
+        for h in bA:
             if norm(h[1:]) < 1e-10:
                 continue
             elif abs(h[0]) > 1e-10:  # should be zero for a cone
                 raise TypeError("Polyhedron is not a cone")
-            # elif i in ineq.lin_set:
-            #     raise TypeError("Polyhedron has linear generators")
-            # A.append(-H[i, 1:])
-        self.__face = -H[:, 1:]
-        return self.__face
+        self.face = -bA[:, 1:]  # H-rep is [b | A] == [0 | -F]
+        return self.face
 
-    def rays(self):
+    def compute_rays(self):
         """
         Rays, also known as positive generators of the cone.
 
@@ -87,47 +83,64 @@ class Cone(Polyhedron):
             Made for a real world
             All things must pass
         """
-        if self.__rays is not None:
-            return self.__rays
-        V = self.vrep()
-        # rays = []
-        for i in xrange(V.shape[0]):
-            if V[i, 0] != 0:  # 1 = vertex, 0 = ray
+        if self.rays is not None:
+            return self.rays
+        tV = self.vrep()  # V-rep is [t | V]
+        for i in xrange(tV.shape[0]):
+            if tV[i, 0] != 0:  # t = 1 for vertex, 0 for ray
                 raise Exception("Polyhedron is not a cone")
-            # elif i not in g.lin_set:  # ignore those in lin_set
-            #     rays.append(V[i, 1:])
-        self.__rays = list(V[:, 1:])
-        return self.__rays
+        self.rays = list(tV[:, 1:])
+        return self.rays
 
     def span(self):
         """
         Span matrix S such that the cone is defined by x = S * z (z >= 0).
         """
-        return array(self.rays()).T
+        if self.rays is None:
+            return None
+        return array(self.rays).T
+
+    def draw(self, apex, size=1., combined='g-#', color=None, linewidth=2):
+        """
+        Draw cone with apex at a given world position.
+
+        INPUT:
+
+        - ``apex`` -- position of the apex of the cone in world coordinates
+        - ``size`` -- scale factor (default: 1.)
+        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
+        - ``color`` -- color letter or RGBA tuple
+        - ``linewidth`` -- thickness of the edges of the cone
+
+        OUTPUT:
+
+        A list of OpenRAVE handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
+        """
+        assert len(apex) == 3, "apex is not a 3D point"
+        assert len(self.rays[0]) == 3, "only 3D cones can be drawn"
+        rays = self.rays
+        if color is None:
+            color = matplotlib_to_rgba(combined[0])
+        if type(color) is str:
+            color = matplotlib_to_rgba(color)
+        env = get_openrave_env()
+        normal = average(rays, axis=0)
+        normal /= norm(normal)
+        section = [apex + ray * size / dot(normal, ray) for ray in rays]
+        handles = draw_polygon(
+            points=section, normal=normal, combined=combined, color=color)
+        edges = vstack([[apex, vertex] for vertex in section])
+        edge_color = array(color) * 0.7
+        edge_color[3] = 1.
+        handles.append(env.drawlinelist(
+            edges, linewidth=linewidth, colors=edge_color))
+        return handles
 
     """
     Backward compatibility
     ======================
     """
-
-    @staticmethod
-    def span_of_face(F):
-        b, A = zeros((F.shape[0], 1)), F
-        # H-representation: b - A x >= 0
-        # ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-        # the input to pycddlib is [b, -A]
-        mat = cdd.Matrix(hstack([b, -A]), number_type='float')
-        mat.rep_type = cdd.RepType.INEQUALITY
-        P = cdd.Polyhedron(mat)
-        g = P.get_generators()
-        V = array(g)
-        rays = []
-        for i in xrange(V.shape[0]):
-            if V[i, 0] != 0:  # 1 = vertex, 0 = ray
-                raise Exception("Polyhedron is not a cone")
-            elif i not in g.lin_set:  # ignore those in lin_set
-                rays.append(V[i, 1:])
-        return array(rays).T
 
     @staticmethod
     def face_of_span(S):
@@ -152,42 +165,3 @@ class Cone(Polyhedron):
             elif i not in ineq.lin_set:
                 A.append(-H[i, 1:])
         return array(A)
-
-
-class Cone3D(Cone):
-
-    def draw(self, apex, size=1., combined='g-#', color=None, linewidth=2):
-        """
-        Draw cone with apex at a given world position.
-
-        INPUT:
-
-        - ``apex`` -- position of the apex of the cone in world coordinates
-        - ``size`` -- scale factor (default: 1.)
-        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
-        - ``color`` -- color letter or RGBA tuple
-        - ``linewidth`` -- thickness of the edges of the cone
-
-        OUTPUT:
-
-        A list of OpenRAVE handles. Must be stored in some variable, otherwise
-        the drawn object will vanish instantly.
-        """
-        assert len(apex) == 3, "apex is not a 3D point"
-        rays = self.rays()
-        if color is None:
-            color = matplotlib_to_rgba(combined[0])
-        if type(color) is str:
-            color = matplotlib_to_rgba(color)
-        env = get_openrave_env()
-        normal = average(rays, axis=0)
-        normal /= norm(normal)
-        section = [apex + ray * size / dot(normal, ray) for ray in rays]
-        handles = draw_polygon(
-            points=section, normal=normal, combined=combined, color=color)
-        edges = vstack([[apex, vertex] for vertex in section])
-        edge_color = array(color) * 0.7
-        edge_color[3] = 1.
-        handles.append(env.drawlinelist(
-            edges, linewidth=linewidth, colors=edge_color))
-        return handles

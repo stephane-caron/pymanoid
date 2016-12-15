@@ -21,7 +21,6 @@
 import polygon
 
 from cone import Cone
-from cone import Cone3D
 from polyhedron import Polyhedron
 from polytope import Polytope
 from projection import PolyhedronProjector
@@ -29,7 +28,6 @@ from projection import PolytopeProjector
 
 __all__ = [
     'Cone',
-    'Cone3D',
     'Polyhedron',
     'PolyhedronProjector',
     'Polytope',
