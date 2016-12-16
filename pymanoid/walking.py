@@ -29,20 +29,44 @@ from tasks import ContactTask, LinkPoseTask
 
 class SwingFoot(Box):
 
+    """
+    Invisible body used for swing foot interpolation.
+    """
+
     THICKNESS = 0.01
 
-    def __init__(self, color='c', visible=False):
+    def __init__(self, swing_height, color='c', visible=False,
+                 transparency=0.5):
+        """
+        Create a new SwingFoot instance.
+
+        INPUT:
+
+        - ``swing_height`` -- height in [m] for the apex of the foot trajectory
+        - ``color`` -- (optional) color applied to all links of the KinBody
+        - ``visible`` -- (optional) initial visibility
+        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
+        """
         super(SwingFoot, self).__init__(
-            X=0.2, Y=0.1, Z=self.THICKNESS, color=color, visible=visible,
-            dZ=-self.THICKNESS)
+            X=0.12, Y=0.06, Z=self.THICKNESS, color=color, visible=visible,
+            transparency=transparency, dZ=-self.THICKNESS)
         self.end_pose = None
         self.mid_pose = None
         self.start_pose = None
+        self.swing_height = swing_height
 
     def reset(self, start_pose, end_pose):
+        """
+        Reset both end poses of the interpolation.
+
+        INPUT:
+
+        - ``start_pose`` -- new start pose
+        - ``end_pose`` -- new end pose
+        """
         mid_pose = interpolate_pose_linear(start_pose, end_pose, .5)
         mid_n = rotation_matrix_from_quat(mid_pose[:4])[0:3, 2]
-        mid_pose[4:] += 0.2 * mid_n
+        mid_pose[4:] += self.swing_height * mid_n
         self.set_pose(start_pose)
         self.start_pose = start_pose
         self.mid_pose = mid_pose
@@ -77,12 +101,18 @@ class WalkingFSM(Process):
     Finite State Machine for biped walking.
     """
 
-    def __init__(self, stances, robot, cycle=False, callback=None):
+    def __init__(self, stances, robot, swing_foot, cycle=False):
         """
         Create a new finite state machine.
+
+        INPUT:
+
+        - ``stances`` -- list of Stance objects
+        - ``robot`` -- Robot object
+        - ``swing_foot`` -- SwingFoot object
+        - ``cycle`` -- (optional) first stance follows the last one
         """
         super(WalkingFSM, self).__init__()
-        self.callback = callback
         self.cur_phase = stances[0].label
         self.cur_stance = stances[0]
         self.cur_stance_id = 0
@@ -92,7 +122,7 @@ class WalkingFSM(Process):
         self.rem_time = stances[0].duration
         self.robot = robot
         self.stances = stances
-        self.swing_foot = SwingFoot(visible=False, color='c')
+        self.swing_foot = swing_foot
 
     @property
     def next_stance(self):
@@ -139,7 +169,7 @@ class WalkingFSM(Process):
         def can_switch_to_ss():
             com = self.robot.com
             dist_inside_sep = self.next_stance.dist_to_sep_edge(com)
-            return dist_inside_sep > -0.2
+            return dist_inside_sep > -0.15
 
         if self.rem_time > 0.:
             if self.cur_stance.label.startswith('SS'):
@@ -172,7 +202,7 @@ class WalkingFSM(Process):
         prev_lf_task = self.robot.ik.get_task(self.robot.left_foot.name)
         prev_rf_task = self.robot.ik.get_task(self.robot.right_foot.name)
         contact_weight = max(prev_lf_task.weight, prev_rf_task.weight)
-        swing_weight = 1e-2
+        swing_weight = 1e-1
         self.robot.ik.remove_task(self.robot.left_foot.name)
         self.robot.ik.remove_task(self.robot.right_foot.name)
         if self.cur_stance.left_foot is not None:

@@ -39,13 +39,13 @@ except ImportError:
 from pymanoid import Contact, ContactSet, PointMass, Polytope, Stance
 from pymanoid.draw import draw_force, draw_line, draw_point, draw_points
 from pymanoid.draw import draw_polyhedron, draw_polygon
-from pymanoid.misc import norm, normalize
+from pymanoid.misc import normalize
 from pymanoid.mpc import PreviewBuffer, PreviewControl
 from pymanoid.polyhedra import intersect_polygons
 from pymanoid.process import Process, TrajectoryDrawer
 from pymanoid.robots import JVRC1
-from pymanoid.walking import WalkingFSM
-from tasks import DOFTask, MinCAMTask
+from pymanoid.tasks import DOFTask, MinCAMTask
+from pymanoid.walking import SwingFoot, WalkingFSM
 
 
 def generate_staircase(radius, angular_step, height, roughness, friction,
@@ -65,11 +65,12 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
     - ``init_com_offset`` -- (optional) initial offset applied to first stance
     """
     stances = []
+    contact_shape = (0.12, 0.06)
     first_left_foot = None
     prev_right_foot = None
     for theta in arange(0., 2 * pi, angular_step):
         left_foot = Contact(
-            shape=robot.sole_shape,
+            shape=contact_shape,
             pos=[radius * cos(theta),
                  radius * sin(theta),
                  radius + .5 * height * sin(theta)],
@@ -79,7 +80,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         if first_left_foot is None:
             first_left_foot = left_foot
         right_foot = Contact(
-            shape=robot.sole_shape,
+            shape=contact_shape,
             pos=[1.2 * radius * cos(theta + .5 * angular_step),
                  1.2 * radius * sin(theta + .5 * angular_step),
                  radius + .5 * height * sin(theta + .5 * angular_step)],
@@ -122,6 +123,8 @@ class PreviewDrawer(pymanoid.Process):
         self.handles = []
 
     def on_tick(self, sim):
+        if preview_buffer.preview is None:
+            return
         com_pre, comd_pre = com_target.p, com_target.pd
         com_free, comd_free = com_target.p, com_target.pd
         dT = preview_buffer.preview.timestep
@@ -363,42 +366,7 @@ class COMTube(object):
             self.dual_hrep.append((B, c))
 
 
-class COMPreviewControl(PreviewControl):
-
-    def __init__(self, com_init, comd_init, com_goal, comd_goal, tube,
-                 duration, switch_time, nb_steps, state_constraints=False):
-        self.t0 = time.time()
-        dT = duration / nb_steps
-        I = eye(3)
-        A = array(bmat([[I, dT * I], [zeros((3, 3)), I]]))
-        B = array(bmat([[.5 * dT ** 2 * I], [dT * I]]))
-        x_init = hstack([com_init, comd_init])
-        x_goal = hstack([com_goal, comd_goal])
-        switch_step = int(switch_time / dT)
-        G_list = []
-        h_list = []
-        C1, d1 = tube.dual_hrep[0]
-        E, f = None, None
-        if state_constraints:
-            E, f = tube.full_hrep
-        if 0 <= switch_step < nb_steps - 1:
-            C2, d2 = tube.dual_hrep[1]
-        for k in xrange(nb_steps):
-            if k <= switch_step:
-                G_list.append(C1)
-                h_list.append(d1)
-            else:  # k > switch_step
-                G_list.append(C2)
-                h_list.append(d2)
-        G = block_diag(*G_list)
-        h = hstack(h_list)
-        super(COMPreviewControl, self).__init__(
-            A, B, G, h, x_init, x_goal, nb_steps, E, f)
-        self.switch_step = switch_step
-        self.timestep = dT
-
-
-class TubePreviewControl(Process):
+class COMTubePreviewControl(Process):
 
     def __init__(self, com, fsm, preview_buffer, nb_mpc_steps, tube_radius):
         """
@@ -413,64 +381,93 @@ class TubePreviewControl(Process):
         - ``nb_mpc_steps`` -- discretization step of the preview window
         - ``tube_radius`` -- tube radius (in L1 norm)
         """
-        super(TubePreviewControl, self).__init__()
+        super(COMTubePreviewControl, self).__init__()
         self.com = com
         self.fsm = fsm
         self.last_phase_id = -1
         self.nb_mpc_steps = nb_mpc_steps
         self.preview_buffer = preview_buffer
-        self.target_box = PointMass(fsm.cur_stance.com.p, 30., color='g')
+        self.preview_control = None
+        self.target_com = PointMass(fsm.cur_stance.com.p, 30., color='g')
         self.tube = None
         self.tube_radius = tube_radius
-        self.verbose = False
 
     def on_tick(self, sim):
-        cur_com = self.com.p
-        cur_comd = self.com.pd
-        cur_stance = self.fsm.cur_stance
-        next_stance = self.fsm.next_stance
         preview_targets = self.fsm.get_preview_targets()
         switch_time, horizon, target_com, target_comd = preview_targets
-        if self.verbose:
-            print "\nVelocities:"
-            print "- |cur_comd| =", norm(cur_comd)
-            print "- |target_comd| =", norm(target_comd)
-            print "\nTime:"
-            print "- horizon =", horizon
-            print "- switch_time =", switch_time
-            print "- timestep = ", horizon / self.nb_mpc_steps
-            print""
-        self.target_box.set_pos(target_com)
-        # try:
-        self.tube = COMTube(
-            cur_com, target_com, cur_stance, next_stance, self.tube_radius)
+        self.target_com.set_pos(target_com)
+        self.target_com.set_velocity(target_comd)
         try:
-            t0 = time.time()
-            self.tube.compute_primal_vrep()
-            t1 = time.time()
-            self.tube.compute_primal_hrep()
-            t2 = time.time()
-            self.tube.compute_dual_vrep()
-            t3 = time.time()
-            self.tube.compute_dual_hrep()
-            t4 = time.time()
-            sim.log_comp_time('tube_primal_vrep', t1 - t0)
-            sim.log_comp_time('tube_primal_hrep', t2 - t1)
-            sim.log_comp_time('tube_dual_vrep', t3 - t2)
-            sim.log_comp_time('tube_dual_hrep', t4 - t3)
+            self.compute_preview_tube()
         except Exception as e:
             print "Tube error: %s" % str(e)
             return
-        preview_control = COMPreviewControl(
-            cur_com, cur_comd, target_com, target_comd, self.tube, horizon,
-            switch_time, self.nb_mpc_steps)
-        preview_control.compute_dynamics()
         try:
-            preview_control.compute_control()
-            self.preview_buffer.update_preview(preview_control)
+            self.compute_preview_control(switch_time, horizon)
+        except Exception as e:
+            print "PreviewControl error: %s" % str(e)
+            return
+
+    def compute_preview_tube(self):
+        cur_com, target_com = self.com.p, self.target_com.p
+        cur_stance = self.fsm.cur_stance
+        next_stance = self.fsm.next_stance
+        self.tube = COMTube(
+            cur_com, target_com, cur_stance, next_stance, self.tube_radius)
+        t0 = time.time()
+        self.tube.compute_primal_vrep()
+        t1 = time.time()
+        self.tube.compute_primal_hrep()
+        t2 = time.time()
+        self.tube.compute_dual_vrep()
+        t3 = time.time()
+        self.tube.compute_dual_hrep()
+        t4 = time.time()
+        sim.log_comp_time('tube_primal_vrep', t1 - t0)
+        sim.log_comp_time('tube_primal_hrep', t2 - t1)
+        sim.log_comp_time('tube_dual_vrep', t3 - t2)
+        sim.log_comp_time('tube_dual_hrep', t4 - t3)
+
+    def compute_preview_control(self, switch_time, horizon,
+                                state_constraints=False):
+        cur_com = self.com.p
+        cur_comd = self.com.pd
+        target_com = self.target_com.p
+        target_comd = self.target_com.pd
+        dT = horizon / self.nb_mpc_steps
+        I = eye(3)
+        A = array(bmat([[I, dT * I], [zeros((3, 3)), I]]))
+        B = array(bmat([[.5 * dT ** 2 * I], [dT * I]]))
+        x_init = hstack([cur_com, cur_comd])
+        x_goal = hstack([target_com, target_comd])
+        switch_step = int(switch_time / dT)
+        G_list = []
+        h_list = []
+        C1, d1 = self.tube.dual_hrep[0]
+        E, f = None, None
+        if state_constraints:
+            E, f = self.tube.full_hrep
+        if 0 <= switch_step < self.nb_mpc_steps - 1:
+            C2, d2 = self.tube.dual_hrep[1]
+        for k in xrange(self.nb_mpc_steps):
+            if k <= switch_step:
+                G_list.append(C1)
+                h_list.append(d1)
+            else:  # k > switch_step
+                G_list.append(C2)
+                h_list.append(d2)
+        G = block_diag(*G_list)
+        h = hstack(h_list)
+        self.preview_control = PreviewControl(
+            A, B, G, h, x_init, x_goal, self.nb_mpc_steps, E, f)
+        self.preview_control.switch_step = switch_step
+        self.preview_control.timestep = dT
+        self.preview_control.compute_dynamics()
+        try:
+            self.preview_control.compute_control()
+            self.preview_buffer.update_preview(self.preview_control)
         except ValueError:
             print "MPC couldn't solve QP, constraints may be inconsistent"
-            return
 
 
 class ForceDrawer(Process):
@@ -512,18 +509,19 @@ if __name__ == "__main__":
     staircase = generate_staircase(
         radius=1.4,
         angular_step=0.5,
-        height=1.4,
+        height=1.2,
         roughness=0.5,
         friction=0.8,
-        ds_duration=0.5,
+        ds_duration=0.6,
         ss_duration=1.0,
         init_com_offset=array([0., 0., 0.]))
 
     com_target = PointMass([0, 0, 0], 20.)
     preview_buffer = PreviewBuffer(com_target)
-    fsm = WalkingFSM(staircase, robot, cycle=True)
+    swing_foot = SwingFoot(swing_height=0.15)
+    fsm = WalkingFSM(staircase, robot, swing_foot, cycle=True)
 
-    mpc = TubePreviewControl(
+    mpc = COMTubePreviewControl(
         com_target, fsm, preview_buffer,
         nb_mpc_steps=10,
         tube_radius=0.02)
@@ -534,19 +532,14 @@ if __name__ == "__main__":
 
     com_target.set_pos(robot.com)
     robot.ik.tasks['com'].update_target(com_target)
-    robot.ik.add_task(MinCAMTask(robot, weight=0.1))
-    robot.ik.add_task(
-        DOFTask(robot, robot.WAIST_P, 0.2, gain=0.9, weight=0.5))
-    robot.ik.add_task(
-        DOFTask(robot, robot.WAIST_Y, 0., gain=0.9, weight=0.5))
-    robot.ik.add_task(
-        DOFTask(robot, robot.WAIST_R, 0., gain=0.9, weight=0.5))
-    robot.ik.add_task(
-        DOFTask(robot, robot.ROT_P, 0., gain=0.9, weight=0.5))
-    robot.ik.add_task(
-        DOFTask(robot, robot.R_SHOULDER_R, -0.5, gain=0.9, weight=0.5))
-    robot.ik.add_task(
-        DOFTask(robot, robot.L_SHOULDER_R, 0.5, gain=0.9, weight=0.5))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
+    robot.ik.add_task(MinCAMTask(robot, weight=1e-4))
+    robot.ik.tasks['posture'].weight = 1e-5
 
     sim.schedule(fsm)
     sim.schedule(mpc)

@@ -60,8 +60,10 @@ def __compute_polygon_hull(B, c):
         Checking that (c > 0) is not optional. The rest of the algorithm can be
         executed when some coordinates c_i < 0, but the result would be wrong.
     """
-    assert B.shape[1] == 2, "Input is not a polygon"
-    assert all(c > 0), "Polygon should contain the origin"
+    assert B.shape[1] == 2, \
+        "Input (B, c) is not a polygon: B.shape = %s" % str(B.shape)
+    assert all(c > 0), \
+        "Polygon should contain the origin, but min(c) = %.2f" % min(c)
 
     B_polar = hstack([
         (B[:, column] * 1. / c).reshape((B.shape[0], 1))

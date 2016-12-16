@@ -56,10 +56,11 @@ class PreviewBuffer(Process):
             j = 3 * self.preview_index
             comdd = self.preview.U[j:j + 3]
             if comdd.shape[0] == 0:
-                comdd = zeros(3)
                 self.preview = None
+                return (zeros(3), 0.)
+            dT = self.preview.timestep
             self.preview_index += 1
-            return (comdd, self.preview.timestep)
+            return (comdd, dT)
 
     @property
     def preview_was_updated(self):

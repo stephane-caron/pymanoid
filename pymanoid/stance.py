@@ -70,10 +70,10 @@ class Stance(ContactSet):
 
     def compute_stability_criteria(self):
         self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
-        # self.cwc = compute_cwc_pyparma(self, [0, 0, 0])
-        # m = RobotModel.mass  # however, the SEP does not depend on this
         self.sep = Polytope(vertices=self.compute_static_equilibrium_polygon())
-        # self.sep_hrep = Polytope.hrep(self.sep)
+        self.sep.compute_hrep()
+        A, _ = self.sep.hrep_pair
+        self.sep_norm = array([norm(a) for a in A])
 
     def dist_to_sep_edge(self, com):
         """
@@ -81,4 +81,5 @@ class Stance(ContactSet):
         (positive inside, negative outside).
         """
         A, b = self.sep.hrep_pair
-        return min((b - dot(A, com[:2])) / array([norm(a) for a in A]))
+        alg_dists = (b - dot(A, com[:2])) / self.sep_norm
+        return min(alg_dists)
