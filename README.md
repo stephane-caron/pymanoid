@@ -5,9 +5,9 @@ Python library for humanoid robotics. Extends
 
 - **Whole-body Inverse Kinematics** based on the [weight-prioritized
   multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- **Contact-stability criteria:** [Contact Wrench
-  Cone](http://www.roboticsproceedings.org/rss11/p28.pdf), [Generalized ZMP
-  Support Areas](https://scaron.info/research/tro-2016.html), etc.
+- **Contact-stability criteria:** [Generalized ZMP
+  Support Areas](https://scaron.info/research/tro-2016.html), [COM Acceleration
+  Cones](https://scaron.info/research/humanoids-2016.html), etc.
 - Linear Model Preview Control (MPC) and state machines for locomotion
 - Jacobians and Hessians for center of mass (COM) and angular momentum
 - Classes and algorithms to manipulate polytopes and polyhedral cones
@@ -17,9 +17,9 @@ Python library for humanoid robotics. Extends
 
 ## Use cases
 
-- [Multi-contact Walking Pattern Generation](https://scaron.info/research/pre-print-2016-1.html)
+- [Multi-contact Walking Pattern Generation](https://scaron.info/research/humanoids-2016.html)
   based on Model-Preview Control of the 3D acceleration of the center of mass
-- [Generalized ZMP support areas](https://scaron.info/research/arxiv-2015.html)
+- [Generalized ZMP support areas](https://scaron.info/research/tro-2016.html)
   for locomotion in multi-contact scenarios, including e.g. hand contacts
 - [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
   demonstrated on the real HRP-4 robot
