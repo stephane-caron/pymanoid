@@ -1,6 +1,8 @@
 # Examples
 
-## Inverse Kinematics
+## Control
+
+### Inverse Kinematics
 
 <img align="right" src="images/inverse_kinematics.png" width="250" />
 
@@ -10,6 +12,16 @@ This example shows how to use the IK to generate whole-body motions. It loads
 model, then generates a posture where the robot has its two feet on pre-defined
 contacts. Next, it tracks a reference COM motion given by the green virtual
 box, which you can manipulate directly in the OpenRAVE GUI.
+
+### Multi-contact Walking
+
+<img align="right" src="images/multi_contact_walking.png" width="250" />
+
+In this example, we make the JVRC-1 model walk accross a circular staircase
+where all contacts are tilted. This environment is generated so as to make the
+locomotion task difficult. We solve it using a [multi-contact linear
+MPC](https://scaron.info/research/humanoids-2016.html). The Model Preview
+Controller (MPC) wraps around the ``PreviewController`` class from the library.
 
 ## Contact-stability
 
@@ -24,7 +36,7 @@ In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
     
 The definition and calculation of this polygon is detailed in [this
-paper](http://dx.doi.org/10.1109/TRO.2008.2001360). You can move contacts by
+paper](https://doi.org/10.1109/TRO.2008.2001360). You can move contacts by
 selecting them in the OpenRAVE GUI. The robot IK is servoed to their positions.
 To illustrate the validity of this polygon, contact forces are computed that
 support the equilibrium position represented by the blue box (which acts like a
