@@ -20,8 +20,9 @@ box, which you can manipulate directly in the OpenRAVE GUI.
 In this example, we make the JVRC-1 model walk accross a circular staircase
 where all contacts are tilted. This environment is generated so as to make the
 locomotion task difficult. We solve it using a [multi-contact linear
-MPC](https://scaron.info/research/humanoids-2016.html). The Model Preview
-Controller (MPC) wraps around the ``PreviewController`` class from the library.
+MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is
+kept linear thanks to the pendular COM acceleration cone (see the other example
+below).
 
 ## Contact-stability
 
