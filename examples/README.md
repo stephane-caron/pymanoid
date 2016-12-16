@@ -4,25 +4,21 @@
 
 ### Inverse Kinematics
 
-<img align="right" src="images/inverse_kinematics.png" width="250" />
+<img align="right" src="images/inverse_kinematics.png" width="300" />
 
-This example shows how to use the IK to generate whole-body motions. It loads
-(and downloads, if necessary) the
-[JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
-model, then generates a posture where the robot has its two feet on pre-defined
-contacts. Next, it tracks a reference COM motion given by the green virtual
-box, which you can manipulate directly in the OpenRAVE GUI.
+This example shows how to use the robot IK to generate whole-body motions.
+
+It loads (and downloads, if necessary) the
+[JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1) humanoid model, then generates a posture where the robot has both feet on pre-defined contact locations. Next, it tracks a reference COM motion given by the green virtual box. The box is moved around for a while, then you can manipulate it directly in the OpenRAVE GUI.
 
 ### Multi-contact Walking
 
-<img align="right" src="images/multi_contact_walking.png" width="250" />
+<img align="right" src="images/multi_contact_walking.png" width="300" />
 
-In this example, we make the JVRC-1 model walk accross a circular staircase
-where all contacts are tilted. This environment is generated so as to make the
-locomotion task difficult. We solve it using a [multi-contact linear
-MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is
-kept linear thanks to the pendular COM acceleration cone (see the other example
-below).
+In this example, we make the JVRC-1 model walk accross a circular staircase where all contacts are tilted.
+
+The environment is generated so as to make the locomotion task difficult. We solve it using a [multi-contact linear
+MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is kept linear thanks to the pendular COM acceleration cone (see the other example below).
 
 ## Contact-stability
 
@@ -31,7 +27,7 @@ from slipping or detaching during motion.
 
 ### Static-equilibrium Polygon
 
-<img align="right" src="images/static_equilibrium_polygon.png" width="250" />
+<img align="right" src="images/static_equilibrium_polygon.png" width="300" />
 
 In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
@@ -46,7 +42,7 @@ the polygon.
 
 ### ZMP Support Area
 
-<img align="right" src="images/zmp_support_area.png" width="250" />
+<img align="right" src="images/zmp_support_area.png" width="300" />
 
 In this example, we display the pendular ZMP support area of the robot in a
 double-support configuration with titled contacts.
@@ -58,7 +54,7 @@ projection (blue box) you will see the area change as well.
 
 ### COM Acceleration Cone
 
-<img align="right" src="images/com_accel_cone.png" width="250" />
+<img align="right" src="images/com_accel_cone.png" width="300" />
 
 In this example, we display the pendular COM acceleration cone of the robot in
 a double-support configuration with titled contacts.
