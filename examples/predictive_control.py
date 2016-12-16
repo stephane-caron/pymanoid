@@ -115,7 +115,261 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
     return stances
 
 
+class COMTube(object):
+
+    """
+    Primal tube of COM locations computed along with its dual acceleration cone.
+
+    When there is an SS-to-DS contact switch, this strategy computes one primal
+    tube and two dual intersection cones. The primal tube is a parallelepiped
+    containing both the COM current and target locations. Its dual cone is used
+    during the DS phase. The dual cone for the SS phase is calculated by
+    intersecting the latter with the dual cone of the current COM position in
+    single-contact.
+    """
+
+    def __init__(self, start_com, target_com, start_stance, next_stance, radius,
+                 margin=0.01):
+        """
+        Create a new COM trajectory tube.
+
+        INPUT:
+
+        - ``start_com`` -- start position of the COM
+        - ``target_com`` -- end position of the COM
+        - ``start_stance`` -- stance used to compute the contact wrench cone
+        - ``radius`` -- side of the cross-section square (for ``shape`` > 2)
+        - ``margin`` -- safety margin (in [m]) around boundary COM positions
+        """
+        self.dual_hrep = []
+        self.dual_vrep = []
+        self.margin = margin
+        self.next_stance = next_stance
+        self.primal_hrep = []
+        self.primal_vrep = []
+        self.radius = radius
+        self.start_com = start_com
+        self.start_stance = start_stance
+        self.target_com = target_com
+
+    def compute_primal_vrep(self):
+        """Compute vertices of the primal tube."""
+        delta = self.target_com - self.start_com
+        n = normalize(delta)
+        t = array([0., 0., 1.])
+        t -= dot(t, n) * n
+        t = normalize(t)
+        b = cross(n, t)
+        cross_section = [dx * t + dy * b for (dx, dy) in [
+            (+self.radius, +self.radius),
+            (+self.radius, -self.radius),
+            (-self.radius, +self.radius),
+            (-self.radius, -self.radius)]]
+        tube_start = self.start_com - self.margin * n
+        tube_end = self.target_com + self.margin * n
+        vertices = (
+            [tube_start + s for s in cross_section] +
+            [tube_end + s for s in cross_section])
+        self.full_vrep = vertices
+        if self.start_stance.label.startswith('SS'):
+            if all(abs(self.start_stance.com.p - self.target_com) < 1e-3):
+                self.primal_vrep = [vertices]
+            else:  # beginning of SS phase
+                self.primal_vrep = [
+                    [self.start_com],  # single-support
+                    vertices]          # ensuing double-support
+        else:  # start_stance is DS
+            self.primal_vrep = [
+                vertices,             # double-support
+                [self.target_com]]    # final single-support
+
+    def compute_primal_hrep(self):
+        """Compute halfspaces of the primal tube."""
+        try:
+            self.full_hrep = (Polytope.hrep(self.full_vrep))
+        except RuntimeError as e:
+            raise Exception("Could not compute primal hrep: %s" % str(e))
+
+    def compute_dual_vrep(self):
+        """Compute vertices of the dual cones."""
+        if len(self.primal_vrep) == 1:
+            dual = self.start_stance.compute_pendular_accel_cone(
+                com=self.primal_vrep[0])
+            self.dual_vrep = [dual.vertices]
+            return
+        # now, len(self.primal_vrep) == 2
+        ds_then_ss = len(self.primal_vrep[0]) > 1
+        if ds_then_ss:
+            ds_vertices_2d = self.start_stance.compute_pendular_accel_cone(
+                com=self.full_vrep, reduced=True)
+            ss_vertices_2d = self.next_stance.compute_pendular_accel_cone(
+                com=self.primal_vrep[1], reduced=True)
+        else:  # SS, then DS
+            ss_vertices_2d = self.start_stance.compute_pendular_accel_cone(
+                com=self.primal_vrep[0], reduced=True)
+            ds_vertices_2d = self.next_stance.compute_pendular_accel_cone(
+                com=self.full_vrep, reduced=True)
+        ss_vertices_2d = intersect_polygons(ds_vertices_2d, ss_vertices_2d)
+        ds_cone = ContactSet._expand_reduced_pendular_cone(ds_vertices_2d)
+        ss_cone = ContactSet._expand_reduced_pendular_cone(ss_vertices_2d)
+        if ds_then_ss:
+            self.dual_vrep = [ds_cone.vertices, ss_cone.vertices]
+        else:  # SS, then DS
+            self.dual_vrep = [ss_cone.vertices, ds_cone.vertices]
+
+    def compute_dual_hrep(self):
+        """Compute halfspaces of the dual cones."""
+        for (stance_id, cone_vertices) in enumerate(self.dual_vrep):
+            B, c = Polytope.hrep(cone_vertices)
+            self.dual_hrep.append((B, c))
+
+
+class COMTubePreviewControl(Process):
+
+    def __init__(self, com, fsm, preview_buffer, nb_mpc_steps, tube_radius):
+        """
+        Create a new feedback controller that continuously runs the preview
+        controller and sends outputs to a COMAccelBuffer.
+
+        INPUT:
+
+        - ``com`` -- PointMass containing current COM state
+        - ``fsm`` -- instance of finite state machine
+        - ``preview_buffer`` -- PreviewBuffer to send MPC outputs to
+        - ``nb_mpc_steps`` -- discretization step of the preview window
+        - ``tube_radius`` -- tube radius (in L1 norm)
+        """
+        super(COMTubePreviewControl, self).__init__()
+        self.com = com
+        self.fsm = fsm
+        self.last_phase_id = -1
+        self.nb_mpc_steps = nb_mpc_steps
+        self.preview_buffer = preview_buffer
+        self.preview_control = None
+        self.target_com = PointMass(fsm.cur_stance.com.p, 30., color='g')
+        self.tube = None
+        self.tube_radius = tube_radius
+
+    def on_tick(self, sim):
+        """Entry point called at each simulation tick."""
+        preview_targets = self.fsm.get_preview_targets()
+        switch_time, horizon, target_com, target_comd = preview_targets
+        self.target_com.set_pos(target_com)
+        self.target_com.set_velocity(target_comd)
+        try:
+            self.compute_preview_tube()
+        except Exception as e:
+            print "Tube error: %s" % str(e)
+            return
+        try:
+            self.compute_preview_control(switch_time, horizon)
+        except Exception as e:
+            print "PreviewControl error: %s" % str(e)
+            return
+
+    def compute_preview_tube(self):
+        """Compute preview tube and store it in ``self.tube``."""
+        cur_com, target_com = self.com.p, self.target_com.p
+        cur_stance = self.fsm.cur_stance
+        next_stance = self.fsm.next_stance
+        self.tube = COMTube(
+            cur_com, target_com, cur_stance, next_stance, self.tube_radius)
+        t0 = time.time()
+        self.tube.compute_primal_vrep()
+        t1 = time.time()
+        self.tube.compute_primal_hrep()
+        t2 = time.time()
+        self.tube.compute_dual_vrep()
+        t3 = time.time()
+        self.tube.compute_dual_hrep()
+        t4 = time.time()
+        sim.log_comp_time('tube_primal_vrep', t1 - t0)
+        sim.log_comp_time('tube_primal_hrep', t2 - t1)
+        sim.log_comp_time('tube_dual_vrep', t3 - t2)
+        sim.log_comp_time('tube_dual_hrep', t4 - t3)
+
+    def compute_preview_control(self, switch_time, horizon,
+                                state_constraints=False):
+        """Compute controller and store it in ``self.preview_control``."""
+        cur_com = self.com.p
+        cur_comd = self.com.pd
+        target_com = self.target_com.p
+        target_comd = self.target_com.pd
+        dT = horizon / self.nb_mpc_steps
+        I = eye(3)
+        A = array(bmat([[I, dT * I], [zeros((3, 3)), I]]))
+        B = array(bmat([[.5 * dT ** 2 * I], [dT * I]]))
+        x_init = hstack([cur_com, cur_comd])
+        x_goal = hstack([target_com, target_comd])
+        switch_step = int(switch_time / dT)
+        G_list = []
+        h_list = []
+        C1, d1 = self.tube.dual_hrep[0]
+        E, f = None, None
+        if state_constraints:
+            E, f = self.tube.full_hrep
+        if 0 <= switch_step < self.nb_mpc_steps - 1:
+            C2, d2 = self.tube.dual_hrep[1]
+        for k in xrange(self.nb_mpc_steps):
+            if k <= switch_step:
+                G_list.append(C1)
+                h_list.append(d1)
+            else:  # k > switch_step
+                G_list.append(C2)
+                h_list.append(d2)
+        G = block_diag(*G_list)
+        h = hstack(h_list)
+        self.preview_control = PreviewControl(
+            A, B, G, h, x_init, x_goal, self.nb_mpc_steps, E, f)
+        self.preview_control.switch_step = switch_step
+        self.preview_control.timestep = dT
+        self.preview_control.compute_dynamics()
+        try:
+            self.preview_control.compute_control()
+            self.preview_buffer.update_preview(self.preview_control)
+        except ValueError:
+            print "MPC couldn't solve QP, constraints may be inconsistent"
+
+
+class ForceDrawer(Process):
+
+    """
+    Draw supporting contact forces at each simulation tick.
+    """
+
+    def __init__(self):
+        super(ForceDrawer, self).__init__()
+        self.force_scale = 0.0025
+        self.handles = []
+        self.last_bkgnd_switch = None
+        self.mass = robot.mass
+
+    def on_tick(self, sim):
+        """Entry point called at each simulation tick."""
+        comdd = preview_buffer.comdd
+        wrench = hstack([self.mass * (comdd - sim.gravity), zeros(3)])
+        support = fsm.cur_stance.find_supporting_forces(
+            wrench, preview_buffer.com.p, self.mass, 10.)
+        if not support:
+            self.handles = []
+            sim.viewer.SetBkgndColor([.8, .4, .4])
+            self.last_bkgnd_switch = time.time()
+        else:
+            self.handles = [draw_force(c, fc, self.force_scale)
+                            for (c, fc) in support]
+        if self.last_bkgnd_switch is not None \
+                and time.time() - self.last_bkgnd_switch > 0.2:
+            # let's keep epilepsy at bay
+            sim.viewer.SetBkgndColor([.6, .6, .8])
+            self.last_bkgnd_switch = None
+
+
 class PreviewDrawer(pymanoid.Process):
+
+    """
+    Draw preview trajectory, in blue and yellow for the SS and DS parts
+    respectively.
+    """
 
     def __init__(self):
         super(PreviewDrawer, self).__init__()
@@ -155,6 +409,10 @@ class PreviewDrawer(pymanoid.Process):
 
 class TubeDrawer(pymanoid.Process):
 
+    """
+    Draw preview COM tube along with its dual acceleration cone.
+    """
+
     def __init__(self):
         super(TubeDrawer, self).__init__()
         self.comdd_handle = []
@@ -178,7 +436,6 @@ class TubeDrawer(pymanoid.Process):
     def draw_primal(self, tube):
         self.poly_handles = []
         colors = [(0.5, 0.5, 0., 0.3), (0., 0.5, 0.5, 0.3)]
-        # colors = [(0.5, 0.0, 0.0, 0.3), (0.5, 0.0, 0.0, 0.3)]
         if tube.start_stance.label.startswith('SS'):
             colors.reverse()
         for (i, vertices) in enumerate(tube.primal_vrep):
@@ -247,258 +504,6 @@ class TubeDrawer(pymanoid.Process):
         return handles
 
 
-class COMTube(object):
-
-    """
-    When there is an SS-to-DS contact switch, this strategy computes one primal
-    tube and two dual intersection cones.
-
-    The primal tube is, as described in the paper, a parallelepiped containing
-    both the COM current and target locations. Its dual cone is used during the
-    DS phase. The dual cone for the SS phase is calculated by intersecting the
-    latter with the dual cone of the current COM position in single-contact.
-    """
-
-    def __init__(self, start_com, target_com, start_stance, next_stance, radius,
-                 margin=0.01):
-        """
-        Create a new COM trajectory tube.
-
-        INPUT:
-
-        - ``start_com`` -- start position of the COM
-        - ``target_com`` -- end position of the COM
-        - ``start_stance`` -- stance used to compute the contact wrench cone
-        - ``radius`` -- side of the cross-section square (for ``shape`` > 2)
-        - ``margin`` -- safety margin (in [m]) before/after start/end COM
-                        positions (default: 1 [cm])
-        """
-        self.dual_hrep = []
-        self.dual_vrep = []
-        self.margin = margin
-        self.next_stance = next_stance
-        self.primal_hrep = []
-        self.primal_vrep = []
-        self.radius = radius
-        self.start_com = start_com
-        self.start_stance = start_stance
-        self.target_com = target_com
-
-    def compute_primal_vrep(self):
-        """Compute vertices of the primal tube."""
-        delta = self.target_com - self.start_com
-        n = normalize(delta)
-        t = array([0., 0., 1.])
-        t -= dot(t, n) * n
-        t = normalize(t)
-        b = cross(n, t)
-        cross_section = [dx * t + dy * b for (dx, dy) in [
-            (+self.radius, +self.radius),
-            (+self.radius, -self.radius),
-            (-self.radius, +self.radius),
-            (-self.radius, -self.radius)]]
-        tube_start = self.start_com - self.margin * n
-        tube_end = self.target_com + self.margin * n
-        vertices = (
-            [tube_start + s for s in cross_section] +
-            [tube_end + s for s in cross_section])
-        self.full_vrep = vertices
-        if self.start_stance.label.startswith('SS'):
-            if all(abs(self.start_stance.com.p - self.target_com) < 1e-3):
-                self.primal_vrep = [vertices]
-            else:  # beginning of SS phase
-                self.primal_vrep = [
-                    [self.start_com],  # single-support
-                    vertices]          # ensuing double-support
-        else:  # start_stance is DS
-            self.primal_vrep = [
-                vertices,             # double-support
-                [self.target_com]]    # final single-support
-
-    def compute_primal_hrep(self):
-        """
-        Compute halfspaces of the primal tube.
-
-        NB: not optimized, we simply call cdd here.
-        """
-        try:
-            self.full_hrep = (Polytope.hrep(self.full_vrep))
-        except RuntimeError as e:
-            raise Exception("Could not compute primal hrep: %s" % str(e))
-
-    def compute_dual_vrep(self):
-        """Compute vertices of the dual cones."""
-        if len(self.primal_vrep) == 1:
-            dual = self.start_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[0])
-            self.dual_vrep = [dual.vertices]
-            return
-
-        # now, len(self.primal_vrep) == 2
-        ds_then_ss = len(self.primal_vrep[0]) > 1
-        if ds_then_ss:
-            ds_vertices_2d = self.start_stance.compute_pendular_accel_cone(
-                com=self.full_vrep, reduced=True)
-            ss_vertices_2d = self.next_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[1], reduced=True)
-        else:  # SS, then DS
-            ss_vertices_2d = self.start_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[0], reduced=True)
-            ds_vertices_2d = self.next_stance.compute_pendular_accel_cone(
-                com=self.full_vrep, reduced=True)
-        ss_vertices_2d = intersect_polygons(ds_vertices_2d, ss_vertices_2d)
-        ds_cone = ContactSet._expand_reduced_pendular_cone(ds_vertices_2d)
-        ss_cone = ContactSet._expand_reduced_pendular_cone(ss_vertices_2d)
-        if ds_then_ss:
-            self.dual_vrep = [ds_cone.vertices, ss_cone.vertices]
-        else:  # SS, then DS
-            self.dual_vrep = [ss_cone.vertices, ds_cone.vertices]
-
-    def compute_dual_hrep(self):
-        """
-        Compute halfspaces of the dual cones.
-
-        NB: not optimized, we simply call cdd here.
-        """
-        for (stance_id, cone_vertices) in enumerate(self.dual_vrep):
-            B, c = Polytope.hrep(cone_vertices)
-            # B, c = (B.astype(float64), c.astype(float64))  # if using pyparma
-            self.dual_hrep.append((B, c))
-
-
-class COMTubePreviewControl(Process):
-
-    def __init__(self, com, fsm, preview_buffer, nb_mpc_steps, tube_radius):
-        """
-        Create a new feedback controller that continuously runs the preview
-        controller and sends outputs to a COMAccelBuffer.
-
-        INPUT:
-
-        - ``com`` -- PointMass containing current COM state
-        - ``fsm`` -- instance of finite state machine
-        - ``preview_buffer`` -- PreviewBuffer to send MPC outputs to
-        - ``nb_mpc_steps`` -- discretization step of the preview window
-        - ``tube_radius`` -- tube radius (in L1 norm)
-        """
-        super(COMTubePreviewControl, self).__init__()
-        self.com = com
-        self.fsm = fsm
-        self.last_phase_id = -1
-        self.nb_mpc_steps = nb_mpc_steps
-        self.preview_buffer = preview_buffer
-        self.preview_control = None
-        self.target_com = PointMass(fsm.cur_stance.com.p, 30., color='g')
-        self.tube = None
-        self.tube_radius = tube_radius
-
-    def on_tick(self, sim):
-        preview_targets = self.fsm.get_preview_targets()
-        switch_time, horizon, target_com, target_comd = preview_targets
-        self.target_com.set_pos(target_com)
-        self.target_com.set_velocity(target_comd)
-        try:
-            self.compute_preview_tube()
-        except Exception as e:
-            print "Tube error: %s" % str(e)
-            return
-        try:
-            self.compute_preview_control(switch_time, horizon)
-        except Exception as e:
-            print "PreviewControl error: %s" % str(e)
-            return
-
-    def compute_preview_tube(self):
-        cur_com, target_com = self.com.p, self.target_com.p
-        cur_stance = self.fsm.cur_stance
-        next_stance = self.fsm.next_stance
-        self.tube = COMTube(
-            cur_com, target_com, cur_stance, next_stance, self.tube_radius)
-        t0 = time.time()
-        self.tube.compute_primal_vrep()
-        t1 = time.time()
-        self.tube.compute_primal_hrep()
-        t2 = time.time()
-        self.tube.compute_dual_vrep()
-        t3 = time.time()
-        self.tube.compute_dual_hrep()
-        t4 = time.time()
-        sim.log_comp_time('tube_primal_vrep', t1 - t0)
-        sim.log_comp_time('tube_primal_hrep', t2 - t1)
-        sim.log_comp_time('tube_dual_vrep', t3 - t2)
-        sim.log_comp_time('tube_dual_hrep', t4 - t3)
-
-    def compute_preview_control(self, switch_time, horizon,
-                                state_constraints=False):
-        cur_com = self.com.p
-        cur_comd = self.com.pd
-        target_com = self.target_com.p
-        target_comd = self.target_com.pd
-        dT = horizon / self.nb_mpc_steps
-        I = eye(3)
-        A = array(bmat([[I, dT * I], [zeros((3, 3)), I]]))
-        B = array(bmat([[.5 * dT ** 2 * I], [dT * I]]))
-        x_init = hstack([cur_com, cur_comd])
-        x_goal = hstack([target_com, target_comd])
-        switch_step = int(switch_time / dT)
-        G_list = []
-        h_list = []
-        C1, d1 = self.tube.dual_hrep[0]
-        E, f = None, None
-        if state_constraints:
-            E, f = self.tube.full_hrep
-        if 0 <= switch_step < self.nb_mpc_steps - 1:
-            C2, d2 = self.tube.dual_hrep[1]
-        for k in xrange(self.nb_mpc_steps):
-            if k <= switch_step:
-                G_list.append(C1)
-                h_list.append(d1)
-            else:  # k > switch_step
-                G_list.append(C2)
-                h_list.append(d2)
-        G = block_diag(*G_list)
-        h = hstack(h_list)
-        self.preview_control = PreviewControl(
-            A, B, G, h, x_init, x_goal, self.nb_mpc_steps, E, f)
-        self.preview_control.switch_step = switch_step
-        self.preview_control.timestep = dT
-        self.preview_control.compute_dynamics()
-        try:
-            self.preview_control.compute_control()
-            self.preview_buffer.update_preview(self.preview_control)
-        except ValueError:
-            print "MPC couldn't solve QP, constraints may be inconsistent"
-
-
-class ForceDrawer(Process):
-
-    def __init__(self):
-        super(ForceDrawer, self).__init__()
-        self.force_scale = 0.0025
-        self.handles = []
-        self.last_bkgnd_switch = None
-        self.mass = robot.mass
-
-    def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
-        comdd = preview_buffer.comdd
-        wrench = hstack([self.mass * (comdd - sim.gravity), zeros(3)])
-        support = fsm.cur_stance.find_supporting_forces(
-            wrench, preview_buffer.com.p, self.mass, 10.)
-        if not support:
-            self.handles = []
-            sim.viewer.SetBkgndColor([.8, .4, .4])
-            self.last_bkgnd_switch = time.time()
-        else:
-            self.handles = [draw_force(c, fc, self.force_scale)
-                            for (c, fc) in support]
-        if self.last_bkgnd_switch is not None \
-                and time.time() - self.last_bkgnd_switch > 0.2:
-            # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor([.6, .6, .8])
-            self.last_bkgnd_switch = None
-
-
 if __name__ == "__main__":
     seed(42)
     sim = pymanoid.Simulation(dt=0.03)
@@ -527,7 +532,7 @@ if __name__ == "__main__":
         tube_radius=0.02)
 
     robot.init_ik(robot.whole_body)
-    robot.set_ff_pos([0, 0, 2])  # start IK from above
+    robot.set_ff_pos([0, 0, 2])  # start IK with the robot above contacts
     robot.generate_posture(fsm.cur_stance, max_it=50)
 
     com_target.set_pos(robot.com)
@@ -548,18 +553,16 @@ if __name__ == "__main__":
 
     com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
     force_drawer = ForceDrawer()
-    left_foot_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
+    lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
     preview_drawer = PreviewDrawer()
-    right_foot_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
-    # screenshot_taker = ScreenshotTaker()
+    rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
     tube_drawer = TubeDrawer()
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(force_drawer)
-    sim.schedule_extra(left_foot_traj_drawer)
+    sim.schedule_extra(lf_traj_drawer)
     sim.schedule_extra(preview_drawer)
-    sim.schedule_extra(right_foot_traj_drawer)
-    # sim.schedule_extra(screenshot_taker)
+    sim.schedule_extra(rf_traj_drawer)
     sim.schedule_extra(tube_drawer)
 
     print """
