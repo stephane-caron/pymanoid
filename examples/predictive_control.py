@@ -517,8 +517,8 @@ if __name__ == "__main__":
         angular_step=0.5,
         height=1.2,
         roughness=0.5,
-        friction=0.8,
-        ds_duration=0.6,
+        friction=0.7,
+        ds_duration=0.7,
         ss_duration=1.0,
         init_com_offset=array([0., 0., 0.]))
 
