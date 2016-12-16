@@ -8,9 +8,10 @@ Python library for humanoid robotics. Extends
 - **Contact-stability criteria:** [Contact Wrench
   Cone](http://www.roboticsproceedings.org/rss11/p28.pdf), [Generalized ZMP
   Support Areas](https://scaron.info/research/tro-2016.html), etc.
+- Linear Model Preview Control (MPC) and state machines for locomotion
 - Jacobians and Hessians for center of mass (COM) and angular momentum
+- Classes and algorithms to manipulate polytopes and polyhedral cones
 - Backends for Linear Programming and Quadratic Programming (QP) solvers
-- Drawing primitives for 2D and 3D polyhedra
 
 <img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
 
