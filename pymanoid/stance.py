@@ -48,7 +48,7 @@ class Stance(ContactSet):
         - ``duration`` -- (optional) timing information
         """
         contacts = {}
-        if type(com) is not Point:
+        if not issubclass(type(com), Point):
             com = Point(com, visible=False)
         if left_foot:
             contacts['left_foot'] = left_foot

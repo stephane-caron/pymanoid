@@ -30,7 +30,7 @@ except ImportError:
     import pymanoid
 
 from pymanoid import PointMass, Stance
-from pymanoid.contact import FixedContact
+from pymanoid.contact import Contact
 from pymanoid.process import Process, ZMPSupportAreaDrawer
 
 com_height = 0.9  # [m]
@@ -65,13 +65,13 @@ if __name__ == "__main__":
 
     stance = Stance(
         com=com_target,
-        left_foot=FixedContact(
+        left_foot=Contact(
             shape=robot.sole_shape,
             pos=[0.20, 0.15, 0.1],
             rpy=[0.4, 0, 0],
             static_friction=0.5,
             visible=True),
-        right_foot=FixedContact(
+        right_foot=Contact(
             shape=robot.sole_shape,
             pos=[-0.2, -0.195, 0.],
             rpy=[-0.4, 0, 0],
