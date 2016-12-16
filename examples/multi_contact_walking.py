@@ -252,7 +252,9 @@ class COMTubePreviewControl(Process):
         self.tube_radius = tube_radius
 
     def on_tick(self, sim):
-        """Entry point called at each simulation tick."""
+        """
+        Entry point called at each simulation tick.
+        """
         preview_targets = self.fsm.get_preview_targets()
         switch_time, horizon, target_com, target_comd = preview_targets
         self.target_com.set_pos(target_com)
@@ -347,10 +349,10 @@ class ForceDrawer(Process):
 
     def on_tick(self, sim):
         """Entry point called at each simulation tick."""
-        comdd = preview_buffer.comdd
+        comdd = preview_buffer.cur_control
         wrench = hstack([self.mass * (comdd - sim.gravity), zeros(3)])
         support = fsm.cur_stance.find_supporting_forces(
-            wrench, preview_buffer.com.p, self.mass, 10.)
+            wrench, com_target.p, self.mass, 10.)
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor([.8, .4, .4])
@@ -465,7 +467,7 @@ class TubeDrawer(pymanoid.Process):
                     combined='r-#', color=color))
 
     def draw_comdd(self):
-        comdd = self.acc_scale * preview_buffer.comdd + self.trans
+        comdd = self.acc_scale * preview_buffer.cur_control + self.trans
         self.comdd_handle = [
             draw_line(self.trans, comdd, color='r', linewidth=3),
             draw_points([self.trans, comdd], color='r', pointsize=0.005)]
@@ -523,7 +525,8 @@ if __name__ == "__main__":
         init_com_offset=array([0., 0., 0.]))
 
     com_target = PointMass([0, 0, 0], 20.)
-    preview_buffer = PreviewBuffer(com_target)
+    preview_buffer = PreviewBuffer(
+        callback=lambda u, dT: com_target.integrate_acceleration(u, dT))
     swing_foot = SwingFoot(swing_height=0.15)
     fsm = WalkingFSM(staircase, robot, swing_foot, cycle=True)
 

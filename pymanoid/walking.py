@@ -123,6 +123,7 @@ class WalkingFSM(Process):
         self.robot = robot
         self.stances = stances
         self.swing_foot = swing_foot
+        self.verbose = True
 
     @property
     def next_stance(self):
@@ -189,7 +190,6 @@ class WalkingFSM(Process):
         elif self.cur_stance_id == self.nb_stances - 1 and not self.cycle:
             self.is_over = True
         else:
-            print "FSM switching to next stance..."
             # NB: in the following block, cur_stance has not been updated yet
             if self.cur_stance.label == 'DS-R' \
                     and self.next_next_stance.label == 'DS-L':
@@ -206,6 +206,8 @@ class WalkingFSM(Process):
             self.cur_stance = self.stances[self.cur_stance_id]
             self.rem_time = self.cur_stance.duration
             self.update_robot_ik()
+            if self.verbose:
+                print "FSM switched to '%s' stance" % self.cur_stance.label
 
     def update_robot_ik(self):
         prev_lf_task = self.robot.ik.get_task(self.robot.left_foot.name)

@@ -368,6 +368,11 @@ class Point(Cube):
     def integrate_acceleration(self, pdd, dt):
         """
         Euler integration of constant acceleration ``pdd`` over duration ``dt``.
+
+        INPUT:
+
+        - ``pdd`` -- 3D acceleration vector
+        - ``dt`` -- duration in [s]
         """
         self.set_pos(self.p + self.pd * dt + pdd * .5 * dt ** 2)
         self.set_velocity(self.pd + pdd * dt)

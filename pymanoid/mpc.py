@@ -28,49 +28,58 @@ from optim import solve_qp
 class PreviewBuffer(Process):
 
     """
-    These buffers store COM accelerations output by the preview controller and
-    execute them until the next update.
+    Buffer to store controls output by the preview controller.
     """
 
-    def __init__(self, com):
+    def __init__(self, callback):
+        """
+        Create a new buffer associated with a given target.
+
+        INPUT:
+
+        - ``callback`` -- function to call with each new control ``(u, dT)``
+        """
         super(PreviewBuffer, self).__init__()
-        self.com = com
+        self.callback = callback
+        self.cur_control = None
+        self.preview = None
         self.preview_index = 0
         self.preview_lock = Lock()
-        self.preview = None
         self.rem_time = 0.
 
     def update_preview(self, preview):
+        """
+        Update preview with a filled PreviewControl object.
+        """
         with self.preview_lock:
             self.preview_index = 0
             self.preview = preview
 
-    def get_next_preview_window(self):
+    def get_next_control(self):
         """
-        Returns the next pair ``(comdd, dT)`` in the preview window, where
-        acceleration ``comdd`` is executed during ``dT``.
+        Return the next pair ``(u, dT)`` in the preview window.
         """
         with self.preview_lock:
             if self.preview is None:
                 return (zeros(3), 0.)
             j = 3 * self.preview_index
-            comdd = self.preview.U[j:j + 3]
-            if comdd.shape[0] == 0:
+            u = self.preview.U[j:j + 3]
+            if u.shape[0] == 0:
                 self.preview = None
                 return (zeros(3), 0.)
             dT = self.preview.timestep
             self.preview_index += 1
-            return (comdd, dT)
-
-    @property
-    def preview_was_updated(self):
-        """Returns True when preview was updated since last read."""
-        return self.preview_index == 0
+            return (u, dT)
 
     def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+        """
         if self.rem_time < sim.dt:
-            (self.comdd, self.rem_time) = self.get_next_preview_window()
-        self.com.integrate_acceleration(self.comdd, sim.dt)
+            u, dT = self.get_next_control()
+            self.cur_control = u
+            self.rem_time = dT
+        self.callback(self.cur_control, sim.dt)
         self.rem_time -= sim.dt
 
 
@@ -97,12 +106,12 @@ class PreviewControl(object):
         1)  |x_{nb_steps} - x_goal|^2
         2)  sum_k |u_k|^2
 
-    Note that this is a weighted (not prioritized) minimization.
+    The minimization is weighted (not prioritized).
     """
 
     def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None):
         """
-        Instantiate a new controller.
+        Create a new preview controller.
 
         INPUT:
 
@@ -136,22 +145,15 @@ class PreviewControl(object):
 
     def compute_dynamics(self):
         """
-        Blah:
+        Compute internal matrices mapping stacked controls ``U`` to states.
 
-            x_1 =     A' * x_0 +       B'  * u_0
-            x_2 = (A'^2) * x_0 + (A' * B') * u_0 + B' * u_1
-            ...
+        ALGORITHM:
 
-        Second, rewrite future sxstem dxnamics as:
+        See [Aud+14] for details, as we use the same notations below.
 
-            X = Phi * x_0 + Psi * U
+        REFERENCES:
 
-            U = [u_0 ... u_{N-1}]
-            X = [x_0 ... x_{N-1}]
-
-            x_k = phi[k] * x_0 + psi[k] * U
-            x_N = phi_last * x_0 + psi_last * U
-
+        .. [Aud+14] http://dx.doi.org/10.1109/IROS.2014.6943129
         """
         phi = eye(self.x_dim)
         psi = zeros((self.x_dim, self.U_dim))
@@ -173,6 +175,9 @@ class PreviewControl(object):
         self.psi_last = psi
 
     def compute_control(self):
+        """
+        Compute the stacked control vector ``U`` minimizing the preview QP.
+        """
         assert self.psi_last is not None, "Call compute_dynamics() first"
 
         # Cost 1: sum_k u_k^2
@@ -192,9 +197,6 @@ class PreviewControl(object):
         q = w1 * q1 + w2 * q2
 
         # Inequality constraints
-        if self.E is not None:
-            G = vstack([self.G] + self.G_state)
-            h = hstack([self.h] + self.h_state)
-            self.U = solve_qp(P, q, G, h)
-        else:
-            self.U = solve_qp(P, q, self.G, self.h)
+        G = self.G if self.E is None else vstack([self.G] + self.G_state)
+        h = self.h if self.E is None else hstack([self.h] + self.h_state)
+        self.U = solve_qp(P, q, G, h)
