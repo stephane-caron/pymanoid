@@ -106,6 +106,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             com_target, right_foot=right_foot, label='SS-R',
             duration=ss_duration))
         prev_right_foot = right_foot
+    com_target = first_left_foot.p + [0., 0., JVRC1.leg_length]
     stances.append(Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot,
         label='DS-L', duration=ds_duration))
@@ -529,7 +530,7 @@ if __name__ == "__main__":
     mpc = COMTubePreviewControl(
         com_target, fsm, preview_buffer,
         nb_mpc_steps=10,
-        tube_radius=0.02)
+        tube_radius=0.01)
 
     robot.init_ik(robot.whole_body)
     robot.set_ff_pos([0, 0, 2])  # start IK with the robot above contacts

@@ -126,12 +126,19 @@ class WalkingFSM(Process):
 
     @property
     def next_stance(self):
-        next_stance_id = min(self.cur_stance_id + 1, self.nb_stances - 1)
+        next_stance_id = self.cur_stance_id + 1
+        if next_stance_id >= self.nb_stances:
+            next_stance_id = 0 if self.cycle else self.cur_stance_id
         return self.stances[next_stance_id]
 
     @property
     def next_next_stance(self):
-        next_next_stance_id = min(self.cur_stance_id + 2, self.nb_stances - 1)
+        next_next_stance_id = self.cur_stance_id + 2
+        if next_next_stance_id >= self.nb_stances:
+            if self.cycle:
+                next_next_stance_id %= self.nb_stances
+            else:  # not self.cycle:
+                next_next_stance_id = self.nb_stances - 1
         return self.stances[next_next_stance_id]
 
     def get_preview_targets(self):
@@ -183,17 +190,19 @@ class WalkingFSM(Process):
             self.is_over = True
         else:
             print "FSM switching to next stance..."
-            self.cur_stance_id = (self.cur_stance_id + 1) % self.nb_stances
             # NB: in the following block, cur_stance has not been updated yet
-            if self.cur_stance.label == 'DS-R':
+            if self.cur_stance.label == 'DS-R' \
+                    and self.next_next_stance.label == 'DS-L':
                 self.swing_foot.reset(
                     self.cur_stance.left_foot.pose,
                     self.next_next_stance.left_foot.pose)
-            elif self.cur_stance.label == 'DS-L':
+            elif self.cur_stance.label == 'DS-L' \
+                    and self.next_next_stance.label == 'DS-R':
                 self.swing_foot.reset(
                     self.cur_stance.right_foot.pose,
                     self.next_next_stance.right_foot.pose)
             # now that we have read swing foot poses, we update cur_stance
+            self.cur_stance_id = (self.cur_stance_id + 1) % self.nb_stances
             self.cur_stance = self.stances[self.cur_stance_id]
             self.rem_time = self.cur_stance.duration
             self.update_robot_ik()
