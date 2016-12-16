@@ -237,7 +237,7 @@ class Simulation(object):
         INPUT:
 
         - ``pname`` -- Process name
-        - ``ctime`` -- computation time to log
+        - ``ctime`` -- computation time in [s] to log
         """
         if pname not in self.comp_times:
             self.comp_times[pname] = AvgStdEstimator()
@@ -247,11 +247,11 @@ class Simulation(object):
         total_avg, total_std = 0., 0.
         for (key, estimator) in self.comp_times.iteritems():
             avg, std, n = estimator.get_all()
-            avg *= 1000  # [ms]
-            std *= 1000  # [ms]
-            print "%20s: %.1f ms +/- %.1f ms over %5d items" % (
+            avg *= 1000  # in [ms]
+            std *= 1000  # in [ms]
+            print "%20s: %.2f ms +/- %.2f ms over %5d items" % (
                 key, avg, std, n)
             total_avg += avg
             total_std += std
         print "%20s  ----------------------------------" % ''
-        print "%20s: %.1f ms +/- %.1f ms" % ("total", total_avg, total_std)
+        print "%20s: %.2f ms +/- %.2f ms" % ("total", total_avg, total_std)

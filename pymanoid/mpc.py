@@ -113,7 +113,8 @@ class PreviewControl(object):
     Where the minimization is weighted, not prioritized.
     """
 
-    def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None):
+    def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
+                 wx=1000., wu=1.):
         """
         Create a new preview controller.
 
@@ -128,6 +129,8 @@ class PreviewControl(object):
         - ``nb_steps`` -- number of discretized time steps
         - ``E`` -- (optional) matrix for state inequality constraints
         - ``f`` -- (optional) vector for state inequality constraints
+        - ``wx`` -- (optional) weight on the state error ``|x - x_goal|^2``
+        - ``wu`` -- (optional) weight on cumulated controls ``sum_k |u_k|^2``
         """
         u_dim = B.shape[1]
         x_dim = A.shape[1]
@@ -147,6 +150,8 @@ class PreviewControl(object):
         self.x_dim = x_dim
         self.x_goal = x_goal
         self.x_init = x_init
+        self.wu = wu
+        self.wx = wx
 
     def compute_dynamics(self):
         """
@@ -187,20 +192,20 @@ class PreviewControl(object):
         assert self.psi_last is not None, "Call compute_dynamics() first"
 
         # Cost 1: sum_k u_k^2
-        P1 = eye(self.U_dim)
-        q1 = zeros(self.U_dim)
-        w1 = 1.
+        Pu = eye(self.U_dim)
+        qu = zeros(self.U_dim)
+        wu = self.wu
 
         # Cost 2: |x_N - x_goal|^2 = |A * x - b|^2
         A = self.psi_last
         b = self.x_goal - dot(self.phi_last, self.x_init)
-        P2 = dot(A.T, A)
-        q2 = -dot(b.T, A)
-        w2 = 1000.
+        Px = dot(A.T, A)
+        qx = -dot(b.T, A)
+        wx = self.wx
 
         # Weighted combination of both costs
-        P = w1 * P1 + w2 * P2
-        q = w1 * q1 + w2 * q2
+        P = wx * Px + wu * Pu
+        q = wx * qx + wu * qu
 
         # Inequality constraints
         G = self.G if self.E is None else vstack([self.G] + self.G_state)
@@ -230,7 +235,7 @@ try:
         """
 
         def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
-                     solver=vsmpc.SolverFlag.QuadProgDense):
+                     wx=1000., wu=1., solver=vsmpc.SolverFlag.QuadProgDense):
             """
             Create a new preview controller.
 
@@ -245,6 +250,8 @@ try:
             - ``nb_steps`` -- number of discretized time steps
             - ``E`` -- (optional) matrix for state inequality constraints
             - ``f`` -- (optional) vector for state inequality constraints
+            - ``wx`` -- (optional) weight on the state error ``|x - x_goal|^2``
+            - ``wu`` -- (optional) weight on cumul. controls ``sum_k |u_k|^2``
             - ``solver`` -- (optional) backend QP solver to use
             """
             self.A = array_to_MatrixXd(A)
@@ -252,12 +259,15 @@ try:
             self.G = array_to_MatrixXd(G)
             self.c = VectorXd.Zero(A.shape[0])  # no bias term for now
             self.controller = None
+            self.debug = False
             self.h = array_to_VectorXd(h)
             self.nb_steps = nb_steps
             self.ps = None
             self.solver = solver
             self.x_goal = array_to_VectorXd(x_goal)
             self.x_init = array_to_VectorXd(x_init)
+            self.wu = VectorXd.Ones(B.shape[1]) * wu
+            self.wx = VectorXd.Ones(A.shape[1]) * wx
 
         def compute_dynamics(self):
             """
@@ -267,8 +277,8 @@ try:
             self.ps.system(
                 self.A, self.B, self.c, self.x_init, self.x_goal, self.nb_steps)
             self.controller = vsmpc.MPCTypeLast(self.ps, self.solver)
-            control_ineq = vsmpc.NewControlConstraint(self.G, self.h, True)
-            if False:
+            self.control_ineq = vsmpc.NewControlConstraint(self.G, self.h, True)
+            if self.debug:
                 print "A =", repr(self.A)
                 print "B =", repr(self.B)
                 print "c =", repr(self.c)
@@ -277,8 +287,10 @@ try:
                 print "nb_steps =", repr(self.nb_steps)
                 print "G =", repr(self.G)
                 print "h =", repr(self.h)
-            self.controller.addConstraint(control_ineq)
-            # self.controller.weights(Wx, Wu)  # defaults to diagonal 1e-8
+                print "wu =", repr(self.wu)
+                print "wx =", repr(self.wx)
+            self.controller.addConstraint(self.control_ineq)
+            self.controller.weights(self.wx, self.wu)
 
         def compute_control(self):
             """
@@ -289,10 +301,10 @@ try:
             if not ret:
                 raise Exception("MPC failed to solve QP")
             self.U = VectorXd_to_array(self.controller.control())
-            self.solve_time = self.controller.solveTime().wall  # in [us]
+            self.solve_time = self.controller.solveTime().wall  # in [ns]
             self.solve_and_build_time = self.controller.solveAndBuildTime().wall
-            self.solve_time *= 1e-6  # in [s]
-            self.solve_and_build_time *= 1e-6  # in [s]
+            self.solve_time *= 1e-9  # in [s]
+            self.solve_and_build_time *= 1e-9  # in [s]
 
 except ImportError:  # mpcontroller module not available
     pass
