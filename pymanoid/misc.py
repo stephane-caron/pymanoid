@@ -117,3 +117,28 @@ def interpolate_pose_linear(pose0, pose1, t):
     pos = pose0[4:] + t * (pose1[4:] - pose0[4:])
     quat = quat_slerp(pose0[:4], pose1[:4], t)
     return hstack([quat, pos])
+
+
+try:
+    from minieigen import MatrixXd, VectorXd
+except ImportError:
+    pass
+
+
+def array_to_MatrixXd(a):
+    A = MatrixXd.Zero(a.shape[0], a.shape[1])
+    for i in xrange(a.shape[0]):
+        for j in xrange(a.shape[1]):
+            A[i, j] = a[i, j]
+    return A
+
+
+def array_to_VectorXd(v):
+    V = VectorXd.Zero(v.shape[0])
+    for i in xrange(v.shape[0]):
+        V[i] = v[i]
+    return V
+
+
+def VectorXd_to_array(V):
+    return array([V[i] for i in xrange(V.rows())])

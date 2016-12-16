@@ -40,7 +40,13 @@ from pymanoid import Contact, ContactSet, PointMass, Polytope, Stance
 from pymanoid.draw import draw_force, draw_line, draw_point, draw_points
 from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import normalize
-from pymanoid.mpc import PreviewBuffer, PreviewControl
+from pymanoid.mpc import PreviewBuffer
+try:
+    from pymanoid.mpc import VSPreviewControl as PreviewControl
+    print "using VSPreviewController"
+except ImportError:
+    from pymanoid.mpc import PreviewControl as PreviewControl
+    print "using default PreviewController"
 from pymanoid.polyhedra import intersect_polygons
 from pymanoid.process import Process, TrajectoryDrawer
 from pymanoid.robots import JVRC1
@@ -269,6 +275,10 @@ class COMTubePreviewControl(Process):
         except Exception as e:
             print "PreviewControl error: %s" % str(e)
             return
+        sim.log_comp_time(
+            'qp_solve', self.preview_control.solve_time)
+        sim.log_comp_time(
+            'qp_solve_and_build', self.preview_control.solve_and_build_time)
 
     def compute_preview_tube(self):
         """Compute preview tube and store it in ``self.tube``."""
