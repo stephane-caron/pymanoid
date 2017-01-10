@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2016 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -56,6 +56,16 @@ class Contact(Box):
         self.kinetic_friction = kinetic_friction
         self.static_friction = static_friction
         self.vel = zeros(3)  # velocity in local frame
+        self.vel.flags.writeable = False
+
+    def set_velocity(self, v):
+        self.vel.flags.writeable = True
+        self.vel = array(v)
+        self.vel.flags.writeable = False
+
+    @property
+    def is_fixed(self):
+        return not self.is_sliding
 
     @property
     def is_sliding(self):
@@ -179,29 +189,27 @@ class Contact(Box):
            <https://scaron.info/papers/conf/caron-icra-2015.pdf>
 
         """
-        if self.is_sliding:
-            raise NotImplementedError
-        else:  # fixed contact mode
-            X, Y = self.X, self.Y
-            mu = self.static_friction / sqrt(2)  # inner approximation
-            local_cone = array([
-                # fx fy             fz taux tauy tauz
-                [-1,  0,           -mu,   0,   0,   0],
-                [+1,  0,           -mu,   0,   0,   0],
-                [0,  -1,           -mu,   0,   0,   0],
-                [0,  +1,           -mu,   0,   0,   0],
-                [0,   0,            -Y,  -1,   0,   0],
-                [0,   0,            -Y,  +1,   0,   0],
-                [0,   0,            -X,   0,  -1,   0],
-                [0,   0,            -X,   0,  +1,   0],
-                [-Y, -X, -(X + Y) * mu, +mu, +mu,  -1],
-                [-Y, +X, -(X + Y) * mu, +mu, -mu,  -1],
-                [+Y, -X, -(X + Y) * mu, -mu, +mu,  -1],
-                [+Y, +X, -(X + Y) * mu, -mu, -mu,  -1],
-                [+Y, +X, -(X + Y) * mu, +mu, +mu,  +1],
-                [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
-                [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
-                [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
+        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
+        X, Y = self.X, self.Y
+        mu = self.static_friction / sqrt(2)  # inner approximation
+        local_cone = array([
+            # fx fy             fz taux tauy tauz
+            [-1,  0,           -mu,   0,   0,   0],
+            [+1,  0,           -mu,   0,   0,   0],
+            [0,  -1,           -mu,   0,   0,   0],
+            [0,  +1,           -mu,   0,   0,   0],
+            [0,   0,            -Y,  -1,   0,   0],
+            [0,   0,            -Y,  +1,   0,   0],
+            [0,   0,            -X,   0,  -1,   0],
+            [0,   0,            -X,   0,  +1,   0],
+            [-Y, -X, -(X + Y) * mu, +mu, +mu,  -1],
+            [-Y, +X, -(X + Y) * mu, +mu, -mu,  -1],
+            [+Y, -X, -(X + Y) * mu, -mu, +mu,  -1],
+            [+Y, +X, -(X + Y) * mu, -mu, -mu,  -1],
+            [+Y, +X, -(X + Y) * mu, +mu, +mu,  +1],
+            [+Y, -X, -(X + Y) * mu, +mu, -mu,  +1],
+            [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
+            [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         return dot(local_cone, block_diag(self.R.T, self.R.T))
 
     @property
@@ -209,15 +217,13 @@ class Contact(Box):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
         """
-        if self.is_sliding:
-            raise NotImplementedError
-        else:  # fixed contact mode
-            rays = []
-            for v in self.vertices:
-                x, y, z = v - self.p
-                for f in self.force_rays:
-                    rays.append(hstack([f, cross(v - self.p, f)]))
-            return rays
+        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
+        rays = []
+        for v in self.vertices:
+            x, y, z = v - self.p
+            for f in self.force_rays:
+                rays.append(hstack([f, cross(v - self.p, f)]))
+        return rays
 
     @property
     def wrench_span(self):
@@ -232,14 +238,12 @@ class Contact(Box):
         coordinates. Note that the contact wrench w is taken at the contact
         point (self.p) and in the world frame.
         """
-        if self.is_sliding:
-            raise NotImplementedError
-        else:  # fixed contact mode
-            span_blocks = []
-            for (i, v) in enumerate(self.vertices):
-                x, y, z = v - self.p
-                Gi = vstack([eye(3), crossmat(v - self.p)])
-                span_blocks.append(dot(Gi, self.force_span))
-            S = hstack(span_blocks)
-            assert S.shape == (6, 16)
-            return S
+        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
+        span_blocks = []
+        for (i, v) in enumerate(self.vertices):
+            x, y, z = v - self.p
+            Gi = vstack([eye(3), crossmat(v - self.p)])
+            span_blocks.append(dot(Gi, self.force_span))
+        S = hstack(span_blocks)
+        assert S.shape == (6, 16)
+        return S
