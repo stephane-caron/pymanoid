@@ -62,7 +62,6 @@ class Robot(object):
         rave = env.GetRobot(name)
         nb_dofs = rave.GetDOF()
         q_min, q_max = rave.GetDOFLimits()
-        rave.SetDOFVelocities([0] * nb_dofs)
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)
         if qd_lim is None:
             qd_lim = self.__default_qd_lim
