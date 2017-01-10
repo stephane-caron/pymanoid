@@ -231,7 +231,7 @@ class VelocitySolver(object):
         qp_h = hstack([qd_max, -qd_min, zeros(n)])
         return self.__solve_qp(qp_P, qp_q, qp_G, qp_h)
 
-    def compute_velocity(self, dt, method='safe'):
+    def compute_velocity(self, dt, method):
         """
         Compute a new velocity satisfying all tasks at best, while staying
         within joint-velocity limits.
@@ -239,7 +239,7 @@ class VelocitySolver(object):
         INPUT:
 
         - ``dt`` -- time step in [s]
-        - ``method`` -- (optional) choice between 'fast' and 'safe'
+        - ``method`` -- choice between 'fast' and 'safe'
 
         OUTPUT:
 

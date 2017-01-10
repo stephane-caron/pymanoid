@@ -329,7 +329,7 @@ class Robot(object):
         INPUT:
 
         - ``max_it`` -- maximum number of solver iterations
-        - ``method`` -- 'fast' or 'safe' for more joint-limit avoidance
+        - ``method`` -- 'fast', or 'safe' for more joint-limit avoidance
         - ``conv_tol`` -- stop when cost improvement is less than this threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
