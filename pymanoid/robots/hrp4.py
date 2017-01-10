@@ -19,7 +19,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, pi
-from os.path import isfile
 
 from pymanoid.body import Manipulator
 from pymanoid.robot import Humanoid
@@ -137,8 +136,7 @@ class HRP4(Humanoid):
          0., 0., 0., 0., -3., 10., 0., -30., 0., 0., 0., 0.,  0., 0., 0., 0.,
          0., 0., 0.])
 
-    def __init__(self, path='HRP4R.dae', root_body='BODY', qd_lim=None,
-                 download_if_needed=False):
+    def __init__(self, path='HRP4R.dae', root_body='BODY'):
         """
         Add the HRP4R model to the environment.
 
@@ -146,17 +144,13 @@ class HRP4(Humanoid):
 
         - ``path`` -- path to the COLLADA model of the robot
         - ``root_body`` -- name of the root (first) body in the model
-        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
-        - ``download_if_needed`` -- unavailable, here for compatibility reasons
 
         .. NOTE::
 
             Unfortunately it is unclear whether we can release the COLLADA file
             "HRP4R.dae" due to copyright.
         """
-        if download_if_needed and not isfile(path):
-            raise Exception("Model cannot be downloaded due to copyright :(")
-        super(HRP4, self).__init__(path, root_body, qd_lim=qd_lim)
+        super(HRP4, self).__init__(path, root_body)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.left_foot = Manipulator(
             self.rave.GetManipulator("left_foot_center"))

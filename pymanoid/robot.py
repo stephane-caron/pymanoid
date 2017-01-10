@@ -19,7 +19,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, cross, dot, tensordot, zeros
-from numpy import concatenate, eye, maximum, minimum, ones, vstack
+from numpy import concatenate, eye, maximum, minimum, vstack
 from os.path import basename, splitext
 from warnings import warn
 
@@ -35,15 +35,13 @@ class Robot(object):
     Robot with a fixed base. This class wraps OpenRAVE's Robot type.
     """
 
-    __default_qd_lim = 10.  # [rad] / [s]; this is already quite fast
-
     __default_xml = """
     <environment>
         <robot file="%s" name="%s" />
     </environment>
     """
 
-    def __init__(self, path=None, xml=None, qd_lim=None):
+    def __init__(self, path=None, xml=None):
         """
         Create a new robot model.
 
@@ -51,7 +49,6 @@ class Robot(object):
 
         - ``path`` -- path to the COLLADA model of the robot
         - ``xml`` -- (optional) string in OpenRAVE XML format
-        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
         """
         assert path is not None or xml is not None
         name = basename(splitext(path)[0])
@@ -63,10 +60,6 @@ class Robot(object):
         nb_dofs = rave.GetDOF()
         q_min, q_max = rave.GetDOFLimits()
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)
-        if qd_lim is None:
-            qd_lim = self.__default_qd_lim
-        qd_max = +qd_lim * ones(nb_dofs)
-        qd_min = -qd_lim * ones(nb_dofs)
 
         self.has_free_flyer = False
         self.ik = None  # created by self.init_ik()
@@ -79,8 +72,6 @@ class Robot(object):
         self.q_max.flags.writeable = False
         self.q_min = q_min
         self.q_min.flags.writeable = False
-        self.qd_max = qd_max
-        self.qd_min = qd_min
         self.qdd_max = None  # set in child class
         self.rave = rave
         self.tau_max = None  # set by hand in child robot class
@@ -317,21 +308,35 @@ class Robot(object):
         self.ik = VelocitySolver(self, active_dofs, doflim_gain)
         self.ik_process = IKProcess()
 
-    def step_ik(self, dt):
-        qd = self.ik.compute_velocity(dt)
+    def step_ik(self, dt, method='safe'):
+        """
+        Apply velocities computed by inverse kinematics.
+
+        INPUT:
+
+        - ``dt`` -- time step in [s]
+        - ``method`` -- choice between 'fast' and 'safe'
+        """
+        qd = self.ik.compute_velocity(dt, method)
         self.set_dof_values(self.q + qd * dt, clamp=True)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=5e-3, debug=False):
+    def solve_ik(self, max_it=1000, method='fast', conv_tol=1e-5, dt=5e-3,
+                 debug=True):
         """
         Compute joint-angles q satisfying all kinematic constraints at best.
 
         INPUT:
 
         - ``max_it`` -- maximum number of solver iterations
+        - ``method`` -- 'fast' or 'safe' for more joint-limit avoidance
         - ``conv_tol`` -- stop when cost improvement is less than this threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
+
+        OUTPUT:
+
+        Pair (number of iterations taken, final IK cost).
 
         .. NOTE::
 
@@ -341,6 +346,8 @@ class Robot(object):
         if debug:
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
         cost = 100000.
+        self.ik.qd_max *= 1000
+        self.ik.qd_min *= 1000
         for itnum in xrange(max_it):
             prev_cost = cost
             cost = self.ik.compute_cost(dt)
@@ -349,7 +356,9 @@ class Robot(object):
                 print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_relvar)
             if cost_relvar < conv_tol:
                 break
-            self.step_ik(dt)
+            self.step_ik(dt, method)
+        self.ik.qd_max /= 1000
+        self.ik.qd_min /= 1000
         return itnum, cost
 
     """
@@ -533,7 +542,7 @@ class Humanoid(Robot):
     </environment>
     """
 
-    def __init__(self, path, root_body, qd_lim=None):
+    def __init__(self, path, root_body):
         """
         Create a new humanoid robot model.
 
@@ -541,11 +550,10 @@ class Humanoid(Robot):
 
         - ``path`` -- path to the COLLADA model of the robot
         - ``root_body`` -- name of the root (first) body in the model
-        - ``qd_lim`` -- maximum angular joint velocity (in [rad] / [s])
         """
         name = basename(splitext(path)[0])
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
-        super(Humanoid, self).__init__(path, xml=xml, qd_lim=qd_lim)
+        super(Humanoid, self).__init__(path, xml=xml)
         self.has_free_flyer = True
         self.__cam = None
         self.__com = None
