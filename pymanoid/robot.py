@@ -925,15 +925,18 @@ class Humanoid(Robot):
     ==================
     """
 
-    def generate_posture(self, stance, **kwargs):
+    def generate_posture(self, stance, max_it=1000, conv_tol=1e-5, dt=5e-3,
+                         debug=False):
         """
         Generate robot posture (joint-angles + free-flyer) for a given Stance.
 
         INPUT:
 
         - ``stance`` -- Stance object
-
-        Extra keyword arguments are passed on to ``solve_ik()``.
+        - ``max_it`` -- maximum number of IK solver iterations
+        - ``conv_tol`` -- stop when cost improvement is less than this threshold
+        - ``dt`` -- time step for the differential IK
+        - ``debug`` -- print extra debug info
         """
         from tasks import COMTask, ContactTask, PostureTask
         if stance.left_foot is not None:
@@ -956,4 +959,4 @@ class Humanoid(Robot):
         posture_task = PostureTask(self, self.q_halfsit, weight=1e-4)
         self.ik.add_task(com_task)
         self.ik.add_task(posture_task)
-        self.solve_ik(**kwargs)
+        self.solve_ik(max_it, conv_tol, dt, debug)
