@@ -201,6 +201,8 @@ class VelocitySolver(object):
         INPUT:
 
         - ``dt`` -- time step in [s]
+        - ``margin_reg`` -- regularization term on margin variables
+        - ``margin_lin`` -- linear penalty term on margin variables
 
         OUTPUT:
 
