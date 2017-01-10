@@ -22,7 +22,6 @@ from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 
 from body import Box
-from misc import norm
 from polyhedra import Cone
 from rotations import crossmat
 
@@ -56,7 +55,7 @@ class Contact(Box):
             kinetic_friction = static_friction
         self.kinetic_friction = kinetic_friction
         self.static_friction = static_friction
-        self.vel = zeros(3)
+        self.vel = zeros(3)  # velocity in local frame
 
     @property
     def is_sliding(self):
@@ -119,22 +118,13 @@ class Contact(Box):
         """
         Face (H-rep) of the force friction cone in world frame.
         """
-        if self.is_sliding:
-            mu = self.kinetic_friction / sqrt(2)  # inner approximation
-            nv = norm(self.vel)
-            vx, vy, _ = self.vel
-            local_cone = array([
-                [-1, 0, -mu * vx / nv],
-                [+1, 0, +mu * vx / nv],
-                [0, -1, -mu * vy / nv],
-                [0, +1, -mu * vy / nv]])
-        else:  # fixed contact mode
-            mu = self.static_friction / sqrt(2)  # inner approximation
-            local_cone = array([
-                [-1, 0, -mu],
-                [+1, 0, -mu],
-                [0, -1, -mu],
-                [0, +1, -mu]])
+        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
+        mu = self.static_friction / sqrt(2)  # inner approximation
+        local_cone = array([
+            [-1, 0, -mu],
+            [+1, 0, -mu],
+            [0, -1, -mu],
+            [0, +1, -mu]])
         return dot(local_cone, self.R.T)
 
     @property
@@ -142,18 +132,13 @@ class Contact(Box):
         """
         Rays (V-rep) of the force friction cone in world frame.
         """
-        if self.is_sliding:
-            mu = self.kinetic_friction / sqrt(2)  # inner approximation
-            nv = norm(self.v)
-            vx, vy, _ = self.v
-            return dot(self.R, [-mu * vx / nv, -mu * vy / nv, +1])
-        else:  # fixed contact mode
-            mu = self.static_friction / sqrt(2)  # inner approximation
-            f1 = dot(self.R, [+mu, +mu, +1])
-            f2 = dot(self.R, [+mu, -mu, +1])
-            f3 = dot(self.R, [-mu, +mu, +1])
-            f4 = dot(self.R, [-mu, -mu, +1])
-            return [f1, f2, f3, f4]
+        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
+        mu = self.static_friction / sqrt(2)  # inner approximation
+        f1 = dot(self.R, [+mu, +mu, +1])
+        f2 = dot(self.R, [+mu, -mu, +1])
+        f3 = dot(self.R, [-mu, +mu, +1])
+        f4 = dot(self.R, [-mu, -mu, +1])
+        return [f1, f2, f3, f4]
 
     @property
     def force_span(self):
