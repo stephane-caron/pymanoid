@@ -321,18 +321,18 @@ class Robot(object):
         self.set_dof_values(self.q + qd * dt, clamp=True)
         self.set_dof_velocities(qd)
 
-    def solve_ik(self, max_it=1000, method='fast', conv_tol=1e-5, dt=5e-3,
-                 debug=True):
+    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=5e-3, debug=True,
+                 method='fast'):
         """
         Compute joint-angles q satisfying all kinematic constraints at best.
 
         INPUT:
 
         - ``max_it`` -- maximum number of solver iterations
-        - ``method`` -- 'fast', or 'safe' for more joint-limit avoidance
         - ``conv_tol`` -- stop when cost improvement is less than this threshold
         - ``dt`` -- time step for the differential IK
         - ``debug`` -- print extra debug info
+        - ``method`` -- 'fast', or 'safe' for more joint-limit avoidance
 
         OUTPUT:
 
