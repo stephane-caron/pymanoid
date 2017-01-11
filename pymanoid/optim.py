@@ -23,6 +23,7 @@ import cvxopt.solvers
 
 from cvxopt import matrix as cvxmat
 from cvxopt.solvers import lp as cvxopt_lp
+from cvxopt.solvers import qp as cvxopt_qp
 from numpy import array, dot
 from warnings import warn
 
@@ -36,7 +37,7 @@ Linear Programming
 
 try:
     import cvxopt.glpk
-    __default_solver = 'glpk'
+    LP_SOLVER = 'glpk'
     # GLPK is the fastest LP solver I could find so far:
     # <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
     # ... however, it's verbose by default, so tell it to STFU:
@@ -44,10 +45,10 @@ try:
     cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
     cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
 except ImportError:
-    __default_solver = None
+    LP_SOLVER = None
 
 
-def solve_lp(c, G, h, A=None, b=None, solver=__default_solver):
+def solve_lp(c, G, h, A=None, b=None, solver=LP_SOLVER):
     """
     Solve a Linear Program defined by:
 
@@ -83,8 +84,6 @@ Quadratic Programming
 =====================
 """
 
-solve_qp = None
-
 try:
     # quadprog is the fastest QP solver I could find so far
     from quadprog import solve_qp as _quadprog_solve_qp
@@ -100,73 +99,106 @@ try:
                 G * x <= h
 
         using quadprog <https://pypi.python.org/pypi/quadprog/>.
+
+        INPUT:
+
+        - ``P`` -- primal quadratic cost matrix
+        - ``q`` -- primal quadratic cost vector
+        - ``G`` -- linear inequality constraint matrix
+        - ``h`` -- linear inequality constraint vector
+
+        OUTPUT:
+
+        A numpy.array with the solution ``x``, if found, otherwise None.
         """
         # quadprog assumes that P is symmetric so we project it and its
         # symmetric part beforehand
         P = .5 * (P + P.T)
         return _quadprog_solve_qp(P, -q, -G.T, -h)[0]
-
-    if solve_qp is None:
-        solve_qp = quadprog_solve_qp
 except ImportError:
-    def quadprog_solve_qp(*args, **kwargs):
-        raise ImportError("quadprog not found")
+    warn("QP solver: quadprog not found, falling back to CVXOPT")
+    quadprog_solve_qp = None
+
+
+def cvxopt_solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
+    """
+    Solve a Quadratic Program defined as:
+
+        minimize
+            (1/2) * x.T * P * x + q.T * x
+
+        subject to
+            G * x <= h
+            A * x == b  (optional)
+
+    using CVXOPT
+    <http://cvxopt.org/userguide/coneprog.html#quadratic-programming>.
+
+    INPUT:
+
+    - ``P`` -- primal quadratic cost matrix
+    - ``q`` -- primal quadratic cost vector
+    - ``G`` -- linear inequality constraint matrix
+    - ``h`` -- linear inequality constraint vector
+    - ``A`` -- (optional) linear equality constraint matrix
+    - ``b`` -- (optional) linear equality constraint vector
+    - ``solver`` -- (optional) use 'mosek' to run MOSEK rather than CVXOPT
+    - ``initvals`` -- (optional) warm-start guess
+
+    OUTPUT:
+
+    A numpy.array with the solution ``x``, if found, otherwise None.
+    """
+    # CVXOPT only considers the lower entries of P so we project on its
+    # symmetric part beforehand
+    P = .5 * (P + P.T)
+    args = [cvxmat(P), cvxmat(q), cvxmat(G), cvxmat(h)]
+    if A is not None:
+        args.extend([cvxmat(A), cvxmat(b)])
+    sol = cvxopt_qp(*args, solver=solver, initvals=initvals)
+    if not ('optimal' in sol['status']):
+        warn("QP optimum not found: %s" % sol['status'])
+        return None
+    return array(sol['x']).reshape((P.shape[1],))
+
 
 try:
-    # CVXOPT is our second choice
-    from cvxopt.solvers import qp as cvxopt_qp
+    import cvxopt.msk
+    import mosek
+    cvxopt.solvers.options['mosek'] = {mosek.iparam.log: 0}
 
-    def cvxopt_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
-        """
-        Solve a Quadratic Program defined as:
-
-            minimize
-                (1/2) * x.T * P * x + q.T * x
-
-            subject to
-                G * x <= h
-                A * x == b  (optional)
-
-        using CVXOPT
-        <http://cvxopt.org/userguide/coneprog.html#quadratic-programming>.
-        """
-        # CVXOPT only considers the lower entries of P so we project on its
-        # symmetric part beforehand
-        P = .5 * (P + P.T)
-        args = [cvxmat(P), cvxmat(q), cvxmat(G), cvxmat(h)]
-        if A is not None:
-            args.extend([cvxmat(A), cvxmat(b)])
-        sol = cvxopt_qp(*args, initvals=initvals)
-        if not ('optimal' in sol['status']):
-            warn("QP optimum not found: %s" % sol['status'])
-            return None
-        return array(sol['x']).reshape((P.shape[1],))
-
-    if solve_qp is None:
-        solve_qp = cvxopt_solve_qp
+    def mosek_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
+        return cvxopt_solve_qp(P, q, G, h, A, b, 'mosek', initvals)
 except ImportError:
-    def cvxopt_solve_qp(*args, **kwargs):
-        raise ImportError("CVXOPT not found")
+    pass
+
+
+if quadprog_solve_qp is not None:
+    solve_qp = quadprog_solve_qp
+else:  # fallback option is CVXOPT
+    solve_qp = cvxopt_solve_qp
 
 
 def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
     """
     Solve a relaxed version of the Quadratic Program:
 
-        min_x   x.T * P * x + 2 * q.T * x
+        min_x   c1(x)
 
          s.t.   G * x <= h
-                A * x == b
+                c2(x) == 0
+
+    where the cost function and linear equalities are given by:
+
+        c1(x) = x.T * P * x + 2 * q.T * x
+        c2(x) = |A * x - b|^2
 
     The relaxed problem is defined by
 
         min_x   c1(x, P, q) + OVER_WEIGHT * c2(x, A, b)
          s.t.   G * x <= h
 
-    where c1(x, P, q) is the initial cost, OVER_WEIGHT is a very high weight and
-
-        c1(x, P, q) = x.T * P * x + 2 * q.T * x
-        c2(x, A, b) = |A * x - b|^2
+    where OVER_WEIGHT is a very high weight.
 
     If ``tol`` is not None, the solution will only be returned if the relative
     variation between A * x and b is less than ``tol``.
