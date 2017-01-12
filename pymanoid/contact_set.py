@@ -139,7 +139,8 @@ class ContactSet(object):
             for contact in self.contacts for _ in xrange(4)])
         P = dot(RT_diag.T, dot(P_local, RT_diag))
         q = zeros((n,))
-        G = self.compute_stacked_force_faces()
+        G = block_diag(*[
+            c.force_face for c in self.contacts for p in c.vertices])
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix_from_forces(point)
         b = wrench
@@ -191,7 +192,7 @@ class ContactSet(object):
         n = 6 * self.nb_contacts
         P = eye(n)
         q = zeros((n,))
-        G = self.compute_stacked_wrench_faces()
+        G = block_diag(*[c.wrench_face for c in self.contacts])
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix(point)
         b = wrench
@@ -220,35 +221,6 @@ class ContactSet(object):
         True if and only if ``com`` is inside the static-equilibrium polygon.
         """
         return self.find_static_supporting_forces(com, mass) is not None
-
-    def compute_stacked_force_faces(self):
-        """
-        Compute the friction constraints on all contact forces.
-
-        The friction matrix F is defined so that friction constraints on all
-        contact wrenches are written:
-
-            F * f_all <= 0
-
-        where f_all is the stacked vector of contact forces, each taken at its
-        corresponding contact point in the world frame.
-        """
-        return block_diag(*[c.force_face for c in self.contacts
-                            for p in c.vertices])
-
-    def compute_stacked_wrench_faces(self):
-        """
-        Compute the friction constraints on all contact wrenches.
-
-        The friction matrix F is defined so that friction constraints on all
-        contact wrenches are written:
-
-            F * w_all <= 0
-
-        where w_all is the stacked vector of contact wrenches, each taken at its
-        corresponding contact point in the world frame.
-        """
-        return block_diag(*[c.wrench_face for c in self.contacts])
 
     def compute_wrench_span(self, p):
         """
@@ -386,7 +358,7 @@ class ContactSet(object):
             return compute_polygon_hull(B, c)
         p = [0, 0, 0]  # point where contact wrench is taken at
         G = self.compute_grasp_matrix(p)
-        F = self.compute_stacked_wrench_faces()
+        F = block_diag(*[contact.wrench_face for contact in self.contacts])
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, see Section IV.B in
         # <https://hal.archives-ouvertes.fr/hal-01349880> for details
@@ -432,7 +404,7 @@ class ContactSet(object):
         z_com, z_zmp = com[2], plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
         G = self.compute_grasp_matrix([0, 0, 0])
-        F = self.compute_stacked_wrench_faces()
+        F = block_diag(*[contact.wrench_face for contact in self.contacts])
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, c.f. Section IV.C in
         # <https://hal.archives-ouvertes.fr/hal-01349880>
