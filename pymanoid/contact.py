@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
+from numpy import array, cross, dot, eye, hstack, sqrt, vstack
 from scipy.linalg import block_diag
 
 from body import Box
@@ -55,13 +55,6 @@ class Contact(Box):
             kinetic_friction = static_friction
         self.kinetic_friction = kinetic_friction
         self.static_friction = static_friction
-        self.vel = zeros(3)  # velocity in local frame
-        self.vel.flags.writeable = False
-
-    def set_velocity(self, v):
-        self.vel.flags.writeable = True
-        self.vel = array(v)
-        self.vel.flags.writeable = False
 
     """
     Geometry

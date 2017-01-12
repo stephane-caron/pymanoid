@@ -368,10 +368,10 @@ class ContactSet(object):
 
         ALGORITHM:
 
-        The method 'bretl' is adapted from in [BL08] where the
+        The method 'bretl' is adapted from in [BL08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN16]. See the
-        Appendix from [CK16] for a performance comparison.
+        to the double-description approach described in [CPN16]_. See the
+        Appendix from [CK16]_ for a performance comparison.
 
         REFERENCES:
 
