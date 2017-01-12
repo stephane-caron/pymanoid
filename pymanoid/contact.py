@@ -63,14 +63,6 @@ class Contact(Box):
         self.vel = array(v)
         self.vel.flags.writeable = False
 
-    @property
-    def is_fixed(self):
-        return not self.is_sliding
-
-    @property
-    def is_sliding(self):
-        return dot(self.vel, self.vel) > 1e-6
-
     """
     Geometry
     ========
@@ -133,7 +125,6 @@ class Contact(Box):
         """
         Face (H-rep) of the force friction cone in world frame.
         """
-        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
         mu = self.static_friction / sqrt(2)  # inner approximation
         local_cone = array([
             [-1, 0, -mu],
@@ -147,7 +138,6 @@ class Contact(Box):
         """
         Rays (V-rep) of the force friction cone in world frame.
         """
-        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
         mu = self.static_friction / sqrt(2)  # inner approximation
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
@@ -194,7 +184,6 @@ class Contact(Box):
            <https://scaron.info/papers/conf/caron-icra-2015.pdf>
 
         """
-        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
         X, Y = self.X, self.Y
         mu = self.static_friction / sqrt(2)  # inner approximation
         local_cone = array([
@@ -222,7 +211,6 @@ class Contact(Box):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
         """
-        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
         rays = []
         for v in self.vertices:
             x, y, z = v - self.p
@@ -243,7 +231,6 @@ class Contact(Box):
         coordinates. Note that the contact wrench w is taken at the contact
         point (self.p) and in the world frame.
         """
-        assert not self.is_sliding, "Cone is degenerate for sliding contacts"
         span_blocks = []
         for (i, v) in enumerate(self.vertices):
             x, y, z = v - self.p
