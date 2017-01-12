@@ -337,7 +337,7 @@ class ContactSet(object):
         REFERENCES:
 
         .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
-        .. [CPN16] https://dx.doi.org/10.1109/TRO.2016.2623338
+        .. [CPN16] https://scaron.info/papers/journal/caron-tro-2016.pdf
         .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
         """
         if method == 'hull':
