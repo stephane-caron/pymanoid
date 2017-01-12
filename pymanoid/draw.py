@@ -102,7 +102,7 @@ def draw_arrow(p1, p2, color='r', linewidth=0.02):
     return env.drawarrow(p1, p2, linewidth=linewidth, color=color)
 
 
-def draw_force(point, force, scale=0.005, color='r', linewidth=0.015):
+def draw_force(point, force, scale=0.005, linewidth=0.015):
     """
     Draw a force acting at a given point.
 
@@ -110,7 +110,6 @@ def draw_force(point, force, scale=0.005, color='r', linewidth=0.015):
 
     - ``point`` -- point where the force is acting
     - ``force`` -- 3D force vector
-    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
     - ``scale`` -- scaling factor between Euclidean and Force spaces
     - ``linewidth`` -- thickness of force vector
 
@@ -119,13 +118,10 @@ def draw_force(point, force, scale=0.005, color='r', linewidth=0.015):
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    if type(color) is str:
-        color = matplotlib_to_rgb(color)
     f_scale = scale * force
     if dot(f_scale, f_scale) < 1e-6:
         return None
-    return get_openrave_env().drawarrow(
-        point, point + f_scale, linewidth=linewidth, color=color)
+    return draw_arrow(point, point + f_scale, color='r', linewidth=linewidth)
 
 
 def draw_line(start_point, end_point, color='g', linewidth=1.):
@@ -295,8 +291,7 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     return handles
 
 
-def draw_wrench(body, wrench, scale=0.005, color='r', pointsize=0.02,
-                linewidth=0.01):
+def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
     """
     Draw a wrench acting on a given rigid body.
 
@@ -304,26 +299,30 @@ def draw_wrench(body, wrench, scale=0.005, color='r', pointsize=0.02,
 
     - ``body`` -- body on which the wrench is acting
     - ``force`` -- 6D wrench vector in world-frame coordinates
-    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
     - ``scale`` -- scaling factor between Euclidean and Force spaces
     - ``pointsize`` -- point radius in [m]
     - ``linewidth`` -- thickness of force vector
 
     OUTPUT:
 
-    A list containing two OpenRAVE handles. It must be stored in some variable,
-    otherwise the drawn object will vanish instantly. The first handle is for
-    the n-moment point, i.e. the center of pressure + a displacement along the
-    normal axis representing the yaw moment.
+    A list containing two or three OpenRAVE handles. It must be stored in some
+    variable, otherwise the drawn object will vanish instantly. The first handle
+    is for the center of pressure and the second one for the resultant force.
+    When the yaw torque is non-zero, its arrow handle is appended.
     """
     if type(wrench) is list:
         wrench = array(wrench)
     assert wrench.shape == (6,)
     f, tau = wrench[:3], wrench[3:]
     cop = body.p + cross(body.n, tau) / dot(body.n, f)
-    nmp = cop + dot(body.n, tau) / dot(body.n, f) * body.n
-    h1 = draw_point(nmp, pointsize=pointsize)
-    h2 = draw_force(nmp, f, scale=scale, color=color, linewidth=linewidth)
+    tau_z = dot(body.n, tau)
+    h1 = draw_point(cop, pointsize=pointsize)
+    h2 = draw_force(cop, f, scale=scale, linewidth=linewidth)
+    if abs(tau_z) > 1e-1:
+        h3 = draw_arrow(
+            cop, cop + 10 * scale * tau_z * body.n, color='b',
+            linewidth=linewidth)
+        return [h1, h2, h3]
     return [h1, h2]
 
 
