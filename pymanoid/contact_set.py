@@ -23,9 +23,7 @@ import numpy
 from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
-from warnings import warn
 
-from draw import draw_force
 from optim import solve_relaxed_qp
 from polyhedra import Cone
 from polyhedra.polygon import compute_polygon_hull
@@ -52,10 +50,6 @@ class ContactSet(object):
             assert contacts is None
             self.contact_dict = {}
 
-    @property
-    def nb_contacts(self):
-        return len(self.contact_dict)
-
     def __contains__(self, name):
         """Check whether a named contact is present."""
         return name in self.contact_dict
@@ -73,6 +67,10 @@ class ContactSet(object):
         """Iterate contacts in the set."""
         for contact in self.contact_dict.itervalues():
             yield contact
+
+    @property
+    def nb_contacts(self):
+        return len(self.contact_dict)
 
     def find_supporting_forces(self, wrench, point, friction_weight=.1,
                                pressure_weight=10.):
@@ -106,11 +104,11 @@ class ContactSet(object):
             and pressure forces. However, one can model them without loss of
             generality (in terms of the resultant wrench) by considering only
             point contact forces applied at the vertices of the contact area.
-            See [CPN]_ for details.
+            See [CPN15]_ for details.
 
         REFERENCES:
 
-        .. [CPN] Caron, Pham, Nakamura, "Stability of surface contacts for
+        .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
            humanoid robots: Closed-form formulae of the contact wrench cone for
            rectangular support areas." 2015 IEEE International Conference on
            Robotics and Automation (ICRA).
@@ -154,15 +152,6 @@ class ContactSet(object):
                 output.append((p, f_all[next_index:next_index + 3]))
                 next_index += 3
         return output
-
-    def draw_supporting_forces(self, wrench, point, force_scale=0.0025,
-                               **kwargs):
-        support = self.find_supporting_forces(wrench, point, **kwargs)
-        if support is None:
-            warn("draw_supporting_support(): there are no supporting forces")
-            return
-        handles = [draw_force(c, fc, force_scale) for (c, fc) in support]
-        return handles
 
     def find_static_supporting_forces(self, com, mass):
         """
