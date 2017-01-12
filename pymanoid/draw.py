@@ -102,14 +102,14 @@ def draw_arrow(p1, p2, color='r', linewidth=0.02):
     return env.drawarrow(p1, p2, linewidth=linewidth, color=color)
 
 
-def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
+def draw_force(point, force, scale=0.005, color='r', linewidth=0.015):
     """
     Draw a force acting at a given point.
 
     INPUT:
 
-    - ``p`` -- point where the force is acting
-    - ``f`` -- force vector
+    - ``point`` -- point where the force is acting
+    - ``force`` -- 3D force vector
     - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
     - ``scale`` -- scaling factor between Euclidean and Force spaces
     - ``linewidth`` -- thickness of force vector
@@ -121,21 +121,21 @@ def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
     """
     if type(color) is str:
         color = matplotlib_to_rgb(color)
-    f_scale = scale * f
+    f_scale = scale * force
     if dot(f_scale, f_scale) < 1e-6:
         return None
     return get_openrave_env().drawarrow(
-        p, p + f_scale, linewidth=linewidth, color=color)
+        point, point + f_scale, linewidth=linewidth, color=color)
 
 
-def draw_line(p1, p2, color='g', linewidth=1.):
+def draw_line(start_point, end_point, color='g', linewidth=1.):
     """
-    Draw a line between points p1 and p2.
+    Draw a line between two points.
 
     INPUT:
 
-    - ``p1`` -- one end of the line
-    - ``p2`` -- other end of the line
+    - ``start_point`` -- one end of the line
+    - ``end_point`` -- other end of the line
     - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
     - ``linewidth`` -- thickness of drawn line
 
@@ -147,14 +147,40 @@ def draw_line(p1, p2, color='g', linewidth=1.):
     if type(color) is str:
         color = matplotlib_to_rgb(color)
     return get_openrave_env().drawlinelist(
-        array([p1, p2]), linewidth=linewidth, colors=color)
+        array([start_point, end_point]), linewidth=linewidth, colors=color)
 
 
-def draw_point(p, color='g', pointsize=0.05):
-    return draw_points([p], color, pointsize)
+def draw_point(point, color='g', pointsize=0.05):
+    """
+    Draw a point.
+
+    INPUT:
+
+    - ``point`` -- 3D vector of point coordinates
+    - ``pointsize`` -- point radius in [m]
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
+    return draw_points([point], color, pointsize)
 
 
 def draw_points(points, color='g', pointsize=0.05):
+    """
+    Draw a list of points.
+
+    INPUT:
+
+    - ``points`` -- list of 3D vectors of point coordinates
+    - ``pointsize`` -- point radius in [m]
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
     if type(color) is str:
         color = matplotlib_to_rgba(color, alpha=1.)
     return get_openrave_env().plot3(
@@ -269,7 +295,61 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     return handles
 
 
-def pick_2d_extreme_rays(rays):
+def draw_wrench(body, wrench, scale=0.005, color='r', pointsize=0.02,
+                linewidth=0.01):
+    """
+    Draw a wrench acting on a given rigid body.
+
+    INPUT:
+
+    - ``body`` -- body on which the wrench is acting
+    - ``force`` -- 6D wrench vector in world-frame coordinates
+    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
+    - ``scale`` -- scaling factor between Euclidean and Force spaces
+    - ``pointsize`` -- point radius in [m]
+    - ``linewidth`` -- thickness of force vector
+
+    OUTPUT:
+
+    A list containing two OpenRAVE handles. It must be stored in some variable,
+    otherwise the drawn object will vanish instantly. The first handle is for
+    the n-moment point, i.e. the center of pressure + a displacement along the
+    normal axis representing the yaw moment.
+    """
+    if type(wrench) is list:
+        wrench = array(wrench)
+    assert wrench.shape == (6,)
+    f, tau = wrench[:3], wrench[3:]
+    cop = body.p + cross(body.n, tau) / dot(body.n, f)
+    nmp = cop + dot(body.n, tau) / dot(body.n, f) * body.n
+    h1 = draw_point(nmp, pointsize=pointsize)
+    h2 = draw_force(nmp, f, scale=scale, color=color, linewidth=linewidth)
+    return [h1, h2]
+
+
+def _convert_cone2d_to_vertices(vertices, rays):
+    if not rays:
+        return vertices
+    try:
+        r0, r1 = _pick_2d_extreme_rays([r[:2] for r in rays])
+    except UnboundedPolyhedron:
+        vertices = [
+            BIG_DIST * array([-1, -1]),
+            BIG_DIST * array([-1, +1]),
+            BIG_DIST * array([+1, -1]),
+            BIG_DIST * array([+1, +1])]
+        return vertices, []
+    r0 = array([r0[0], r0[1], 0.])
+    r1 = array([r1[0], r1[1], 0.])
+    r0 = r0 / sqrt(dot(r0, r0))
+    r1 = r1 / sqrt(dot(r1, r1))
+    conv_vertices = [v for v in vertices]
+    conv_vertices += [v + r0 * BIG_DIST for v in vertices]
+    conv_vertices += [v + r1 * BIG_DIST for v in vertices]
+    return conv_vertices
+
+
+def _pick_2d_extreme_rays(rays):
     if len(rays) <= 2:
         return rays
     u_high, u_low = None, rays.pop()
@@ -292,25 +372,3 @@ def pick_2d_extreme_rays(rays):
         elif c1 < 0 and c2 > 0:
             raise UnboundedPolyhedron
     return u_low, u_high
-
-
-def _convert_cone2d_to_vertices(vertices, rays):
-    if not rays:
-        return vertices
-    try:
-        r0, r1 = pick_2d_extreme_rays([r[:2] for r in rays])
-    except UnboundedPolyhedron:
-        vertices = [
-            BIG_DIST * array([-1, -1]),
-            BIG_DIST * array([-1, +1]),
-            BIG_DIST * array([+1, -1]),
-            BIG_DIST * array([+1, +1])]
-        return vertices, []
-    r0 = array([r0[0], r0[1], 0.])
-    r1 = array([r1[0], r1[1], 0.])
-    r0 = r0 / sqrt(dot(r0, r0))
-    r1 = r1 / sqrt(dot(r1, r1))
-    conv_vertices = [v for v in vertices]
-    conv_vertices += [v + r0 * BIG_DIST for v in vertices]
-    conv_vertices += [v + r1 * BIG_DIST for v in vertices]
-    return conv_vertices
