@@ -187,8 +187,7 @@ class ContactSet(object):
         wrench = numpy.hstack([f, tau])
         return self.find_supporting_forces(wrench, com)
 
-    def find_supporting_wrenches(self, wrench, point, friction_weight=.1,
-                                 pressure_weight=10.):
+    def find_supporting_wrenches(self, wrench, point):
         n = 6 * self.nb_contacts
         P = eye(n)
         q = zeros((n,))

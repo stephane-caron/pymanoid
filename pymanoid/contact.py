@@ -71,6 +71,11 @@ class Contact(Box):
     def is_sliding(self):
         return dot(self.vel, self.vel) > 1e-6
 
+    """
+    Geometry
+    ========
+    """
+
     def grasp_matrix(self, p):
         """
         Compute the grasp matrix from the origin of the contact frame (in world
@@ -172,7 +177,7 @@ class Contact(Box):
     @property
     def wrench_face(self):
         """
-        Compute the matrix F of friction inequalities.
+        Matrix F of static-friction inequalities in world frame.
 
         This matrix describes the linearized Coulomb friction model by:
 

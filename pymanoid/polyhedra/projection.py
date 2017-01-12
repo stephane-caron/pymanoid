@@ -30,7 +30,7 @@ class PolyhedronProjector(object):
     def __init__(self, A=None, b=None, C=None, d=None, E=None, f=None,
                  box_size=42):
         """
-        Project a polytope defined by:
+        Project a polyhedron defined by:
 
             A * x <= b
             C * x == d
@@ -162,7 +162,7 @@ class PolytopeProjector(PolyhedronProjector):
     def project_bretl(self, solver='glpk'):
         """
         Project polytope using the incremental projection algorithm
-        from [BL08].
+        from [BL08]_.
 
         INPUT:
 
