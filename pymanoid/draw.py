@@ -21,7 +21,6 @@
 import itertools
 
 from numpy import array, cross, dot, int64, sqrt, vstack
-from numpy.random import randint
 from scipy.spatial import ConvexHull
 from scipy.spatial.qhull import QhullError
 from warnings import warn
@@ -55,26 +54,30 @@ def matplotlib_to_rgba(color, alpha=0.5):
     return matplotlib_to_rgb(color) + [alpha]
 
 
-def draw_line(p1, p2, color='g', linewidth=1.):
+def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
+                 faces=None):
     """
-    Draw a line between points p1 and p2.
+    Draw a 2D cone defined from its rays and vertices. The normal vector n of
+    the plane containing the cone must also be supplied.
 
     INPUT:
 
-    - ``p1`` -- one end of the line
-    - ``p2`` -- other end of the line
-    - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
-    - ``linewidth`` -- thickness of drawn line
+    - ``vertices`` -- list of 3D points
+    - ``rays`` -- list of 3D vectors
+    - ``normal`` -- unit vector normal to the drawing plane
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
+    - ``color`` -- color letter or RGBA tuple
+    - ``faces`` -- string indicating the faces of the polyhedron to draw
 
     OUTPUT:
 
     And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
     object will vanish instantly.
     """
-    if type(color) is str:
-        color = matplotlib_to_rgb(color)
-    return get_openrave_env().drawlinelist(
-        array([p1, p2]), linewidth=linewidth, colors=color)
+    if not rays:
+        return draw_polygon(vertices, normal, combined, color, faces)
+    plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
+    return draw_polygon(plot_vertices, normal, combined, color, faces)
 
 
 def draw_arrow(p1, p2, color='r', linewidth=0.02):
@@ -125,6 +128,28 @@ def draw_force(p, f, scale=0.005, color='r', linewidth=0.015):
         p, p + f_scale, linewidth=linewidth, color=color)
 
 
+def draw_line(p1, p2, color='g', linewidth=1.):
+    """
+    Draw a line between points p1 and p2.
+
+    INPUT:
+
+    - ``p1`` -- one end of the line
+    - ``p2`` -- other end of the line
+    - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
+    - ``linewidth`` -- thickness of drawn line
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
+    if type(color) is str:
+        color = matplotlib_to_rgb(color)
+    return get_openrave_env().drawlinelist(
+        array([p1, p2]), linewidth=linewidth, colors=color)
+
+
 def draw_point(p, color='g', pointsize=0.05):
     return draw_points([p], color, pointsize)
 
@@ -135,6 +160,45 @@ def draw_points(points, color='g', pointsize=0.05):
     return get_openrave_env().plot3(
         array(points), pointsize=pointsize, drawstyle=1,
         colors=color)
+
+
+def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
+                 linewidth=1., pointsize=0.02):
+    """
+    Draw a polygon defined as the convex hull of a set of points. The normal
+    vector n of the plane containing the polygon must also be supplied.
+
+    INPUT:
+
+    - ``points`` -- list of coplanar 3D points
+    - ``normal`` -- unit vector normal to the drawing plane
+    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
+    - ``color`` -- color letter or RGBA tuple
+    - ``faces`` -- string indicating the faces of the polyhedron to draw
+    - ``linewidth`` -- (default: 1.) thickness of drawn line
+    - ``pointsize`` -- (default: 0.02) vertex size
+
+    OUTPUT:
+
+    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
+    object will vanish instantly.
+    """
+    assert abs(1. - norm(normal)) < 1e-10
+    n = normal
+    t = array([n[2] - n[1], n[0] - n[2], n[1] - n[0]], dtype=float)
+    t /= norm(t)
+    b = cross(n, t)
+    points2d = [[dot(t, x), dot(b, x)] for x in points]
+    try:
+        hull = ConvexHull(points2d)
+    except QhullError:
+        warn("QhullError: maybe polygon is empty?")
+        return []
+    except IndexError:
+        warn("Qhull raised an IndexError for points2d=%s" % repr(points2d))
+        return []
+    return draw_polyhedron(
+        points, combined, color, faces, linewidth, pointsize, hull=hull)
 
 
 def draw_polyhedron(points, combined='g-#', color=None, faces=None,
@@ -205,45 +269,6 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     return handles
 
 
-def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
-                 linewidth=1., pointsize=0.02):
-    """
-    Draw a polygon defined as the convex hull of a set of points. The normal
-    vector n of the plane containing the polygon must also be supplied.
-
-    INPUT:
-
-    - ``points`` -- list of coplanar 3D points
-    - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-    - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string indicating the faces of the polyhedron to draw
-    - ``linewidth`` -- (default: 1.) thickness of drawn line
-    - ``pointsize`` -- (default: 0.02) vertex size
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
-    """
-    assert abs(1. - norm(normal)) < 1e-10
-    n = normal
-    t = array([n[2] - n[1], n[0] - n[2], n[1] - n[0]], dtype=float)
-    t /= norm(t)
-    b = cross(n, t)
-    points2d = [[dot(t, x), dot(b, x)] for x in points]
-    try:
-        hull = ConvexHull(points2d)
-    except QhullError:
-        warn("QhullError: maybe polygon is empty?")
-        return []
-    except IndexError:
-        warn("Qhull raised an IndexError for points2d=%s" % repr(points2d))
-        return []
-    return draw_polyhedron(
-        points, combined, color, faces, linewidth, pointsize, hull=hull)
-
-
 def pick_2d_extreme_rays(rays):
     if len(rays) <= 2:
         return rays
@@ -289,56 +314,3 @@ def _convert_cone2d_to_vertices(vertices, rays):
     conv_vertices += [v + r0 * BIG_DIST for v in vertices]
     conv_vertices += [v + r1 * BIG_DIST for v in vertices]
     return conv_vertices
-
-
-def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
-                 faces=None):
-    """
-    Draw a 2D cone defined from its rays and vertices. The normal vector n of
-    the plane containing the cone must also be supplied.
-
-    INPUT:
-
-    - ``vertices`` -- list of 3D points
-    - ``rays`` -- list of 3D vectors
-    - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-    - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string indicating the faces of the polyhedron to draw
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
-    """
-    if not rays:
-        return draw_polygon(vertices, normal, combined, color, faces)
-    plot_vertices = _convert_cone2d_to_vertices(vertices, rays)
-    return draw_polygon(plot_vertices, normal, combined, color, faces)
-
-
-def draw_contact_force_lines(contact, length=0.25):
-    """
-    Draw friction cones from each vertex of the surface patch.
-
-    INPUT:
-
-    - ``length`` -- (optional) length of friction rays in [m]
-
-    OUTPUT:
-
-    A list of OpenRAVE GUI handles.
-    """
-    env = get_openrave_env()
-    handles = []
-    for c in contact.vertices:
-        color = [0.1, 0.1, 0.1]
-        color[randint(3)] += 0.2
-        for f in contact.force_rays:
-            handles.append(env.drawlinelist(
-                array([c, c + length * f]),
-                linewidth=1, colors=color))
-        handles.append(env.drawlinelist(
-            array([c, c + length * contact.n]),
-            linewidth=5, colors=color))
-    return handles
