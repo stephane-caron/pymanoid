@@ -179,32 +179,61 @@ else:  # fallback option is CVXOPT
     solve_qp = cvxopt_solve_qp
 
 
-def solve_relaxed_qp(P, q, G, h, A, b, tol=None, OVER_WEIGHT=100000.):
-    """
-    Solve a relaxed version of the Quadratic Program:
+def solve_relaxed_qp(P, q, G, h, A, b, tol=None, WEIGHT=100000.):
+    """Solve a Quadratic Program with relaxed equality constraints.
 
-        min_x   c1(x)
+    The reference QP is defined by:
 
-         s.t.   G * x <= h
-                c2(x) == 0
+    .. math::
+
+        \\begin{eqnarray}
+        \\mathrm{minimize} & & c_1(x) \\\\
+        \\mathrm{s.t.} & & G x \leq h \\\\
+            & & c_2(x) = 0
+        \\end{eqnarray}
 
     where the cost function and linear equalities are given by:
 
-        c1(x) = x.T * P * x + 2 * q.T * x
-        c2(x) = |A * x - b|^2
+    .. math::
+
+        \\begin{eqnarray}
+        c_1(x) & = & x^T P x + 2 q^T x \\\\
+        c_2(x) & = & \\|A x - b\\|^2
+        \\end{eqnarray}
 
     The relaxed problem is defined by
 
-        min_x   c1(x, P, q) + OVER_WEIGHT * c2(x, A, b)
-         s.t.   G * x <= h
+    .. math::
 
-    where OVER_WEIGHT is a very high weight.
+        \\begin{eqnarray}
+        \\mathrm{minimize} & & c_1(x) + W c_2(x) \\\\
+        \\mathrm{s.t.} & & G x \leq h
+        \\end{eqnarray}
 
-    If ``tol`` is not None, the solution will only be returned if the relative
-    variation between A * x and b is less than ``tol``.
+    where :math:`W` is a very large weight.
+
+    Parameters
+    ----------
+    P : ndarray
+        Quadratic cost matrix.
+    q : ndarray
+        Quadratic cost vector.
+    G : ndarray
+        Linear inequality constraint matrix.
+    h : ndarray
+        Linear inequality constraint vector.
+    A : ndarray
+        Linear equality constraint matrix.
+    b : ndarray
+        Linear equality constraint vector.
+    tol : double, optional
+        If provided, the solution will only be returned if the relative
+        variation between :math:`A x` and :math:`b` is less than ``tol``.
+    WEIGHT : double, optional
+        Large weight :math:`W`. Defaults to :math:`10^5`.
     """
-    P2 = P + OVER_WEIGHT * dot(A.T, A)
-    q2 = q + OVER_WEIGHT * dot(-b.T, A)
+    P2 = P + WEIGHT * dot(A.T, A)
+    q2 = q + WEIGHT * dot(-b.T, A)
     x = solve_qp(P2, q2, G, h)
     if x is not None and tol is not None:
         def sq(v):
