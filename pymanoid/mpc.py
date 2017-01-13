@@ -92,49 +92,67 @@ class PreviewControl(object):
     """
     Preview control for a system with linear dynamics.
 
-    ALGORITHM:
+    The dynamics of a linear system are described by:
 
-    System dynamics are described by:
+    .. math::
 
-        x_{k+1} = A * x_k + B * u_k
+        x_{k+1} = A x_k + B u_k
 
-    where ``x`` is assumed to be the first-order state of a configuration
-    variable ``p``, i.e., it stacks both the position ``p`` and its
-    time-derivative ``pd``.
+    where :math:`x` is assumed to be the first-order state of a configuration
+    variable :math:`p`, i.e., it stacks both the position :math:`p` and its
+    time-derivative :math:`\\dot{p}`. Meanwhile, the system is linearly
+    constrained by:
 
-    The system is constrained by:
+    .. math::
 
-        x_0 = x_init                    -- initial state
-        for all k,   C(k) * u_k <= d(k) -- control constraints
-        for all k,   E(k) * p_k <= f(k) -- position constraints
+        \\begin{eqnarray}
+        x_0 & = & x_\\mathrm{init} \\\\
+        \\forall k, \\ G_k u_k & \\leq & h_k \\\\
+        \\forall k, \\ E_k p_k & \\leq & f_k
+        \\end{eqnarray}
 
     The output control law will minimize, by decreasing priority:
 
-        1)  |x_{nb_steps} - x_goal|^2
-        2)  sum_k |u_k|^2
+    - :math:`\\|x_\\mathrm{nb\\_steps} - x_\\mathrm{goal}\\|^2` with weight
+      :math:`w_x`
+    - :math:`\\sum_k \\|u_k\\|^2` with weight :math:`w_u`
 
     Where the minimization is weighted, not prioritized.
+
+    Parameters
+    ----------
+
+    A : ndarray
+        State linear dynamics matrix.
+    B : ndarray
+        Control linear dynamics matrix.
+    G : function int -> ndarray
+        Function mapping a time step :math:`k` to the matrix :math:`G_k` of
+        control inequality constraints.
+    h : function int -> ndarray
+        Function mapping a time step :math:`k` to the vector :math:`h_k` of
+        control inequality constraints.
+    x_init : ndarray
+        Initial state as stacked position and velocity.
+    x_goal : ndarray
+        Goal state as stacked position and velocity.
+    nb_steps : int
+        Number of discretized time steps.
+    E : function int -> ndarray, optional
+        Function mapping a time step :math:`k` to the matrix :math:`E_k` of
+        state inequality constraints.
+    f : function int -> ndarray, optional
+        Function mapping a time step :math:`k` to the vector :math:`f_k` of
+        state inequality constraints.
+    wx : double, optional
+        Weight :math:`w_x` on the state error :math:`\\|x -
+        x_\\mathrm{goal}\\|^2`.
+    wu : double, optional
+        Weight :math:`w_u` on cumulated controls :math:`\\sum_k \\|u_k\\|^2`.
     """
 
     def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
                  wx=1000., wu=1.):
-        """
-        Create a new preview controller.
-
-        INPUT:
-
-        - ``A`` -- state linear dynamics matrix
-        - ``B`` -- control linear dynamics matrix
-        - ``G`` -- matrix for control inequality constraints
-        - ``h`` -- vector for control inequality constraints
-        - ``x_init`` -- initial state (stacked position and velocity)
-        - ``x_goal`` -- goal state (stacked position and velocity)
-        - ``nb_steps`` -- number of discretized time steps
-        - ``E`` -- (optional) matrix for state inequality constraints
-        - ``f`` -- (optional) vector for state inequality constraints
-        - ``wx`` -- (optional) weight on the state error ``|x - x_goal|^2``
-        - ``wu`` -- (optional) weight on cumulated controls ``sum_k |u_k|^2``
-        """
         u_dim = B.shape[1]
         x_dim = A.shape[1]
         self.A = A
@@ -160,13 +178,21 @@ class PreviewControl(object):
         """
         Compute internal matrices mapping stacked controls ``U`` to states.
 
-        ALGORITHM:
+        Notes
+        -----
+        See [Aud+14]_ for details, as we use the same notations below.
 
-        See [Aud+14] for details, as we use the same notations below.
-
-        REFERENCES:
-
-        .. [Aud+14] http://dx.doi.org/10.1109/IROS.2014.6943129
+        References
+        ----------
+        .. [Aud+14] Hervé Audren, Joris Vaillant, Aberrahmane Kheddar, Adrien
+            Escande, Kenji Kaneko, Eiichi Yoshida, "Model preview control in
+            multi-contact motion-application to a humanoid robot," 2014 IEEE/RSJ
+            International Conference on Intelligent Robots and Systems, Chicago,
+            IL, 2014, pp. 4030-4035.
+            `[doi]
+            <http://dx.doi.org/10.1109/IROS.2014.6943129>`_
+            `[pdf]
+            <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`_
         """
         self.t_build_start = time()
         phi = eye(self.x_dim)
