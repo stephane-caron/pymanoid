@@ -36,9 +36,32 @@ class Cone(Polyhedron):
     """
     Cones are polyhedra with only rays and a single apex at the origin.
 
-    H-rep: the matrix A such that the cone is defined by A * x <= 0
-    V-rep: the set {r_1, ..., r_k} of ray vectors such that the cone is defined
-           by x = nonneg(r_1, ..., r_k)
+    Parameters
+    ----------
+    face : ndarray
+        Face matrix :math:`A` of the polyhedral cone.
+    rays : list of ndarrays
+        List of rays definied the V-representation of the cone.
+
+    Notes
+    -----
+
+    By the `Minkowski-Weyl theorem
+    <https://www.inf.ethz.ch/personal/fukudak/polyfaq/node14.html>`_,
+    polyhedral convex cones can be described equivalently in:
+
+    - *H-representation*: a matrix :math:`A` such that the cone is defined by
+
+    .. math::
+
+        A x \leq 0
+
+    - *V-representation*: a set :math:`\\{r_1, \\ldots, r_k\\}` of ray vectors
+      such that the cone is defined by
+
+    .. math::
+
+        x = \\mathrm{nonneg}(r_1, \\ldots, r_k)
     """
 
     def __init__(self, face=None, rays=None):
