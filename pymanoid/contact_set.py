@@ -74,12 +74,11 @@ class ContactSet(object):
 
     def find_supporting_forces(self, wrench, point, friction_weight=.1,
                                pressure_weight=10.):
-        """
-        Find a set of contact forces supporting a given wrench.
+        """Find supporting forces for a given net wrench.
 
-        If the resultant wrench ``wrench`` (expressed at ``point``) can be
-        supported by the contact set, output a set of supporting contact
-        forces that minimizes the cost
+        If the net wrench ``wrench`` (expressed at ``point``) can be supported
+        by the contact set, output a set of supporting contact forces that
+        minimizes the cost
 
         .. math::
 
@@ -91,9 +90,9 @@ class ContactSet(object):
 
         Parameters
         ----------
-        wrench : (6,) ndarray
-            The resultant wrench to be realized.
-        point : (3,) ndarray
+        wrench : ndarray
+            Resultant wrench to be realized.
+        point : ndarray
             Point where the wrench is expressed.
         friction_weight : double
             Weight :math:`w_t` for friction terms in the cost function.
@@ -166,23 +165,29 @@ class ContactSet(object):
         return output
 
     def find_static_supporting_forces(self, com, mass):
-        """
-        Find a set of contact forces supporting the robot in static equilibrium
-        when its center of mass is located at ``com``.
+        """Find supporting forces in static-equilibrium.
 
-        INPUT:
+        Find a set of contact forces that support the robot in static
+        equilibrium when its center of mass is located at ``com``.
 
-        - ``com`` -- position of the center of mass
-        - ``mass`` -- total mass of the robot
+        Parameters
+        ----------
+        com : ndarray
+            Position of the center of mass.
+        mass : double
+            Total mass of the robot in [kg].
 
-        OUTPUT:
 
-        A list of couples (contact point, contact force) expressed in the world
-        frame.
+        Returns
+        -------
+        support : list of (3,) ndarray couples
+            List of couples (contact point, contact force) with coordinates
+            expressed in the world frame.
 
-        .. SEEALSO::
-
-            :meth:`pymanoid.contact.ContactSet.find_supporting_forces`,
+        See Also
+        --------
+        - :meth:`pymanoid.contact.ContactSet.find_supporting_forces`
+        - :meth:`pymanoid.contact.ContactSet.find_supporting_wrenches`
         """
         f = numpy.array([0., 0., mass * 9.81])
         tau = zeros(3)
