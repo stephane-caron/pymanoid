@@ -28,25 +28,36 @@ from rotations import crossmat
 
 class Contact(Box):
 
+    """
+    Rectangular contact surface.
+
+    Parameters
+    ----------
+    shape : double couple
+        Surface dimensions (half-length, half-width) in [m].
+    pos : ndarray
+        Contact position in world frame.
+    rpy : ndarray
+        Contact orientation in world frame.
+    pose : ndarray
+        Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at the
+        same time.
+    static_friction : double
+        Static friction coefficient.
+    kinetic_friction : double
+        Kinetic friction coefficient.
+    visible : bool, optional
+        Initial visibility. Defaults to ``True``.
+    name : string, optional
+        Name in OpenRAVE scope.
+    """
+
     THICKNESS = 0.01
+    """Thickness in [m] of the contact patch."""
 
     def __init__(self, shape, pos=None, rpy=None, pose=None,
                  static_friction=None, kinetic_friction=None, visible=True,
                  name=None, color='r'):
-        """
-        Create a new rectangular contact.
-
-        INPUT:
-
-        - ``shape`` -- surface dimensions (half-length, half-width) in [m]
-        - ``pos`` -- contact position in world frame
-        - ``rpy`` -- contact orientation in world frame
-        - ``pose`` -- initial pose (supersedes pos and rpy)
-        - ``static_friction`` -- static friction coefficient
-        - ``kinetic_friction`` -- kinetic friction coefficient
-        - ``visible`` -- initial box visibility
-        - ``name`` -- (optional) name in OpenRAVE scope
-        """
         X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
@@ -62,22 +73,26 @@ class Contact(Box):
     """
 
     def grasp_matrix(self, p):
-        """
-        Compute the grasp matrix from the origin of the contact frame (in world
-        coordinates) to a given point.
+        """Compute the grasp matrix for a given destination point.
+
+        Compute the grasp matrix :math:`G(p)` converting the local contact
+        wrench :math:`w` to the contact wrench :math:`w_P` at another point
+        :math:`P`:
+
+        .. math::
+
+            w_P = G(P) w
+
+        All wrenches are expressed with respect to the world frame.
 
         INPUT:
 
         - ``p`` -- point (world frame coordinates) where the wrench is taken
 
-        OUTPUT:
-
-        The grasp matrix G(p) converting the local contact wrench w to the
-        contact wrench w(p) at another point p:
-
-            w(p) = G(p) * w
-
-        All wrenches are expressed with respect to the world frame.
+        Returns
+        -------
+        G : ndarray
+            Grasp matrix :math:`G(p)`.
         """
         x, y, z = self.p - p
         return array([
@@ -159,23 +174,25 @@ class Contact(Box):
 
     @property
     def wrench_face(self):
-        """
-        Matrix F of static-friction inequalities in world frame.
+        """Matrix :math:`F` of static-friction inequalities in world frame.
 
         This matrix describes the linearized Coulomb friction model by:
 
-            F * w <= 0
+        .. math::
 
-        where w is the contact wrench at the contact point (self.p) in the
-        world frame. See [Caron2015]_ for details.
+            F w \leq 0
 
-        REFERENCES:
+        where :math:`w` is the contact wrench at the contact point (``self.p``)
+        in the world frame. See [CPN2015]_ for details.
 
-        .. [Caron2015] S. Caron, Q.-C. Pham, Y. Nakamura. "Stability of Surface
-           Contacts for Humanoid Robots Closed-Form Formulae of the Contact
-           Wrench Cone for Rectangular Support Areas". ICRA 2015.
-           <https://scaron.info/papers/conf/caron-icra-2015.pdf>
-
+        References
+        ----------
+        .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
+            humanoid robots: Closed-form formulae of the contact wrench cone for
+            rectangular support areas." 2015 IEEE International Conference on
+            Robotics and Automation (ICRA).
+            `[doi] <https://doi.org/10.1109/ICRA.2015.7139910>`__
+            `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
         """
         X, Y = self.X, self.Y
         mu = self.static_friction / sqrt(2)  # inner approximation
