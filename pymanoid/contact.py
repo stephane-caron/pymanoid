@@ -75,24 +75,25 @@ class Contact(Box):
     def grasp_matrix(self, p):
         """Compute the grasp matrix for a given destination point.
 
-        Compute the grasp matrix :math:`G(p)` converting the local contact
+        Compute the grasp matrix :math:`G_P` converting the local contact
         wrench :math:`w` to the contact wrench :math:`w_P` at another point
         :math:`P`:
 
         .. math::
 
-            w_P = G(P) w
+            w_P = G_P w
 
         All wrenches are expressed with respect to the world frame.
 
-        INPUT:
-
-        - ``p`` -- point (world frame coordinates) where the wrench is taken
+        Parameters
+        ----------
+        p : ndarray
+            Point, in world frame coordinates, where the wrench is taken.
 
         Returns
         -------
         G : ndarray
-            Grasp matrix :math:`G(p)`.
+            Grasp matrix :math:`G_P`.
         """
         x, y, z = self.p - p
         return array([
