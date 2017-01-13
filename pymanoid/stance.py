@@ -30,23 +30,27 @@ class Stance(ContactSet):
 
     """
     Stances extend contact sets with COM locations.
+
+    Parameters
+    ----------
+    com : ndarray or Point
+        COM given by coordinates or a Point object.
+    left_foot : Contact, optional
+        Left foot contact.
+    right_foot : Contact, optional
+        Right foot contact.
+    left_hand : Contact, optional
+        Left hand contact.
+    right_hand : Contact, optional
+        Right hand contact.
+    label : string, optional
+        Label for the current contact phase.
+    duration : double, optional
+        Timing information.
     """
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
                  right_hand=None, label=None, duration=None):
-        """
-        Create a new stance.
-
-        INPUT:
-
-        - ``com`` -- coordinates or Point object
-        - ``left_foot`` -- (optional) left foot Contact
-        - ``right_foot`` -- (optional) right foot Contact
-        - ``left_hand`` -- (optional) left hand Contact
-        - ``right_hand`` -- (optional) right hand Contact
-        - ``label`` -- (optional) string label, e.g. phase in walking FSM
-        - ``duration`` -- (optional) timing information
-        """
         contacts = {}
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)

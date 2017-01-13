@@ -30,16 +30,14 @@ class PreviewBuffer(Process):
 
     """
     Buffer to store controls output by the preview controller.
+
+    Parameters
+    ----------
+    callback : function
+        Function to call with each new control :math:`(u, {\\rm d}T)`.
     """
 
     def __init__(self, callback):
-        """
-        Create a new buffer associated with a given target.
-
-        INPUT:
-
-        - ``callback`` -- function to call with each new control ``(u, dT)``
-        """
         super(PreviewBuffer, self).__init__()
         self.callback = callback
         self.cur_control = None
@@ -51,6 +49,11 @@ class PreviewBuffer(Process):
     def update_preview(self, preview):
         """
         Update preview with a filled PreviewControl object.
+
+        Parameter
+        ---------
+        preview : PreviewControl
+            New PreviewControl instance to store into the buffer.
         """
         with self.preview_lock:
             self.preview_index = 0

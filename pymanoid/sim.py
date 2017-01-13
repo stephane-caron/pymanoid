@@ -39,18 +39,23 @@ def get_openrave_env():
 
 class Simulation(object):
 
+    """
+    Simulation objects are the entry point of pymanoid scripts (similar to
+    OpenRAVE environments, which they wrap).
+
+    Parameters
+    ----------
+    dt : real
+        Time interval between two ticks in simulation time.
+    env_path : string, optional
+        Load environment from XML/DAE file.
+    env_xml : string, optional
+        Load environment from XML string.
+    """
+
     BACKGROUND_COLOR = [0.7, 0.8, 0.9]  # rien de tel que le bleu canard
 
     def __init__(self, dt, env_path=None, env_xml=None):
-        """
-        Create a new simulation object and initialize its OpenRAVE environment.
-
-        INPUT:
-
-        - ``dt`` -- time interval between two ticks in simulation time
-        - ``env_path`` -- (optional) load environment from XML/DAE file
-        - ``env_xml`` -- (optional) load environment from XML string
-        """
         global env, gravity
         if env is not None:
             raise Exception("an OpenRAVE environment already exists")

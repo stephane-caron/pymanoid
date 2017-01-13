@@ -27,10 +27,12 @@ def PointStamped_from_pos(p, seq=None):
     """
     Create a geometry_msgs/PointStamped from position coordinates.
 
-    INPUT:
-
-    - ``pos`` -- coordinates in world frame
-    - ``seq`` -- (optional) sequence number for transform's header
+    Parameters
+    ----------
+    pos : ndarray
+        Coordinates in world frame.
+    seq : integer
+        Sequence number for transform's header.
     """
     ps = PointStamped()
     if seq is not None:

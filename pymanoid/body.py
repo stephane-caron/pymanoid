@@ -28,28 +28,34 @@ from sim import get_openrave_env
 
 class Body(object):
 
-    count = 0  # counter for anonymous bodies
+    """
+    Base class for rigid bodies. Wraps OpenRAVE's KinBody type.
 
+    Parameters
+    ----------
+    kinbody : openravepy.KinBody
+        OpenRAVE body to wrap.
+    pos : ndarray, optional
+        Initial position in inertial frame.
+    rpy : ndarray, optional
+        Initial orientation in inertial frame.
+    pose : ndarray, optional
+        Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
+        the same time.
+    color : char, optional
+        Color applied to all links of the KinBody.
+    visible : bool, optional
+        Initial visibility.
+    transparency : double, optional
+        Transparency value from 0 (opaque) to 1 (invisible).
+    name : string, optional
+        Body name in OpenRAVE scope.
     """
-    Wrapper around OpenRAVE KinBody.
-    """
+
+    count = 0  # counter for anonymous bodies
 
     def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
                  visible=True, transparency=None, name=None):
-        """
-        Create body from an OpenRAVE KinBody.
-
-        INPUT:
-
-        - ``kinbody`` -- KinBody object to wrap
-        - ``pos`` -- (optional) initial position in inertial frame
-        - ``rpy`` -- (optional) initial orientation in inertial frame
-        - ``pose`` -- (optional) initial pose, supersedes ``pos`` and ``rpy``
-        - ``color`` -- (optional) color applied to all links of the KinBody
-        - ``visible`` -- (optional) initial visibility
-        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
-        - ``name`` -- (optional) body name in OpenRAVE scope
-        """
         if not kinbody.GetName():
             if name is None:
                 name = "%s%s" % (type(self).__name__, Body.count)
@@ -77,10 +83,11 @@ class Body(object):
         """
         Set the color of all bodies in the OpenRAVE KinBody object.
 
-        INPUT:
-
-        - ``color`` -- color code in Matplotlib convention,
-                       see <http://matplotlib.org/api/colors_api.html>.
+        Parameters
+        ----------
+        color : char
+            Color code in `Matplotlib convention
+            <http://matplotlib.org/api/colors_api.html>`_.
         """
         if color == 'w':
             acolor = array([1., 1., 1.])

@@ -41,7 +41,14 @@ from openravepy import \
 
 
 def crossmat(x):
-    """Cross-product matrix of a 3D vector"""
+    """
+    Cross-product matrix of a 3D vector.
+
+    Parameters
+    ----------
+    x : ndarray
+        3D vector to take the cross-product with.
+    """
     return array([
         [0, -x[2], x[1]],
         [x[2], 0, -x[0]],

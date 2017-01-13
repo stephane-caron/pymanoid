@@ -31,22 +31,23 @@ class SwingFoot(Box):
 
     """
     Invisible body used for swing foot interpolation.
+
+    Parameters
+    ----------
+    swing_height : double
+        Height in [m] for the apex of the foot trajectory.
+    color : char, optional
+        Color applied to all links of the KinBody.
+    visible : bool, optional
+        Initial visibility.
+    transparency : double, optional
+        Transparency value from 0 (opaque) to 1 (invisible).
     """
 
     THICKNESS = 0.01
 
     def __init__(self, swing_height, color='c', visible=False,
                  transparency=0.5):
-        """
-        Create a new SwingFoot instance.
-
-        INPUT:
-
-        - ``swing_height`` -- height in [m] for the apex of the foot trajectory
-        - ``color`` -- (optional) color applied to all links of the KinBody
-        - ``visible`` -- (optional) initial visibility
-        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
-        """
         super(SwingFoot, self).__init__(
             X=0.12, Y=0.06, Z=self.THICKNESS, color=color, visible=visible,
             transparency=transparency, dZ=-self.THICKNESS)

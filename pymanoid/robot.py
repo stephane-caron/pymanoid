@@ -33,6 +33,14 @@ class Robot(object):
 
     """
     Robot with a fixed base. This class wraps OpenRAVE's Robot type.
+
+    Parameters
+    ----------
+    path : string
+        Path to the COLLADA model of the robot.
+    xml : string, optional
+        Environment description in `OpenRAVE XML format
+        <http://openrave.programmingvision.com/wiki/index.php/Format:XML>`_.
     """
 
     __default_xml = """
@@ -42,14 +50,6 @@ class Robot(object):
     """
 
     def __init__(self, path=None, xml=None):
-        """
-        Create a new robot model.
-
-        INPUT:
-
-        - ``path`` -- path to the COLLADA model of the robot
-        - ``xml`` -- (optional) string in OpenRAVE XML format
-        """
         assert path is not None or xml is not None
         name = basename(splitext(path)[0])
         if xml is None:

@@ -28,7 +28,9 @@ from misc import norm
 
 class Process(object):
 
-    """Processes implement the ``on_tick`` method called by the Simulation."""
+    """
+    Processes implement the ``on_tick`` method called by the Simulation.
+    """
 
     def __init__(self):
         self.paused = False

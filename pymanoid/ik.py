@@ -33,30 +33,34 @@ class VelocitySolver(object):
 
     """
     Compute velocities bringing the system closer to fulfilling a set of tasks.
+
+    Parameters
+    ----------
+    robot : Robot
+        Robot to be updated.
+    active_dofs : list of integers
+        List of DOFs updated by the IK solver.
+    doflim_gain : real value between 0 and 1
+        DOF-limit gain as described in [Kanoun2012]_. In `this
+        implementation <https://scaron.info/teaching/inverse-kinematics.html>`_,
+        it should be between zero and one.
+
+    Notes
+    -----
+    One unsatisfactory aspect of the DOF-limit gain is that it slows down the
+    robot when approaching DOF limits. For instance, it may slow down a foot
+    motion when approaching the knee singularity, despite the robot being able
+    to move faster with a fully extended knee.
+
+    References
+    ----------
+    .. [Kanoun2012] Oussama Kanoun, "Real-time prioritized kinematic control
+        under inequality constraints for redundant manipulators," Robotics:
+        Science and Systems. Vol. 7. 2012.
+        `[pdf] <http://www.roboticsproceedings.org/rss07/p21.pdf>`__
     """
 
     def __init__(self, robot, active_dofs, doflim_gain):
-        """
-        Initialize the solver.
-
-        INPUT:
-
-        - ``robot`` -- upper DOF limit
-        - ``active_dofs`` -- list of DOFs used by the IK
-        - ``doflim_gain`` -- gain between 0 and 1 used for DOF limits
-
-        The ``doflim_gain`` is described in [Kanoun2012]_. In this
-        implementation, it should be between 0. and 1. [Caron2016]_. One
-        unsatisfactory aspect of this solution is that it artificially slows
-        down the robot when approaching DOF limits. For instance, it may slow
-        down a foot motion when approaching the knee singularity, despite the
-        robot being able to move faster with a fully extended knee.
-
-        REFERENCES:
-
-        .. [Caron2016] <https://scaron.info/teaching/inverse-kinematics.html>
-        .. [Kanoun2012] <http://www.roboticsproceedings.org/rss07/p21.pdf>
-        """
         assert 0. <= doflim_gain <= 1.
         nb_active_dofs = len(active_dofs)
         self.active_dofs = active_dofs
