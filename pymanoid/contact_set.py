@@ -81,37 +81,49 @@ class ContactSet(object):
         supported by the contact set, output a set of supporting contact
         forces that minimizes the cost
 
-            sum_{contact i}  w_t * |f_{i,t}|^2 + w_z * |f_{i,z}|^2
+        .. math::
 
-        where |f_{i,t}| (resp. f_{i,z}) is the norm of the i-th friction (resp.
-        pressure) force.
+            \\sum_{\\textrm{contact }i}
+            w_t \\|f_i^t\\|^2 + w_n \\|f_i^n\\|^2
 
-        INPUT:
+        where :math:`f_i^t` (resp. :math:`f_i^n`) is the friction (resp.
+        pressure) force at the :math:`i^\\mathrm{th}` contact.
 
-        - ``wrench`` -- the resultant wrench to be realized
-        - ``point`` -- point where the wrench is expressed
-        - ``friction_weight`` -- weight for friction term in optim. objective
-        - ``pressure_weight`` -- weight for pressure term in optim. objective
+        Parameters
+        ----------
+        wrench : (6,) ndarray
+            The resultant wrench to be realized.
+        point : (3,) ndarray
+            Point where the wrench is expressed.
+        friction_weight : double
+            Weight :math:`w_t` for friction terms in the cost function.
+            The default value is ``0.1``.
+        pressure_weight : double
+            Weight :math:`w_n` for pressure terms in the cost function.
+            The default value is ``10``.
 
-        OUTPUT:
+        Returns
+        -------
+        support : list of (3,) ndarray couples
+            List of couples (contact point, contact force) with coordinates
+            expressed in the world frame.
 
-        A list of couples (contact point, contact force) expressed in the world
-        frame.
+        Notes
+        -----
+        Physically, contact results in continuous distributions of friction and
+        pressure forces. However, one can model them without loss of generality
+        (in terms of the resultant wrench) by considering only point contact
+        forces applied at the vertices of the contact area (see e.g. [CPN15]_)
+        which is why we only consider point contacts here.
 
-        .. NOTE::
-
-            Physically, contact results in continuous distributions of friction
-            and pressure forces. However, one can model them without loss of
-            generality (in terms of the resultant wrench) by considering only
-            point contact forces applied at the vertices of the contact area.
-            See [CPN15]_ for details.
-
-        REFERENCES:
-
+        References
+        ----------
         .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
-           humanoid robots: Closed-form formulae of the contact wrench cone for
-           rectangular support areas." 2015 IEEE International Conference on
-           Robotics and Automation (ICRA).
+            humanoid robots: Closed-form formulae of the contact wrench cone for
+            rectangular support areas." 2015 IEEE International Conference on
+            Robotics and Automation (ICRA).
+            `[doi] <https://doi.org/10.1109/ICRA.2015.7139910>`__
+            `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
         """
         n = 12 * self.nb_contacts
         nb_forces = n / 3
@@ -319,26 +331,43 @@ class ContactSet(object):
         """
         Compute the static-equilibrium polygon of the center of mass.
 
-        INPUT:
+        Parameters
+        ----------
+        method : string, optional
+            choice between 'bretl', 'cdd' or 'hull'
 
-        - ``method`` -- (optional) choice between 'bretl', 'cdd' or 'hull'
+        Returns
+        -------
+        vertices : list of ndarrays
+            2D vertices of the static-equilibrium polygon.
 
-        OUTPUT:
-
-        List of 2D vertices of the static-equilibrium polygon.
-
-        ALGORITHM:
-
+        Notes
+        -----
         The method 'bretl' is adapted from in [BL08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
         to the double-description approach described in [CPN16]_. See the
         Appendix from [CK16]_ for a performance comparison.
 
-        REFERENCES:
+        References
+        ----------
 
-        .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
-        .. [CPN16] https://scaron.info/papers/journal/caron-tro-2016.pdf
-        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
+        .. [BL08] T. Bretl and S. Lall, "Testing Static Equilibrium for Legged
+            Robots," IEEE Transactions on Robotics, vol. 24, no. 4, pp. 794-807,
+            Aug. 2008.
+            `[doi] <https://dx.doi.org/10.1109/TRO.2008.2001360>`__
+
+        .. [CPN16] Stéphane Caron, Quang-Cuong Pham and Yoshihiko Nakamura, "ZMP
+            support areas for multi-contact mobility under frictional
+            constraints," IEEE Transactions on Robotics, Dec. 2016.
+            `[doi] <https://doi.org/10.1109/TRO.2016.2623338>`__
+            `[pdf] <https://scaron.info/papers/journal/caron-tro-2016.pdf>`__
+
+        .. [CK16] Stéphane Caron and Abderrahmane Kheddar, "Multi-contact
+            Walking Pattern Generation based on Model Preview Control of 3D COM
+            Accelerations," 2016 IEEE-RAS 16th International Conference on
+            Humanoid Robots (Humanoids), Cancun, Mexico, 2016, pp. 550-557.
+            `[doi] <https://doi.org/10.1109/HUMANOIDS.2016.7803329>`__
+            `[pdf] <https://hal.archives-ouvertes.fr/hal-01349880>`__
         """
         if method == 'hull':
             A_O = self.compute_wrench_face([0, 0, 0])
@@ -367,28 +396,27 @@ class ContactSet(object):
         """
         Compute the (pendular) ZMP support area for a given COM position.
 
-        INPUT:
 
-        - ``com`` -- COM position
-        - ``plane`` -- origin (in world frame) of the virtual plane
-        - ``method`` -- (optional) choice between 'bretl' or 'cdd'
+        Parameters
+        ----------
+        com : ndarray
+            COM position
+        plane : ndarray
+            origin (in world frame) of the virtual plane
+        method : string, optional
+            choice between ``"bretl"`` or ``"cdd"``
 
-        OUTPUT:
+        Returns
+        -------
+        vertices : list of ndarrays
+            List of vertices of the ZMP support area.
 
-        List of vertices of the ZMP support area.
-
-        ALGORITHM:
-
-        The method 'bretl' is adapted from in [BL08] where the
+        Notes
+        -----
+        The method 'bretl' is adapted from in [BL08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN16]. See the
-        Appendix from [CK16] for a performance comparison.
-
-        REFERENCES:
-
-        .. [BL08]  https://dx.doi.org/10.1109/TRO.2008.2001360
-        .. [CPN16] https://dx.doi.org/10.1109/TRO.2016.2623338
-        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
+        to the double-description approach described in [CPN16]_. See the
+        Appendix from [CK16]_ for a performance comparison.
         """
         z_com, z_zmp = com[2], plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
@@ -432,16 +460,12 @@ class ContactSet(object):
 
         When ``com`` is a list of vertices, the returned cone corresponds to COM
         accelerations that are feasible from *all* COM located inside the
-        polytope. See [CK16] for details on this conservative criterion.
+        polytope. See [CK16]_ for details on this conservative criterion.
 
         ALGORITHM:
 
         The method is based on a rewriting of the cone formula, followed by a 2D
-        convex hull on dual vertices. The algorithm is described in [CK16].
-
-        REFERENCES:
-
-        .. [CK16]  https://hal.archives-ouvertes.fr/hal-01349880
+        convex hull on dual vertices. The algorithm is described in [CK16]_.
         """
         com_vertices = [com] if type(com) is not list else com
         CWC_O = self.compute_wrench_face([0., 0., 0.])

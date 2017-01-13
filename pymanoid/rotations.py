@@ -19,9 +19,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Rotations
-=========
-
 This module mostly imports top-level rotation functions from OpenRAVE in order
 to make them visible in pymanoid. Conversions to and from roll-pitch-yaw (in
 humanoid-robotics convention: with an upward yaw axis) were adapted from a

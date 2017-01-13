@@ -39,15 +39,22 @@ class PolyhedronProjector(object):
 
             y = E * x + f
 
-        INPUT:
-
-        - ``A`` -- inequality matrix
-        - ``b`` -- inequality vector
-        - ``C`` -- equality matrix
-        - ``d`` -- equality vector
-        - ``E`` -- output matrix
-        - ``f`` -- output vector
-        - ``box_size`` -- used to make sure the output is a polygon
+        Parameters
+        ----------
+        A : ndarray
+            inequality matrix
+        b : ndarray
+            inequality vector
+        C : ndarray
+            equality matrix
+        d : ndarray
+            equality vector
+        E : ndarray
+            output matrix
+        f : ndarray
+            output vector
+        box_size : double
+            large clamping value used to make sure the output is a polygon
         """
         self.A = A
         self.C = C
@@ -88,10 +95,12 @@ class PolyhedronProjector(object):
         """
         Project polyhedron.
 
-        OUTPUT:
-
-        Pair ``(v, r)`` where ``v`` is the list of vertices and ``r`` the list
-        of rays (should be empty) of the projected polytope.
+        Returns
+        -------
+        v : list of ndarrays
+            list of vertices of the projected polytope
+        r : list of ndarrays
+            list of rays (should be empty) of the projected polytope
         """
         return self.project_cdd()
 

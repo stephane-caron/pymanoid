@@ -101,18 +101,24 @@ def compute_polygon_hull(B, c):
     """
     Compute the vertex representation of a polygon defined by:
 
-        B * x <= c
+    .. math::
 
-    where x is a 2D vector.
+        B x \leq c
 
-    INPUT:
+    where :math:`x` is a 2D vector.
 
-    - ``B`` -- (2 x K) matrix
-    - ``c`` -- vector of length K and positive coordinates
+    Parameters
+    ----------
 
-    OUTPUT:
+    B : ndarray
+        (2 x K) linear inequality matrix
+    c : ndarray
+        vector of length K and positive coordinates
 
-    List of 2D vertices in counterclowise order.
+    Returns
+    -------
+    vertices : sequence of 2D ndarrays
+        List of 2D vertices in counterclowise order.
     """
     x = None
     if not all(c > 0):
