@@ -212,22 +212,6 @@ class ContactSet(object):
                 next_index += 6
         return output
 
-    def is_inside_static_equ_polygon(self, com, mass):
-        """
-        Check whether a given COM position lies inside the static-equilibrium
-        COM polygon.
-
-        INPUT:
-
-        - ``com`` -- COM position to check
-        - ``mass`` -- total mass of the robot
-
-        OUTPUT:
-
-        True if and only if ``com`` is inside the static-equilibrium polygon.
-        """
-        return self.find_static_supporting_forces(com, mass) is not None
-
     def compute_wrench_span(self, p):
         """
         Compute the span matrix of the contact wrench cone in world frame.
