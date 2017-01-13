@@ -43,9 +43,8 @@ quadratic programming and [GLPK](https://www.gnu.org/software/glpk/) for linear
 programming. If any of these is not available, the library will try to use
 [CVXOPT](http://cvxopt.org) instead.
 
-## Using the library
+## Getting to know the library
 
-To learn how to use the library, you can check out:
-
-- the [examples](/examples) folder, which contains pedagogical tests, and
-- the [pymanoid API documentation](https://scaron.info/doc/pymanoid/).
+- The [examples](/examples) folder contains pedagogical tests.
+- Check out the comprehensive [pymanoid API
+  documentation](https://scaron.info/doc/pymanoid/).
