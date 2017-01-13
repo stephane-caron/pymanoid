@@ -374,7 +374,7 @@ class Point(Cube):
         - ``pdd`` -- 3D acceleration vector
         - ``dt`` -- duration in [s]
         """
-        self.set_pos(self.p + self.pd * dt + pdd * .5 * dt ** 2)
+        self.set_pos(self.p + (self.pd + .5 * pdd * dt) * dt)
         self.set_velocity(self.pd + pdd * dt)
 
 

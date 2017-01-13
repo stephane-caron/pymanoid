@@ -110,7 +110,7 @@ def draw_force(point, force, scale=0.005, linewidth=0.015):
 
     - ``point`` -- point where the force is acting
     - ``force`` -- 3D force vector
-    - ``scale`` -- scaling factor between Euclidean and Force spaces
+    - ``scale`` -- force-to-distance scaling factor in [N] / [m]
     - ``linewidth`` -- thickness of force vector
 
     OUTPUT:

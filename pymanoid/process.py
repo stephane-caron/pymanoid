@@ -58,7 +58,6 @@ class Process(object):
 class PointMassForceDrawer(Process):
 
     KO_COLOR = [.8, .4, .4]
-    OK_COLOR = [1., 1., 1.]
 
     def __init__(self, pm, contact_set, scale=0.0025):
         """
@@ -94,7 +93,7 @@ class PointMassForceDrawer(Process):
         if self.last_bkgnd_switch is not None \
                 and time() - self.last_bkgnd_switch > 0.2:
             # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(self.OK_COLOR)
+            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
             self.last_bkgnd_switch = None
 
 
@@ -118,7 +117,7 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
         if self.last_bkgnd_switch is not None \
                 and time() - self.last_bkgnd_switch > 0.2:
             # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(self.OK_COLOR)
+            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
             self.last_bkgnd_switch = None
 
 
