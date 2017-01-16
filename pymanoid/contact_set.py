@@ -25,6 +25,7 @@ from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
 from optim import solve_relaxed_qp
+from optim import solve_qp
 from polyhedra import Cone
 from polyhedra.polygon import compute_polygon_hull
 from polyhedra import Polytope, PolytopeProjector
@@ -201,15 +202,11 @@ class ContactSet(object):
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix(point)
         b = wrench
-        w_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
+        w_all = solve_qp(P, q, G, h, A, b)
         if w_all is None:
             return None
-        output, next_index = [], 0
-        for i, contact in enumerate(self.contacts):
-            for j, p in enumerate(contact.vertices):
-                output.append((p, w_all[next_index:next_index + 6]))
-                next_index += 6
-        return output
+        return [(contact, w_all[6 * i:6 * (i + 1)])
+                for i, contact in enumerate(self.contacts)]
 
     def compute_wrench_span(self, p):
         """
