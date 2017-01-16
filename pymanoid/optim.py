@@ -24,7 +24,7 @@ import cvxopt.solvers
 from cvxopt import matrix as cvxmat
 from cvxopt.solvers import lp as cvxopt_lp
 from cvxopt.solvers import qp as cvxopt_qp
-from numpy import array, dot
+from numpy import array, dot, hstack, vstack
 from warnings import warn
 
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
@@ -88,7 +88,7 @@ try:
     # quadprog is the fastest QP solver I could find so far
     from quadprog import solve_qp as _quadprog_solve_qp
 
-    def quadprog_solve_qp(P, q, G, h):
+    def quadprog_solve_qp(P, q, G, h, A=None, b=None):
         """
         Solve a Quadratic Program defined as:
 
@@ -100,21 +100,37 @@ try:
 
         using quadprog <https://pypi.python.org/pypi/quadprog/>.
 
-        INPUT:
+        Parameters
+        ----------
+        P : array, shape=(n, n)
+            Primal quadratic cost matrix.
+        q : array, shape=(n,)
+            Primal quadratic cost vector.
+        G : array, shape=(m, n)
+            Linear inequality constraint matrix.
+        h : array, shape=(m,)
+            Linear inequality constraint vector.
+        A : array, shape=(meq, n), default=None
+            Linear equality constraint matrix.
+        b : array, shape=(meq,), default=None
+            Linear equality constraint vector.
 
-        - ``P`` -- primal quadratic cost matrix
-        - ``q`` -- primal quadratic cost vector
-        - ``G`` -- linear inequality constraint matrix
-        - ``h`` -- linear inequality constraint vector
-
-        OUTPUT:
-
-        A numpy.array with the solution ``x``, if found, otherwise None.
+        Returns
+        -------
+        x : array, shape=(n,)
+            Solution to the QP, if found, otherwise None.
         """
-        # quadprog assumes that P is symmetric so we project it and its
-        # symmetric part beforehand
-        P = .5 * (P + P.T)
-        return _quadprog_solve_qp(P, -q, -G.T, -h)[0]
+        qp_G = .5 * (P + P.T)   # quadprog assumes that P is symmetric
+        qp_a = -q
+        if A is not None:
+            qp_C = -vstack([A, G]).T
+            qp_b = -hstack([b, h])
+            meq = A.shape[0]
+        else:  # no equality constraint
+            qp_C = -G.T
+            qp_b = -h
+            meq = 0
+        return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
 except ImportError:
     warn("QP solver: quadprog not found, falling back to CVXOPT")
     quadprog_solve_qp = None
@@ -179,7 +195,7 @@ else:  # fallback option is CVXOPT
     solve_qp = cvxopt_solve_qp
 
 
-def solve_relaxed_qp(P, q, G, h, A, b, tol=None, WEIGHT=100000.):
+def solve_relaxed_qp(P, q, G, h, A, b, tol=None, W=100000.):
     """Solve a Quadratic Program with relaxed equality constraints.
 
     The reference QP is defined by:
@@ -197,7 +213,7 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, WEIGHT=100000.):
     .. math::
 
         \\begin{eqnarray}
-        c_1(x) & = & x^T P x + 2 q^T x \\\\
+        c_1(x) & = & (1/2) x^T P x + q^T x \\\\
         c_2(x) & = & \\|A x - b\\|^2
         \\end{eqnarray}
 
@@ -229,11 +245,11 @@ def solve_relaxed_qp(P, q, G, h, A, b, tol=None, WEIGHT=100000.):
     tol : double, optional
         If provided, the solution will only be returned if the relative
         variation between :math:`A x` and :math:`b` is less than ``tol``.
-    WEIGHT : double, optional
+    W : double, optional
         Large weight :math:`W`. Defaults to :math:`10^5`.
     """
-    P2 = P + WEIGHT * dot(A.T, A)
-    q2 = q + WEIGHT * dot(-b.T, A)
+    P2 = P + W * dot(A.T, A)
+    q2 = q + W * dot(-b.T, A)
     x = solve_qp(P2, q2, G, h)
     if x is not None and tol is not None:
         def sq(v):
