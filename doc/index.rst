@@ -134,14 +134,6 @@ pymanoid.tasks
     :undoc-members:
     :show-inheritance:
 
-pymanoid.walking
-----------------
-
-.. automodule:: pymanoid.walking
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Indices and tables
 ==================
 
