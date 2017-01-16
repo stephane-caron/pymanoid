@@ -87,7 +87,8 @@ class PointMassForceDrawer(Process):
         pdd = self.pm.pdd  # needs to be stored by the user
         gravity = sim.gravity
         wrench = hstack([mass * (pdd - gravity), zeros(3)])
-        support = self.contact_set.find_supporting_forces(wrench, p)
+        contact_set = self.cs() if callable(self.cs) else self.cs
+        support = contact_set.find_supporting_forces(wrench, p)
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)
@@ -110,7 +111,8 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
         pdd = self.pm.pdd  # needs to be stored by the user
         gravity = sim.gravity
         wrench = hstack([mass * (pdd - gravity), zeros(3)])
-        support = self.contact_set.find_supporting_wrenches(wrench, p)
+        contact_set = self.cs() if callable(self.cs) else self.cs
+        support = contact_set.find_supporting_wrenches(wrench, p)
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)
