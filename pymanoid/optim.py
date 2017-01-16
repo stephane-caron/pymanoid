@@ -92,13 +92,16 @@ try:
         """
         Solve a Quadratic Program defined as:
 
-            minimize
-                (1/2) * x.T * P * x + q.T * x
+        .. math::
 
-            subject to
-                G * x <= h
+            \\begin{eqnarray}
+            \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
+            \\mathrm{subject\\ to} & & G x \leq h \\\\
+                & & A x = b
+            \\end{eqnarray}
 
-        using quadprog <https://pypi.python.org/pypi/quadprog/>.
+        using the `quadprog <https://pypi.python.org/pypi/quadprog/>`_ QP
+        solver, which implements the Goldfarb-Idnani dual algorithm [GI83]_.
 
         Parameters
         ----------
@@ -119,6 +122,16 @@ try:
         -------
         x : array, shape=(n,)
             Solution to the QP, if found, otherwise None.
+
+        References
+        ----------
+        .. [GI83] D. Goldfarb and A. Idnani, "A numerically stable dual method
+            for solving strictly convex quadratic programs," Mathematical
+            Programming, vol. 27, pp. 1-33, 1983.
+            `[doi]
+            <https://doi.org/10.1007/BF02591962>`__
+            `[pdf]
+            <http://download.springer.com/static/pdf/284/art%3A10.1007%2FBF02591962.pdf?originUrl=http://link.springer.com/article/10.1007/BF02591962&token2=exp=1484583587~acl=/static/pdf/284/art%253A10.1007%252FBF02591962.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Farticle%2F10.1007%2FBF02591962*~hmac=d46ab943f1858d7bf70ab68270f1b3ba355551fc79047f2f0f6c6863c936c0a2>`__
         """
         qp_G = .5 * (P + P.T)   # quadprog assumes that P is symmetric
         qp_a = -q

@@ -119,7 +119,7 @@ class ContactSet(object):
         ----------
         .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
             humanoid robots: Closed-form formulae of the contact wrench cone for
-            rectangular support areas." 2015 IEEE International Conference on
+            rectangular support areas," 2015 IEEE International Conference on
             Robotics and Automation (ICRA).
             `[doi] <https://doi.org/10.1109/ICRA.2015.7139910>`__
             `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
@@ -177,12 +177,11 @@ class ContactSet(object):
         mass : double
             Total mass of the robot in [kg].
 
-
         Returns
         -------
-        support : list of (3,) ndarray couples
-            List of couples (contact point, contact force) with coordinates
-            expressed in the world frame.
+        support : list of (Contact, ndarray) couples
+            List of couples (contact, contact force) with coordinates expressed
+            in the world frame.
 
         See Also
         --------

@@ -295,20 +295,24 @@ def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
     """
     Draw a wrench acting on a given rigid body.
 
-    INPUT:
+    Parameters
+    ----------
+    body : Body
+        Body on which the wrench is acting.
+    force : ndarray
+        6D wrench vector in world-frame coordinates.
+    scale : scalar
+        Scaling factor between Euclidean and Force spaces.
+    pointsize : scalar
+        Point radius in [m].
+    linewidth : scalar
+        Thickness of force vector.
 
-    - ``body`` -- body on which the wrench is acting
-    - ``force`` -- 6D wrench vector in world-frame coordinates
-    - ``scale`` -- scaling factor between Euclidean and Force spaces
-    - ``pointsize`` -- point radius in [m]
-    - ``linewidth`` -- thickness of force vector
-
-    OUTPUT:
-
-    A list containing two or three OpenRAVE handles. It must be stored in some
-    variable, otherwise the drawn object will vanish instantly. The first handle
-    is for the center of pressure and the second one for the resultant force.
-    When the yaw torque is non-zero, its arrow handle is appended.
+    Returns
+    -------
+    handles : list of OpenRAVE handles
+        This list must be stored in some variable, otherwise the drawn object
+        will vanish instantly.
     """
     if type(wrench) is list:
         wrench = array(wrench)

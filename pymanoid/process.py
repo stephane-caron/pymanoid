@@ -61,18 +61,21 @@ class PointMassForceDrawer(Process):
 
     KO_COLOR = [.8, .4, .4]
 
-    def __init__(self, pm, contact_set, scale=0.0025):
+    def __init__(self, pm, cs, scale=0.0025):
         """
         Create a new force drawer for a point-mass system.
 
-        INPUT:
-
-        - ``pm`` -- PointMass object
-        - ``contact_set`` -- ContactSet of supporting contacts
-        - ``scale`` -- force-to-distance conversion ratio in [m] / [N]
+        Parameters
+        ----------
+        pm : PointMass
+            Point-mass to which forces are applied.
+        cs : ContactSet
+            Set of contacts providing interaction forces.
+        scale : scalar
+            Force-to-distance conversion ratio in [m] / [N].
         """
         super(PointMassForceDrawer, self).__init__()
-        self.contact_set = contact_set
+        self.cs = cs
         self.handles = []
         self.last_bkgnd_switch = None
         self.pm = pm

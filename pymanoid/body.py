@@ -43,7 +43,8 @@ class Body(object):
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
         the same time.
     color : char, optional
-        Color applied to all links of the KinBody.
+        Color code in `Matplotlib convention
+        <http://matplotlib.org/api/colors_api.html>`_.
     visible : bool, optional
         Initial visibility.
     transparency : double, optional
@@ -81,7 +82,7 @@ class Body(object):
 
     def set_color(self, color):
         """
-        Set the color of all bodies in the OpenRAVE KinBody object.
+        Set the color of the rigid body.
 
         Parameters
         ----------
@@ -112,38 +113,98 @@ class Body(object):
                 g.SetDiffuseColor(dcolor)
 
     def set_transparency(self, transparency):
+        """
+        Set the transparency of the rigid body.
+
+        Parameters
+        ----------
+        transparency : double, optional
+            Transparency value from 0 (opaque) to 1 (invisible).
+        """
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
     def show(self):
+        """
+        Make the body visible.
+        """
         self.rave.SetVisible(True)
 
     def hide(self):
+        """
+        Make the body invisible.
+        """
         self.rave.SetVisible(False)
 
     def set_visible(self, visible):
+        """
+        Change the visibility of the rigid body.
+
+        Parameters
+        ----------
+        visible : bool
+            New visibility.
+        """
         self.is_visible = visible
         self.rave.SetVisible(visible)
 
     @property
     def index(self):
-        """Notably used to compute jacobians and hessians."""
+        """
+        OpenRAVE index of the body.
+
+        Notes
+        -----
+        This index is notably used to compute jacobians and hessians.
+        """
         return self.rave.GetIndex()
 
     @property
     def name(self):
-        """Get name from OpenRAVE object."""
+        """Body name."""
         return self.rave.GetName()
 
     @property
     def T(self):
-        """Transformation matrix."""
+        """
+        Homogeneous coordinates of the rigid body.
+
+        These coordinates describe the orientation and position of the rigid
+        body by the 4 x 4 transformation matrix
+
+        .. math::
+
+            T = \\left[
+                \\begin{array}{cc}
+                    R & p \\\\
+                    0_{1 \\times 3} & 1
+                \\end{array}
+                \\right]
+
+        where `R` is a `3 x 3` rotation matrix and `p` is the vector of position
+        coordinates.
+
+        Notes
+        -----
+        More precisely, `T` is the transformation matrix *from* the body frame
+        *to* the world frame: if :math:`\\tilde{p}_\\mathrm{body} = [x y z 1]`
+        denotes the homogeneous coordinates of a point in the body frame, then
+        the homogeneous coordinates of this point in the world frame are
+        :math:`\\tilde{p}_\\mathrm{world} = T :math:`\\tilde{p}_\\mathrm{body}`.
+        """
         return self.rave.GetTransform()
 
     @property
     def pose(self):
-        """Pose (in OpenRAVE convention)."""
+        """
+        Body pose as a 7D quaternion + position vector.
+
+        The pose vector :math:`[q_w q_x q_y q_z x y z]` consists of a quaternion
+        :math:`q = [q_w q_x q_y q_z]` (with the real term :math:`q_w` coming
+        first) for the body orientation, followed by the coordinates `p = [x y
+        z]` in the world frame.
+        """
         pose = self.rave.GetTransformPose()
         if pose[0] < 0:  # convention: cos(alpha) > 0
             # this convention enforces Slerp shortest path
@@ -152,91 +213,169 @@ class Body(object):
 
     @property
     def R(self):
-        """Rotation matrix"""
+        """Rotation matrix `R`."""
         return self.T[0:3, 0:3]
 
     @property
     def p(self):
-        """Position in world frame"""
+        """Position coordinates `p = [x y z]` in the world frame."""
         return self.T[0:3, 3]
 
     @property
     def x(self):
+        """`x`-coordinate in the world frame."""
         return self.p[0]
 
     @property
     def y(self):
+        """`y`-coordinate in the world frame."""
         return self.p[1]
 
     @property
     def z(self):
+        """`z`-coordinate in the world frame."""
         return self.p[2]
 
     @property
     def t(self):
-        """Tangent vector"""
+        """Tangent vector directing the `x`-axis of the body frame."""
         return self.T[0:3, 0]
 
     @property
     def b(self):
-        """Binormal vector"""
+        """Binormal vector directing the `y`-axis of the body frame."""
         return self.T[0:3, 1]
 
     @property
     def n(self):
-        """Normal vector"""
+        """Normal vector directing the `z`-axis of the body frame."""
         return self.T[0:3, 2]
 
     @property
     def quat(self):
+        """Quaternion of the rigid body orientation."""
         return self.pose[0:4]
 
     @property
     def rpy(self):
-        """Roll-pitch-yaw angles"""
+        """
+        Roll-pitch-yaw angles.
+
+        They correspond to Euleur angles for the sequence (1, 2, 3). See
+        [Diebel06]_ for details.
+
+        References
+        ----------
+        [Diebel06] James Diebel, "Representing Attitude: Euler Angles, Unit
+            Quaternions, and Rotation Vectors,"
+            `[doi]
+            <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134>`___
+        """
         return rpy_from_quat(self.quat)
 
     @property
     def roll(self):
+        """Roll angle of the body orientation."""
         return self.rpy[0]
 
     @property
     def pitch(self):
+        """Pitch angle of the body orientation."""
         return self.rpy[1]
 
     @property
     def yaw(self):
+        """Yaw angle of the body orientation."""
         return self.rpy[2]
 
     def set_transform(self, T):
+        """
+        Set homogeneous coordinates of the rigid body.
+
+        Parameters
+        ----------
+        T : ndarray
+            4 x 4 transform matrix.
+        """
         self.rave.SetTransform(T)
 
     def set_pos(self, pos):
+        """
+        Set the position of the body in the world frame.
+
+        Parameters
+        ----------
+        pos : ndarray
+            3D vector of position coordinates.
+        """
         T = self.T.copy()
         T[:3, 3] = pos
         self.set_transform(T)
 
     def set_rotation_matrix(self, R):
+        """
+        Set the orientation of the rigid body.
+
+        Recall that this orientation is described by the rotation matrix `R`
+        *from* the body frame *to* the world frame.
+
+        Parameters
+        ----------
+        R : ndarray
+            3 x 3 rotation matrix.
+        """
         T = self.T.copy()
         T[:3, :3] = R
         self.set_transform(T)
 
     def set_x(self, x):
+        """
+        Set the `x`-coordinate of the body in the world frame.
+
+        Parameters
+        ----------
+        x : scalar
+            New `x`-coordinate.
+        """
         T = self.T.copy()
         T[0, 3] = x
         self.set_transform(T)
 
     def set_y(self, y):
+        """
+        Set the `y`-coordinate of the body in the world frame.
+
+        Parameters
+        ----------
+        y : scalar
+            New `y`-coordinate.
+        """
         T = self.T.copy()
         T[1, 3] = y
         self.set_transform(T)
 
     def set_z(self, z):
+        """
+        Set the `z`-coordinate of the body in the world frame.
+
+        Parameters
+        ----------
+        z : scalar
+            New `z`-coordinate.
+        """
         T = self.T.copy()
         T[2, 3] = z
         self.set_transform(T)
 
     def set_rpy(self, rpy):
+        """
+        Set the roll-pitch-yaw angles of the body orientation.
+
+        Parameters
+        ----------
+        rpy : scalar triplet
+            Triplet `(r, p, y)` of roll-pitch-yaw angles.
+        """
         T = self.T.copy()
         T[0:3, 0:3] = rotation_matrix_from_rpy(*rpy)
         self.set_transform(T)
