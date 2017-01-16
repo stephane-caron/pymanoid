@@ -245,17 +245,17 @@ class ContactSet(object):
         """
         Compute the face matrix of the contact wrench cone in the world frame.
 
-        INPUT:
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
 
-        - ``p`` -- point where the resultant wrench is taken at
-
-        OUTPUT:
-
-        The friction matrix F(p) such that all valid contact wrenches satisfy:
-
-            F(p) * w(p) <= 0,
-
-        where w(p) is the resultant contact wrench at p.
+        Returns
+        -------
+        F : array, shape=(m, 6)
+            Friction matrix such that all valid contact wrenches satisfy
+            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
+            `p`.
         """
         S = self.compute_wrench_span(p)
         return Cone.face_of_span(S)
@@ -264,19 +264,18 @@ class ContactSet(object):
         """
         Compute the grasp matrix of all contact wrenches at point p.
 
-        INPUT:
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
 
-        - ``p`` -- point where to take the resultant wrench
-
-        OUTPUT:
-
-        The grasp matrix G(p) giving the resultant contact wrench w(p) of all
-        contact wrenches by:
-
-            w(p) = G(p) * w_all,
-
-        with w_all the stacked vector of contact wrenches, each wrench being
-        taken at its respective contact point and in the world frame.
+        Returns
+        -------
+        G : array, shape=(6, m)
+            Grasp matrix giving the resultant contact wrench :math:`w_P` of all
+            contact wrenches as :math:`w_P = G w_{all}`, with :math:`w_{all}`
+            the stacked vector of contact wrenches (each wrench being taken at
+            its respective contact point and in the world frame).
         """
         return hstack([c.grasp_matrix(p) for c in self.contacts])
 
