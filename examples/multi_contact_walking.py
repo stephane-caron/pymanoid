@@ -40,8 +40,8 @@ from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import interpolate_pose_linear, normalize
-from pymanoid.mpc import PreviewBuffer
 from pymanoid.polyhedra import intersect_polygons
+from pymanoid.process import PreviewBuffer
 from pymanoid.process import Process, TrajectoryDrawer, PointMassWrenchDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat

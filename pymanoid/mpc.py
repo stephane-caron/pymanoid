@@ -18,72 +18,9 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import dot, eye, hstack, vstack, zeros
-from threading import Lock
 
-from process import Process
 from optim import solve_qp
 from time import time as time
-
-
-class PreviewBuffer(Process):
-
-    """
-    Buffer to store controls output by the preview controller.
-
-    Parameters
-    ----------
-    callback : function
-        Function to call with each new control :math:`(u, {\\rm d}T)`.
-    """
-
-    def __init__(self, callback):
-        super(PreviewBuffer, self).__init__()
-        self.callback = callback
-        self.cur_control = None
-        self.preview = None
-        self.preview_index = 0
-        self.preview_lock = Lock()
-        self.rem_time = 0.
-
-    def update_preview(self, preview):
-        """
-        Update preview with a filled PreviewControl object.
-
-        Parameter
-        ---------
-        preview : PreviewControl
-            New PreviewControl instance to store into the buffer.
-        """
-        with self.preview_lock:
-            self.preview_index = 0
-            self.preview = preview
-
-    def get_next_control(self):
-        """
-        Return the next pair ``(u, dT)`` in the preview window.
-        """
-        with self.preview_lock:
-            if self.preview is None:
-                return (zeros(3), 0.)
-            j = 3 * self.preview_index
-            u = self.preview.U[j:j + 3]
-            if u.shape[0] == 0:
-                self.preview = None
-                return (zeros(3), 0.)
-            dT = self.preview.timestep
-            self.preview_index += 1
-            return (u, dT)
-
-    def on_tick(self, sim):
-        """
-        Entry point called at each simulation tick.
-        """
-        if self.rem_time < sim.dt:
-            u, dT = self.get_next_control()
-            self.cur_control = u
-            self.rem_time = dT
-        self.callback(self.cur_control, sim.dt)
-        self.rem_time -= sim.dt
 
 
 class PreviewControl(object):
@@ -120,39 +57,37 @@ class PreviewControl(object):
 
     Parameters
     ----------
-    A : ndarray
+    A : array, shape=(n, n)
         State linear dynamics matrix.
-    B : ndarray
+    B : array, shape=(n, dim(u))
         Control linear dynamics matrix.
-    G : function int -> ndarray
-        Function mapping a time step :math:`k` to the matrix :math:`G_k` of
-        control inequality constraints.
-    h : function int -> ndarray
-        Function mapping a time step :math:`k` to the vector :math:`h_k` of
-        control inequality constraints.
-    x_init : ndarray
+    G : array, shape=(m, dim(u) or nb_steps * dim(u))
+        Matrix for control inequality constraints.
+    h : array, shape=(m,)
+        Vector for control inequality constraints.
+    x_init : array, shape=(n,)
         Initial state as stacked position and velocity.
-    x_goal : ndarray
+    x_goal : array, shape=(n,)
         Goal state as stacked position and velocity.
     nb_steps : int
-        Number of discretized time steps.
-    E : function int -> ndarray, optional
-        Function mapping a time step :math:`k` to the matrix :math:`E_k` of
-        state inequality constraints.
-    f : function int -> ndarray, optional
-        Function mapping a time step :math:`k` to the vector :math:`f_k` of
-        state inequality constraints.
-    wx : double, optional
-        Weight :math:`w_x` on the state error :math:`\\|x -
-        x_\\mathrm{goal}\\|^2`.
-    wu : double, optional
-        Weight :math:`w_u` on cumulated controls :math:`\\sum_k \\|u_k\\|^2`.
+        Number of discretization steps in the preview window.
+    E : array, shape=(l, n), optional
+        Matrix for state inequality constraints.
+    f : array, shape=(l,), optional
+        Vector for state inequality constraints.
+    wx : scalar, optional, default=1000.
+        Weight :math:`w_x` on the state error
+        :math:`\\|x - x_\\mathrm{goal}\\|^2`.
+    wu : scalar, optional, default=1.
+        Weight :math:`w_u` on cumulated controls
+        :math:`\\sum_k \\|u_k\\|^2`.
     """
 
     def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
                  wx=1000., wu=1.):
         u_dim = B.shape[1]
         x_dim = A.shape[1]
+        assert G.shape[1] in [u_dim, nb_steps * u_dim]
         self.A = A
         self.B = B
         self.E = E
@@ -188,9 +123,9 @@ class PreviewControl(object):
             International Conference on Intelligent Robots and Systems, Chicago,
             IL, 2014, pp. 4030-4035.
             `[doi]
-            <http://dx.doi.org/10.1109/IROS.2014.6943129>`_
+            <http://dx.doi.org/10.1109/IROS.2014.6943129>`__
             `[pdf]
-            <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`_
+            <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`__
         """
         self.t_build_start = time()
         phi = eye(self.x_dim)
@@ -214,7 +149,7 @@ class PreviewControl(object):
 
     def compute_control(self):
         """
-        Compute the stacked control vector ``U`` minimizing the preview QP.
+        Compute the stacked control vector `U` minimizing the preview QP.
         """
         assert self.psi_last is not None, "Call compute_dynamics() first"
 
@@ -259,28 +194,39 @@ try:
 
         Source code and installation instructions are available from
         <https://github.com/vsamy/preview_controller>.
+
+        Parameters
+        ----------
+        A : array, shape=(n, n)
+            State linear dynamics matrix.
+        B : array, shape=(n, dim(u))
+            Control linear dynamics matrix.
+        G : array, shape=(m, dim(u) or nb_steps * dim(u))
+            Matrix for control inequality constraints.
+        h : array, shape=(m,)
+            Vector for control inequality constraints.
+        x_init : array, shape=(n,)
+            Initial state, i.e. stacked position and velocity.
+        x_goal : array, shape=(n,)
+            Goal state, i.e. stacked position and velocity.
+        nb_steps : int
+            Number of discretization steps in the preview window.
+        E : array, shape=(l, n), optional
+            Matrix for state inequality constraints.
+        f : array, shape=(l,), optional
+            Vector for state inequality constraints.
+        wx : scalar, optional
+            Weight :math:`w_x` on the state error
+            :math:`\\|x - x_\\mathrm{goal}\\|^2`.
+        wu : scalar, optional
+            Weight :math:`w_u` on cumulated controls
+            :math:`\\sum_k \\|u_k\\|^2`.
+        solver : vsmpc.SolverFlag, optional
+            Backend QP solver to use.
         """
 
         def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
                      wx=1000., wu=1., solver=vsmpc.SolverFlag.QuadProgDense):
-            """
-            Create a new preview controller.
-
-            INPUT:
-
-            - ``A`` -- state linear dynamics matrix
-            - ``B`` -- control linear dynamics matrix
-            - ``G`` -- matrix for control inequality constraints
-            - ``h`` -- vector for control inequality constraints
-            - ``x_init`` -- initial state (stacked position and velocity)
-            - ``x_goal`` -- goal state (stacked position and velocity)
-            - ``nb_steps`` -- number of discretized time steps
-            - ``E`` -- (optional) matrix for state inequality constraints
-            - ``f`` -- (optional) vector for state inequality constraints
-            - ``wx`` -- (optional) weight on the state error ``|x - x_goal|^2``
-            - ``wu`` -- (optional) weight on cumul. controls ``sum_k |u_k|^2``
-            - ``solver`` -- (optional) backend QP solver to use
-            """
             self.A = array_to_MatrixXd(A)
             self.B = array_to_MatrixXd(B)
             self.G = array_to_MatrixXd(G)

@@ -34,11 +34,11 @@ class Body(object):
     ----------
     kinbody : openravepy.KinBody
         OpenRAVE body to wrap.
-    pos : ndarray, optional
+    pos : array, shape=(3,), optional
         Initial position in inertial frame.
-    rpy : ndarray, optional
+    rpy : array, shape=(3,), optional
         Initial orientation in inertial frame.
-    pose : ndarray, optional
+    pose : array, shape=(7,), optional
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
         the same time.
     color : char, optional
@@ -190,7 +190,7 @@ class Body(object):
         *to* the world frame: if :math:`\\tilde{p}_\\mathrm{body} = [x y z 1]`
         denotes the homogeneous coordinates of a point in the body frame, then
         the homogeneous coordinates of this point in the world frame are
-        :math:`\\tilde{p}_\\mathrm{world} = T :math:`\\tilde{p}_\\mathrm{body}`.
+        :math:`\\tilde{p}_\\mathrm{world} = T \\tilde{p}_\\mathrm{body}`.
         """
         return self.rave.GetTransform()
 
@@ -199,10 +199,10 @@ class Body(object):
         """
         Body pose as a 7D quaternion + position vector.
 
-        The pose vector :math:`[q_w q_x q_y q_z x y z]` consists of a quaternion
-        :math:`q = [q_w q_x q_y q_z]` (with the real term :math:`q_w` coming
-        first) for the body orientation, followed by the coordinates `p = [x y
-        z]` in the world frame.
+        The pose vector :math:`[q_w\\,q_x\\,q_y\\,q_z\\,x\\,y\\,z]` consists of
+        a quaternion :math:`q = [q_w\\,q_x\\,q_y\\,q_z]` (with the real term
+        :math:`q_w` coming first) for the body orientation, followed by the
+        coordinates :math:`p = [x\\,y\\,z]` in the world frame.
         """
         pose = self.rave.GetTransformPose()
         if pose[0] < 0:  # convention: cos(alpha) > 0
@@ -261,14 +261,18 @@ class Body(object):
         Roll-pitch-yaw angles.
 
         They correspond to Euleur angles for the sequence (1, 2, 3). See
-        [Diebel06]_ for details.
+        [Die+06]_ for details.
 
         References
         ----------
-        [Diebel06] James Diebel, "Representing Attitude: Euler Angles, Unit
-            Quaternions, and Rotation Vectors,"
-            `[doi]
-            <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134>`___
+        .. [Die+06] James Diebel, "Representing Attitude: Euler Angles, Unit
+            Quaternions, and Rotation Vectors." |Die+06doi|
+
+        .. |Die+06doi| raw:: html
+
+            <a
+            href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134">
+            [doi]</a>
         """
         return rpy_from_quat(self.quat)
 
@@ -293,8 +297,8 @@ class Body(object):
 
         Parameters
         ----------
-        T : ndarray
-            4 x 4 transform matrix.
+        T : array, shape=(4, 4)
+            Transform matrix.
         """
         self.rave.SetTransform(T)
 
@@ -304,7 +308,7 @@ class Body(object):
 
         Parameters
         ----------
-        pos : ndarray
+        pos : array, shape=(3,)
             3D vector of position coordinates.
         """
         T = self.T.copy()
@@ -320,8 +324,8 @@ class Body(object):
 
         Parameters
         ----------
-        R : ndarray
-            3 x 3 rotation matrix.
+        R : array, shape=(3, 3)
+            Rotation matrix.
         """
         T = self.T.copy()
         T[:3, :3] = R

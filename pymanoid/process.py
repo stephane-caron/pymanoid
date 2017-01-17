@@ -18,6 +18,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import hstack, zeros
+from threading import Lock
 from time import time
 
 from draw import draw_line, draw_polygon, draw_polyhedron
@@ -28,7 +29,7 @@ from misc import norm
 class Process(object):
 
     """
-    Processes implement the ``on_tick`` method called by the Simulation.
+    Processes implement the ``on_tick`` method called by the simulation.
     """
 
     def __init__(self):
@@ -39,40 +40,51 @@ class Process(object):
         """
         Log average computation times for each tick.
 
-        INPUT:
-
-        - ``active`` -- set to True to activate logging (default: True)
+        Parameters
+        ----------
+        active : bool, default=True
+            Enable or disable logging.
         """
         self._log_comp_times = active
 
     def on_tick(self, sim):
-        """Function called by the Simulation parent after each clock tick."""
+        """
+        Function called by the simulation at each clock tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
         raise NotImplementedError
 
     def pause(self):
+        """Stop calling the process at new clock ticks."""
         self.paused = True
 
     def resume(self):
+        """Resume calling the process at new clock ticks."""
         self.paused = False
 
 
 class PointMassForceDrawer(Process):
 
+    """
+    Draw contact forces for a point-mass system in multi-contact.
+
+    Parameters
+    ----------
+    pm : PointMass
+        Point-mass to which forces are applied.
+    cs : ContactSet
+        Set of contacts providing interaction forces.
+    scale : scalar
+        Force-to-distance conversion ratio in [m] / [N].
+    """
+
     KO_COLOR = [.8, .4, .4]
 
     def __init__(self, pm, cs, scale=0.0025):
-        """
-        Create a new force drawer for a point-mass system.
-
-        Parameters
-        ----------
-        pm : PointMass
-            Point-mass to which forces are applied.
-        cs : ContactSet
-            Set of contacts providing interaction forces.
-        scale : scalar
-            Force-to-distance conversion ratio in [m] / [N].
-        """
         super(PointMassForceDrawer, self).__init__()
         self.cs = cs
         self.handles = []
@@ -104,6 +116,19 @@ class PointMassForceDrawer(Process):
 
 class PointMassWrenchDrawer(PointMassForceDrawer):
 
+    """
+    Draw contact wrenches for a point-mass system in multi-contact.
+
+    Parameters
+    ----------
+    pm : PointMass
+        Point-mass to which forces are applied.
+    cs : ContactSet
+        Set of contacts providing interaction forces.
+    scale : scalar
+        Force-to-distance conversion ratio in [m] / [N].
+    """
+
     def on_tick(self, sim):
         """Find supporting contact forces at each COM acceleration update."""
         p, mass = self.pm.p, self.pm.mass
@@ -125,6 +150,72 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
             # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
             self.last_bkgnd_switch = None
+
+
+class PreviewBuffer(Process):
+
+    """
+    Buffer to store controls output by a preview controller.
+
+    Parameters
+    ----------
+    callback : function
+        Function to call with each new control `(u, dT)`.
+    """
+
+    def __init__(self, callback):
+        super(PreviewBuffer, self).__init__()
+        self.callback = callback
+        self.cur_control = None
+        self.preview = None
+        self.preview_index = 0
+        self.preview_lock = Lock()
+        self.rem_time = 0.
+
+    def update_preview(self, preview):
+        """
+        Update preview with a filled PreviewControl object.
+
+        Parameters
+        ----------
+        preview : PreviewControl
+            New PreviewControl instance to store into the buffer.
+        """
+        with self.preview_lock:
+            self.preview_index = 0
+            self.preview = preview
+
+    def get_next_control(self):
+        """
+        Return the next pair ``(u, dT)`` in the preview window.
+        """
+        with self.preview_lock:
+            if self.preview is None:
+                return (zeros(3), 0.)
+            j = 3 * self.preview_index
+            u = self.preview.U[j:j + 3]
+            if u.shape[0] == 0:
+                self.preview = None
+                return (zeros(3), 0.)
+            dT = self.preview.timestep
+            self.preview_index += 1
+            return (u, dT)
+
+    def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
+        if self.rem_time < sim.dt:
+            u, dT = self.get_next_control()
+            self.cur_control = u
+            self.rem_time = dT
+        self.callback(self.cur_control, sim.dt)
+        self.rem_time -= sim.dt
 
 
 class SupportAreaDrawer(Process):
