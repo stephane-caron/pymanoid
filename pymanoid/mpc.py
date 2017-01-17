@@ -232,7 +232,6 @@ try:
             self.G = array_to_MatrixXd(G)
             self.c = VectorXd.Zero(A.shape[0])  # no bias term for now
             self.controller = None
-            self.debug = False
             self.h = array_to_VectorXd(h)
             self.nb_steps = nb_steps
             self.ps = None
@@ -251,17 +250,6 @@ try:
                 self.A, self.B, self.c, self.x_init, self.x_goal, self.nb_steps)
             self.controller = vsmpc.MPCTypeLast(self.ps, self.solver)
             self.control_ineq = vsmpc.NewControlConstraint(self.G, self.h, True)
-            if self.debug:
-                print "A =", repr(self.A)
-                print "B =", repr(self.B)
-                print "c =", repr(self.c)
-                print "x_init =", repr(self.x_init)
-                print "x_goal =", repr(self.x_goal)
-                print "nb_steps =", repr(self.nb_steps)
-                print "G =", repr(self.G)
-                print "h =", repr(self.h)
-                print "wu =", repr(self.wu)
-                print "wx =", repr(self.wx)
             self.controller.addConstraint(self.control_ineq)
             self.controller.weights(self.wx, self.wu)
 
