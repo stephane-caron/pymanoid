@@ -61,16 +61,24 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
     """
     Generate a new slanted staircase with tilted steps.
 
-    INPUT:
-
-    - ``radius`` -- staircase radius (in [m])
-    - ``angular_step`` -- angular step between contacts (in [rad])
-    - ``height`` -- altitude variation (in [m])
-    - ``roughness`` -- amplitude of contact roll, pitch and yaw (in [rad])
-    - ``friction`` -- friction coefficient between a robot foot and a step
-    - ``ds_duration`` -- duration of double-support phases in [s]
-    - ``ss_duration`` -- duration of single-support phases in [s]
-    - ``init_com_offset`` -- (optional) initial offset applied to first stance
+    Parameters
+    ----------
+    radius : scalar
+        Staircase radius in [m].
+    angular_step : scalar
+        Angular step between contacts in [rad].
+    height : scalar
+        Altitude variation in [m].
+    roughness : scalar
+        Amplitude of contact roll, pitch and yaw in [rad].
+    friction : scalar
+        Friction coefficient between a robot foot and a step.
+    ds_duration : scalar
+        Duration of double-support phases in [s].
+    ss_duration : scalar
+        Duration of single-support phases in [s].
+    init_com_offset : array, optional
+        Initial offset applied to first stance.
     """
     stances = []
     contact_shape = (0.12, 0.06)
@@ -157,10 +165,12 @@ class SwingFoot(Box):
         """
         Reset both end poses of the interpolation.
 
-        INPUT:
-
-        - ``start_pose`` -- new start pose
-        - ``end_pose`` -- new end pose
+        Parameters
+        ----------
+        start_pose : array
+            New start pose.
+        end_pose : array
+            New end pose.
         """
         mid_pose = interpolate_pose_linear(start_pose, end_pose, .5)
         mid_n = rotation_matrix_from_quat(mid_pose[:4])[0:3, 2]
@@ -174,9 +184,10 @@ class SwingFoot(Box):
         """
         Update pose to a given index ``s`` in the swing-foot motion.
 
-        INPUT:
-
-        - ``s`` -- index between 0 and 1 in the swing-foot motion.
+        Parameters
+        ----------
+        s : scalar
+            Index between 0 and 1 in the swing-foot motion.
         """
         if s >= 1.:
             return
@@ -203,12 +214,16 @@ class WalkingFSM(Process):
         """
         Create a new finite state machine.
 
-        INPUT:
-
-        - ``stances`` -- list of Stance objects
-        - ``robot`` -- Robot object
-        - ``swing_foot`` -- SwingFoot object
-        - ``cycle`` -- (optional) first stance follows the last one
+        Parameters
+        ----------
+        stances : list of Stances
+            Consecutives stances traversed by the FSM.
+        robot : Robot
+            Controller robot.
+        swing_foot : SwingFoot
+            Virtual contact used for swing foot mtoions.
+        cycle : bool, optional
+            If ``True``, the first stance will succeed the last one.
         """
         super(WalkingFSM, self).__init__()
         self.cur_phase = stances[0].label
@@ -269,9 +284,10 @@ class WalkingFSM(Process):
         """
         Update the FSM after a tick of the control loop.
 
-        INPUT:
-
-        - ``sim`` -- instance of current simulation
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
         """
         if self.is_over:
             return
@@ -343,6 +359,21 @@ class COMTube(object):
     """
     Primal tube of COM locations computed along with its dual acceleration cone.
 
+    Parameters
+    ----------
+    start_com : array
+        Start position of the COM.
+    target_com : array
+        End position of the COM.
+    start_stance : Stance
+        Stance used to compute the contact wrench cone.
+    radius : scalar
+        Side of the cross-section square (for ``shape`` > 2).
+    margin : scalar
+        Safety margin (in [m]) around boundary COM positions.
+
+    Notes
+    -----
     When there is an SS-to-DS contact switch, this strategy computes one primal
     tube and two dual intersection cones. The primal tube is a parallelepiped
     containing both the COM current and target locations. Its dual cone is used
@@ -353,17 +384,6 @@ class COMTube(object):
 
     def __init__(self, start_com, target_com, start_stance, next_stance, radius,
                  margin=0.01):
-        """
-        Create a new COM trajectory tube.
-
-        INPUT:
-
-        - ``start_com`` -- start position of the COM
-        - ``target_com`` -- end position of the COM
-        - ``start_stance`` -- stance used to compute the contact wrench cone
-        - ``radius`` -- side of the cross-section square (for ``shape`` > 2)
-        - ``margin`` -- safety margin (in [m]) around boundary COM positions
-        """
         self.dual_hrep = []
         self.dual_vrep = []
         self.margin = margin
@@ -449,19 +469,25 @@ class COMTube(object):
 
 class COMTubePreviewControl(Process):
 
+    """
+    Feedback controller that continuously runs the preview controller and sends
+    outputs to a COMAccelBuffer.
+
+    Parameters
+    ----------
+    com : PointMass
+        Current state (position and velocity) of the COM.
+    fsm : WalkingFSm
+        Instance of finite state machine.
+    preview_buffer : PreviewBuffer
+        MPC outputs are sent to this buffer.
+    nb_mpc_steps : int
+        Discretization step of the preview window.
+    tube_radius : scalar
+        Tube radius in [m] for the L1 norm.
+    """
+
     def __init__(self, com, fsm, preview_buffer, nb_mpc_steps, tube_radius):
-        """
-        Create a new feedback controller that continuously runs the preview
-        controller and sends outputs to a COMAccelBuffer.
-
-        INPUT:
-
-        - ``com`` -- PointMass containing current COM state
-        - ``fsm`` -- instance of finite state machine
-        - ``preview_buffer`` -- PreviewBuffer to send MPC outputs to
-        - ``nb_mpc_steps`` -- discretization step of the preview window
-        - ``tube_radius`` -- tube radius (in L1 norm)
-        """
         super(COMTubePreviewControl, self).__init__()
         self.com = com
         self.fsm = fsm
@@ -476,6 +502,11 @@ class COMTubePreviewControl(Process):
     def on_tick(self, sim):
         """
         Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
         """
         preview_targets = self.fsm.get_preview_targets()
         switch_time, horizon, target_com, target_comd = preview_targets
@@ -572,6 +603,14 @@ class PreviewDrawer(pymanoid.Process):
         self.handles = []
 
     def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
+        """
         if preview_buffer.preview is None:
             return
         com_pre, comd_pre = com_target.p, com_target.pd
@@ -617,6 +656,14 @@ class TubeDrawer(pymanoid.Process):
         self.trans = array([0., 0., 1.1])
 
     def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
+        """
         try:
             self.draw_primal(mpc.tube)
         except Exception as e:
@@ -670,18 +717,24 @@ class TubeDrawer(pymanoid.Process):
         Draw a 3D cone defined from its apex, axis vector and a cross-section
         polygon (defined in the plane orthogonal to the axis vector).
 
-        INPUT:
+        Parameters
+        ----------
+        apex : array
+            Position of the origin of the cone in world coordinates.
+        axis : array
+            Unit vector directing the cone axis and lying inside.
+        combined : string, default='g-#'
+            Drawing spec in matplotlib fashion.
+        linewidth : scalar
+            Thickness of the edges of the cone.
+        pointsize : scalar
+            Point size in [m].
 
-        - ``apex`` -- position of the origin of the cone in world coordinates
-        - ``axis`` -- unit vector directing the cone axis and lying inside
-        - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-        - ``linewidth`` -- thickness of the edges of the cone
-        - ``pointsize`` -- point size in meters
-
-        OUTPUT:
-
-        A list of OpenRAVE handles. Must be stored in some variable, otherwise
-        the drawn object will vanish instantly.
+        Returns
+        -------
+        handles : list of GUI handles
+            Must be stored in some variable, otherwise the drawn object will
+            vanish instantly.
         """
         if len(section) < 1:
             warn("Trying to draw an empty cone")
@@ -707,6 +760,14 @@ class UpdateCOMTargetAccel(Process):
         self.preview_buffer = preview_buffer
 
     def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
+        """
         self.com_target.pdd = self.preview_buffer.cur_control
 
 
