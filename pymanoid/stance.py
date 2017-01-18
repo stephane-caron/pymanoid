@@ -69,9 +69,6 @@ class Stance(ContactSet):
         self.right_foot = right_foot
         self.right_hand = right_hand
         super(Stance, self).__init__(contacts)
-        self.compute_stability_criteria()
-
-    def compute_stability_criteria(self):
         self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
         self.sep = Polytope(vertices=self.compute_static_equilibrium_polygon())
         self.sep.compute_hrep()

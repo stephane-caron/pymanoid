@@ -584,7 +584,13 @@ class COMTubePreviewControl(Process):
         self.preview_control.compute_dynamics()
         try:
             self.preview_control.compute_control()
-            self.preview_buffer.update_preview(self.preview_control)
+            U = self.preview_control.U
+            dT = [self.preview_control.timestep] * self.nb_mpc_steps
+            self.preview_buffer.update_preview(U, dT)
+            # <dirty why="used in PreviewDrawer">
+            self.preview_buffer.nb_mpc_steps = self.nb_mpc_steps
+            self.preview_buffer.switch_step = self.preview_control.switch_step
+            # </dirty>
         except ValueError:
             print "MPC couldn't solve QP, constraints may be inconsistent"
 
@@ -610,22 +616,22 @@ class PreviewDrawer(pymanoid.Process):
         sim : Simulation
             Instance of the current simulation.
         """
-        if preview_buffer.preview is None:
+        if preview_buffer.is_empty:
             return
         com_pre, comd_pre = com_target.p, com_target.pd
         com_free, comd_free = com_target.p, com_target.pd
-        dT = preview_buffer.preview.timestep
         self.handles = []
         self.handles.append(
             draw_point(com_target.p, color='m', pointsize=0.007))
-        for preview_index in xrange(len(preview_buffer.preview.U) / 3):
+        for preview_index in xrange(preview_buffer.nb_mpc_steps):
             com_pre0 = com_pre
             j = 3 * preview_index
-            comdd = preview_buffer.preview.U[j:j + 3]
+            comdd = preview_buffer.U[j:j + 3]
+            dT = preview_buffer.dT[preview_index]
             com_pre = com_pre + comd_pre * dT + comdd * .5 * dT ** 2
             comd_pre += comdd * dT
             color = \
-                'b' if preview_index <= preview_buffer.preview.switch_step \
+                'b' if preview_index <= preview_buffer.switch_step \
                 else 'y'
             self.handles.append(
                 draw_point(com_pre, color=color, pointsize=0.005))
@@ -789,13 +795,14 @@ if __name__ == "__main__":
 
     com_target = PointMass([0, 0, 0], 20.)
     preview_buffer = PreviewBuffer(
+        u_dim=3,
         callback=lambda u, dT: com_target.integrate_acceleration(u, dT))
     swing_foot = SwingFoot(swing_height=0.15)
     fsm = WalkingFSM(staircase, robot, swing_foot, cycle=True)
 
     mpc = COMTubePreviewControl(
         com_target, fsm, preview_buffer,
-        nb_mpc_steps=10,
+        nb_mpc_steps=20,
         tube_radius=0.01)
 
     robot.init_ik(robot.whole_body)

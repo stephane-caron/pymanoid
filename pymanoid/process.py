@@ -159,46 +159,63 @@ class PreviewBuffer(Process):
 
     Parameters
     ----------
+    u_dim : int
+        Dimension of preview control vectors.
     callback : function
         Function to call with each new control `(u, dT)`.
     """
 
-    def __init__(self, callback):
+    def __init__(self, u_dim, callback):
         super(PreviewBuffer, self).__init__()
+        self.U = None
+        self._no_control = (zeros(u_dim), 0.)
         self.callback = callback
         self.cur_control = None
-        self.preview = None
-        self.preview_index = 0
-        self.preview_lock = Lock()
+        self.cur_index = 0
+        self.dT = None
+        self.lock = Lock()
         self.rem_time = 0.
+        self.u_dim = u_dim
 
-    def update_preview(self, preview):
+    @property
+    def is_empty(self):
+        return self.U is None
+
+    def update_preview(self, U, dT):
         """
         Update preview with a filled PreviewControl object.
 
         Parameters
         ----------
-        preview : PreviewControl
-            New PreviewControl instance to store into the buffer.
+        U : array, shape=(N * d,)
+            Vector of stacked preview controls, each of dimension `d`.
+        dT : array, shape=(N,)
+            Sequence of durations, one for each preview control.
         """
-        with self.preview_lock:
-            self.preview_index = 0
-            self.preview = preview
+        with self.lock:
+            self.U = U
+            self.dT = dT
+            self.cur_index = 0
 
     def get_next_control(self):
         """
-        Return the next pair ``(u, dT)`` in the preview window.
+        Get the next pair (`u`, `dT`) in the preview window.
+
+        Returns
+        -------
+        (u, dT) : array, scalar
+            Next control in the preview window.
         """
-        with self.preview_lock:
-            if self.preview is None:
-                return (zeros(3), 0.)
-            j = 3 * self.preview_index
-            u = self.preview.U[j:j + 3]
+        with self.lock:
+            if self.U is None:
+                return self._no_control
+            j = self.u_dim * self.cur_index
+            u = self.U[j:j + self.u_dim]
             if u.shape[0] == 0:
-                self.preview = None
-                return (zeros(3), 0.)
-            dT = self.preview.timestep
-            self.preview_index += 1
+                self.U = None
+                return self._no_control
+            dT = self.dT[self.cur_index]
+            self.cur_index += 1
             return (u, dT)
 
     def on_tick(self, sim):
