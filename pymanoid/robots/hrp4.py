@@ -67,7 +67,9 @@ class HRP4(Humanoid):
     L_ANKLE_P = 26
     L_ANKLE_R = 27
     CHEST_P = 28
+    WAIST_P = 28  # compatibility with JVRC-1
     CHEST_Y = 29
+    WAIST_Y = 29  # compatibility with JVRC-1
     NECK_Y = 30
     NECK_P = 31
     R_SHOULDER_P = 32
