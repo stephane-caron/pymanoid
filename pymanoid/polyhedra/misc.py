@@ -29,24 +29,31 @@ def is_positive_combination(b, A):
     """
     Check if b can be written as a positive combination of lines from A.
 
-    INPUT:
+    Parameters
+    ----------
+    b : array
+        Test vector.
+    A : array
+        Matrix of line vectors to combine.
 
-    - ``b`` -- test vector
-    - ``A`` -- matrix of line vectors to combine
+    Returns
+    -------
+    is_positive_combination : bool
+        Whether :math:`b = A^T x` for some positive `x`.
 
-    OUTPUT:
-
-    True if and only if b = A.T * x for some x >= 0.
+    Notes
+    -----
+    As an alternative implementation, one could try solving a QP minimizing
+    :math:`\\|A x - b\\|^2` (and no equality constraint), however I found that
+    the precision of the output is then quite low (~1e-1).
     """
-    m = A.shape[0]
-    P, q = eye(m), zeros(m)
-    #
-    # NB: one could try solving a QP minimizing |A * x - b|^2 (and no equality
-    # constraint), however the precision of the output is quite low (~1e-1).
-    #
-    G, h = -eye(m), zeros(m)
-    x = solve_qp(P, q, G, h, A.T, b)
-    if x is None:  # optimum not found
+    try:
+        m = A.shape[0]
+        P, q, G, h = eye(m), zeros(m), -eye(m), zeros(m)
+        x = solve_qp(P, q, G, h, A.T, b)
+        if x is None:  # optimum not found
+            return False
+    except ValueError:
         return False
     return norm(dot(A.T, x) - b) < 1e-10 and min(x) > -1e-10
 
@@ -56,13 +63,19 @@ def is_redundant(vectors):
     Check if a set of vectors is redundant, i.e. one of them can be written as
     positive combination of the others.
 
-    .. NOTE::
+    Parameters
+    ----------
+    vectors : list of arrays
+        List of vectors to check.
 
-        When using cvxopt, this function may print out a significant number
-        of messages "Terminated (singular KKT matrix)." in the terminal.
-
+    Note
+    ----
+    When using CVXOPT as QP solver, this function may print out a significant
+    number of messages "Terminated (singular KKT matrix)." in the terminal.
     """
     F = array(vectors)
     all_lines = set(range(F.shape[0]))
-    return any([is_positive_combination(
-        F[i], F[list(all_lines - set([i]))]) for i in all_lines])
+    for i in all_lines:
+        if is_positive_combination(F[i], F[list(all_lines - set([i]))]):
+            return True
+    return False
