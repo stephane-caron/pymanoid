@@ -40,8 +40,8 @@ from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import interpolate_pose_linear, normalize
+from pymanoid.mpc import PreviewBuffer
 from pymanoid.polyhedra import intersect_polygons
-from pymanoid.process import PreviewBuffer
 from pymanoid.process import Process, TrajectoryDrawer, PointMassWrenchDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
@@ -586,9 +586,8 @@ class COMTubePreviewControl(Process):
             self.preview_control.compute_control()
             U = self.preview_control.U
             dT = [self.preview_control.timestep] * self.nb_mpc_steps
-            self.preview_buffer.update_preview(U, dT)
+            self.preview_buffer.update_preview(U, dT, self.nb_mpc_steps)
             # <dirty why="used in PreviewDrawer">
-            self.preview_buffer.nb_mpc_steps = self.nb_mpc_steps
             self.preview_buffer.switch_step = self.preview_control.switch_step
             # </dirty>
         except ValueError:
@@ -623,11 +622,11 @@ class PreviewDrawer(pymanoid.Process):
         self.handles = []
         self.handles.append(
             draw_point(com_target.p, color='m', pointsize=0.007))
-        for preview_index in xrange(preview_buffer.nb_mpc_steps):
+        for preview_index in xrange(preview_buffer.nb_steps):
             com_pre0 = com_pre
             j = 3 * preview_index
-            comdd = preview_buffer.U[j:j + 3]
-            dT = preview_buffer.dT[preview_index]
+            comdd = preview_buffer._U[j:j + 3]
+            dT = preview_buffer._dT[preview_index]
             com_pre = com_pre + comd_pre * dT + comdd * .5 * dT ** 2
             comd_pre += comdd * dT
             color = \

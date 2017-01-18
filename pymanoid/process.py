@@ -18,7 +18,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import hstack, zeros
-from threading import Lock
 from time import time
 
 from draw import draw_line, draw_polygon, draw_polyhedron
@@ -150,89 +149,6 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
             # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
             self.last_bkgnd_switch = None
-
-
-class PreviewBuffer(Process):
-
-    """
-    Buffer to store controls output by a preview controller.
-
-    Parameters
-    ----------
-    u_dim : int
-        Dimension of preview control vectors.
-    callback : function
-        Function to call with each new control `(u, dT)`.
-    """
-
-    def __init__(self, u_dim, callback):
-        super(PreviewBuffer, self).__init__()
-        self.U = None
-        self._no_control = (zeros(u_dim), 0.)
-        self.callback = callback
-        self.cur_control = None
-        self.cur_index = 0
-        self.dT = None
-        self.lock = Lock()
-        self.rem_time = 0.
-        self.u_dim = u_dim
-
-    @property
-    def is_empty(self):
-        return self.U is None
-
-    def update_preview(self, U, dT):
-        """
-        Update preview with a filled PreviewControl object.
-
-        Parameters
-        ----------
-        U : array, shape=(N * d,)
-            Vector of stacked preview controls, each of dimension `d`.
-        dT : array, shape=(N,)
-            Sequence of durations, one for each preview control.
-        """
-        with self.lock:
-            self.U = U
-            self.dT = dT
-            self.cur_index = 0
-
-    def get_next_control(self):
-        """
-        Get the next pair (`u`, `dT`) in the preview window.
-
-        Returns
-        -------
-        (u, dT) : array, scalar
-            Next control in the preview window.
-        """
-        with self.lock:
-            if self.U is None:
-                return self._no_control
-            j = self.u_dim * self.cur_index
-            u = self.U[j:j + self.u_dim]
-            if u.shape[0] == 0:
-                self.U = None
-                return self._no_control
-            dT = self.dT[self.cur_index]
-            self.cur_index += 1
-            return (u, dT)
-
-    def on_tick(self, sim):
-        """
-        Entry point called at each simulation tick.
-
-        Parameters
-        ----------
-        sim : Simulation
-            Current simulation instance.
-        """
-        if self.rem_time < sim.dt:
-            u, dT = self.get_next_control()
-            self.cur_control = u
-            self.rem_time = dT
-        self.callback(self.cur_control, sim.dt)
-        self.rem_time -= sim.dt
 
 
 class SupportAreaDrawer(Process):
