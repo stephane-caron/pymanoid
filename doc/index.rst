@@ -38,6 +38,14 @@ pymanoid.draw
     :undoc-members:
     :show-inheritance:
 
+pymanoid.drawers
+----------------
+
+.. automodule:: pymanoid.drawers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pymanoid.ik
 -----------
 
@@ -66,14 +74,6 @@ pymanoid.polyhedra
 ------------------
 
 .. automodule:: pymanoid.polyhedra
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pymanoid.process
-----------------
-
-.. automodule:: pymanoid.process
     :members:
     :undoc-members:
     :show-inheritance:

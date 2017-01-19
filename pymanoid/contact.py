@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, eye, hstack, sqrt, vstack
+from numpy import array, cross, dot, empty, eye, hstack, sqrt, vstack
 from scipy.linalg import block_diag
 
 from body import Box
@@ -234,17 +234,22 @@ class Contact(Box):
 
         This matrix is such that all valid contact wrenches can be written as:
 
-            w = S * lambda,     lambda >= 0
+        .. math::
 
-        where S is the friction span and lambda is a vector with positive
-        coordinates. Note that the contact wrench w is taken at the contact
-        point (self.p) and in the world frame.
+            w_P = S \\lambda, \\quad \\lambda \\geq 0
+
+        where `S` is the friction span and :math:`\\lambda` is a vector with
+        positive coordinates. Note that the contact wrench coordinates
+        :math:`w_P` are taken at the contact point `P` (``self.p``) and in the
+        world frame.
+
+        Returns
+        -------
+        S : array, shape=(6, 16)
+            Span matrix of the contact wrench cone.
         """
         span_blocks = []
-        for (i, v) in enumerate(self.vertices):
-            x, y, z = v - self.p
-            Gi = vstack([eye(3), crossmat(v - self.p)])
-            span_blocks.append(dot(Gi, self.force_span))
-        S = hstack(span_blocks)
-        assert S.shape == (6, 16)
-        return S
+        for v in self.vertices:
+            G = vstack([eye(3), crossmat(v - self.p)])
+            span_blocks.append(dot(G, self.force_span))
+        return hstack(span_blocks)
