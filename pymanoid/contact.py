@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, empty, eye, hstack, sqrt, vstack
+from numpy import array, cross, dot, eye, hstack, sqrt, vstack
 from scipy.linalg import block_diag
 
 from body import Box
@@ -239,14 +239,20 @@ class Contact(Box):
             w_P = S \\lambda, \\quad \\lambda \\geq 0
 
         where `S` is the friction span and :math:`\\lambda` is a vector with
-        positive coordinates. Note that the contact wrench coordinates
-        :math:`w_P` are taken at the contact point `P` (``self.p``) and in the
-        world frame.
+        positive coordinates.
 
         Returns
         -------
         S : array, shape=(6, 16)
             Span matrix of the contact wrench cone.
+
+        Notes
+        -----
+        Note that the contact wrench coordinates :math:`w_P` ("output" of `S`)
+        are taken at the contact point `P` (``self.p``) and in the world frame.
+        Meanwhile, the number of columns of `S` results from our choice of 4
+        contact points (one for each vertex of the rectangular area) with
+        4-sided friction pyramids at each.
         """
         span_blocks = []
         for v in self.vertices:
