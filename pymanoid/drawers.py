@@ -21,99 +21,12 @@ from numpy import hstack, zeros
 from time import time
 
 from draw import draw_line, draw_polygon, draw_polyhedron
-from draw import draw_force, draw_wrench
+from draw import draw_wrench
 from misc import norm
+from sim import Process
 
 
-class Process(object):
-
-    """
-    Processes implement the ``on_tick`` method called by the simulation.
-    """
-
-    def __init__(self):
-        self.paused = False
-        self._log_comp_times = False
-
-    def log_comp_times(self, active=True):
-        """
-        Log average computation times for each tick.
-
-        Parameters
-        ----------
-        active : bool, default=True
-            Enable or disable logging.
-        """
-        self._log_comp_times = active
-
-    def on_tick(self, sim):
-        """
-        Function called by the simulation at each clock tick.
-
-        Parameters
-        ----------
-        sim : Simulation
-            Current simulation instance.
-        """
-        raise NotImplementedError
-
-    def pause(self):
-        """Stop calling the process at new clock ticks."""
-        self.paused = True
-
-    def resume(self):
-        """Resume calling the process at new clock ticks."""
-        self.paused = False
-
-
-class PointMassForceDrawer(Process):
-
-    """
-    Draw contact forces for a point-mass system in multi-contact.
-
-    Parameters
-    ----------
-    pm : PointMass
-        Point-mass to which forces are applied.
-    cs : ContactSet
-        Set of contacts providing interaction forces.
-    scale : scalar
-        Force-to-distance conversion ratio in [m] / [N].
-    """
-
-    KO_COLOR = [.8, .4, .4]
-
-    def __init__(self, pm, cs, scale=0.0025):
-        super(PointMassForceDrawer, self).__init__()
-        self.cs = cs
-        self.handles = []
-        self.last_bkgnd_switch = None
-        self.pm = pm
-        self.scale = scale
-
-    def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
-        p, mass = self.pm.p, self.pm.mass
-        pdd = self.pm.pdd  # needs to be stored by the user
-        gravity = sim.gravity
-        wrench = hstack([mass * (pdd - gravity), zeros(3)])
-        contact_set = self.cs() if callable(self.cs) else self.cs
-        support = contact_set.find_supporting_forces(wrench, p)
-        if not support:
-            self.handles = []
-            sim.viewer.SetBkgndColor(self.KO_COLOR)
-            self.last_bkgnd_switch = time()
-        else:
-            self.handles = [
-                draw_force(c, fc, self.scale) for (c, fc) in support]
-        if self.last_bkgnd_switch is not None \
-                and time() - self.last_bkgnd_switch > 0.2:
-            # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
-            self.last_bkgnd_switch = None
-
-
-class PointMassWrenchDrawer(PointMassForceDrawer):
+class PointMassWrenchDrawer(Process):
 
     """
     Draw contact wrenches for a point-mass system in multi-contact.
@@ -128,14 +41,27 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
         Force-to-distance conversion ratio in [m] / [N].
     """
 
-    def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
+    KO_COLOR = [.8, .4, .4]
+
+    def __init__(self, pm, cs, scale=0.0025):
+        super(PointMassWrenchDrawer, self).__init__()
+        self.cs = cs
+        self.handles = []
+        self.last_bkgnd_switch = None
+        self.pm = pm
+        self.scale = scale
+
+    def find_supporting_wrenches(self, gravity):
         p, mass = self.pm.p, self.pm.mass
         pdd = self.pm.pdd  # needs to be stored by the user
-        gravity = sim.gravity
         wrench = hstack([mass * (pdd - gravity), zeros(3)])
         contact_set = self.cs() if callable(self.cs) else self.cs
         support = contact_set.find_supporting_wrenches(wrench, p)
+        return support
+
+    def on_tick(self, sim):
+        """Find supporting contact forces at each COM acceleration update."""
+        support = self.find_supporting_wrenches(sim.gravity)
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)
@@ -149,6 +75,49 @@ class PointMassWrenchDrawer(PointMassForceDrawer):
             # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
             self.last_bkgnd_switch = None
+
+
+class StaticWrenchDrawer(PointMassWrenchDrawer):
+
+    def find_supporting_wrenches(self, gravity):
+        p, mass = self.pm.p, self.pm.mass
+        contact_set = self.cs() if callable(self.cs) else self.cs
+        support = contact_set.find_static_supporting_wrenches(p, mass)
+        return support
+
+
+class TrajectoryDrawer(Process):
+
+    def __init__(self, body, combined='b-', color=None, linewidth=3,
+                 linestyle=None):
+        super(TrajectoryDrawer, self).__init__()
+        color = color if color is not None else combined[0]
+        linestyle = linestyle if linestyle is not None else combined[1]
+        assert linestyle in ['-', '.']
+        self.body = body
+        self.color = color
+        self.handles = []
+        self.last_pos = body.p
+        self.linestyle = linestyle
+        self.linewidth = linewidth
+
+    def on_tick(self, sim):
+        if self.linestyle == '-':
+            self.handles.append(draw_line(
+                self.last_pos, self.body.p, color=self.color,
+                linewidth=self.linewidth))
+        self.last_pos = self.body.p
+
+    def dash_graph_handles(self):
+        for i in xrange(len(self.handles)):
+            if i % 2 == 0:
+                self.handles[i] = None
+
+
+"""
+Support areas and volumes
+=========================
+"""
 
 
 class SupportAreaDrawer(Process):
@@ -192,65 +161,6 @@ class SEPDrawer(SupportAreaDrawer):
                 normal=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))
         except Exception as e:
             print "SEPDrawer:", e
-
-
-class StaticForceDrawer(Process):
-
-    KO_COLOR = [.8, .4, .4]
-    OK_COLOR = [1., 1., 1.]
-
-    def __init__(self, com, contact_set, force_scale=0.0025):
-        super(StaticForceDrawer, self).__init__()
-        self.com = com
-        self.contact_set = contact_set
-        self.force_scale = force_scale
-        self.handles = []
-        self.last_bkgnd_switch = None
-
-    def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
-        support = self.contact_set.find_static_supporting_forces(
-            self.com.p, self.com.mass)
-        if not support:
-            self.handles = []
-            sim.viewer.SetBkgndColor(self.KO_COLOR)
-            self.last_bkgnd_switch = time()
-        else:
-            self.handles = [
-                draw_force(c, fc, self.force_scale) for (c, fc) in support]
-        if self.last_bkgnd_switch is not None \
-                and time() - self.last_bkgnd_switch > 0.2:
-            # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(self.OK_COLOR)
-            self.last_bkgnd_switch = None
-
-
-class TrajectoryDrawer(Process):
-
-    def __init__(self, body, combined='b-', color=None, linewidth=3,
-                 linestyle=None):
-        super(TrajectoryDrawer, self).__init__()
-        color = color if color is not None else combined[0]
-        linestyle = linestyle if linestyle is not None else combined[1]
-        assert linestyle in ['-', '.']
-        self.body = body
-        self.color = color
-        self.handles = []
-        self.last_pos = body.p
-        self.linestyle = linestyle
-        self.linewidth = linewidth
-
-    def on_tick(self, sim):
-        if self.linestyle == '-':
-            self.handles.append(draw_line(
-                self.last_pos, self.body.p, color=self.color,
-                linewidth=self.linewidth))
-        self.last_pos = self.body.p
-
-    def dash_graph_handles(self):
-        for i in xrange(len(self.handles)):
-            if i % 2 == 0:
-                self.handles[i] = None
 
 
 class ZMPSupportAreaDrawer(SupportAreaDrawer):

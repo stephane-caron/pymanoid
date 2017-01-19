@@ -116,11 +116,11 @@ if __name__ == "__main__":
     print "box around, and see what happens when it exits the polygon."
     print ""
 
-    force_drawer = StaticForceDrawer(com_target, stance)
+    wrench_drawer = StaticWrenchDrawer(com_target, stance)
     sep_drawer = SEPDrawer(stance, z_polygon)
 
     sim.schedule(robot.ik_process)
-    sim.schedule(force_drawer)
+    sim.schedule(wrench_drawer)
     sim.schedule(sep_drawer)
     sim.schedule(COMSync())
     sim.start()

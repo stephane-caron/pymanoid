@@ -181,8 +181,8 @@ class Contact(Box):
 
             F w \leq 0
 
-        where :math:`w` is the contact wrench at the contact point (``self.p``)
-        in the world frame. See [CPN15]_ for details.
+        where `w` is the contact wrench at the contact point (``self.p``) in the
+        world frame. See [CPN15]_ for the derivation of the formula for `F`.
 
         References
         ----------

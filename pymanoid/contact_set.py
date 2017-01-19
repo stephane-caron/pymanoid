@@ -23,7 +23,6 @@ from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
-from optim import solve_relaxed_qp
 from optim import solve_qp
 from polyhedra import Cone
 from polyhedra.polygon import compute_polygon_hull
@@ -72,128 +71,30 @@ class ContactSet(object):
     def nb_contacts(self):
         return len(self.contact_dict)
 
-    def find_supporting_forces(self, wrench, point, friction_weight=.1,
-                               pressure_weight=10.):
-        """Find supporting forces for a given net wrench.
-
-        If the net wrench ``wrench`` (expressed at ``point``) can be supported
-        by the contact set, output a set of supporting contact forces that
-        minimizes the cost
-
-        .. math::
-
-            \\sum_{\\textrm{contact }i}
-            w_t \\|f_i^t\\|^2 + w_n \\|f_i^n\\|^2
-
-        where :math:`f_i^t` (resp. :math:`f_i^n`) is the friction (resp.
-        pressure) force at the :math:`i^\\mathrm{th}` contact.
-
-        Parameters
-        ----------
-        wrench : ndarray
-            Resultant wrench to be realized.
-        point : ndarray
-            Point where the wrench is expressed.
-        friction_weight : double
-            Weight :math:`w_t` for friction terms in the cost function.
-            The default value is ``0.1``.
-        pressure_weight : double
-            Weight :math:`w_n` for pressure terms in the cost function.
-            The default value is ``10``.
-
-        Returns
-        -------
-        support : list of (3,) ndarray couples
-            List of couples (contact point, contact force) with coordinates
-            expressed in the world frame.
-
-        Notes
-        -----
-        Physically, contact results in continuous distributions of friction and
-        pressure forces. However, one can model them without loss of generality
-        (in terms of the resultant wrench) by considering only point contact
-        forces applied at the vertices of the contact area (see e.g. [CPN15]_)
-        which is why we only consider point contacts here.
-
-        References
-        ----------
-        .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
-            humanoid robots: Closed-form formulae of the contact wrench cone for
-            rectangular support areas," 2015 IEEE International Conference on
-            Robotics and Automation (ICRA).
-            `[doi] <https://doi.org/10.1109/ICRA.2015.7139910>`__
-            `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
-        """
-        n = 12 * self.nb_contacts
-        nb_forces = n / 3
-        P_fric = block_diag(*[
-            array([
-                [1., 0., 0.],
-                [0., 1., 0.],
-                [0., 0., 0.]])
-            for _ in xrange(nb_forces)])
-        P_press = block_diag(*[
-            array([
-                [0., 0., 0.],
-                [0., 0., 0.],
-                [0., 0., 1.]])
-            for _ in xrange(nb_forces)])
-        o_z = hstack([
-            [0, 0, 1. / n]
-            for _ in xrange(nb_forces)])
-        P_press -= dot(o_z.reshape((n, 1)), o_z.reshape((1, n)))
-        P_local = friction_weight * P_fric + pressure_weight * P_press
-        RT_diag = block_diag(*[
-            contact.R.T
-            for contact in self.contacts for _ in xrange(4)])
-        P = dot(RT_diag.T, dot(P_local, RT_diag))
-        q = zeros((n,))
-        G = block_diag(*[
-            c.force_face for c in self.contacts for p in c.vertices])
-        h = zeros((G.shape[0],))  # G * x <= h
-        A = self.compute_grasp_matrix_from_forces(point)
-        b = wrench
-        # f_all = cvxopt_solve_qp(P, q, G, h, A, b)  # useful for debugging
-        f_all = solve_relaxed_qp(P, q, G, h, A, b, tol=1e-2)
-        if f_all is None:
-            return None
-        output, next_index = [], 0
-        for i, contact in enumerate(self.contacts):
-            for j, p in enumerate(contact.vertices):
-                output.append((p, f_all[next_index:next_index + 3]))
-                next_index += 3
-        return output
-
-    def find_static_supporting_forces(self, com, mass):
-        """Find supporting forces in static-equilibrium.
-
-        Find a set of contact forces that support the robot in static
-        equilibrium when its center of mass is located at ``com``.
-
-        Parameters
-        ----------
-        com : ndarray
-            Position of the center of mass.
-        mass : double
-            Total mass of the robot in [kg].
-
-        Returns
-        -------
-        support : list of (Contact, ndarray) couples
-            List of couples (contact, contact force) with coordinates expressed
-            in the world frame.
-
-        See Also
-        --------
-        - :meth:`pymanoid.contact.ContactSet.find_supporting_forces`
-        - :meth:`pymanoid.contact.ContactSet.find_supporting_wrenches`
-        """
-        f = numpy.array([0., 0., mass * 9.81])
-        tau = zeros(3)
-        wrench = numpy.hstack([f, tau])
-        return self.find_supporting_forces(wrench, com)
-
     def find_supporting_wrenches(self, wrench, point):
+        """Find supporting contact wrenches for a given net contact wrench.
+
+        Parameters
+        ----------
+        wrench : array, shape=(6,)
+            Resultant contact wrench :math:`w_P` to be realized.
+        point : array, shape=(3,)
+            Point `P` where the wrench is expressed.
+
+        Returns
+        -------
+        support : list of (Contact, array) pairs
+            Mapping between each contact `i` in the contact set and a supporting
+            contact wrench :math:`w^i_{C_i}`. All contact wrenches satisfy
+            friction constraints and sum up to the net wrench: :math:`\\sum_c
+            w^i_P = w_P``.
+
+        Note
+        ----
+        Note that wrench coordinates are returned in their respective contact
+        frames (:math:`w^i_{C_i}`), not at the point `P` where the net wrench
+        :math:`w_P` is given.
+        """
         n = 6 * self.nb_contacts
         P = eye(n)
         q = zeros((n,))
@@ -204,8 +105,31 @@ class ContactSet(object):
         w_all = solve_qp(P, q, G, h, A, b)
         if w_all is None:
             return None
-        return [(contact, w_all[6 * i:6 * (i + 1)])
-                for i, contact in enumerate(self.contacts)]
+        support = [
+            (contact, w_all[6 * i:6 * (i + 1)])
+            for i, contact in enumerate(self.contacts)]
+        return support
+
+    def find_static_supporting_wrenches(self, com, mass):
+        """Find supporting contact wrenches in static-equilibrium.
+
+        Parameters
+        ----------
+        com : array, shape=(3,)
+            Position of the center of mass.
+        mass : scalar
+            Total mass of the robot in [kg].
+
+        Returns
+        -------
+        support : list of (Contact, array) couples
+            Mapping between each contact `i` in the contact set and a supporting
+            contact wrench :math:`w^i_{C_i}`.
+        """
+        f = numpy.array([0., 0., mass * 9.81])
+        tau_G = zeros(3)
+        wrench = numpy.hstack([f, tau_G])
+        return self.find_supporting_wrenches(wrench, com)
 
     def compute_wrench_span(self, p):
         """
