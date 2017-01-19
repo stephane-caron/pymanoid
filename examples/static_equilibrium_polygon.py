@@ -30,7 +30,7 @@ except ImportError:
 
 from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
-from pymanoid.process import Process, SEPDrawer, StaticForceDrawer
+from pymanoid.drawers import SEPDrawer, StaticWrenchDrawer
 
 K_doflim = 5.
 com_height = 0.9  # [m]
@@ -39,7 +39,7 @@ qd_lim = 10.
 z_polygon = 2.
 
 
-class COMSync(Process):
+class COMSync(pymanoid.Process):
 
     def on_tick(self, sim):
         com_target.set_x(com_above.x)

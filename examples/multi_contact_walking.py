@@ -42,7 +42,7 @@ from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import interpolate_pose_linear, normalize
 from pymanoid.mpc import PreviewBuffer
 from pymanoid.polyhedra import intersect_polygons
-from pymanoid.process import Process, TrajectoryDrawer, PointMassWrenchDrawer
+from pymanoid.drawers import TrajectoryDrawer, PointMassWrenchDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
 from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
@@ -203,7 +203,7 @@ class SwingFoot(Box):
         self.set_pose(hstack([quat, pos]))
 
 
-class WalkingFSM(Process):
+class WalkingFSM(pymanoid.Process):
 
     """
     Finite State Machine for biped walking.
@@ -466,7 +466,7 @@ class COMTube(object):
             self.dual_hrep.append((B, c))
 
 
-class COMTubePreviewControl(Process):
+class COMTubePreviewControl(pymanoid.Process):
 
     """
     Feedback controller that continuously runs the preview controller and sends
@@ -756,7 +756,7 @@ class TubeDrawer(pymanoid.Process):
         return handles
 
 
-class UpdateCOMTargetAccel(Process):
+class UpdateCOMTargetAccel(pymanoid.Process):
 
     def __init__(self, com_target, preview_buffer):
         super(UpdateCOMTargetAccel, self).__init__()

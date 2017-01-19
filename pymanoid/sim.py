@@ -36,6 +36,47 @@ def get_openrave_env():
     return env
 
 
+class Process(object):
+
+    """
+    Processes implement the ``on_tick`` method called by the simulation.
+    """
+
+    def __init__(self):
+        self.paused = False
+        self._log_comp_times = False
+
+    def log_comp_times(self, active=True):
+        """
+        Log average computation times for each tick.
+
+        Parameters
+        ----------
+        active : bool, default=True
+            Enable or disable logging.
+        """
+        self._log_comp_times = active
+
+    def on_tick(self, sim):
+        """
+        Function called by the simulation at each clock tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
+        raise NotImplementedError
+
+    def pause(self):
+        """Stop calling the process at new clock ticks."""
+        self.paused = True
+
+    def resume(self):
+        """Resume calling the process at new clock ticks."""
+        self.paused = False
+
+
 class Simulation(object):
 
     """

@@ -20,8 +20,8 @@
 from numpy import dot, eye, hstack, vstack, zeros
 from threading import Lock
 
-from process import Process
 from optim import solve_qp
+from sim import Process
 from time import time as time
 
 

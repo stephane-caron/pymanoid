@@ -29,9 +29,9 @@ from optim import solve_qp
 from polyhedra import Cone
 from polyhedra import Polyhedron
 from polyhedra import Polytope
-from process import Process
 from robot import Humanoid
 from robot import Robot
+from sim import Process
 from sim import Simulation
 from stance import Stance
 

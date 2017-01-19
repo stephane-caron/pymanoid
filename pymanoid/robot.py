@@ -23,9 +23,8 @@ from os.path import basename, splitext
 from warnings import warn
 
 from body import PointMass
-from process import Process
 from rotations import crossmat, rpy_from_quat
-from sim import get_openrave_env
+from sim import Process, get_openrave_env
 
 
 class Robot(object):

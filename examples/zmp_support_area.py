@@ -30,17 +30,17 @@ except ImportError:
 
 from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
-from pymanoid.process import Process, ZMPSupportAreaDrawer
+from pymanoid.drawers import ZMPSupportAreaDrawer
 
 com_height = 0.9  # [m]
 polygon_handle = None
-z_polygon = -0.2
+z_polygon = 2.
 
 qd_lim = 10.
 K_doflim = 5.
 
 
-class COMSync(Process):
+class COMSync(pymanoid.Process):
 
     def on_tick(self, sim):
         com_target.set_x(com_above.x)
