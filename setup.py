@@ -22,19 +22,21 @@ from distutils.core import setup
 
 setup(
     name='pymanoid',
-    version='0.5.2',
+    version='0.6.1',
     description="Python library for humanoid robotics using OpenRAVE",
     url="https://github.com/stephane-caron/pymanoid",
     author="Stéphane Caron",
     author_email="stephane.caron@normalesup.org",
     license="GPL",
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
+        'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering :: Mathematics',
         'License :: OSI Approved :: GNU General Public License (GPL)',
-        'Programming Language :: Python :: 2.7'],
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Scientific/Engineering :: Mathematics'],
     packages=[
         'pymanoid',
         'pymanoid.polyhedra',
