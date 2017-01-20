@@ -254,10 +254,6 @@ class WalkingFSM(pymanoid.Process):
                 next_next_stance_id = self.nb_stances - 1
         return self.stances[next_next_stance_id]
 
-    def get_cur_stance(self):
-        """Used by the PointMassWrenchDrawer process."""
-        return self.cur_stance
-
     def get_preview_targets(self):
         stance_foot = self.cur_stance.left_foot \
             if self.cur_stance.label.endswith('L') else \
@@ -829,7 +825,7 @@ if __name__ == "__main__":
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
     tube_drawer = TubeDrawer()
     update_com_target = UpdateCOMTargetAccel(com_target, preview_buffer)
-    wrench_drawer = PointMassWrenchDrawer(com_target, fsm.get_cur_stance)
+    wrench_drawer = PointMassWrenchDrawer(com_target, lambda: fsm.cur_stance)
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(lf_traj_drawer)
