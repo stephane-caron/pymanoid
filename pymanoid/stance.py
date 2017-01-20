@@ -50,17 +50,10 @@ class Stance(ContactSet):
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
                  right_hand=None, label=None, duration=None):
-        contacts = {}
+        contacts = filter(None, [left_foot, right_foot, left_hand, right_hand])
+        super(Stance, self).__init__(contacts)
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)
-        if left_foot:
-            contacts['left_foot'] = left_foot
-        if left_hand:
-            contacts['left_hand'] = left_hand
-        if right_foot:
-            contacts['right_foot'] = right_foot
-        if right_hand:
-            contacts['right_hand'] = right_hand
         self.com = com
         self.duration = duration
         self.label = label
@@ -68,12 +61,17 @@ class Stance(ContactSet):
         self.left_hand = left_hand
         self.right_foot = right_foot
         self.right_hand = right_hand
-        super(Stance, self).__init__(contacts)
         self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
         self.sep = Polytope(vertices=self.compute_static_equilibrium_polygon())
         self.sep.compute_hrep()
         A, _ = self.sep.hrep_pair
         self.sep_norm = array([norm(a) for a in A])
+
+    @property
+    def contact(self):
+        assert self.nb_contacts == 1
+        for contact in self.contacts:
+            return contact
 
     def dist_to_sep_edge(self, com):
         """

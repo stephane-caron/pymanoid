@@ -126,8 +126,6 @@ class SupportAreaDrawer(Process):
 
     def __init__(self, contact_set, z=0.):
         super(SupportAreaDrawer, self).__init__()
-        contact_dict = contact_set.contact_dict
-        self.contact_dict = contact_dict
         self.contact_poses = {}
         self.contact_set = contact_set
         self.handle = None
@@ -136,15 +134,15 @@ class SupportAreaDrawer(Process):
         self.update_polygon()
 
     def on_tick(self, sim):
-        for (k, c) in self.contact_dict.iteritems():
-            if norm(c.pose - self.contact_poses[k]) > 1e-10:
+        for contact in self.contact_set.contacts:
+            if norm(contact.pose - self.contact_poses[contact.name]) > 1e-10:
                 self.update_contact_poses()
                 self.update_polygon()
                 break
 
     def update_contact_poses(self):
-        for (k, c) in self.contact_dict.iteritems():
-            self.contact_poses[k] = c.pose
+        for contact in self.contact_set.contacts:
+            self.contact_poses[contact.name] = contact.pose
 
     def update_polygon(self):
         raise NotImplementedError

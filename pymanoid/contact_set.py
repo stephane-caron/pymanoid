@@ -36,40 +36,14 @@ class ContactSet(object):
         """
         Create a new contact set.
 
-        INPUT:
-
-        - ``contacts`` -- list or dictionary of Contact objects
+        Parameters
+        ----------
+        contacts : list of Contact
+            List of contacts that define the contact set.
         """
-        if type(contacts) is list:
-            self.contact_dict = {
-                "Contact-%d" % i: c for (i, c) in enumerate(contacts)}
-        elif type(contacts) is dict:
-            self.contact_dict = contacts
-        else:  # contacts is None
-            assert contacts is None
-            self.contact_dict = {}
-
-    def __contains__(self, name):
-        """Check whether a named contact is present."""
-        return name in self.contact_dict
-
-    def __getitem__(self, name):
-        """Get a named contact from the set."""
-        return self.contact_dict[name]
-
-    def __iter__(self):
-        for contact in self.contact_dict.itervalues():
-            yield contact
-
-    @property
-    def contacts(self):
-        """Iterate contacts in the set."""
-        for contact in self.contact_dict.itervalues():
-            yield contact
-
-    @property
-    def nb_contacts(self):
-        return len(self.contact_dict)
+        assert type(contacts) is list
+        self.contacts = contacts
+        self.nb_contacts = len(self.contacts)
 
     def find_supporting_wrenches(self, wrench, point):
         """Find supporting contact wrenches for a given net contact wrench.
