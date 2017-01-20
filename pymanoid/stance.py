@@ -69,9 +69,59 @@ class Stance(ContactSet):
 
     @property
     def contact(self):
+        """Unique contact if the Stance is single-support."""
         assert self.nb_contacts == 1
         for contact in self.contacts:
             return contact
+
+    def compute_pendular_accel_cone(self, zdd_max=None, reduced=False):
+        """
+        Compute the pendular COM acceleration cone of the Stance.
+
+        Parameters
+        ----------
+        zdd_max : scalar, optional
+            Maximum vertical acceleration in the output cone.
+        reduced : bool, optional
+            If ``True``, returns the reduced 2D form rather than a 3D cone.
+
+        Returns
+        -------
+        vertices : list of (3,) arrays
+            List of 3D vertices of the (truncated) COM acceleration cone, or of
+            the 2D vertices of the reduced form if ``reduced`` is ``True``.
+
+        See Also
+        --------
+        See the homonymous function in ``ContactSet`` for details on these cones
+        and how they are computed.
+        """
+        return super(Stance, self).compute_pendular_accel_cone(
+            self.com, zdd_max, reduced)
+
+    def compute_zmp_support_area(self, plane, method='bretl'):
+        """
+        Compute the (pendular) ZMP support area of the Stance.
+
+        Parameters
+        ----------
+        plane : array, shape=(3,)
+            Origin of the virtual plane.
+        method : string, default='bretl'
+            Choice between ``"bretl"`` or ``"cdd"``.
+
+        Returns
+        -------
+        vertices : list of arrays
+            List of vertices of the ZMP support area.
+
+        See Also
+        --------
+        See the homonymous function in ``ContactSet`` for details on the areas
+        and how they are computed.
+        """
+        return super(Stance, self).compute_zmp_support_area(
+            self.com, plane, method)
 
     def dist_to_sep_edge(self, com):
         """

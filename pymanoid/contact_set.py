@@ -239,8 +239,7 @@ class ContactSet(object):
         G = self.compute_grasp_matrix(p)
         F = block_diag(*[contact.wrench_face for contact in self.contacts])
         mass = 42.  # [kg]
-        # mass has no effect on the output polygon, see Section IV.B in
-        # <https://hal.archives-ouvertes.fr/hal-01349880> for details
+        # mass has no effect on the output polygon, see Section IV.B in [CK16]_
         pp = PolytopeProjector()
         pp.set_inequality(
             F,
