@@ -824,21 +824,20 @@ if __name__ == "__main__":
     sim.schedule(robot.ik_process)
 
     com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
-    # force_drawer = ForceDrawer()
-    force_drawer = PointMassWrenchDrawer(com_target, fsm.get_cur_stance)
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
     preview_drawer = PreviewDrawer()
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
     tube_drawer = TubeDrawer()
     update_com_target = UpdateCOMTargetAccel(com_target, preview_buffer)
+    wrench_drawer = PointMassWrenchDrawer(com_target, fsm.get_cur_stance)
 
-    sim.schedule_extra(update_com_target)
     sim.schedule_extra(com_traj_drawer)
-    sim.schedule_extra(force_drawer)
     sim.schedule_extra(lf_traj_drawer)
     sim.schedule_extra(preview_drawer)
     sim.schedule_extra(rf_traj_drawer)
     sim.schedule_extra(tube_drawer)
+    sim.schedule_extra(update_com_target)
+    sim.schedule_extra(wrench_drawer)
 
     print """
 
