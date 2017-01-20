@@ -209,7 +209,7 @@ class WalkingFSM(pymanoid.Process):
     Finite State Machine for biped walking.
     """
 
-    def __init__(self, stances, robot, swing_foot, cycle=False):
+    def __init__(self, stances, robot, swing_height, cycle=False):
         """
         Create a new finite state machine.
 
@@ -219,8 +219,8 @@ class WalkingFSM(pymanoid.Process):
             Consecutives stances traversed by the FSM.
         robot : Robot
             Controller robot.
-        swing_foot : SwingFoot
-            Virtual contact used for swing foot mtoions.
+        swing_height : scalar
+            Relative height in [m] for the apex of swing foot trajectories.
         cycle : bool, optional
             If ``True``, the first stance will succeed the last one.
         """
@@ -234,7 +234,7 @@ class WalkingFSM(pymanoid.Process):
         self.rem_time = stances[0].duration
         self.robot = robot
         self.stances = stances
-        self.swing_foot = swing_foot
+        self.swing_foot = SwingFoot(swing_height)
         self.verbose = True
 
     @property
@@ -796,8 +796,7 @@ if __name__ == "__main__":
     preview_buffer = PreviewBuffer(
         u_dim=3,
         callback=lambda u, dT: com_target.integrate_acceleration(u, dT))
-    swing_foot = SwingFoot(swing_height=0.15)
-    fsm = WalkingFSM(staircase, robot, swing_foot, cycle=True)
+    fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
 
     mpc = COMTubePreviewControl(
         com_target, fsm, preview_buffer,
