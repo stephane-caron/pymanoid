@@ -45,6 +45,105 @@ class ContactSet(object):
         self.contacts = contacts
         self.nb_contacts = len(self.contacts)
 
+    def compute_grasp_matrix(self, p):
+        """
+        Compute the grasp matrix of all contact wrenches at point p.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
+
+        Returns
+        -------
+        G : array, shape=(6, m)
+            Grasp matrix giving the resultant contact wrench :math:`w_P` of all
+            contact wrenches as :math:`w_P = G w_{all}`, with :math:`w_{all}`
+            the stacked vector of contact wrenches (each wrench being taken at
+            its respective contact point and in the world frame).
+        """
+        return hstack([c.grasp_matrix(p) for c in self.contacts])
+
+    def compute_wrench_face(self, p):
+        """
+        Compute the face matrix of the contact wrench cone in the world frame.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
+
+        Returns
+        -------
+        F : array, shape=(m, 6)
+            Friction matrix such that all valid contact wrenches satisfy
+            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
+            `p`.
+        """
+        S = self.compute_wrench_span(p)
+        return Cone.face_of_span(S)
+
+    def compute_wrench_span(self, p):
+        """
+        Compute the span matrix of the contact wrench cone in world frame.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant-wrench coordinates are taken.
+
+        Returns
+        -------
+        S : array, shape=(6, m)
+            Span matrix of the net contact wrench cone.
+
+        Notes
+        -----
+        The span matrix :math:`S_P` such that all valid contact wrenches can be
+        written as:
+
+        .. math::
+
+            w_P = S_P \\lambda, \\quad \\lambda \\geq 0
+
+        where :math:`w_P` denotes the contact-wrench coordinates at point `P`.
+        """
+        span_blocks = []
+        for contact in self.contacts:
+            x, y, z = contact.p - p
+            Gi = array([
+                [1,  0,  0, 0, 0, 0],
+                [0,  1,  0, 0, 0, 0],
+                [0,  0,  1, 0, 0, 0],
+                [0, -z,  y, 1, 0, 0],
+                [z,  0, -x, 0, 1, 0],
+                [-y, x,  0, 0, 0, 1]])
+            span_blocks.append(dot(Gi, contact.wrench_span))
+        S = hstack(span_blocks)
+        assert S.shape == (6, 16 * self.nb_contacts)
+        return S
+
+    def find_static_supporting_wrenches(self, com, mass):
+        """Find supporting contact wrenches in static-equilibrium.
+
+        Parameters
+        ----------
+        com : array, shape=(3,)
+            Position of the center of mass.
+        mass : scalar
+            Total mass of the robot in [kg].
+
+        Returns
+        -------
+        support : list of (Contact, array) couples
+            Mapping between each contact `i` in the contact set and a supporting
+            contact wrench :math:`w^i_{C_i}`.
+        """
+        f = numpy.array([0., 0., mass * 9.81])
+        tau_G = zeros(3)
+        wrench = numpy.hstack([f, tau_G])
+        return self.find_supporting_wrenches(wrench, com)
+
     def find_supporting_wrenches(self, wrench, point):
         """Find supporting contact wrenches for a given net contact wrench.
 
@@ -84,129 +183,10 @@ class ContactSet(object):
             for i, contact in enumerate(self.contacts)]
         return support
 
-    def find_static_supporting_wrenches(self, com, mass):
-        """Find supporting contact wrenches in static-equilibrium.
-
-        Parameters
-        ----------
-        com : array, shape=(3,)
-            Position of the center of mass.
-        mass : scalar
-            Total mass of the robot in [kg].
-
-        Returns
-        -------
-        support : list of (Contact, array) couples
-            Mapping between each contact `i` in the contact set and a supporting
-            contact wrench :math:`w^i_{C_i}`.
-        """
-        f = numpy.array([0., 0., mass * 9.81])
-        tau_G = zeros(3)
-        wrench = numpy.hstack([f, tau_G])
-        return self.find_supporting_wrenches(wrench, com)
-
-    def compute_wrench_span(self, p):
-        """
-        Compute the span matrix of the contact wrench cone in world frame.
-
-        INPUT:
-
-        - ``p`` -- point where the resultant wrench is taken at
-
-        OUTPUT:
-
-        The span matrix S(p) such that all valid contact wrenches can be written
-        as:
-
-            w(p) = S(p) * lambda,     lambda >= 0
-
-        where w(p) is the contact wrench with respect to point p, lambda is a
-        vector with positive coordinates.
-        """
-        span_blocks = []
-        for contact in self.contacts:
-            x, y, z = contact.p - p
-            Gi = array([
-                [1,  0,  0, 0, 0, 0],
-                [0,  1,  0, 0, 0, 0],
-                [0,  0,  1, 0, 0, 0],
-                [0, -z,  y, 1, 0, 0],
-                [z,  0, -x, 0, 1, 0],
-                [-y, x,  0, 0, 0, 1]])
-            span_blocks.append(dot(Gi, contact.wrench_span))
-        S = hstack(span_blocks)
-        assert S.shape == (6, 16 * self.nb_contacts)
-        return S
-
-    def compute_wrench_face(self, p):
-        """
-        Compute the face matrix of the contact wrench cone in the world frame.
-
-        Parameters
-        ----------
-        p : array, shape=(3,)
-            Point where the resultant wrench is taken at.
-
-        Returns
-        -------
-        F : array, shape=(m, 6)
-            Friction matrix such that all valid contact wrenches satisfy
-            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
-            `p`.
-        """
-        S = self.compute_wrench_span(p)
-        return Cone.face_of_span(S)
-
-    def compute_grasp_matrix(self, p):
-        """
-        Compute the grasp matrix of all contact wrenches at point p.
-
-        Parameters
-        ----------
-        p : array, shape=(3,)
-            Point where the resultant wrench is taken at.
-
-        Returns
-        -------
-        G : array, shape=(6, m)
-            Grasp matrix giving the resultant contact wrench :math:`w_P` of all
-            contact wrenches as :math:`w_P = G w_{all}`, with :math:`w_{all}`
-            the stacked vector of contact wrenches (each wrench being taken at
-            its respective contact point and in the world frame).
-        """
-        return hstack([c.grasp_matrix(p) for c in self.contacts])
-
-    def compute_grasp_matrix_from_forces(self, p):
-        """
-        Compute the grasp matrix from all contact points in the set.
-
-        INPUT:
-
-        - ``p`` -- point where to take the resultant wrench
-
-        OUTPUT:
-
-        The grasp matrix G(p) giving the resultant contact wrench w(p) of all
-        contact forces by:
-
-            w(p) = G(p) * f_all,
-
-        with f_all the stacked vector of contact forces, each force being
-        taken at its respective contact point.
-        """
-        G = zeros((6, 3 * 4 * self.nb_contacts))
-        for i, contact in enumerate(self.contacts):
-            for j, cp in enumerate(contact.vertices):
-                x, y, z = cp - p
-                Gi = array([
-                    [1, 0, 0],
-                    [0, 1, 0],
-                    [0, 0, 1],
-                    [0, -z, y],
-                    [z, 0, -x],
-                    [-y, x, 0]])
-                G[:, (12 * i + 3 * j):(12 * i + 3 * (j + 1))] = Gi
-        return G
+    """
+    Support areas and volumes
+    =========================
+    """
 
     def compute_static_equilibrium_polygon(self, method='hull'):
         """
@@ -219,7 +199,7 @@ class ContactSet(object):
 
         Returns
         -------
-        vertices : list of ndarrays
+        vertices : list of arrays
             2D vertices of the static-equilibrium polygon.
 
         Notes
@@ -280,16 +260,16 @@ class ContactSet(object):
 
         Parameters
         ----------
-        com : ndarray
-            COM position
-        plane : ndarray
-            origin (in world frame) of the virtual plane
-        method : string, optional
-            choice between ``"bretl"`` or ``"cdd"``
+        com : array, shape=(3,)
+            COM position.
+        plane : array, shape=(3,)
+            Origin of the virtual plane.
+        method : string, default='bretl'
+            Choice between ``"bretl"`` or ``"cdd"``.
 
         Returns
         -------
-        vertices : list of ndarrays
+        vertices : list of arrays
             List of vertices of the ZMP support area.
 
         Notes
@@ -323,30 +303,34 @@ class ContactSet(object):
 
     def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
         """
-        Compute the (pendular) COM acceleration cone for a given COM position.
+        Compute the pendular COM acceleration cone for a given COM position.
 
-        This pendular cone is the reduction of the Contact Wrench Cone when the
+        The pendular cone is the reduction of the Contact Wrench Cone when the
         angular momentum at the COM is zero.
 
-        INPUT:
+        Parameters
+        ----------
+        com : array, shape=(3,)
+            COM position, or list of COM vertices.
+        zdd_max : scalar, optional
+            Maximum vertical acceleration in the output cone.
+        reduced : bool, optional
+            If ``True``, returns the reduced 2D form rather than a 3D cone.
 
-        - ``com`` -- COM position, or list of COM vertices
-        - ``zdd_max`` -- (optional) maximum vertical acceleration in output cone
-        - ``reduced`` -- (optional) if True, will return the 2D reduced form
+        Returns
+        -------
+        vertices : list of (3,) arrays
+            List of 3D vertices of the (truncated) COM acceleration cone, or of
+            the 2D vertices of the reduced form if ``reduced`` is ``True``.
 
-        OUTPUT:
-
-        List of 3D vertices of the (truncated) COM acceleration cone, or of the
-        2D vertices of the reduced form if ``reduced`` is ``True``.
+        Notes
+        -----
+        The method is based on a rewriting of the CWC formula, followed by a 2D
+        convex hull on dual vertices. The algorithm is described in [CK16]_.
 
         When ``com`` is a list of vertices, the returned cone corresponds to COM
         accelerations that are feasible from *all* COM located inside the
         polytope. See [CK16]_ for details on this conservative criterion.
-
-        ALGORITHM:
-
-        The method is based on a rewriting of the cone formula, followed by a 2D
-        convex hull on dual vertices. The algorithm is described in [CK16]_.
         """
         com_vertices = [com] if type(com) is not list else com
         CWC_O = self.compute_wrench_face([0., 0., 0.])
