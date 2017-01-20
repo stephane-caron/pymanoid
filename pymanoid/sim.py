@@ -43,8 +43,8 @@ class Process(object):
     """
 
     def __init__(self):
-        self.paused = False
         self._log_comp_times = False
+        self.paused = False
 
     def log_comp_times(self, active=True):
         """
@@ -65,6 +65,10 @@ class Process(object):
         ----------
         sim : Simulation
             Current simulation instance.
+
+        Note
+        ----
+        This function needs to be implemented by child classes.
         """
         raise NotImplementedError
 
@@ -116,6 +120,10 @@ class Simulation(object):
         self.tick_time = 0
         self.viewer = None
         self.window_id = None
+
+    @property
+    def time(self):
+        return self.tick_time * self.dt
 
     def __del__(self):
         """Close thread at shutdown."""
