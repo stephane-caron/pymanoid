@@ -582,8 +582,9 @@ class COMTubePreviewControl(pymanoid.Process):
             self.preview_control.compute_control()
             U = self.preview_control.U
             dT = [self.preview_control.timestep] * self.nb_mpc_steps
-            self.preview_buffer.update_preview(U, dT, self.nb_mpc_steps)
+            self.preview_buffer.update_preview(U, dT)
             # <dirty why="used in PreviewDrawer">
+            self.preview_buffer.nb_steps = self.nb_mpc_steps
             self.preview_buffer.switch_step = self.preview_control.switch_step
             # </dirty>
         except ValueError:
