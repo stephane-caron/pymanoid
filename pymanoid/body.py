@@ -19,8 +19,9 @@
 
 import openravepy
 
-from numpy import array, dot, zeros
+from numpy import array, dot, ndarray, zeros
 
+from misc import norm
 from rotations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 from sim import get_openrave_env
 
@@ -509,6 +510,13 @@ class Point(Cube):
     @property
     def pd(self):
         return self.__pd.copy()
+
+    def dist(self, other_point):
+        if type(other_point) is list:
+            other_point = array(other_point)
+        if type(other_point) is ndarray:
+            return norm(other_point - self.p)
+        return norm(other_point.p - self.p)
 
     def set_velocity(self, pd):
         """Update the point-mass velocity."""
