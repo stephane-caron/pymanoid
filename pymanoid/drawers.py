@@ -52,8 +52,7 @@ class PointMassWrenchDrawer(Process):
         self.scale = scale
 
     def find_supporting_wrenches(self, gravity):
-        p, mass = self.pm.p, self.pm.mass
-        pdd = self.pm.pdd  # needs to be stored by the user
+        p, mass, pdd = self.pm.p, self.pm.mass, self.pm.pdd
         wrench = hstack([mass * (pdd - gravity), zeros(3)])
         contact_set = self.cs() if callable(self.cs) else self.cs
         support = contact_set.find_supporting_wrenches(wrench, p)
@@ -61,6 +60,8 @@ class PointMassWrenchDrawer(Process):
 
     def on_tick(self, sim):
         """Find supporting contact forces at each COM acceleration update."""
+        if self.pm.pdd is None:  # needs to be stored by the user
+            return
         support = self.find_supporting_wrenches(sim.gravity)
         if not support:
             self.handles = []

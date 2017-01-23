@@ -64,6 +64,7 @@ class Contact(Box):
         if kinetic_friction is None and static_friction is not None:
             kinetic_friction = static_friction
         self.kinetic_friction = kinetic_friction
+        self.shape = shape
         self.static_friction = static_friction
 
     """
