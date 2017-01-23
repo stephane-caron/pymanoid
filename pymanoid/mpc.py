@@ -42,12 +42,10 @@ class PreviewBuffer(Process):
         super(PreviewBuffer, self).__init__()
         self._U = None
         self._dT = None
-        self._no_control = (zeros(u_dim), 0.)
         self.callback = callback
         self.cur_control = None
         self.cur_index = 0
         self.lock = Lock()
-        self.nb_steps = None
         self.rem_time = 0.
         self.u_dim = u_dim
 
@@ -55,7 +53,7 @@ class PreviewBuffer(Process):
     def is_empty(self):
         return self._U is None
 
-    def update_preview(self, U, dT, N=None):
+    def update_preview(self, U, dT):
         """
         Update preview with a filled PreviewControl object.
 
@@ -65,14 +63,15 @@ class PreviewBuffer(Process):
             Vector of stacked preview controls, each of dimension `d`.
         dT : array, shape=(N,)
             Sequence of durations, one for each preview control.
-        N : int, optional
-            Number of steps in the preview window.
         """
         with self.lock:
             self._U = U
             self._dT = dT
             self.cur_index = 0
-            self.nb_steps = N
+            self.rem_time = 0.
+
+    def reset(self):
+        self.update_preview(zeros(self.u_dim), [0.1])
 
     def get_next_control(self):
         """
@@ -84,13 +83,11 @@ class PreviewBuffer(Process):
             Next control in the preview window.
         """
         with self.lock:
-            if self.is_empty:
-                return self._no_control
             j = self.u_dim * self.cur_index
             u = self._U[j:j + self.u_dim]
             if u.shape[0] == 0:
                 self._U = None
-                return self._no_control
+                return (zeros(self.u_dim), 0.1)
             dT = self._dT[self.cur_index]
             self.cur_index += 1
             return (u, dT)
