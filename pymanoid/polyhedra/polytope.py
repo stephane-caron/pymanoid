@@ -34,11 +34,6 @@ def norm(v):
     return sqrt(dot(v, v))
 
 
-class EmptyPolytope(Exception):
-
-    pass
-
-
 class Polytope(Polyhedron):
 
     """Polytopes are bounded polyhedra, i.e., with only vertices and no ray."""
@@ -121,5 +116,5 @@ class Polytope(Polyhedron):
         A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
         z = solve_lp(cost, A_cheby, b)
         if z[-1] < -1e-1:  # last coordinate is distance to boundaries
-            raise EmptyPolytope("Chebyshev center violation by %.2f" % z[-1])
+            raise Exception("Chebyshev center violation by %.2f" % z[-1])
         return z[:-1]

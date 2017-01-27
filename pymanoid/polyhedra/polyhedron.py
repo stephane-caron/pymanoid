@@ -25,20 +25,21 @@ from numpy import array
 class Polyhedron(object):
 
     """
-    Wrapper for the CDD library.
+    Polyhedron.
+
+    Parameters
+    ----------
+    hrep : array, optional
+        Halfspace-representation matrix [b | A] where the polyhedron is defined
+        as `b + A x >= 0`.
+    vrep : array, optional
+        Vertex-representation matrix [t | V] where V is the matrix of stacked
+        generators and t indicates their type: 1 for vertices and 0 for rays.
     """
 
     number_type = 'float'
 
     def __init__(self, hrep=None, vrep=None):
-        """
-        Create a new polyhedron.
-
-        INPUT:
-
-        - ``hrep`` -- halfspace-representation matrix [b | A]
-        - ``vrep`` -- vertex-representation matrix [t | V]
-        """
         assert hrep is not None or vrep is not None, \
             "Please provide either H-rep or V-rep."
         self.hrep = hrep
@@ -94,7 +95,7 @@ class Polyhedron(object):
         if self.vrep is None:
             return None
         tV = self.vrep
-        return [tV[i, 1:] for i in xrange(tV.shape[0]) if tV[i, 0] == 0]
+        return [tV[i, 1:] for i in xrange(tV.shape[0]) if abs(tV[i, 0]) < 1e-10]
 
     @property
     def vertices(self):
