@@ -343,10 +343,6 @@ class ContactSet(object):
         c = hstack(c_list)
         try:
             g = -gravity[2]  # gravity constant (positive)
-            check = c / B[:, 2]
-            assert max(check) - min(check) < 1e-10, \
-                "max - min failed (%.1e)" % ((max(check) - min(check)))
-            assert abs(check[0] - (-g)) < 1e-10, "check is not -g?"
             B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
             sigma = c / g  # see Equation (30) in [CK16]
             reduced_hull = compute_polygon_hull(B_2d, sigma)
