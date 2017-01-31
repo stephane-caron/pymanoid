@@ -19,7 +19,7 @@
 
 from numpy import array, zeros
 
-from generic import Task
+from task import Task
 
 
 class DOFTask(Task):

@@ -19,7 +19,7 @@
 
 from numpy import dot, zeros
 
-from generic import Task
+from task import Task
 
 
 class ConstantCAMTask(Task):

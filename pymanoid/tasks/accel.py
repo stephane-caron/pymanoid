@@ -19,7 +19,7 @@
 
 from numpy import eye
 
-from generic import Task
+from task import Task
 
 
 class MinAccelerationTask(Task):

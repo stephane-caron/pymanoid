@@ -19,7 +19,7 @@
 
 from numpy import array, dot, ndarray
 
-from generic import Task
+from task import Task
 
 
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])

@@ -19,7 +19,7 @@
 
 from numpy import array, ndarray
 
-from generic import Task
+from task import Task
 
 
 class COMTask(Task):
