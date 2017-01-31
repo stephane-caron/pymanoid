@@ -355,6 +355,7 @@ class Robot(object):
             if cost_relvar < conv_tol:
                 break
             self.step_ik(dt, method)
+        self.set_dof_velocities(zeros(self.qd.shape))
         self.ik.qd_max /= 1000
         self.ik.qd_min /= 1000
         return itnum, cost
