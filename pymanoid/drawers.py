@@ -80,6 +80,10 @@ class PointMassWrenchDrawer(Process):
 
 class StaticWrenchDrawer(PointMassWrenchDrawer):
 
+    def __init__(self, pm, cs, scale=0.0025):
+        super(StaticWrenchDrawer, self).__init__(pm, cs, scale)
+        pm.pdd = zeros((3,))
+
     def find_supporting_wrenches(self, gravity):
         p, mass = self.pm.p, self.pm.mass
         contact_set = self.cs() if callable(self.cs) else self.cs
