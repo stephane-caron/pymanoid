@@ -936,13 +936,18 @@ class Humanoid(Robot):
         """
         Generate robot posture (joint-angles + free-flyer) for a given Stance.
 
-        INPUT:
-
-        - ``stance`` -- Stance object
-        - ``max_it`` -- maximum number of IK solver iterations
-        - ``conv_tol`` -- stop when cost improvement is less than this threshold
-        - ``dt`` -- time step for the differential IK
-        - ``debug`` -- print extra debug info
+        Parameters
+        ----------
+        stance : Stance
+            Contacts and COM configurations to generate the posture from.
+        max_it : integer
+            Maximum number of IK iterations.
+        conv_tol : scalar
+            Stop when cost improvement is less than this threshold.
+        dt : scalar
+            Time step for the differential IK.
+        debug : bool, optional
+            Print extra debug info, default is False.
         """
         from tasks import COMTask, ContactTask, PostureTask
         if stance.left_foot is not None:

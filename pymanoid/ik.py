@@ -78,21 +78,29 @@ class VelocitySolver(object):
         """
         Add a new task in the IK.
 
-        INPUT:
+        Parameters
+        ----------
+        task : Task
+            New task to add to the list.
 
-        - ``task`` -- Task object
-
-        .. NOTE::
-
-            This function is not made to be called frequently.
+        Note
+        ----
+        This function is not made to be called frequently.
         """
-        task.check()
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
 
     def add_tasks(self, tasks):
+        """
+        Add new tasks.
+
+        Parameters
+        ----------
+        tasks : list of Tasks
+            List of tasks to add.
+        """
         for task in tasks:
             self.add_task(task)
 
@@ -100,31 +108,34 @@ class VelocitySolver(object):
         """
         Get an active task from its name.
 
-        INPUT:
+        Parameters
+        ----------
+        name : string
+            Name of the task to remove.
 
-        - ``name`` -- task name
-
-        OUTPUT:
-
-        The corresponding task object.
+        Returns
+        -------
+        task : Task or None
+            The corresponding task if present, None otherwise.
         """
         with self.tasks_lock:
             if name not in self.tasks:
                 warn("no task with name '%s'" % name)
-                return
+                return None
             return self.tasks[name]
 
     def remove_task(self, name):
         """
-        Remove a task from the IK.
+        Remove a task.
 
-        INPUT:
-
-        - ``name`` -- task name
+        Parameters
+        ----------
+        name : string
+            Name of the task to remove.
         """
         with self.tasks_lock:
             if name not in self.tasks:
-                warn("no task '%s' to remove" % name)
+                print "Warning: no task '%s' to remove" % name
                 return
             del self.tasks[name]
 
@@ -164,31 +175,35 @@ class VelocitySolver(object):
         Compute a new velocity satisfying all tasks at best, while staying
         within joint-velocity limits.
 
-        INPUT:
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
 
-        - ``dt`` -- time step in [s]
+        Returns
+        -------
+        qd : array
+            Active joint velocity vector.
 
-        OUTPUT:
+        Notes
+        -----
+        The returned velocity minimizes squared residuals as in the weighted
+        cost function, which corresponds to the Gauss-Newton algorithm. Indeed,
+        expanding the square expression in cost(task, qd) yields
 
-        Active joint velocity vector.
-
-        ALGORITHM:
-
-        Minimizes squared residuals as in the weighted cost function, which
-        corresponds to the Gauss-Newton algorithm. Indeed, expanding the square
-        expression in cost(task, qd) yields
-
-            minimize    qd * (J.T * J) * qd - 2 * (residual / dt) * J * qd
+            minimize
+                qd * (J.T * J) * qd - 2 * residual * J * qd
 
         Differentiating with respect to ``qd`` shows that the minimum is
-        attained for (J.T * J) * qd == (residual / dt), where we recognize the
+        attained for (J.T * J) * qd == residual, where we recognize the
         Gauss-Newton update rule.
 
-        .. NOTE::
-
-            This method is reasonably fast but may become unstable when some
-            tasks are widely infeasible and the optimum saturates joint limits.
-            In such situations, you can use ``compute_velocity_safe()`` instead.
+        Note
+        ----
+        The method implemented in this function is reasonably fast but may
+        become unstable when some tasks are widely infeasible and the optimum
+        saturates joint limits. In such situations, you can use
+        ``compute_velocity_safe()`` instead.
         """
         n = self.nb_active_dofs
         qp_P, qp_q, qd_max, qd_min = self.__compute_qp_common(dt)
@@ -201,25 +216,29 @@ class VelocitySolver(object):
         Compute a new velocity satisfying all tasks at best, while staying
         within joint-velocity limits.
 
-        INPUT:
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
+        margin_reg : scalar
+            Regularization term on margin variables.
+        margin_lin : scalar
+            Linear penalty term on margin variables.
 
-        - ``dt`` -- time step in [s]
-        - ``margin_reg`` -- regularization term on margin variables
-        - ``margin_lin`` -- linear penalty term on margin variables
+        Returns
+        -------
+        qd : array
+            Active joint velocity vector.
 
-        OUTPUT:
-
-        Active joint velocity vector.
-
-        ALGORITHM:
-
+        Notes
+        -----
         Variation on the QP from ``compute_velocity_fast()`` reported in Equ.
         (10) of [Nozawa2016]_. DOF limits are better taken care of by margin
         variables, but the variable count doubles and the QP takes roughly 50%
         more time to solve.
 
-        REFERENCES:
-
+        References
+        ----------
         .. [Nozawa2016] Nozawa, Shunichi, et al. "Three-dimensional humanoid
            motion planning using COM feasible region and its application to
            ladder climbing tasks." Humanoid Robots (Humanoids), 2016 IEEE-RAS
@@ -239,14 +258,17 @@ class VelocitySolver(object):
         Compute a new velocity satisfying all tasks at best, while staying
         within joint-velocity limits.
 
-        INPUT:
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
+        method : string
+            Choice between 'fast' and 'safe'.
 
-        - ``dt`` -- time step in [s]
-        - ``method`` -- choice between 'fast' and 'safe'
-
-        OUTPUT:
-
-        Active joint velocity vector.
+        Returns
+        -------
+        qd : array
+            Active joint velocity vector.
         """
         if method == 'fast':
             return self.compute_velocity_fast(dt)

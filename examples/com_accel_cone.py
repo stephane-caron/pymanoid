@@ -32,13 +32,6 @@ from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
 from pymanoid.drawers import COMAccelConeDrawer
 
-com_height = 0.9  # [m]
-polygon_handle = None
-z_polygon = 2.
-
-qd_lim = 10.
-K_doflim = 5.
-
 
 class COMSync(pymanoid.Process):
 
@@ -58,9 +51,11 @@ if __name__ == "__main__":
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.25)
 
+    com_height = 0.9  # [m]
+    z_polygon = 2.  # [m]
     com_target = PointMass(
         pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
-    com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
+    com_above = pymanoid.Cube(0.02, [0.05, 0.04, 2.], color='b')
 
     stance = Stance(
         com=com_target,
