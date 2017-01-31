@@ -22,7 +22,7 @@ from numpy import concatenate, eye, maximum, minimum, vstack
 from os.path import basename, splitext
 from warnings import warn
 
-from body import PointMass
+from draw import draw_point
 from rotations import crossmat, rpy_from_quat
 from sim import Process, get_openrave_env
 
@@ -556,7 +556,7 @@ class Humanoid(Robot):
         self.has_free_flyer = True
         self.__cam = None
         self.__com = None
-        self.__com_box = None
+        self.__com_handle = None
         self.__comd = None
 
     """
@@ -645,8 +645,9 @@ class Humanoid(Robot):
     def com(self):
         if self.__com is None:
             self.__com = self.compute_com()
-        if self.__com_box is not None:
-            self.__com_box.set_pos(self.__com)
+        if self.__com_handle is not None:
+            self.__com_handle = draw_point(
+                self.__com, pointsize=0.0005 * self.mass)
         return self.__com
 
     @property
@@ -716,12 +717,12 @@ class Humanoid(Robot):
         return H_com
 
     def show_com(self):
-        if self.__com_box is None:
-            self.__com_box = PointMass(self.com, self.mass)
-        self.__com_box.show()
+        if self.__com_handle is None:
+            self.__com_handle = draw_point(
+                self.com, pointsize=0.0005 * self.mass)
 
     def hide_com(self):
-        self.__com_box.hide()
+        self.__com_handle = None
 
     """
     Angular Momentum
@@ -738,7 +739,6 @@ class Humanoid(Robot):
         """
         am = zeros(3)
         for link in self.rave.GetLinks():
-            # TODO: replace by newer link.GetGlobalInertia()
             T = link.GetTransform()
             m = link.GetMass()
             v = link.GetVelocity()
