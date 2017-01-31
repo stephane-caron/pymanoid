@@ -295,14 +295,16 @@ class PreviewBuffer(Process):
         self.cur_control = None
         self.cur_index = 0
         self.lock = Lock()
+        self.nb_steps = 0
         self.rem_time = 0.
+        self.switch_step = None
         self.u_dim = u_dim
 
     @property
     def is_empty(self):
         return self._U is None
 
-    def update_preview(self, U, dT):
+    def update_preview(self, U, dT, switch_step=None):
         """
         Update preview with a filled PreviewControl object.
 
@@ -312,12 +314,16 @@ class PreviewBuffer(Process):
             Vector of stacked preview controls, each of dimension `d`.
         dT : array, shape=(N,)
             Sequence of durations, one for each preview control.
+        switch_step : int, optional
+            Optional index of a contact-switch step in the sequence.
         """
         with self.lock:
             self._U = U
             self._dT = dT
             self.cur_index = 0
+            self.nb_steps = len(dT)
             self.rem_time = 0.
+            self.switch_step = switch_step
 
     def reset(self):
         """Reset preview buffer to its empty state."""
