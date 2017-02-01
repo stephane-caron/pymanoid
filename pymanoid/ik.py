@@ -139,6 +139,11 @@ class VelocitySolver(object):
                 return
             del self.tasks[name]
 
+    def update_task(self, name, new_task):
+        assert new_task.name == name
+        self.remove_task(name)
+        self.add_task(new_task)
+
     def compute_cost(self, dt):
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
