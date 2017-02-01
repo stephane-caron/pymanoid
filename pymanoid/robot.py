@@ -369,31 +369,41 @@ class Robot(object):
         """
         Compute the inertia matrix of the robot.
 
-        INPUT:
+        Parameters
+        ----------
+        external_torque : array, optional
+            Vector of external torques.
 
-        - ``external_torque`` -- vector of external torques (optional)
+        Notes
+        -----
+        The inertia matrix is the matrix :math:`M(q)` such that the equations of
+        motion are written as:
 
-        .. NOTE::
+        .. math::
 
-            The inertia matrix is the matrix M(q) such that the equations of
-            motion are:
+            M(q) \\ddot{q} + \\dot{q}^T C(q) \\dot{q} + g(q) = F +
+            \\tau_\\mathrm{ext}
 
-                M(q) * qdd + qd.T * C(q) * qd + g(q) = F + external_torque
+        with:
 
-            with:
+        - :math:`q` -- vector of joint angles (DOF values)
+        - :math:`\\dot{q}` -- vector of joint velocities
+        - :math:`\\ddot{q}` -- vector of joint accelerations
+        - :math:`C(q)` -- Coriolis tensor (derivative of M(q) w.r.t. q)
+        - :math:`g(q)` -- gravity vector
+        - :math:`F` -- generalized forces (joint torques, contact wrenches, ...)
+        - :math:`\\tau_\\mathrm{ext}` -- additional torque vector
 
-            q -- vector of joint angles (DOF values)
-            qd -- vector of joint velocities
-            qdd -- vector of joint accelerations
-            C(q) -- Coriolis tensor (derivative of M(q) w.r.t. q)
-            g(q) -- gravity vector
-            F -- generalized forces (joint torques, contact wrenches, ...)
-            external_torque -- additional torque vector (optional)
+        This function applies the unit-vector method described by Walker & Orin
+        in [WO82]_. It is not efficient, so if you are looking for performance,
+        you should consider more recent libraries such as `pinocchio
+        <https://github.com/stack-of-tasks/pinocchio>`_.
 
-            This function applies the unit-vector method described by Walker &
-            Orin <https://dx.doi.org/10.1115/1.3139699>. It is inefficient, so
-            if you are looking for performance, you should consider more recent
-            libraries such as <https://github.com/stack-of-tasks/pinocchio>.
+        References
+        ----------
+        .. [WO82] M.Walker and D. Orin. "Efficient dynamic computer simulation
+                  of robotic mechanisms." ASME Trans. J. dynamics Systems,
+                  Measurement and Control 104 (1982): 205-211.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
         for (i, e_i) in enumerate(eye(self.nb_dofs)):

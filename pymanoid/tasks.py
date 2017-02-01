@@ -25,7 +25,7 @@ _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 class Task(object):
 
     """
-    Create a new IK task.
+    Generic IK task.
 
     Parameters
     ----------
@@ -46,8 +46,8 @@ class Task(object):
     velocity. For instance, ``qd`` and ``(q1 - q2) / dt`` are valid residuals,
     but ``0.5 * q`` is not.
 
-    Notes
-    -----
+    References
+    ----------
     See <https://scaron.info/teaching/inverse-kinematics.html> for an
     introduction to the concepts used here.
     """
@@ -299,8 +299,9 @@ class MinAccelerationTask(Task):
 
     Note
     ----
-    As the differential IK returns velocities, we approximate the task "minimize
-    qdd" by "minimize (qd_next - qd)".
+    As the differential IK returns velocities, we approximate the minimization
+    over :math:`\\ddot{q}` by that over :math:`(\\dot{q}_\\mathrm{next} -
+    \\dot{q})`.
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
