@@ -281,7 +281,7 @@ class LinkPoseTask(Task):
             jacobian, residual, weight, gain, exclude_dofs)
 
 
-class MinAccelerationTask(Task):
+class MinAccelTask(Task):
 
     """
     Task to minimize joint accelerations.
@@ -301,7 +301,8 @@ class MinAccelerationTask(Task):
     ----
     As the differential IK returns velocities, we approximate the minimization
     over :math:`\\ddot{q}` by that over :math:`(\\dot{q}_\\mathrm{next} -
-    \\dot{q})`.
+    \\dot{q})`. See the documentation of the PendulumModeTask for details on the
+    discrete approximation of :math:`\\ddot{q}`.
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
@@ -314,7 +315,7 @@ class MinAccelerationTask(Task):
             return E
 
         self.name = 'minaccel'
-        super(MinAccelerationTask, self).__init__(
+        super(MinAccelTask, self).__init__(
             self, jacobian, residual, weight, gain, exclude_dofs)
 
 
@@ -349,7 +350,7 @@ class MinCAMTask(Task):
             jacobian, residual, weight, gain, exclude_dofs)
 
 
-class MinVelocityTask(Task):
+class MinVelTask(Task):
 
     """
     Task to minimize joint velocities
@@ -377,7 +378,7 @@ class MinVelocityTask(Task):
             return E
 
         self.name = 'minvel'
-        super(MinVelocityTask, self).__init__(
+        super(MinVelTask, self).__init__(
             self, jacobian, residual, weight, gain, exclude_dofs)
 
 
