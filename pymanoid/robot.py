@@ -22,7 +22,7 @@ from numpy import concatenate, eye, maximum, minimum, vstack
 from os.path import basename, splitext
 from warnings import warn
 
-from draw import draw_point
+from draw import draw_force, draw_point
 from rotations import crossmat, rpy_from_quat
 from sim import Process, get_openrave_env
 
@@ -568,6 +568,9 @@ class Humanoid(Robot):
         self.__com = None
         self.__com_handle = None
         self.__comd = None
+        self.__comd_handle = None
+        self.__show_com = False  # mostly but not always == (com_handle is None)
+        self.__show_comd = False
 
     """
     Kinematics
@@ -602,7 +605,7 @@ class Humanoid(Robot):
 
         - ``quat`` -- quaternion vector (w, x, y, z)
         """
-        return self.set_ff_rpy(rpy_from_quat(quat))
+        self.set_ff_rpy(rpy_from_quat(quat))
 
     def set_ff_pose(self, pose):
         """
@@ -628,22 +631,34 @@ class Humanoid(Robot):
         self.__cam = None
         self.__com = None
         self.__comd = None
+        if self.__show_com:
+            self.show_com()
+        if self.__show_comd:
+            self.show_comd()
         super(Humanoid, self).set_dof_values(
             q, dof_indices=dof_indices, clamp=clamp)
 
     def set_dof_velocities(self, qd, dof_indices=None):
         self.__cam = None
         self.__comd = None
+        if self.__show_comd:
+            self.show_comd()
         super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
 
     def set_active_dof_values(self, q_active):
         self.__cam = None
         self.__com = None
         self.__comd = None
+        if self.__com_handle is not None:
+            self.show_com()
+        if self.__comd_handle is not None:
+            self.show_comd()
         super(Humanoid, self).set_active_dof_values(q_active)
 
     def set_active_dof_velocities(self, qd_active):
         self.__cam = None
+        if self.__comd_handle is not None:
+            self.show_comd()
         super(Humanoid, self).set_active_dof_velocities(qd_active)
 
     """
@@ -655,9 +670,6 @@ class Humanoid(Robot):
     def com(self):
         if self.__com is None:
             self.__com = self.compute_com()
-        if self.__com_handle is not None:
-            self.__com_handle = draw_point(
-                self.__com, pointsize=0.0005 * self.mass)
         return self.__com
 
     @property
@@ -727,12 +739,20 @@ class Humanoid(Robot):
         return H_com
 
     def show_com(self):
-        if self.__com_handle is None:
-            self.__com_handle = draw_point(
-                self.com, pointsize=0.0005 * self.mass)
+        self.__show_com = True
+        self.__com_handle = draw_point(self.com, pointsize=0.0005 * self.mass)
 
     def hide_com(self):
+        self.__show_com = False
         self.__com_handle = None
+
+    def show_comd(self):
+        self.__show_comd = True
+        self.__comd_handle = draw_force(self.com, self.comd, scale=1.)
+
+    def hide_comd(self):
+        self.__show_comd = False
+        self.__comd_handle = None
 
     """
     Angular Momentum
