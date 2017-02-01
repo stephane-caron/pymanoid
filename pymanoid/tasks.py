@@ -17,7 +17,9 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot, eye, ndarray, zeros
+from numpy import array, dot, eye, zeros
+
+from misc import PointWrap, PoseWrap
 
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
@@ -52,11 +54,8 @@ class Task(object):
     introduction to the concepts used here.
     """
 
-    def __init__(self, jacobian, residual, weight, gain=0.85,
-                 exclude_dofs=None):
-        self._exclude_dofs = exclude_dofs
-        self._jacobian = jacobian
-        self._residual = residual
+    def __init__(self, weight, gain=0.85, exclude_dofs=None):
+        self._exclude_dofs = [] if exclude_dofs is None else exclude_dofs
         self.gain = gain
         self.weight = weight
 
@@ -79,11 +78,12 @@ class Task(object):
 
     def exclude_dofs(self, dofs):
         """
-        Exclude some DOFs from being used by the task.
+        Exclude additional DOFs from being used by the task.
         """
-        if self._exclude_dofs is None:
-            self._exclude_dofs = []
         self._exclude_dofs.extend(dofs)
+
+    def _jacobian(self):
+        raise NotImplementedError("Task Jacobian not implemented")
 
     def jacobian(self):
         """
@@ -95,10 +95,12 @@ class Task(object):
             Jacobian matrix of the task.
         """
         J = self._jacobian()
-        if self._exclude_dofs:
-            for dof_id in self._exclude_dofs:
-                J[:, dof_id] *= 0.
+        for dof_id in self._exclude_dofs:
+            J[:, dof_id] *= 0.
         return J
+
+    def _residual(self, dt):
+        raise NotImplementedError("Task residual not implemented")
 
     def residual(self, dt):
         return self.gain * self._residual(dt)
@@ -124,27 +126,27 @@ class COMTask(Task):
     """
 
     def __init__(self, robot, target, weight, gain=0.85, exclude_dofs=None):
-        self.update_target(target)
-        residual = self._residual
-
-        def jacobian():
-            return self.robot.compute_com_jacobian()
-
-        self.robot = robot
+        super(COMTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'com'
-        super(COMTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+        self.update_target(target)
+
+    def _jacobian(self):
+        return self.robot.compute_com_jacobian()
+
+    def _residual(self, dt):
+        return (self.target.p - self.robot.com) / dt
 
     def update_target(self, target):
-        if type(target) in [list, ndarray]:
-            def residual(dt):
-                return (target - self.robot.com) / dt
-        elif hasattr(target, 'p'):
-            def residual(dt):
-                return (target.p - self.robot.com) / dt
-        else:  # COM target should have a position field
-            raise Exception("Target %s has no 'p' attribute" % type(target))
-        self._residual = residual
+        """
+        Update the task residual with a new target.
+
+        Parameters
+        ----------
+        target : Point or array or list
+            New COM position target.
+        """
+        self.target = target if hasattr(target, 'p') else PointWrap(target)
 
 
 class DOFTask(Task):
@@ -170,21 +172,22 @@ class DOFTask(Task):
 
     def __init__(self, robot, dof_id, dof_ref, weight, gain=0.85,
                  exclude_dofs=None):
+        super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(dof_id) is str:
             dof_id = robot.__dict__[dof_id]
         J = zeros((1, robot.nb_dofs))
         J[0, dof_id] = 1.
-
-        def residual(dt):
-            return array([dof_ref - robot.q[dof_id]]) / dt
-
-        def jacobian():
-            return J
-
+        self.__J = J
         self.dof_id = dof_id
+        self.dof_ref = dof_ref
         self.name = 'dof-%d' % dof_id
-        super(DOFTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.__J
+
+    def _residual(self, dt):
+        return array([self.dof_ref - self.robot.q[self.dof_id]]) / dt
 
 
 class LinkPosTask(Task):
@@ -210,25 +213,29 @@ class LinkPosTask(Task):
 
     def __init__(self, robot, link, target, weight, gain=0.85,
                  exclude_dofs=None):
+        super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__dict__[link]
-
-        if hasattr(target, 'p'):
-            def residual(dt):
-                return (target.p - link.p) / dt
-        elif type(target) in [list, ndarray]:
-            def residual(dt):
-                return (target - link.p) / dt
-        else:  # this is an aesthetic comment
-            raise Exception("Target %s has no 'p' attribute" % type(target))
-
-        def jacobian():
-            return robot.compute_link_pos_jacobian(link)
-
         self.link = link
         self.name = self.link.name
-        super(LinkPosTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.update_target(target)
+
+    def _jacobian(self):
+        return self.robot.compute_link_pos_jacobian(self.link)
+
+    def _residual(self, dt):
+        return (self.target.p - self.link.p) / dt
+
+    def update_target(self, target):
+        """
+        Update the task residual with a new target.
+
+        Parameters
+        ----------
+        target : Point or array or list
+            New link position target.
+        """
+        self.target = target if hasattr(target, 'p') else PointWrap(target)
 
 
 class LinkPoseTask(Task):
@@ -254,31 +261,33 @@ class LinkPoseTask(Task):
 
     def __init__(self, robot, link, target, weight, gain=0.85,
                  exclude_dofs=None):
+        super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__dict__[link]
-
-        if hasattr(target, 'pose'):
-            def residual(dt):
-                pose_diff = target.pose - link.pose
-                if dot(pose_diff[0:4], pose_diff[0:4]) > 1.:
-                    pose_diff = _oppose_quat * target.pose - link.pose
-                return pose_diff / dt
-        elif type(target) in [list, ndarray]:
-            def residual(dt):
-                pose_diff = target - link.pose
-                if dot(pose_diff[0:4], pose_diff[0:4]) > 1.:
-                    pose_diff = _oppose_quat * target - link.pose
-                return pose_diff / dt
-        else:  # link frame target should be a pose
-            raise Exception("Target %s has no 'pose' attribute" % type(target))
-
-        def jacobian():
-            return robot.compute_link_pose_jacobian(link)
-
         self.link = link
         self.name = self.link.name
-        super(LinkPoseTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+        self.update_target(target)
+
+    def _jacobian(self):
+        return self.robot.compute_link_pose_jacobian(self.link)
+
+    def _residual(self, dt):
+        pose_diff = self.target.pose - self.link.pose
+        if dot(pose_diff[0:4], pose_diff[0:4]) > 1.:
+            pose_diff = _oppose_quat * self.target.pose - self.link.pose
+        return pose_diff / dt
+
+    def update_target(self, target):
+        """
+        Update the task residual with a new target.
+
+        Parameters
+        ----------
+        target : Point or array or list
+            New link position target.
+        """
+        self.target = target if hasattr(target, 'pose') else PoseWrap(target)
 
 
 class MinAccelTask(Task):
@@ -306,17 +315,16 @@ class MinAccelTask(Task):
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
-        E = eye(robot.nb_dofs)
-
-        def residual(dt):
-            return robot.qd
-
-        def jacobian():
-            return E
-
+        super(MinAccelTask, self).__init__(weight, gain, exclude_dofs)
+        self.__J = eye(robot.nb_dofs)
         self.name = 'minaccel'
-        super(MinAccelTask, self).__init__(
-            self, jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.__J
+
+    def _residual(self, dt):
+        return self.robot.qd
 
 
 class MinCAMTask(Task):
@@ -337,17 +345,16 @@ class MinCAMTask(Task):
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
-        zero_cam = zeros((3,))
-
-        def residual(dt):
-            return zero_cam
-
-        def jacobian():
-            return robot.compute_cam_jacobian()
-
+        super(MinCAMTask, self).__init__(weight, gain, exclude_dofs)
+        self.__zero_cam = zeros((3,))
         self.name = 'mincam'
-        super(MinCAMTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.robot.compute_cam_jacobian()
+
+    def _residual(self, dt):
+        return self.__zero_cam
 
 
 class MinVelTask(Task):
@@ -368,18 +375,17 @@ class MinVelTask(Task):
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
-        E = eye(robot.nb_dofs)
-        qd_ref = zeros(robot.qd.shape)
-
-        def residual(dt):
-            return (qd_ref - robot.qd)
-
-        def jacobian():
-            return E
-
+        super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
+        self.__J = eye(robot.nb_dofs)
         self.name = 'minvel'
-        super(MinVelTask, self).__init__(
-            self, jacobian, residual, weight, gain, exclude_dofs)
+        self.qd_ref = zeros(robot.qd.shape)
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.__J
+
+    def _residual(self, dt):
+        return self.qd_ref - self.robot.qd
 
 
 class PendulumModeTask(Task):
@@ -452,18 +458,18 @@ class PendulumModeTask(Task):
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
-        def residual(dt):
-            qd = robot.qd
-            J_cam = robot.compute_cam_jacobian()
-            H_cam = robot.compute_cam_hessian()  # computation intensive :(
-            return dot(J_cam, qd) - .5 * dt * dot(qd, dot(H_cam, qd))
-
-        def jacobian():
-            return robot.compute_cam_jacobian()
-
+        super(PendulumModeTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'pendulum'
-        super(PendulumModeTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.robot.compute_cam_jacobian()
+
+    def _residual(self, dt):
+        qd = self.robot.qd
+        J_cam = self.robot.compute_cam_jacobian()
+        H_cam = self.robot.compute_cam_hessian()  # computation intensive :(
+        return dot(J_cam, qd) - .5 * dt * dot(qd, dot(H_cam, qd))
 
 
 class PostureTask(Task):
@@ -487,29 +493,28 @@ class PostureTask(Task):
     """
 
     def __init__(self, robot, q_ref, weight, gain=0.85, exclude_dofs=None):
-        assert len(q_ref) == robot.nb_dofs
-
-        J_posture = eye(robot.nb_dofs)
+        super(PostureTask, self).__init__(weight, gain, exclude_dofs)
+        J = eye(robot.nb_dofs)
         if exclude_dofs is None:
             exclude_dofs = []
         if robot.has_free_flyer:  # don't include free-flyer coordinates
             exclude_dofs.extend([
                 robot.TRANS_X, robot.TRANS_Y, robot.TRANS_Z, robot.ROT_Y])
         for i in exclude_dofs:
-            J_posture[i, i] = 0.
-
-        def residual(dt):
-            e = (q_ref - robot.q)
-            for j in exclude_dofs:
-                e[j] = 0.
-            return e / dt
-
-        def jacobian():
-            return J_posture
-
+            J[i, i] = 0.
+        self.__J = J
         self.name = 'posture'
-        super(PostureTask, self).__init__(
-            jacobian, residual, weight, gain, exclude_dofs)
+        self.q_ref = q_ref
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.__J
+
+    def residual(self, dt):
+        e = self.q_ref - self.robot.q
+        for i in self._exclude_dofs:
+            e[i] = 0.
+        return e / dt
 
 
 class ContactTask(LinkPoseTask):

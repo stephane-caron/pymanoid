@@ -65,6 +65,38 @@ class AvgStdEstimator(object):
         return unbiased * sqrt(self.x2 / self.n - self.avg ** 2)
 
 
+class PointWrap(object):
+
+    """
+    An object with a ``p`` array field.
+
+    Parameters
+    ----------
+    p : list or array
+        Point coordinates.
+    """
+
+    def __init__(self, p):
+        assert len(p) == 3, "Argument is not a point"
+        self.p = array(p)
+
+
+class PoseWrap(object):
+
+    """
+    An object with a ``pose`` array field.
+
+    Parameters
+    ----------
+    p : list or array
+        Pose coordinates.
+    """
+
+    def __init__(self, pose):
+        assert len(pose) == 7, "Argument is not a pose"
+        self.pose = array(pose)
+
+
 def norm(v):
     """Euclidean norm, 2x faster than numpy.linalg.norm on my machine."""
     return sqrt(dot(v, v))
