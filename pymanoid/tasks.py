@@ -510,7 +510,7 @@ class PostureTask(Task):
     def _jacobian(self):
         return self.__J
 
-    def residual(self, dt):
+    def _residual(self, dt):
         e = self.q_ref - self.robot.q
         for i in self._exclude_dofs:
             e[i] = 0.
