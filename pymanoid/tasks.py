@@ -400,23 +400,54 @@ class PendulumModeTask(Task):
     Notes
     -----
     The way this task is implemented may be surprising. Basically, keeping a
-    constant CAM means d/dt(CAM) == 0, i.e.,
+    constant CAM :math:`L_G` means that :math:`\\dot{L}_G = 0`, that is,
 
-        d/dt (J_cam * qd) == 0
-        J_cam * qdd + qd * H_cam * qd == 0
+    .. math::
 
-    Because the IK works at the velocity level, we approximate qdd by finite
-    difference from the previous velocity (``qd`` argument to the residual
-    function):
+        \\frac{\\mathrm{d} (J_\\mathrm{CAM} \\dot{q})}{\\mathrm{d} t}
+        = 0 \\ \\Leftrightarrow\\
+        J_\\mathrm{CAM} \\ddot{q} + \\dot{q}^T H_\\mathrm{CAM} \\dot{q}
+        = 0
 
-        J_cam * (qd_next - qd) / dt + qd * H_cam * qd == 0
+    Because the IK works at the velocity level, we approximate :math:`\\ddot{q}`
+    by finite difference from the previous robot velocity. Assuming that the
+    velocity :math:`\\dot{q}_\\mathrm{next}` output by the IK is applied
+    immediately, joint angles become:
 
-    Finally, the task in qd_next (output velocity) is:
+    .. math::
 
-        J_cam * qd_next == J_cam * qd - dt * qd * H_cam * qd
+        q' = q + \\dot{q}_\\mathrm{next} \\delta t
 
-    Hence, there are two occurrences of J_cam: one in the task residual, and the
-    second in the task jacobian.
+    Meanwhile, the Taylor expansion of `q` is
+
+    .. math::
+
+        q' = q + \\dot{q} \\delta t + \\frac12 \\ddot{q} \delta t^2,
+
+    so that applying :math:`\\dot{q}_\\mathrm{next}` is equivalent to having the
+    following constant acceleration over :math:`\\delta t`:
+
+    .. math::
+
+        \\ddot{q} = 2 \\frac{\\dot{q}_\\mathrm{next} - \\dot{q}}{\\delta t}.
+
+    Replacing in the Jacobian/Hessian expansion yields:
+
+    .. math::
+
+        2 J_\\mathrm{CAM} \\frac{\\dot{q}_\\mathrm{next} - \\dot{q}}{\\delta t}
+        + + \\dot{q}^T H_\\mathrm{CAM} \\dot{q} = 0.
+
+    Finally, the task in :math:`\\dot{q}_\\mathrm{next}` is:
+
+    .. math::
+
+        J_\\mathrm{CAM} \\dot{q}_\\mathrm{next}
+        = J_\\mathrm{CAM} \\dot{q} - \\frac12 \\delta t \\dot{q}^T
+        H_\\mathrm{CAM} \\dot{q}
+
+    Note how there are two occurrences of :math:`J_\\mathrm{CAM}`: one in the
+    task residual, and the second in the task Jacobian.
     """
 
     def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
@@ -424,7 +455,7 @@ class PendulumModeTask(Task):
             qd = robot.qd
             J_cam = robot.compute_cam_jacobian()
             H_cam = robot.compute_cam_hessian()  # computation intensive :(
-            return dot(J_cam, qd) - dt * dot(qd, dot(H_cam, qd))
+            return dot(J_cam, qd) - .5 * dt * dot(qd, dot(H_cam, qd))
 
         def jacobian():
             return robot.compute_cam_jacobian()
