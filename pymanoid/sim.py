@@ -201,44 +201,62 @@ class Simulation(object):
         self.env.SetViewer(plugin)
         self.viewer = self.env.GetViewer()
         self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
-        self.set_camera_back()
+        self.set_camera_back(x=-3, y=0, z=0.7)
 
-    def set_camera_back(self, x=-3., y=0., z=0.7):
+    def set_camera_back(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0,  0, 1, x],
             [-1, 0, 0, y],
             [0, -1, 0, z],
             [0,  0, 0, 1.]])
 
-    def set_camera_bottom(self, x=0., y=0., z=-2.):
+    def set_camera_bottom(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0, -1, 0, x],
             [1,  0, 0, y],
             [0,  0, 1, z],
             [0,  0, 0, 1]])
 
-    def set_camera_front(self, x=3., y=0., z=0.7):
+    def set_camera_front(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0,  0, -1, x],
             [1,  0,  0, y],
             [0, -1,  0, z],
             [0,  0,  0, 1.]])
 
-    def set_camera_left(self, x=0., y=3., z=0.7):
+    def set_camera_left(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [-1, 0,  0, x],
             [0,  0, -1, y],
             [0, -1,  0, z],
             [0,  0,  0, 1.]])
 
-    def set_camera_right(self, x=0., y=-3., z=0.7):
+    def set_camera_right(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [1,  0,  0, x],
             [0,  0, 1, y],
             [0, -1, 0, z],
             [0,  0, 0, 1.]])
 
-    def set_camera_top(self, x=0., y=0., z=3.):
+    def set_camera_top(self, x=None, y=None, z=None):
+        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
+        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
+        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0, -1,  0, x],
             [-1, 0,  0, y],

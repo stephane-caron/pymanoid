@@ -740,7 +740,8 @@ class Humanoid(Robot):
 
     def show_com(self):
         self.__show_com = True
-        self.__com_handle = draw_point(self.com, pointsize=0.0005 * self.mass)
+        self.__com_handle = draw_point(
+            self.com, pointsize=0.0005 * self.mass, color='r')
 
     def hide_com(self):
         self.__show_com = False
