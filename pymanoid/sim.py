@@ -142,6 +142,11 @@ class Simulation(object):
         for _ in xrange(n):
             t0 = time.time()
             for process in self.processes:
+                if not hasattr(process, 'paused'):
+                    most_likely_explanation = \
+                        "did '%s' " % type(process).__name__ + \
+                        "forget to call its parent constructor?"
+                    raise AttributeError(most_likely_explanation)
                 if not process.paused:
                     if process._log_comp_times:
                         t0i = time.time()
