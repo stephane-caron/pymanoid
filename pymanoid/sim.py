@@ -190,11 +190,12 @@ class Simulation(object):
 
     def set_viewer(self, plugin='qtcoin'):
         """
-        Set OpenRAVE viewer.
+        Open OpenRAVE viewer.
 
-        INPUT:
-
-        - ``plugin`` -- (optional) viewer plugin name, e.g. 'qtcoin' or 'qtosg'
+        Parameters
+        ----------
+        plugin : string, optional
+            Viewer plugin name ('qtcoin' or 'qtosg'), defaults to 'qtcoin'.
         """
         if self.viewer is not None:
             raise Exception("viewer is already set")

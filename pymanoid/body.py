@@ -213,7 +213,7 @@ class Body(object):
 
     @property
     def R(self):
-        """Rotation matrix `R`."""
+        """Rotation matrix `R` from local to world coordinates."""
         return self.T[0:3, 0:3]
 
     @property
@@ -403,50 +403,111 @@ class Body(object):
         self.set_pose(pose)
 
     def remove(self):
-        """Remove body from OpenRAVE environment."""
+        """
+        Remove body from OpenRAVE environment.
+        """
         env = get_openrave_env()
         with env:
             env.Remove(self.rave)
 
     def __del__(self):
-        """Add body removal to garbage collection step (effective)."""
+        """
+        Add body removal to garbage collection step (effective).
+        """
         self.remove()
 
     def apply_twist(self, v, omega, dt):
         """
         Apply a twist [v, omega] defined in the local coordinate frame.
 
-        INPUT:
-
-        - ``v`` -- linear velocity in local frame
-        - ``omega`` -- angular velocity in local frame
-        - ``dt`` -- duration of twist application
+        Parameters
+        ----------
+        v : array, shape=(3,)
+            Linear velocity in local frame.
+        omega : array, shape=(3,)
+            Angular velocity in local frame.
+        dt : scalar
+            Duration of twist application in [s].
         """
         self.set_pos(self.p + v * dt)
         self.set_rotation_matrix(self.R + dot(crossmat(omega), self.R) * dt)
 
 
+class Manipulator(Body):
+
+    """
+    Manipulators are special bodies with an end-effector property.
+
+    Parameters
+    ----------
+    manipulator : openravepy.KinBody
+        OpenRAVE manipulator object.
+    pos : array, shape=(3,), optional
+        Initial position in inertial frame.
+    rpy : array, shape=(3,), optional
+        Initial orientation in inertial frame.
+    pose : array, shape=(7,), optional
+        Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
+        the same time.
+    color : char, optional
+        Color code in `Matplotlib convention
+        <http://matplotlib.org/api/colors_api.html>`_.
+    visible : bool, optional
+        Initial visibility.
+    transparency : double, optional
+        Transparency value from 0 (opaque) to 1 (invisible).
+    name : string, optional
+        Body name in OpenRAVE scope.
+    """
+
+    def __init__(self, rave_manipulator, pos=None, rpy=None, pose=None,
+                 color=None, visible=True, transparency=None):
+        super(Manipulator, self).__init__(
+            rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
+            visible=visible)
+        self.end_effector = rave_manipulator.GetEndEffector()
+
+    @property
+    def index(self):
+        """
+        Index used in Jacobian and Hessian computations.
+        """
+        return self.end_effector.GetIndex()
+
+
 class Box(Body):
+
+    """
+    Rectangular box.
+
+    Parameters
+    ----------
+    X : scalar
+        Box half-length in [m].
+    Y : scalar
+        Box half-width in [m].
+    Z : scalar
+        Box half-height in [m].
+    pos : array, shape=(3,)
+        Initial position in the world frame.
+    rpy : array, shape=(3,)
+        Initial orientation in the world frame.
+    pose : array, shape=(7,)
+        Initial pose in the world frame.
+    color : char
+        Color letter in ['r', 'g', 'b'].
+    visible : bool
+        Initial visibility.
+    transparency : scalar, optional
+        Transparency value from 0 for opaque to 1 for invisible.
+    name : string, optional
+        Name of the object in the OpenRAVE GUI.
+    dZ : scalar, optional
+        Shift in box normal coordinates used to make Contact slabs.
+    """
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
                  visible=True, transparency=None, name=None, dZ=0.):
-        """
-        Create a new rectangular box.
-
-        INPUT:
-
-        - ``X`` -- box half-length
-        - ``Y`` -- box half-width
-        - ``Z`` -- box half-height
-        - ``pos`` -- initial position in inertial frame
-        - ``rpy`` -- initial orientation in inertial frame
-        - ``color`` -- color letter in ['r', 'g', 'b']
-        - ``name`` -- object's name (optional)
-        - ``pose`` -- initial pose (supersedes pos and rpy)
-        - ``visible`` -- initial box visibility
-        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
-        - ``dZ`` -- special value used to make Contact slabs
-        """
         self.X = X
         self.Y = Y
         self.Z = Z
@@ -463,22 +524,31 @@ class Box(Body):
 
 class Cube(Box):
 
+    """
+    Cube.
+
+    Parameters
+    ----------
+    size : scalar
+        Half-length of a side of the cube in [m].
+    pos : array, shape=(3,)
+        Initial position in the world frame.
+    rpy : array, shape=(3,)
+        Initial orientation in the world frame.
+    pose : array, shape=(7,)
+        Initial pose in the world frame.
+    color : char
+        Color letter in ['r', 'g', 'b'].
+    visible : bool
+        Initial visibility.
+    transparency : scalar, optional
+        Transparency value from 0 for opaque to 1 for invisible.
+    name : string, optional
+        Name of the object in the OpenRAVE GUI.
+    """
+
     def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
                  visible=True, transparency=None, name=None):
-        """
-        Create a new cube.
-
-        INPUT:
-
-        - ``size`` -- half-length of a side of the cube
-        - ``pos`` -- initial position in inertial frame
-        - ``rpy`` -- initial orientation in inertial frame
-        - ``pose`` -- initial pose (supersedes pos and rpy)
-        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
-        - ``visible`` -- initial box visibility
-        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
-        - ``name`` -- object's name (optional)
-        """
         super(Cube, self).__init__(
             size, size, size, pos=pos, rpy=rpy, color=color, name=name,
             pose=pose, visible=visible, transparency=transparency)
@@ -486,22 +556,27 @@ class Cube(Box):
 
 class Point(Cube):
 
-    def __init__(self, pos=None, size=0.01, color='r', visible=True,
+    """
+    Points represented by cubes with a default size.
+
+    Parameters
+    ----------
+    pos : array, shape=(3,)
+        Initial position in the world frame.
+    size : scalar, optional
+        Half-length of a side of the cube in [m].
+    color : char
+        Color letter in ['r', 'g', 'b'].
+    visible : bool
+        Initial visibility.
+    transparency : scalar, optional
+        Transparency value from 0 for opaque to 1 for invisible.
+    name : string, optional
+        Name of the object in the OpenRAVE GUI.
+    """
+
+    def __init__(self, pos, size=0.01, color='r', visible=True,
                  transparency=None, name=None):
-        """
-        Points are simply cubes with a default size.
-
-        INPUT:
-
-        - ``pos`` -- (optional) initial position in inertial frame
-        - ``size`` -- (optional) cube size, defaults to 1 cm
-        - ``color`` -- color in matplotlib format ('r', 'g', 'b', 'm', etc.)
-        - ``visible`` -- initial box visibility
-        - ``transparency`` -- (optional) from 0 for opaque to 1 for invisible
-        - ``name`` -- object's name (optional)
-        """
-        if pos is None:
-            pos = [0., 0., 0.]
         super(Point, self).__init__(
             size, pos=pos, color=color, visible=visible,
             transparency=transparency, name=name)
@@ -526,10 +601,12 @@ class Point(Cube):
         """
         Euler integration of constant acceleration ``pdd`` over duration ``dt``.
 
-        INPUT:
-
-        - ``pdd`` -- 3D acceleration vector
-        - ``dt`` -- duration in [s]
+        Parameters
+        ----------
+        pdd : array, shape=(3,)
+            3D acceleration vector.
+        dt : scalar
+            Duration in [s].
         """
         self.set_pos(self.p + (self.pd + .5 * pdd * dt) * dt)
         self.set_velocity(self.pd + pdd * dt)
@@ -537,30 +614,28 @@ class Point(Cube):
 
 class PointMass(Point):
 
-    def __init__(self, pos, mass, *args, **kwargs):
-        """
-        A point-mass is a simple cube with size proportional to its mass.
+    """
+    Point with a mass property and size proportional to it.
 
-        INPUT:
-
-        - ``pos`` -- initial position in inertial frame
-        - ``mass`` -- total mass in [kg]
-        """
+    Parameters
+    ----------
+    pos : array, shape=(3,)
+        Initial position in the world frame.
+    mass : scalar
+        Total mass in [kg].
+    color : char
+        Color letter in ['r', 'g', 'b'].
+    visible : bool
+        Initial visibility.
+    transparency : scalar, optional
+        Transparency value from 0 for opaque to 1 for invisible.
+    name : string, optional
+        Name of the object in the OpenRAVE GUI.
+    """
+    def __init__(self, pos, mass, color='r', visible=True, transparency=None,
+                 name=None):
         size = max(5e-3, 6e-4 * mass)
-        super(PointMass, self).__init__(pos, size, *args, **kwargs)
+        super(PointMass, self).__init__(
+            pos, size, color=color, visible=visible, transparency=transparency,
+            name=name)
         self.mass = mass
-
-
-class Manipulator(Body):
-
-    def __init__(self, rave_manipulator, color=None, pos=None, rpy=None,
-                 pose=None, visible=True, transparency=None):
-        super(Manipulator, self).__init__(
-            rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
-            visible=visible)
-        self.end_effector = rave_manipulator.GetEndEffector()
-
-    @property
-    def index(self):
-        """Notably used to compute jacobians and hessians."""
-        return self.end_effector.GetIndex()
