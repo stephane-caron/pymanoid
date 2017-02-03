@@ -33,9 +33,9 @@ class PointMassWrenchDrawer(Process):
 
     Parameters
     ----------
-    pm : PointMass
+    point_mass : PointMass
         Point-mass to which forces are applied.
-    cs : ContactSet
+    contact_set : ContactSet
         Set of contacts providing interaction forces.
     scale : scalar
         Force-to-distance conversion ratio in [m] / [N].
@@ -43,24 +43,26 @@ class PointMassWrenchDrawer(Process):
 
     KO_COLOR = [.8, .4, .4]
 
-    def __init__(self, pm, cs, scale=0.0025):
+    def __init__(self, point_mass, contact_set, scale=0.0025):
         super(PointMassWrenchDrawer, self).__init__()
-        self.cs = cs
+        self.contact_set = contact_set
         self.handles = []
         self.last_bkgnd_switch = None
-        self.pm = pm
+        self.point_mass = point_mass
         self.scale = scale
 
     def find_supporting_wrenches(self, gravity):
-        p, mass, pdd = self.pm.p, self.pm.mass, self.pm.pdd
+        mass = self.point_mass.mass
+        p = self.point_mass.p
+        pdd = self.point_mass.pdd
         wrench = hstack([mass * (pdd - gravity), zeros(3)])
-        contact_set = self.cs() if callable(self.cs) else self.cs
-        support = contact_set.find_supporting_wrenches(wrench, p)
+        support = self.contact_set.find_supporting_wrenches(wrench, p)
         return support
 
     def on_tick(self, sim):
         """Find supporting contact forces at each COM acceleration update."""
-        if self.pm.pdd is None:  # needs to be stored by the user
+        print "coucou"
+        if self.point_mass.pdd is None:  # needs to be stored by the user
             return
         support = self.find_supporting_wrenches(sim.gravity)
         if not support:
@@ -82,12 +84,12 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
 
     def __init__(self, pm, cs, scale=0.0025):
         super(StaticWrenchDrawer, self).__init__(pm, cs, scale)
-        pm.pdd = zeros((3,))
+        self.point_mass.pdd = zeros((3,))
 
     def find_supporting_wrenches(self, gravity):
-        p, mass = self.pm.p, self.pm.mass
-        contact_set = self.cs() if callable(self.cs) else self.cs
-        support = contact_set.find_static_supporting_wrenches(p, mass)
+        mass = self.point_mass.mass
+        p = self.point_mass.p
+        support = self.contact_set.find_static_supporting_wrenches(p, mass)
         return support
 
 

@@ -35,6 +35,7 @@ from sim import Process
 from sim import Simulation
 from stance import Stance
 
+import drawers
 import robots
 
 __all__ = [
@@ -54,6 +55,7 @@ __all__ = [
     'Robot',
     'Simulation',
     'Stance',
+    'drawers',
     'robots',
     'solve_lp',
     'solve_qp',
