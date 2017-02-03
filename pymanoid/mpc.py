@@ -125,7 +125,7 @@ class PreviewControl(object):
             International Conference on Intelligent Robots and Systems, Chicago,
             IL, 2014, pp. 4030-4035.
             `[doi]
-            <http://dx.doi.org/10.1109/IROS.2014.6943129>`__
+            <http://doai.io/10.1109/IROS.2014.6943129>`__
             `[pdf]
             <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`__
         """

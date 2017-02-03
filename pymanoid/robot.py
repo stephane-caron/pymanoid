@@ -416,7 +416,7 @@ class Robot(object):
         """
         Wrapper around OpenRAVE's ComputeInverseDynamics function, which
         implements the Recursive Newton-Euler algorithm by Walker & Orin
-        <https://dx.doi.org/10.1115/1.3139699>.
+        <http://doai.io/10.1115/1.3139699>.
 
         The function returns three terms tm, tc and tg such that
 

@@ -191,7 +191,7 @@ class Contact(Box):
             humanoid robots: Closed-form formulae of the contact wrench cone for
             rectangular support areas." 2015 IEEE International Conference on
             Robotics and Automation (ICRA).
-            `[doi] <https://doi.org/10.1109/ICRA.2015.7139910>`__
+            `[doi] <http://doai.io/10.1109/ICRA.2015.7139910>`__
             `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
         """
         X, Y = self.X, self.Y

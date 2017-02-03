@@ -182,7 +182,7 @@ class PolytopeProjector(PolyhedronProjector):
 
         REFERENCES:
 
-        .. [BL08] http://dx.doi.org/10.1109/TRO.2008.2001360
+        .. [BL08] http://doai.io/10.1109/TRO.2008.2001360
         """
         A, b, C, d, E, f = self._prepare()
 
