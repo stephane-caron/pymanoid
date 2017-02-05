@@ -122,22 +122,21 @@ class Robot(object):
         """
         Get the couple (q_min, q_max) of DOF limits.
 
-        INPUT:
+        Parameters
+        ----------
+        dof_indices : list of DOF indexes, optional
+            Only compute limits for these indices.
 
-        - ``dof_indices`` -- (optional) only compute limits for these indices
+        Notes
+        -----
+        This OpenRAVE function is wrapped because it is too slow in practice. On
+        my machine:
 
-        .. NOTE::
+            In [1]: %timeit robot.get_dof_limits()
+            1000000 loops, best of 3: 237 ns per loop
 
-            This OpenRAVE function is wrapped because it is too slow in
-            practice. On my machine:
-
-                In [1]: %timeit robot.get_dof_limits()
-                1000000 loops, best of 3: 205 ns per loop
-
-                In [2]: %timeit robot.rave.GetDOFLimits()
-                100000 loops, best of 3: 2.59 µs per loop
-
-            Recall that this function is called at every IK step.
+            In [2]: %timeit robot.rave.GetDOFLimits()
+            100000 loops, best of 3: 9.24 µs per loop
         """
         q_min, q_max = self.q_min, self.q_max
         if dof_indices is not None:
