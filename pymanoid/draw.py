@@ -127,17 +127,22 @@ def draw_line(start_point, end_point, color='g', linewidth=1.):
     """
     Draw a line between two points.
 
-    INPUT:
+    Parameters
+    ----------
+    start_point : array, shape=(3,)
+        One end of the line, in world frame coordinates.
+    end_point : array, shape=(3,)
+        Other end of the line, in world frame coordinates.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
+    linewidth : scalar
+        Thickness of drawn line.
 
-    - ``start_point`` -- one end of the line
-    - ``end_point`` -- other end of the line
-    - ``color`` -- (default: 'g') matplotlib color letter or RGB triplet
-    - ``linewidth`` -- thickness of drawn line
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handle : openravepy.GraphHandle
+        OpenRAVE handle that must be stored in some variable, otherwise the
+        drawn object will vanish instantly.
     """
     if type(color) is str:
         color = matplotlib_to_rgb(color)
@@ -149,15 +154,18 @@ def draw_point(point, color='g', pointsize=0.025):
     """
     Draw a point.
 
-    INPUT:
+    Parameters
+    ----------
+    point : array, shape=(3,)
+        Point coordinates in the world frame.
+    pointsize : scalar, optional
+        Radius of the drawn sphere in [m].
 
-    - ``point`` -- 3D vector of point coordinates
-    - ``pointsize`` -- point radius in [m]
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handle : openravepy.GraphHandle
+        OpenRAVE handle that must be stored in some variable, otherwise the
+        drawn object will vanish instantly.
     """
     return draw_points([point], color, pointsize)
 
@@ -166,15 +174,18 @@ def draw_points(points, color='g', pointsize=0.05):
     """
     Draw a list of points.
 
-    INPUT:
+    Parameters
+    ----------
+    point : list of arrays
+        List of point coordinates in the world frame.
+    pointsize : scalar, optional
+        Radius of the drawn sphere in [m].
 
-    - ``points`` -- list of 3D vectors of point coordinates
-    - ``pointsize`` -- point radius in [m]
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handle : openravepy.GraphHandle
+        OpenRAVE handle that must be stored in some variable, otherwise the
+        drawn object will vanish instantly.
     """
     if type(color) is str:
         color = matplotlib_to_rgba(color, alpha=1.)
