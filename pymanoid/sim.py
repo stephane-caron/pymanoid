@@ -19,6 +19,7 @@
 
 import openravepy
 import time
+import traceback
 
 from numpy import array
 from os import popen, system
@@ -141,32 +142,46 @@ class Simulation(object):
         """Perform one simulation step."""
         for _ in xrange(n):
             t0 = time.time()
-            for process in self.processes:
-                if not hasattr(process, 'paused'):
-                    most_likely_explanation = \
-                        "did '%s' " % type(process).__name__ + \
-                        "forget to call its parent constructor?"
-                    raise AttributeError(most_likely_explanation)
-                if not process.paused:
-                    if process._log_comp_times:
-                        t0i = time.time()
-                        process.on_tick(self)
-                        pname = type(process).__name__
-                        self.log_comp_time(pname, time.time() - t0i)
-                    else:  # just do the thing
-                        process.on_tick(self)
+            self._tick_processes()
             rem_time = self.dt - (time.time() - t0)
             if rem_time < 0.:
                 print "sim.step(%d): warning: cycle time budget" % n,
                 print "(%.1f ms) depleted!" % (self.dt * 1000.)
-            if self.extras:
-                for process in self.extras:
-                    if not process.paused:
-                        process.on_tick(self)
-                rem_time = self.dt - (time.time() - t0)
+            self._tick_extras()
+            rem_time = self.dt - (time.time() - t0)
             if rem_time > 1e-4:
                 time.sleep(rem_time)
             self.tick_time += 1
+
+    def _tick_processes(self):
+        for process in self.processes:
+            if not hasattr(process, 'paused'):
+                most_likely_explanation = \
+                    "did '%s' " % type(process).__name__ + \
+                    "forget to call its parent constructor?"
+                raise AttributeError(most_likely_explanation)
+            if not process.paused:
+                if process._log_comp_times:
+                    t0i = time.time()
+                    process.on_tick(self)
+                    pname = type(process).__name__
+                    self.log_comp_time(pname, time.time() - t0i)
+                else:  # just do the thing
+                    process.on_tick(self)
+
+    def _tick_extras(self):
+        if not self.extras:
+            return
+        for process in self.extras:
+            try:
+                if not process.paused:
+                    process.on_tick(self)
+            except Exception:
+                msg = "SIMULATION: exception raised by extra process '%s'" % \
+                    type(process).__name__
+                print "\n%s\n%s" % ("-" * len(msg), msg)
+                traceback.print_exc()
+                print "%s\n" % ("-" * len(msg))
 
     """
     Threading
