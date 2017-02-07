@@ -35,8 +35,8 @@ class Task(object):
         Function returning the task Jacobian when called with no argument.
     residual : function
         Function returning the task residual when called with no argument.
-    weight : scalar
-        Task weight used in IK cost function.
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
@@ -54,7 +54,7 @@ class Task(object):
     introduction to the concepts used here.
     """
 
-    def __init__(self, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, weight=None, gain=0.85, exclude_dofs=None):
         self._exclude_dofs = [] if exclude_dofs is None else exclude_dofs
         self.gain = gain
         self.weight = weight
@@ -117,15 +117,16 @@ class COMTask(Task):
         Targetted robot.
     target : list or array or Point
         Coordinates or the targetted COM position.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, target, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, target, weight=None, gain=0.85,
+                 exclude_dofs=None):
         super(COMTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'com'
         self.robot = robot
@@ -160,9 +161,9 @@ class COMAccelTask(Task):
         Targetted robot.
     target : list or array or Point
         Coordinates or the targetted COM position.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
@@ -181,7 +182,7 @@ class COMAccelTask(Task):
     See the documentation of the PendulumModeTask for a detailed derivation.
     """
 
-    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(COMAccelTask, self).__init__(weight, gain, exclude_dofs)
         self._comdd = zeros(3)
         self.name = 'com'
@@ -211,15 +212,15 @@ class DOFTask(Task):
         DOF index or string of DOF identifier.
     dof_ref : scalar
         Reference DOF value.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
-    weight : scalar
-        Task weight used in IK cost function.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, dof_id, dof_ref, weight, gain=0.85,
+    def __init__(self, robot, dof_id, dof_ref, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(dof_id) is str:
@@ -252,15 +253,15 @@ class LinkPosTask(Task):
         One of the Link objects in the kinematic chain of the robot.
     target : list or array (shape=(3,)) or pymanoid.Body
         Coordinates of the link's target.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, link, target, weight, gain=0.85,
+    def __init__(self, robot, link, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
@@ -300,15 +301,15 @@ class LinkPoseTask(Task):
         One of the Link objects in the kinematic chain of the robot.
     target : list or array (shape=(7,)) or pymanoid.Body
         Pose coordinates of the link's target.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, link, target, weight, gain=0.85,
+    def __init__(self, robot, link, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
@@ -348,9 +349,9 @@ class MinAccelTask(Task):
     ----------
     robot : Robot
         Targetted robot.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
@@ -363,7 +364,7 @@ class MinAccelTask(Task):
     discrete approximation of :math:`\\ddot{q}`.
     """
 
-    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinAccelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'minaccel'
@@ -385,15 +386,15 @@ class MinCAMTask(Task):
     ----------
     robot : Humanoid
         Targetted robot.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinCAMTask, self).__init__(weight, gain, exclude_dofs)
         self.__zero_cam = zeros((3,))
         self.name = 'mincam'
@@ -415,15 +416,15 @@ class MinVelTask(Task):
     ----------
     robot : Robot
         Targetted robot.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'minvel'
@@ -446,9 +447,9 @@ class PendulumModeTask(Task):
     ----------
     robot : Humanoid
         Targetted robot.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
@@ -506,7 +507,7 @@ class PendulumModeTask(Task):
     task residual, and the second in the task Jacobian.
     """
 
-    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(PendulumModeTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'pendulum'
         self.robot = robot
@@ -533,15 +534,15 @@ class PostureTask(Task):
         Targetted robot.
     q_ref : array
         Vector of reference joint angles.
-    weight : scalar
-        Task weight used in IK cost function.
-    gain : scalar
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
         Proportional gain of the task.
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, q_ref, weight, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, q_ref, weight=None, gain=0.85, exclude_dofs=None):
         super(PostureTask, self).__init__(weight, gain, exclude_dofs)
         J = eye(robot.nb_dofs)
         if exclude_dofs is None:
