@@ -23,6 +23,7 @@ from os.path import basename, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
+from misc import norm
 from rotations import crossmat, rpy_from_quat
 from sim import Process, get_openrave_env
 
@@ -175,11 +176,14 @@ class Robot(object):
         """
         Set the joint values of the robot.
 
-        INPUT:
-
-        - ``q`` -- vector of joint angle values (ordered by DOF indices)
-        - ``dof_indices`` -- (optional) list of DOF indices to update
-        - ``clamp`` -- correct ``q`` if it exceeds joint limits
+        Parameters
+        ----------
+        q : list or array
+           Joint angle values, ordered by DOF indices.
+        dof_indices : list, optional
+            List of DOF indices to update.
+        clamp : bool
+            Correct joint angles when exceeding joint limits.
         """
         if clamp:
             q = minimum(maximum(self.q_min, q), self.q_max)
@@ -188,6 +192,16 @@ class Robot(object):
         return self.rave.SetDOFValues(q)
 
     def set_dof_velocities(self, qd, dof_indices=None):
+        """
+        Set the joint velocities of the robot.
+
+        Parameters
+        ----------
+        qd : list or array
+           Joint angle velocities, ordered by DOF indices.
+        dof_indices : list, optional
+            List of DOF indices to update.
+        """
         check_dof_limits = 0  # CLA_Nothing
         if dof_indices is not None:
             return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
@@ -200,19 +214,24 @@ class Robot(object):
 
     def compute_link_jacobian(self, link, p=None):
         """
-        Compute the jacobian J(q) of the reference frame of the link, i.e. the
-        velocity of the link frame is given by:
+        Compute the Jacobian `J(q)` of a frame attached to a given link, the
+        velocity of this frame being given by:
 
-            [v omega] = J(q) * qd
+        .. math::
 
-        where v and omega are the linear and angular velocities of the link
-        frame, respectively.
+            \\left[\\begin{array}{c} v_p \\\\ \\varomega} \\end{array}\\right]
+            = J(q) \\dot{q}
 
-        INPUT:
+        where :math:`v_p` is the linear velocity of the link at point `p`
+        (default is the origin of the link frame) and :math:`\\varomega` is the
+        angular velocity of the link.
 
-        - ``link`` -- link index or pymanoid.Link object
-        - ``p`` -- link frame origin (optional: if None, link.p is used)
-        - ``q`` -- vector of joint angles (optional: if None, robot.q is used)
+        Parameters
+        ----------
+        link : integer or pymanoid.Link
+            Link identifier: either a link index, or the Link object directly.
+        p : array
+            Point coordinates in the world frame.
         """
         link_index = link if type(link) is int else link.index
         p = p if type(link) is int else link.p
@@ -222,6 +241,25 @@ class Robot(object):
         return J
 
     def compute_link_pose_jacobian(self, link):
+        """
+        Compute the pose Jacobian of a given link, i.e. the matrix `J(q)` such
+        that:
+
+        .. math::
+
+            \\left[\\begin{array}{c} \\dot{\\xi} \\\\ v_L} \\end{array}\\right]
+            = J(q) \\dot{q},
+
+        with :math:`\\xi` a quaternion for the link orientation and :math:`v_L =
+        \\dot{p}_L` the velocity of the origin `L` of the link frame, so that
+        the link pose is :math:`[\\xi p_L]` and the left-hand side of the
+        equation above is its time-derivative.
+
+        Parameters
+        ----------
+        link : integer or pymanoid.Link
+            Link identifier: either a link index, or the Link object directly.
+        """
         J_trans = self.rave.CalculateJacobian(link.index, link.p)
         or_quat = link.rave.GetTransformPose()[:4]  # don't use link.pose
         J_quat = self.rave.CalculateRotationJacobian(link.index, or_quat)
@@ -232,13 +270,14 @@ class Robot(object):
 
     def compute_link_pos_jacobian(self, link, p=None):
         """
-        Compute the position Jacobian of a point p on a given robot link.
+        Compute the position Jacobian of a point `p` on a given robot link.
 
-        INPUT:
-
-        - ``link`` -- link index or pymanoid.Link object
-        - ``p`` -- point coordinates in world frame (optional, default is the
-                   origin of the link reference frame)
+        Parameters
+        ----------
+        link : integer or pymanoid.Link
+            Link identifier: either a link index, or the Link object directly.
+        p : array
+            Point coordinates in the world frame.
         """
         link_index = link if type(link) is int else link.index
         p = link.p if p is None else p
@@ -247,18 +286,24 @@ class Robot(object):
 
     def compute_link_hessian(self, link, p=None):
         """
-        Compute the hessian H(q) of the reference frame of the link, i.e. the
-        acceleration of the link frame is given by:
+        Compute the Hessian `H(q)` of a frame attached to a robot link, the
+        acceleration of which is given by:
 
-            [a omegad] = J(q) * qdd + qd.T * H(q) * qd
+        .. math::
 
-        where a and omegad are the linear and angular accelerations of the
-        frame, and J(q) is the frame jacobian.
+            \\left[\\begin{array}{c} a_p \\\\ \\dot{\\varomega}
+            \\end{array}\\right] = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}
 
-        INPUT:
+        where :math:`a_p` is the linear acceleration of the point `p` (default
+        is the origin of the link frame) and :math:`\\dot{\\varomega}` is the
+        angular accelerations of the frame.
 
-        - ``link`` -- link index or pymanoid.Link object
-        - ``p`` -- link frame origin (optional: if None, link.p is used)
+        Parameters
+        ----------
+        link : integer or pymanoid.Link
+            Link identifier: either a link index, or the Link object directly.
+        p : array
+            Point coordinates in the world frame.
         """
         link_index = link if type(link) is int else link.index
         p = p if type(link) is int else link.p
@@ -269,13 +314,19 @@ class Robot(object):
 
     def compute_link_pos_hessian(self, link, p=None):
         """
-        Compute the hessian H(q) of a point p on ``link``.
+        Compute the translation Hessian H(q) of a point `p` on ``link``, i.e.
+        the matrix such that the acceleration of `p` is given by:
 
-        INPUT:
+        .. math::
 
-        - ``link`` -- link index or pymanoid.Link object
-        - ``p`` -- point coordinates in world frame (optional, default is the
-                   origin of the link reference frame)
+            a_p = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}.
+
+        Parameters
+        ----------
+        link : integer or pymanoid.Link
+            Link identifier: either a link index, or the Link object directly.
+        p : array
+            Point coordinates in the world frame.
         """
         link_index = link if type(link) is int else link.index
         p = p if type(link) is int else link.p
@@ -291,10 +342,12 @@ class Robot(object):
         """
         Initialize the IK solver.
 
-        INPUT:
-
-        - ``active_dofs`` -- list of DOFs used by the IK
-        - ``doflim_gain`` -- gain between 0 and 1 used for DOF limits
+        Parameters
+        ----------
+        active_dofs : list
+            Specifies DOFs used by the IK.
+        doflim_gain : scalar
+            Gain between 0 and 1 used for DOF limits.
         """
         from ik import VelocitySolver
 
@@ -309,10 +362,12 @@ class Robot(object):
         """
         Apply velocities computed by inverse kinematics.
 
-        INPUT:
-
-        - ``dt`` -- time step in [s]
-        - ``method`` -- choice between 'fast' and 'safe'
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
+        method : string, optional
+            Choice between 'fast' and 'safe' (default).
         """
         qd = self.ik.compute_velocity(dt, method)
         self.set_dof_values(self.q + qd * dt, clamp=True)
@@ -323,22 +378,29 @@ class Robot(object):
         """
         Compute joint-angles q satisfying all kinematic constraints at best.
 
-        INPUT:
+        Parameters
+        ----------
+        max_it : integer, optional
+            Maximum number of solver iterations.
+        conv_tol : scalar, optional
+            Stop when cost improvement is less than this threshold.
+        dt : scalar, optional
+            Time step in [s].
+        debug : bool, optional
+            Print extra debug info.
+        method : string, optional
+            Either 'fast', or 'safe' for more joint-limit avoidance
 
-        - ``max_it`` -- maximum number of solver iterations
-        - ``conv_tol`` -- stop when cost improvement is less than this threshold
-        - ``dt`` -- time step for the differential IK
-        - ``debug`` -- print extra debug info
-        - ``method`` -- 'fast', or 'safe' for more joint-limit avoidance
+        Returns
+        -------
+        (itnum, cost) : (integer, scalar)
+            Number of iterations taken, followed by final IK cost.
 
-        OUTPUT:
-
-        Pair (number of iterations taken, final IK cost).
-
-        .. NOTE::
-
-            Good values of dt depend on the weights of the IK tasks. Small
-            values make convergence slower, while big values may jeopardize it.
+        Note
+        ----
+        Good values of dt depend on the weights of the IK tasks. Small values
+        make convergence slower, while big values make the optimization unstable
+        (in which case there may be no convergence at all).
         """
         if debug:
             print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
