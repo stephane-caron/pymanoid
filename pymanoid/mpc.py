@@ -55,7 +55,7 @@ class PreviewControl(object):
       :math:`w_x`
     - :math:`\\sum_k \\|u_k\\|^2` with weight :math:`w_u`
 
-    Where the minimization is weighted, not prioritized.
+    Where the minimization is weighted (not prioritized).
 
     Parameters
     ----------
@@ -83,6 +83,15 @@ class PreviewControl(object):
     wu : scalar, optional, default=1.
         Weight :math:`w_u` on cumulated controls
         :math:`\\sum_k \\|u_k\\|^2`.
+
+    Notes
+    -----
+    In numerical analysis, there are basically three classes of methods for
+    solving `boundary value problems
+    <https://en.wikipedia.org/wiki/Boundary_value_problem>`_: single shooting,
+    multiple shooting and collocation. The solver implemented in this class
+    follows the `single shooting method
+    <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 
     def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
