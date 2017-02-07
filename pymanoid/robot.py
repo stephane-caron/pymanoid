@@ -358,7 +358,7 @@ class Robot(object):
         self.ik = VelocitySolver(self, active_dofs, doflim_gain)
         self.ik_process = IKProcess()
 
-    def step_ik(self, dt, method='safe'):
+    def step_ik(self, dt, method='safe', verbose=False):
         """
         Apply velocities computed by inverse kinematics.
 
@@ -370,6 +370,14 @@ class Robot(object):
             Choice between 'fast' and 'safe' (default).
         """
         qd = self.ik.compute_velocity(dt, method)
+        if verbose:
+            print "\n                TASK      COST",
+            print "\n------------------------------"
+            for task in self.ik.tasks.itervalues():
+                J = task.jacobian()
+                r = task.residual(dt)
+                print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
+            print ""
         self.set_dof_values(self.q + qd * dt, clamp=True)
         self.set_dof_velocities(qd)
 
