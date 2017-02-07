@@ -149,6 +149,55 @@ class COMTask(Task):
         self.target = target if hasattr(target, 'p') else PointWrap(target)
 
 
+class COMAccelTask(Task):
+
+    """
+    COM acceleration task.
+
+    Parameters
+    ----------
+    robot : Humanoid
+        Targetted robot.
+    target : list or array or Point
+        Coordinates or the targetted COM position.
+    weight : scalar
+        Task weight used in IK cost function.
+    gain : scalar
+        Proportional gain of the task.
+    exclude_dofs : list of integers, optional
+        DOF indices not used by task.
+
+    Notes
+    -----
+    Expanding :math:`\\ddot{x}_G = u` in terms of COM Jacobian and Hessian, the
+    equation of the task is:
+
+    .. math::
+
+        J_\\mathrm{COM} \\dot{q}_\\mathrm{next}
+        = \\frac12 u + J_\\mathrm{COM} \\dot{q} - \\frac12 \\delta t \\dot{q}^T
+        H_\\mathrm{COM} \\dot{q}
+
+    See the documentation of the PendulumModeTask for a detailed derivation.
+    """
+
+    def __init__(self, robot, weight, gain=0.85, exclude_dofs=None):
+        super(COMAccelTask, self).__init__(weight, gain, exclude_dofs)
+        self._comdd = zeros(3)
+        self.name = 'com'
+        self.robot = robot
+
+    def _jacobian(self):
+        return self.robot.compute_com_jacobian()
+
+    def _residual(self, dt):
+        next_comd = self.robot.comd + dt * self._comdd
+        return next_comd
+
+    def update_command(self, comdd):
+        self._comdd = comdd
+
+
 class DOFTask(Task):
 
     """
