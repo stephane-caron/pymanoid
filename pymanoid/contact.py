@@ -63,9 +63,14 @@ class Contact(Box):
             visible=visible, dZ=-self.THICKNESS, name=name)
         if kinetic_friction is None and static_friction is not None:
             kinetic_friction = static_friction
+        v1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
+        v2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
+        v3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
+        v4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         self.kinetic_friction = kinetic_friction
         self.shape = shape
         self.static_friction = static_friction
+        self.vertices = [v1, v2, v3, v4]
 
     """
     Geometry
@@ -103,15 +108,6 @@ class Contact(Box):
             [0,  -z,  y,   1,   0,   0],
             [z,   0, -x,   0,   1,   0],
             [-y,  x,  0,   0,   0,   1]])
-
-    @property
-    def vertices(self):
-        """Vertices of the contact area."""
-        c1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
-        c2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
-        c3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
-        c4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
-        return [c1, c2, c3, c4]
 
     """
     Force Friction Cone
