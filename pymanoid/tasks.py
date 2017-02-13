@@ -185,7 +185,7 @@ class COMAccelTask(Task):
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(COMAccelTask, self).__init__(weight, gain, exclude_dofs)
         self._comdd = zeros(3)
-        self.name = 'com'
+        self.name = 'comaccel'
         self.robot = robot
 
     def _jacobian(self):
@@ -230,7 +230,7 @@ class DOFTask(Task):
         self.__J = J
         self.dof_id = dof_id
         self.dof_ref = dof_ref
-        self.name = 'dof-%d' % dof_id
+        self.name = 'dof%d' % dof_id
         self.robot = robot
 
     def _jacobian(self):

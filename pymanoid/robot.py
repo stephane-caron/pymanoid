@@ -701,35 +701,36 @@ class Humanoid(Robot):
         self.__cam = None
         self.__com = None
         self.__comd = None
+        super(Humanoid, self).set_dof_values(
+            q, dof_indices=dof_indices, clamp=clamp)
         if self.__show_com:
             self.show_com()
         if self.__show_comd:
             self.show_comd()
-        super(Humanoid, self).set_dof_values(
-            q, dof_indices=dof_indices, clamp=clamp)
 
     def set_dof_velocities(self, qd, dof_indices=None):
         self.__cam = None
         self.__comd = None
+        super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
         if self.__show_comd:
             self.show_comd()
-        super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
 
     def set_active_dof_values(self, q_active):
         self.__cam = None
         self.__com = None
         self.__comd = None
-        if self.__com_handle is not None:
-            self.show_com()
-        if self.__comd_handle is not None:
-            self.show_comd()
         super(Humanoid, self).set_active_dof_values(q_active)
+        if self.__show_com:
+            self.show_com()
+        if self.__show_comd:
+            self.show_comd()
 
     def set_active_dof_velocities(self, qd_active):
         self.__cam = None
-        if self.__comd_handle is not None:
-            self.show_comd()
+        self.__comd = None
         super(Humanoid, self).set_active_dof_velocities(qd_active)
+        if self.__show_comd:
+            self.show_comd()
 
     """
     Center Of Mass
