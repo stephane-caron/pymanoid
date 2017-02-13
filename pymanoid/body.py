@@ -53,7 +53,10 @@ class Body(object):
         Body name in OpenRAVE scope.
     """
 
-    count = 0  # counter for anonymous bodies
+    count = 0
+    """
+    Counter for anonymous bodies.
+    """
 
     def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
                  visible=True, transparency=None, name=None):

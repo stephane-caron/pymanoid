@@ -497,15 +497,16 @@ class Robot(object):
 
             tm + tc + tg = F + external_torque
 
-        INPUT:
+        Parameters
+        ----------
+        qdd : array, optional
+            Vector of joint accelerations.
+        external_torque : array, optional
+            Vector of external joint torques.
 
-        ``qdd`` -- (optional) vector of joint accelerations
-        ``external_torque`` -- (optional) vector of external joint torques
-
-        .. NOTE::
-
-            When ``qdd`` is not provided, the value returned for ``tm`` is
-            ``None``.
+        Note
+        ----
+        When ``qdd`` is not provided, the value returned for ``tm`` is ``None``.
         """
         if qdd is None:
             _, tc, tg = self.rave.ComputeInverseDynamics(
@@ -928,6 +929,7 @@ class Humanoid(Robot):
 
     @property
     def cam(self):
+        """Centroidal Angular Momentum."""
         if self.__cam is None:
             self.__cam = self.compute_cam()
         return self.__cam
@@ -945,7 +947,23 @@ class Humanoid(Robot):
         return self.compute_angular_momentum_jacobian(self.com)
 
     def compute_cam_rate(self, qdd):
-        """Compute the time-derivative of the CAM. """
+        """
+        Compute the time-derivative of the CAM.
+
+        Parameters
+        ----------
+        qdd : array
+            Vector of joint accelerations.
+
+        Returns
+        -------
+        cam : array
+            Coordinates of the angular momentum at the COM.
+
+        Note
+        ----
+        This function is not optimized.
+        """
         qd = self.qd
         J = self.compute_cam_jacobian()
         H = self.compute_cam_hessian()
@@ -956,6 +974,16 @@ class Humanoid(Robot):
         Compute the matrix H(q) such that the rate of change of the CAM is
 
             Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd))
+
+        Parameters
+        ----------
+        q : array
+            Vector of joint angles.
+
+        Returns
+        -------
+        H : array
+            Hessian matrix for the centroidal angular-momentum.
         """
         return self.compute_angular_momentum_hessian(self.com)
 
