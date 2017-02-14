@@ -64,6 +64,15 @@ class AvgStdEstimator(object):
         unbiased = sqrt(self.n * 1. / (self.n - 1))
         return unbiased * sqrt(self.x2 / self.n - self.avg ** 2)
 
+    @property
+    def as_comp_times(self, unit='ms'):
+        scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
+        if self.n < 1:
+            return "? %s" % unit
+        elif self.n == 1:
+            return "%.2f %s" % (scale * self.avg, unit)
+        return "%.2f +/- %.2f %s" % (scale * self.avg, scale * self.std, unit)
+
 
 class PointWrap(object):
 
