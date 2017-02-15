@@ -210,8 +210,8 @@ class DOFTask(Task):
         Targetted robot.
     dof_id : string or integer
         DOF index or string of DOF identifier.
-    dof_ref : scalar
-        Reference DOF value.
+    target : scalar
+        Target DOF value.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -220,7 +220,7 @@ class DOFTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, dof_id, dof_ref, weight=None, gain=0.85,
+    def __init__(self, robot, dof_id, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(dof_id) is str:
@@ -229,15 +229,18 @@ class DOFTask(Task):
         J[0, dof_id] = 1.
         self.__J = J
         self.dof_id = dof_id
-        self.dof_ref = dof_ref
         self.name = 'dof%d' % dof_id
         self.robot = robot
+        self.target = target
 
     def _jacobian(self):
         return self.__J
 
     def _residual(self, dt):
-        return array([self.dof_ref - self.robot.q[self.dof_id]]) / dt
+        return array([self.target - self.robot.q[self.dof_id]]) / dt
+
+    def update_target(self, target):
+        self.target = target
 
 
 class LinkPosTask(Task):
