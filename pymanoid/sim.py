@@ -292,8 +292,7 @@ class Simulation(object):
     def read_window_id(self):
         print "Please click on the OpenRAVE window."
         line = popen('/usr/bin/xwininfo | grep "Window id:"').readlines()[0]
-        __window_id__ = "0x%s" % search('0x([0-9a-f]+)', line).group(1)
-        print "Window id:", __window_id__
+        self.window_id = "0x%s" % search('0x([0-9a-f]+)', line).group(1)
 
     def take_screenshot(self, fname):
         if self.window_id is None:
@@ -344,3 +343,23 @@ class Simulation(object):
             total_std += scale * times.std  # worst-case assumption
         print "%20s  ----------------------------------" % ''
         print "%20s: %.2f ms +/- %.2f ms" % ("total", total_avg, total_std)
+
+
+class CameraRecorder(Process):
+
+    def __init__(self, sim, output_folder, fname='video.mp4'):
+        super(CameraRecorder, self).__init__()
+        while output_folder.endswith('/'):
+            output_folder = output_folder[:-1]
+        sim.read_window_id()
+        with open('%s/make_video.sh' % output_folder, 'w') as script:
+            frate = 1. / sim.dt
+            avconv = "avconv -r %f -qscale 1 -i %%05d.png %s" % (frate, fname)
+            script.write("#!/bin/sh\n%s" % avconv)
+        self.frame_index = 0
+        self.output_folder = output_folder
+
+    def on_tick(self, sim):
+        fname = '%s/%05d.png' % (self.output_folder, self.frame_index)
+        sim.take_screenshot(fname)
+        self.frame_index += 1
