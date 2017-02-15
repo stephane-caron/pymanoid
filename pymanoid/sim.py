@@ -26,7 +26,7 @@ from os import popen, system
 from re import search
 from threading import Thread
 
-from misc import AvgStdEstimator
+from misc import TimeStats
 
 
 env = None  # global OpenRAVE environment
@@ -332,18 +332,15 @@ class Simulation(object):
         - ``ctime`` -- computation time in [s] to log
         """
         if pname not in self.comp_times:
-            self.comp_times[pname] = AvgStdEstimator()
+            self.comp_times[pname] = TimeStats()
         self.comp_times[pname].add(ctime)
 
-    def print_comp_times(self):
+    def print_comp_times(self, unit='ms'):
         total_avg, total_std = 0., 0.
-        for (key, estimator) in self.comp_times.iteritems():
-            avg, std, n = estimator.avg, estimator.std, estimator.n
-            avg *= 1000  # in [ms]
-            std *= 1000  # in [ms]
-            print "%20s: %.2f ms +/- %.2f ms over %5d items" % (
-                key, avg, std, n)
-            total_avg += avg
-            total_std += std
+        scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
+        for (key, times) in self.comp_times.iteritems():
+            print "%20d: %s" % (key, times.as_comp_times(unit))
+            total_avg += scale * times.avg  # legit
+            total_std += scale * times.std  # worst-case assumption
         print "%20s  ----------------------------------" % ''
         print "%20s: %.2f ms +/- %.2f ms" % ("total", total_avg, total_std)

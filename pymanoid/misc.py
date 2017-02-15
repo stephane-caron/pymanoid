@@ -22,30 +22,35 @@ from numpy import array, dot, hstack, sqrt
 from rotations import quat_slerp
 
 
-class AvgStdEstimator(object):
+class TimeStats(object):
 
     """
-    Online estimator for the average and standard deviation of a time series of
-    scalar values.
+    Online estimator for various statistics of a time series of scalar values.
     """
 
     def __init__(self):
+        self.n = 0
         self.x = 0.
         self.x2 = 0.
-        self.n = 0
+        self.x_max = None
+        self.x_min = None
 
-    def add(self, v):
+    def add(self, x):
         """
         Add a new value of the time series.
 
         Parameters
         ----------
-        v : scalar
+        x : scalar
             New value.
         """
-        self.x += v
-        self.x2 += v ** 2
+        self.x += x
+        self.x2 += x ** 2
         self.n += 1
+        if self.x_min is None or x < self.x_min:
+            self.x_min = x
+        if self.x_max is None or x > self.x_max:
+            self.x_max = x
 
     @property
     def avg(self):
@@ -64,14 +69,15 @@ class AvgStdEstimator(object):
         unbiased = sqrt(self.n * 1. / (self.n - 1))
         return unbiased * sqrt(self.x2 / self.n - self.avg ** 2)
 
-    @property
-    def as_comp_times(self, unit='ms'):
+    def as_comp_times(self, unit):
         scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
         if self.n < 1:
             return "? %s" % unit
         elif self.n == 1:
             return "%.2f %s" % (scale * self.avg, unit)
-        return "%.2f +/- %.2f %s" % (scale * self.avg, scale * self.std, unit)
+        return "%.2f +/- %.2f %s (max: %.2f %s, min: %.2f %s) over %d items" % (
+            scale * self.avg, scale * self.std, unit, self.x_max, unit,
+            self.x_min, unit, self.n)
 
 
 class PointWrap(object):
