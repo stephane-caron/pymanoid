@@ -22,8 +22,10 @@ import time
 import traceback
 
 from numpy import array
-from os import popen, system
+from os import chmod, popen, system
+from os import stat as fstat
 from re import search
+from stat import S_IEXEC
 from threading import Thread
 
 from misc import TimeStats
@@ -352,10 +354,13 @@ class CameraRecorder(Process):
         while output_folder.endswith('/'):
             output_folder = output_folder[:-1]
         sim.read_window_id()
-        with open('%s/make_video.sh' % output_folder, 'w') as script:
+        script_path = '%s/make_video.sh' % output_folder
+        with open(script_path, 'w') as script:
             frate = 1. / sim.dt
             avconv = "avconv -r %f -qscale 1 -i %%05d.png %s" % (frate, fname)
             script.write("#!/bin/sh\n%s" % avconv)
+        st = fstat(script_path)
+        chmod(script_path, st.st_mode | S_IEXEC)
         self.frame_index = 0
         self.output_folder = output_folder
 
