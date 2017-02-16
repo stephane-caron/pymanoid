@@ -17,10 +17,11 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot, eye, hstack, maximum, minimum, vstack, zeros, bmat, ones
-from optim import solve_qp
+from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 from warnings import warn
+
+from optim import solve_qp
 
 
 class IKError(Exception):
@@ -286,9 +287,10 @@ class VelocitySolver(object):
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
         qp_P0, qp_q0, qd_max, qd_min = self.__compute_qp_common(dt)
-        qp_P = bmat([[qp_P0, Z], [Z, margin_reg * E]])
+        qp_P = vstack([hstack([qp_P0, Z]), hstack([Z, margin_reg * E])])
         qp_q = hstack([qp_q0, -margin_lin * ones(n)])
-        qp_G = bmat([[+E, +E / dt], [-E, +E / dt], [Z, -E]])
+        qp_G = vstack([
+            hstack([+E, +E / dt]), hstack([-E, +E / dt]), hstack([Z, -E])])
         qp_h = hstack([qd_max, -qd_min, zeros(n)])
         return self.__solve_qp(qp_P, qp_q, qp_G, qp_h)
 
