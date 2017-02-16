@@ -17,6 +17,28 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Multi-contact Walking Pattern Generation
+========================================
+
+This example implements the walking pattern generator reported in:
+
+    "Multi-contact Walking Pattern Generation based
+    on Model Preview Control of 3D COM Accelerations",
+    Stéphane Caron and Abderrahmane Kheddar, Humanoids 2016.
+    <https://scaron.info/research/humanoids-2016.html>
+
+It is based on predictive control of the 3D acceleration of the center of mass.
+A key point in its design is the calculation of contact-stability constraints:
+the 3D volume of feasible COM accelerations is a always an upward-pointing cone,
+which we compute by reduction to a convex hull of dual 2D points (see
+``compute_pendular_accel_cone()`` in the ``ContactSet`` class). These
+computations are fast enough so that we can run them in the control loop. We
+then extend the construction to a (conservative) trajectory-wide
+contact-stability criterion (``COMTube`` class) which is finally used in the
+model-predictive controller (``COMTubePreviewControl`` class).
+"""
+
 import IPython
 import os
 import sys

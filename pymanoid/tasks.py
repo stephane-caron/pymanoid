@@ -300,8 +300,8 @@ class LinkPoseTask(Task):
     ----------
     robot : Robot
         Targetted robot.
-    link : Link
-        One of the Link objects in the kinematic chain of the robot.
+    link : Link or string
+        Robot Link, or name of the link field in the ``robot`` argument.
     target : list or array (shape=(7,)) or pymanoid.Body
         Pose coordinates of the link's target.
     weight : scalar, optional
