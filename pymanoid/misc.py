@@ -29,6 +29,7 @@ class TimeStats(object):
     """
 
     def __init__(self):
+        self.last_value = None
         self.n = 0
         self.x = 0.
         self.x2 = 0.
@@ -44,13 +45,14 @@ class TimeStats(object):
         x : scalar
             New value.
         """
+        self.last_value = x
+        self.n += 1
         self.x += x
         self.x2 += x ** 2
-        self.n += 1
-        if self.x_min is None or x < self.x_min:
-            self.x_min = x
         if self.x_max is None or x > self.x_max:
             self.x_max = x
+        if self.x_min is None or x < self.x_min:
+            self.x_min = x
 
     @property
     def avg(self):
