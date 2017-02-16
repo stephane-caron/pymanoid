@@ -166,7 +166,7 @@ class Body(object):
     @property
     def name(self):
         """Body name."""
-        return self.rave.GetName()
+        return str(self.rave.GetName())
 
     @property
     def T(self):

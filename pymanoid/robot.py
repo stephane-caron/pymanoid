@@ -647,13 +647,31 @@ class Humanoid(Robot):
     ==========
     """
 
+    def get_dof_name_from_index(self, index):
+        """
+        Get DOF name from its index in the kinematic chain.
+
+        Parameters
+        ----------
+        index : integer
+            DOF index.
+
+        Returns
+        -------
+        name : string
+            DOF name.
+        """
+        return str(self.rave.GetJointFromDOFIndex(index).GetName())
+
     def set_ff_pos(self, pos):
         """
-        Update the position of the free-flying frame.
+        Set the position of the free-flyer, a.k.a. free-floating or base frame
+        of the robot.
 
-        INPUT:
-
-        - ``pos`` -- position in world frame
+        Parameters
+        ----------
+        pos : array, shape=(3,)
+            Position coordinates in the world frame.
         """
         self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
 

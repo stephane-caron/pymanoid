@@ -104,47 +104,81 @@ class VelocitySolver(object):
         for task in tasks:
             self.add_task(task)
 
-    def get_task(self, name):
+    def __get_task_name(self, ident):
+        """
+        Produce a task name from a string, or any object with a ``name`` field
+        (such as a robot Link).
+
+        Parameters
+        ----------
+        ident : string or object
+            Name or object with a ``name`` field identifying the task.
+        """
+        name = ident if type(ident) is str else ident.name
+        if not name.isupper():
+            name = name.upper()
+        return name
+
+    def get_task(self, ident):
         """
         Get an active task from its name.
 
         Parameters
         ----------
-        name : string
-            Name of the task to remove.
+        ident : string or object
+            Name or object with a ``name`` field identifying the task.
 
         Returns
         -------
         task : Task or None
             The corresponding task if present, None otherwise.
         """
+        name = self.__get_task_name(ident)
         with self.tasks_lock:
             if name not in self.tasks:
                 warn("no task with name '%s'" % name)
                 return None
             return self.tasks[name]
 
-    def remove_task(self, name):
+    def remove_task(self, ident):
         """
         Remove a task.
 
         Parameters
         ----------
-        name : string
-            Name of the task to remove.
+        ident : string or object
+            Name or object with a ``name`` field identifying the task.
         """
+        name = self.__get_task_name(ident)
         with self.tasks_lock:
             if name not in self.tasks:
                 print "Warning: no task '%s' to remove" % name
                 return
             del self.tasks[name]
 
-    def update_task(self, name, new_task):
-        assert new_task.name == name
+    def update_task(self, ident, task):
+        """
+        Update a task.
+
+        Parameters
+        ----------
+        ident : string or object
+            Name or object with a ``name`` field identifying the task.
+        """
+        name = self.__get_task_name(ident)
+        assert task.name == name
         self.remove_task(name)
-        self.add_task(new_task)
+        self.add_task(task)
 
     def compute_cost(self, dt):
+        """
+        Compute the IK cost of the present system state for a time step of dt.
+
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
+        """
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
     def __compute_qp_common(self, dt):

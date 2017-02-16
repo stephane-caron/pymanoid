@@ -128,7 +128,7 @@ class COMTask(Task):
     def __init__(self, robot, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(COMTask, self).__init__(weight, gain, exclude_dofs)
-        self.name = 'com'
+        self.name = 'COM'
         self.robot = robot
         self.update_target(target)
 
@@ -185,7 +185,7 @@ class COMAccelTask(Task):
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(COMAccelTask, self).__init__(weight, gain, exclude_dofs)
         self._comdd = zeros(3)
-        self.name = 'comaccel'
+        self.name = 'COM_ACCEL'
         self.robot = robot
 
     def _jacobian(self):
@@ -208,7 +208,7 @@ class DOFTask(Task):
     ----------
     robot : Robot
         Targetted robot.
-    dof_id : string or integer
+    index : string or integer
         DOF index or string of DOF identifier.
     target : scalar
         Target DOF value.
@@ -220,16 +220,16 @@ class DOFTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, dof_id, target, weight=None, gain=0.85,
+    def __init__(self, robot, index, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
-        if type(dof_id) is str:
-            dof_id = robot.__dict__[dof_id]
+        if type(index) is str:
+            index = robot.__dict__[index]
         J = zeros((1, robot.nb_dofs))
-        J[0, dof_id] = 1.
+        J[0, index] = 1.
         self.__J = J
-        self.dof_id = dof_id
-        self.name = 'dof%d' % dof_id
+        self.index = index
+        self.name = robot.get_dof_name_from_index(index)
         self.robot = robot
         self.target = target
 
@@ -237,7 +237,7 @@ class DOFTask(Task):
         return self.__J
 
     def _residual(self, dt):
-        return array([self.target - self.robot.q[self.dof_id]]) / dt
+        return array([self.target - self.robot.q[self.index]]) / dt
 
     def update_target(self, target):
         self.target = target
@@ -270,7 +270,7 @@ class LinkPosTask(Task):
         if type(link) is str:
             link = robot.__dict__[link]
         self.link = link
-        self.name = self.link.name
+        self.name = self.link.name.upper()
         self.update_target(target)
 
     def _jacobian(self):
@@ -318,7 +318,7 @@ class LinkPoseTask(Task):
         if type(link) is str:
             link = robot.__dict__[link]
         self.link = link
-        self.name = self.link.name
+        self.name = self.link.name.upper()
         self.robot = robot
         self.update_target(target)
 
@@ -370,7 +370,7 @@ class MinAccelTask(Task):
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinAccelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
-        self.name = 'minaccel'
+        self.name = 'MIN_ACCEL'
         self.robot = robot
 
     def _jacobian(self):
@@ -400,7 +400,7 @@ class MinCAMTask(Task):
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinCAMTask, self).__init__(weight, gain, exclude_dofs)
         self.__zero_cam = zeros((3,))
-        self.name = 'mincam'
+        self.name = 'MIN_CAM'
         self.robot = robot
 
     def _jacobian(self):
@@ -430,7 +430,7 @@ class MinVelTask(Task):
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
-        self.name = 'minvel'
+        self.name = 'MIN_VEL'
         self.qd_ref = zeros(robot.qd.shape)
         self.robot = robot
 
@@ -512,7 +512,7 @@ class PendulumModeTask(Task):
 
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
         super(PendulumModeTask, self).__init__(weight, gain, exclude_dofs)
-        self.name = 'pendulum'
+        self.name = 'PENDULUM'
         self.robot = robot
 
     def _jacobian(self):
@@ -556,7 +556,7 @@ class PostureTask(Task):
         for i in exclude_dofs:
             J[i, i] = 0.
         self.__J = J
-        self.name = 'posture'
+        self.name = 'POSTURE'
         self.q_ref = q_ref
         self.robot = robot
 
