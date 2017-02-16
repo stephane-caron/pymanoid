@@ -271,6 +271,7 @@ class LinkPosTask(Task):
             link = robot.__dict__[link]
         self.link = link
         self.name = self.link.name.upper()
+        self.robot = robot
         self.update_target(target)
 
     def _jacobian(self):
