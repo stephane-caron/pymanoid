@@ -25,12 +25,12 @@ from sim import Process
 from time import time as time
 
 
-class PreviewControl(object):
+class LinearPredictiveControl(object):
 
     """
-    Preview control for a system with linear dynamics.
+    Predictive control for a system with linear dynamics and linear constraints.
 
-    The dynamics of a linear system are described by:
+    The discretized dynamics of a linear system are described by:
 
     .. math::
 
@@ -198,10 +198,10 @@ try:
 
     from misc import array_to_MatrixXd, array_to_VectorXd, VectorXd_to_array
 
-    class VSPreviewControl(PreviewControl):
+    class VSLMPC(LinearPredictiveControl):
 
         """
-        Wrapper to Vincent Samy's preview controller.
+        Wrapper to Vincent Samy's LMPC library.
 
         Source code and installation instructions are available from
         <https://github.com/vsamy/preview_controller>.

@@ -36,7 +36,7 @@ which we compute by reduction to a convex hull of dual 2D points (see
 computations are fast enough so that we can run them in the control loop. We
 then extend the construction to a (conservative) trajectory-wide
 contact-stability criterion (``COMTube`` class) which is finally used in the
-model-predictive controller (``COMTubePreviewControl`` class).
+model-predictive controller (``COMTubePredictiveControl`` class).
 """
 
 import IPython
@@ -64,17 +64,17 @@ from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import interpolate_pose_linear, normalize
 from pymanoid.mpc import PreviewBuffer
 from pymanoid.polyhedra import intersect_polygons
-from pymanoid.drawers import TrajectoryDrawer, PointMassWrenchDrawer
+from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
 from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
 
 try:
-    from pymanoid.mpc import VSPreviewControl as PreviewControl
-    print "using VSPreviewController"
+    from pymanoid.mpc import VSLMPC as LinearPredictiveControl
+    print "using VSLMPC"
 except ImportError:
-    from pymanoid.mpc import PreviewControl as PreviewControl
-    print "using default PreviewController"
+    from pymanoid.mpc import LinearPredictiveControl
+    print "using vanilla LinearPredictiveControl"
 
 
 def generate_staircase(radius, angular_step, height, roughness, friction,
@@ -484,7 +484,7 @@ class COMTube(object):
             self.dual_hrep.append((B, c))
 
 
-class COMTubePreviewControl(pymanoid.Process):
+class COMTubePredictiveControl(pymanoid.Process):
 
     """
     Feedback controller that continuously runs the preview controller and sends
@@ -505,7 +505,7 @@ class COMTubePreviewControl(pymanoid.Process):
     """
 
     def __init__(self, com, fsm, preview_buffer, nb_mpc_steps, tube_radius):
-        super(COMTubePreviewControl, self).__init__()
+        super(COMTubePredictiveControl, self).__init__()
         self.com = com
         self.fsm = fsm
         self.last_phase_id = -1
@@ -537,7 +537,7 @@ class COMTubePreviewControl(pymanoid.Process):
         try:
             self.compute_preview_control(switch_time, horizon)
         except Exception as e:
-            print "PreviewControl error: %s" % str(e)
+            print "COMTubePredictiveControl error: %s" % str(e)
             return
         # sim.log_comp_time('qp_solve', self.preview_control.solve_time)
         sim.log_comp_time(
@@ -595,7 +595,7 @@ class COMTubePreviewControl(pymanoid.Process):
                 h_list.append(d2)
         G = block_diag(*G_list)
         h = hstack(h_list)
-        self.preview_control = PreviewControl(
+        self.preview_control = LinearPredictiveControl(
             A, B, G, h, x_init, x_goal, self.nb_mpc_steps, E, f)
         self.preview_control.switch_step = switch_step
         self.preview_control.timestep = dT
@@ -794,6 +794,13 @@ class UpdateCOMTargetAccel(pymanoid.Process):
         self.com_target.pdd = self.preview_buffer.cur_control
 
 
+class PointMassWrenchDrawer(pymanoid.drawers.PointMassWrenchDrawer):
+
+    def on_tick(self, sim):
+        self.contact_set = fsm.cur_stance
+        super(PointMassWrenchDrawer, self).on_tick(sim)
+
+
 if __name__ == "__main__":
     seed(42)
     sim = pymanoid.Simulation(dt=0.03)
@@ -817,7 +824,7 @@ if __name__ == "__main__":
         callback=lambda u, dT: com_target.integrate_acceleration(u, dT))
     fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
 
-    mpc = COMTubePreviewControl(
+    mpc = COMTubePredictiveControl(
         com_target, fsm, preview_buffer,
         nb_mpc_steps=20,
         tube_radius=0.01)
@@ -827,15 +834,23 @@ if __name__ == "__main__":
     robot.generate_posture(fsm.cur_stance, max_it=50)
 
     com_target.set_pos(robot.com)
-    robot.ik.tasks['com'].update_target(com_target)
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
-    robot.ik.add_task(MinCAMTask(robot, weight=1e-4))
-    robot.ik.tasks['posture'].weight = 1e-5
+    robot.ik.tasks['COM'].update_target(com_target)
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0.))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0.))
+    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0.))
+    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5))
+    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5))
+    robot.ik.add_task(MinCAMTask(robot))
+
+    robot.ik.tasks['WAIST_P'].weight = 1e-3
+    robot.ik.tasks['WAIST_Y'].weight = 1e-3
+    robot.ik.tasks['WAIST_R'].weight = 1e-3
+    robot.ik.tasks['ROT_P'].weight = 1e-3
+    robot.ik.tasks['R_SHOULDER_R'].weight = 1e-3
+    robot.ik.tasks['L_SHOULDER_R'].weight = 1e-3
+    robot.ik.tasks['MIN_CAM'].weight = 1e-4
+    robot.ik.tasks['POSTURE'].weight = 1e-5
 
     sim.schedule(fsm)
     sim.schedule(mpc)
