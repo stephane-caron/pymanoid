@@ -602,7 +602,7 @@ class COMTubePredictiveControl(pymanoid.Process):
         self.preview_control.compute_dynamics()
         try:
             self.preview_control.compute_control()
-            U = self.preview_control.U
+            U = self.preview_control.U.flatten()
             dT = [self.preview_control.timestep] * self.nb_mpc_steps
             self.preview_buffer.update_preview(U, dT)
             # <dirty why="used in PreviewDrawer">

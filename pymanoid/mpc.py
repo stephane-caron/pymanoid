@@ -220,6 +220,7 @@ try:
 
         def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
                      wx=1000., wu=1., solver=vsmpc.SolverFlag.QuadProgDense):
+            u_dim = B.shape[1]
             self.A = array_to_MatrixXd(A)
             self.B = array_to_MatrixXd(B)
             self.G = array_to_MatrixXd(G)
@@ -229,10 +230,11 @@ try:
             self.nb_steps = nb_steps
             self.ps = None
             self.solver = solver
-            self.x_goal = array_to_VectorXd(x_goal)
-            self.x_init = array_to_VectorXd(x_init)
+            self.u_dim = u_dim
             self.wu = VectorXd.Ones(B.shape[1]) * wu
             self.wx = VectorXd.Ones(A.shape[1]) * wx
+            self.x_goal = array_to_VectorXd(x_goal)
+            self.x_init = array_to_VectorXd(x_init)
 
         def compute_dynamics(self):
             """
@@ -254,7 +256,8 @@ try:
             ret = self.controller.solve()
             if not ret:
                 raise Exception("MPC failed to solve QP")
-            self.U = VectorXd_to_array(self.controller.control())
+            U = VectorXd_to_array(self.controller.control())
+            self.U = U.reshape((self.nb_steps, self.u_dim))
             self.solve_time = self.controller.solveTime().wall  # in [ns]
             self.solve_and_build_time = self.controller.solveAndBuildTime().wall
             self.solve_time *= 1e-9  # in [s]
