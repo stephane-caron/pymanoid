@@ -542,42 +542,42 @@ class Humanoid(Robot):
     <environment>
         <robot>
             <kinbody>
-                <body name="FLYER_TX_LINK">
+                <body name="TRANS_X_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
                 </body>
             </kinbody>
             <kinbody>
-                <body name="FLYER_TY_LINK">
+                <body name="TRANS_Y_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
                 </body>
             </kinbody>
             <kinbody>
-                <body name="FLYER_TZ_LINK">
+                <body name="TRANS_Z_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
                 </body>
             </kinbody>
             <kinbody>
-                <body name="FLYER_ROLL_LINK">
+                <body name="ROT_Y_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
                 </body>
             </kinbody>
             <kinbody>
-                <body name="FLYER_PITCH_LINK">
+                <body name="ROT_P_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
                 </body>
             </kinbody>
             <kinbody>
-                <body name="FLYER_YAW_LINK">
+                <body name="ROT_R_LINK">
                     <mass type="mimicgeom">
                         <total>0</total>
                     </mass>
@@ -585,33 +585,33 @@ class Humanoid(Robot):
             </kinbody>
             <robot file="%s" name="%s">
                 <kinbody>
-                    <joint name="FLYER_TX" type="slider">
-                        <body>FLYER_TX_LINK</body>
-                        <body>FLYER_TY_LINK</body>
+                    <joint name="TRANS_X" type="slider">
+                        <body>TRANS_X_LINK</body>
+                        <body>TRANS_Y_LINK</body>
                         <axis>1 0 0</axis>
                     </joint>
-                    <joint name="FLYER_TY" type="slider">
-                        <body>FLYER_TY_LINK</body>
-                        <body>FLYER_TZ_LINK</body>
+                    <joint name="TRANS_Y" type="slider">
+                        <body>TRANS_Y_LINK</body>
+                        <body>TRANS_Z_LINK</body>
                         <axis>0 1 0</axis>
                     </joint>
-                    <joint name="FLYER_TZ" type="slider">
-                        <body>FLYER_TZ_LINK</body>
-                        <body>FLYER_YAW_LINK</body>
+                    <joint name="TRANS_Z" type="slider">
+                        <body>TRANS_Z_LINK</body>
+                        <body>ROT_Y_LINK</body>
                         <axis>0 0 1</axis>
                     </joint>
-                    <joint name="FLYER_YAW" type="hinge" circular="true">
-                        <body>FLYER_YAW_LINK</body>
-                        <body>FLYER_PITCH_LINK</body>
+                    <joint name="ROT_Y" type="hinge" circular="true">
+                        <body>ROT_Y_LINK</body>
+                        <body>ROT_P_LINK</body>
                         <axis>0 0 1</axis>
                     </joint>
-                    <joint name="FLYER_PITCH" type="hinge" circular="true">
-                        <body>FLYER_PITCH_LINK</body>
-                        <body>FLYER_ROLL_LINK</body>
+                    <joint name="ROT_P" type="hinge" circular="true">
+                        <body>ROT_P_LINK</body>
+                        <body>ROT_R_LINK</body>
                         <axis>0 1 0</axis>
                     </joint>
-                    <joint name="FLYER_ROLL" type="hinge" circular="true">
-                        <body>FLYER_ROLL_LINK</body>
+                    <joint name="ROT_R" type="hinge" circular="true">
+                        <body>ROT_R_LINK</body>
                         <body>%s</body>
                         <axis>1 0 0</axis>
                     </joint>
