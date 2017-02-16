@@ -659,31 +659,38 @@ class Humanoid(Robot):
 
     def set_ff_rpy(self, rpy):
         """
-        Update the orientation of the free-flying frame.
+        Set the orientation of the free-flyer, a.k.a. free-floating or base
+        frame of the robot.
 
-        INPUT:
-
-        - ``rpy`` -- Euler angles (Euler sequence (1, 2, 3))
+        Parameters
+        ----------
+        rpy : array, shape=(3,)
+            Roll-pitch-yaw angles, corresponding to Euler sequence (1, 2, 3).
         """
         self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
 
     def set_ff_quat(self, quat):
         """
-        Update the orientation of the free-flying frame.
+        Set the orientation of the free-flyer, a.k.a. free-floating or base
+        frame of the robot.
 
-        INPUT:
-
-        - ``quat`` -- quaternion vector (w, x, y, z)
+        Parameters
+        ----------
+        quat : array, shape=(4,)
+            Quaternion vector (`w`, `x`, `y`, `z`).
         """
         self.set_ff_rpy(rpy_from_quat(quat))
 
     def set_ff_pose(self, pose):
         """
-        Update the pose of the free-flying frame.
+        Set the pose of the free-flyer, a.k.a. free-floating or base frame of
+        the robot.
 
-        INPUT:
-
-        - ``pose`` -- frame pose in OpenRAVE format (qw, qx, qy, qz, x, y, z)
+        Parameters
+        ----------
+        pose : array, shape=(7,)
+            Frame pose in OpenRAVE format (`qw`, `qx`, `qy`, `qz`, `x`, `y`,
+            `z`).
         """
         self.set_ff_quat(pose[:4])
         self.set_ff_pos(pose[4:])
@@ -692,11 +699,14 @@ class Humanoid(Robot):
         """
         Set the joint values of the robot.
 
-        INPUT:
-
-        - ``q`` -- vector of joint angle values (ordered by DOF indices)
-        - ``dof_indices`` -- (optional) list of DOF indices to update
-        - ``clamp`` -- correct ``q`` if it exceeds joint limits
+        Parameters
+        ----------
+        q : array
+            Vector of joint angle values (ordered by DOF indices).
+        dof_indices : list of integers, optional
+            List of DOF indices to update.
+        clamp : bool, optional
+            Correct `q` if it exceeds joint limits (not done by default).
         """
         self.__cam = None
         self.__com = None
@@ -709,6 +719,16 @@ class Humanoid(Robot):
             self.show_comd()
 
     def set_dof_velocities(self, qd, dof_indices=None):
+        """
+        Set the joint velocities of the robot.
+
+        Parameters
+        ----------
+        q : array
+            Vector of joint angular velocities (ordered by DOF indices).
+        dof_indices : list of integers, optional
+            List of DOF indices to update.
+        """
         self.__cam = None
         self.__comd = None
         super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
@@ -716,6 +736,16 @@ class Humanoid(Robot):
             self.show_comd()
 
     def set_active_dof_values(self, q_active):
+        """
+        Set the active joint values of the robot.
+
+        Parameters
+        ----------
+        q : array
+            Vector of joint angle values (ordered by DOF indices).
+        dof_indices : list of integers, optional
+            List of DOF indices to update.
+        """
         self.__cam = None
         self.__com = None
         self.__comd = None
@@ -726,6 +756,14 @@ class Humanoid(Robot):
             self.show_comd()
 
     def set_active_dof_velocities(self, qd_active):
+        """
+        Set the active joint velocities of the robot.
+
+        Parameters
+        ----------
+        q : array
+            Vector of active joint angular velocities.
+        """
         self.__cam = None
         self.__comd = None
         super(Humanoid, self).set_active_dof_velocities(qd_active)
