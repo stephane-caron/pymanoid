@@ -78,19 +78,18 @@ class LinearPredictiveControl(object):
     f : array, shape=(l,), optional
         Vector for state inequality constraints.
     wx : scalar, optional, default=1000.
-        Weight :math:`w_x` on the state error
+        Weight :math:`w_x` on the end-state error
         :math:`\\|x - x_\\mathrm{goal}\\|^2`.
     wu : scalar, optional, default=1.
-        Weight :math:`w_u` on cumulated controls
+        Weight :math:`w_u` on the cumulated control cost
         :math:`\\sum_k \\|u_k\\|^2`.
 
     Notes
     -----
-    In numerical analysis, there are basically three classes of methods for
-    solving `boundary value problems
-    <https://en.wikipedia.org/wiki/Boundary_value_problem>`_: single shooting,
-    multiple shooting and collocation. The solver implemented in this class
-    follows the `single shooting method
+    In numerical analysis, there are three classes of methods to solve `boundary
+    value problems <https://en.wikipedia.org/wiki/Boundary_value_problem>`_:
+    single shooting, multiple shooting and collocation. The solver implemented
+    in this class follows the `single shooting method
     <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 
@@ -104,7 +103,6 @@ class LinearPredictiveControl(object):
         self.E = E
         self.G = G
         self.U_dim = u_dim * nb_steps
-        self.X_dim = x_dim * nb_steps  # not used but meh
         self.f = f
         self.h = h
         self.nb_steps = nb_steps
@@ -120,7 +118,7 @@ class LinearPredictiveControl(object):
 
     def compute_dynamics(self):
         """
-        Compute internal matrices mapping stacked controls ``U`` to states.
+        Compute internal matrices defining the preview QP.
 
         Notes
         -----
@@ -141,20 +139,18 @@ class LinearPredictiveControl(object):
         self.t_build_start = time()
         phi = eye(self.x_dim)
         psi = zeros((self.x_dim, self.U_dim))
-        G_list, h_list = [], []
+        G_state, h_state = [], []
         for k in xrange(self.nb_steps):
-            # x_k = phi * x_init + psi * U
-            # p_k = phi[:3] * x_init + psi[:3] * U
-            # E * p_k <= f
-            # (E * psi[:3]) * U <= f - (E * phi[:3]) * x_init
+            # Loop invariant: x_k = phi * x_init + psi * U
+            # Thus, {E * x_k <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
             if self.E is not None:
-                G_list.append(dot(self.E, psi[:3]))
-                h_list.append(self.f - dot(dot(self.E, phi[:3]), self.x_init))
+                G_state.append(dot(self.E, psi))
+                h_state.append(self.f - dot(dot(self.E, phi), self.x_init))
             phi = dot(self.A, phi)
             psi = dot(self.A, psi)
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
-        self.G_state = G_list
-        self.h_state = h_list
+        self.G_state = G_state
+        self.h_state = h_state
         self.phi_last = phi
         self.psi_last = psi
 
@@ -163,27 +159,14 @@ class LinearPredictiveControl(object):
         Compute the stacked control vector `U` minimizing the preview QP.
         """
         assert self.psi_last is not None, "Call compute_dynamics() first"
-
-        # Cost 1: sum_k u_k^2
-        Pu = eye(self.U_dim)
-        qu = zeros(self.U_dim)
-        wu = self.wu
-
-        # Cost 2: |x_N - x_goal|^2 = |A * x - b|^2
         A = self.psi_last
         b = self.x_goal - dot(self.phi_last, self.x_init)
-        Px = dot(A.T, A)
-        qx = -dot(b.T, A)
-        wx = self.wx
-
-        # Weighted combination of both costs
-        P = wx * Px + wu * Pu
-        q = wx * qx + wu * qu
-
-        # Inequality constraints
+        Pu, qu = eye(self.U_dim), zeros(self.U_dim)  # sum_k |u_k|^2
+        Px, qx = dot(A.T, A), -dot(b.T, A)  # |x_N - x_goal|^2 = |A * x - b|^2
+        P = self.wx * Px + self.wu * Pu
+        q = self.wx * qx + self.wu * qu
         G = self.G if self.E is None else vstack([self.G] + self.G_state)
         h = self.h if self.E is None else hstack([self.h] + self.h_state)
-        assert self.E is None
         t_solve_start = time()
         self.U = solve_qp(P, q, G, h)
         t_done = time()
