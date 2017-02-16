@@ -48,6 +48,7 @@ from numpy import arange, array, bmat, cross, dot, eye, hstack, vstack, zeros
 from numpy import cos, pi, sin
 from numpy.random import random, seed
 from scipy.linalg import block_diag
+from threading import Lock
 from warnings import warn
 
 try:
@@ -62,7 +63,6 @@ from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_polyhedron, draw_polygon
 from pymanoid.misc import interpolate_pose_linear, normalize
-from pymanoid.mpc import PreviewBuffer
 from pymanoid.polyhedra import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
@@ -611,6 +611,105 @@ class COMTubePredictiveControl(pymanoid.Process):
             # </dirty>
         except ValueError:
             print "MPC couldn't solve QP, constraints may be inconsistent"
+
+
+class PreviewBuffer(pymanoid.Process):
+
+    """
+    Buffer used to store controls on a preview window.
+
+    Parameters
+    ----------
+    u_dim : int
+        Dimension of preview control vectors.
+    callback : function, optional
+        Function to call with each new control `(u, dT)`.
+    """
+
+    def __init__(self, u_dim, callback=None):
+        super(PreviewBuffer, self).__init__()
+        self._U = None
+        self._dT = None
+        self._default_control = (zeros(u_dim), 0.1)
+        self.callback = callback
+        self.cur_control = None
+        self.cur_index = 0
+        self.lock = Lock()
+        self.nb_steps = 0
+        self.rem_time = 0.
+        self.switch_step = None
+        self.u_dim = u_dim
+
+    @property
+    def is_empty(self):
+        return self._U is None
+
+    def update_preview(self, U, dT, switch_step=None):
+        """
+        Update preview with a filled PreviewControl object.
+
+        Parameters
+        ----------
+        U : array, shape=(N * d,)
+            Vector of stacked preview controls, each of dimension `d`.
+        dT : array, shape=(N,)
+            Sequence of durations, one for each preview control.
+        switch_step : int, optional
+            Optional index of a contact-switch step in the sequence.
+        """
+        with self.lock:
+            self._U = U
+            self._dT = dT
+            self.cur_index = 0
+            self.nb_steps = len(dT)
+            self.rem_time = 0.
+            self.switch_step = switch_step
+
+    def reset(self):
+        """Reset preview buffer to its empty state."""
+        with self.lock:
+            self._U = None
+            self._dT = None
+            self.cur_control = None
+            self.cur_index = 0
+            self.rem_time = 0.
+
+    def get_next_control(self):
+        """
+        Get the next pair (`u`, `dT`) in the preview window.
+
+        Returns
+        -------
+        (u, dT) : array, scalar
+            Next control in the preview window.
+        """
+        with self.lock:
+            if self.is_empty:
+                return self._default_control
+            j = self.u_dim * self.cur_index
+            u = self._U[j:j + self.u_dim]
+            if u.shape[0] == 0:
+                return self._default_control
+            dT = self._dT[self.cur_index]
+            self.cur_index += 1
+            return (u, dT)
+
+    def on_tick(self, sim):
+        """
+        Entry point called at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
+        if self.rem_time < sim.dt:
+            u, dT = self.get_next_control()
+            self.cur_control = u
+            self.rem_time = dT
+        if self.callback is not None:
+            self.callback(self.cur_control, sim.dt)
+        self.rem_time -= sim.dt
 
 
 class PreviewDrawer(pymanoid.Process):
