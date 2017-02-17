@@ -587,17 +587,33 @@ class Point(Cube):
 
     @property
     def pd(self):
+        """Point velocity."""
         return self.__pd.copy()
 
     def dist(self, other_point):
+        """
+        Distance to another point.
+
+        Parameters
+        ----------
+        other_point : array or Point
+            Point to compute the distance to.
+        """
         if type(other_point) is list:
             other_point = array(other_point)
         if type(other_point) is ndarray:
             return norm(other_point - self.p)
         return norm(other_point.p - self.p)
 
-    def set_velocity(self, pd):
-        """Update the point-mass velocity."""
+    def set_vel(self, pd):
+        """
+        Update the point velocity.
+
+        Parameters
+        ----------
+        pd : array, shape=(3,)
+            Velocity coordinates in the world frame.
+        """
         self.__pd = array(pd)
 
     def integrate_acceleration(self, pdd, dt):
@@ -607,18 +623,18 @@ class Point(Cube):
         Parameters
         ----------
         pdd : array, shape=(3,)
-            3D acceleration vector.
+            Acceleration coordinates in the world frame.
         dt : scalar
             Duration in [s].
         """
         self.set_pos(self.p + (self.pd + .5 * pdd * dt) * dt)
-        self.set_velocity(self.pd + pdd * dt)
+        self.set_vel(self.pd + pdd * dt)
 
 
 class PointMass(Point):
 
     """
-    Point with a mass property and size proportional to it.
+    Point with a mass property and a size proportional to it.
 
     Parameters
     ----------

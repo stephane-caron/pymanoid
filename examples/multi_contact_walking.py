@@ -528,7 +528,7 @@ class COMTubePredictiveControl(pymanoid.Process):
         preview_targets = self.fsm.get_preview_targets()
         switch_time, horizon, target_com, target_comd = preview_targets
         self.target_com.set_pos(target_com)
-        self.target_com.set_velocity(target_comd)
+        self.target_com.set_vel(target_comd)
         try:
             self.compute_preview_tube()
         except Exception as e:
