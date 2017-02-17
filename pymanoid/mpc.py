@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot, eye, hstack, vstack, zeros
+from numpy import dot, eye, hstack, ndarray, vstack, zeros
 
 from optim import solve_qp
 from time import time as time
@@ -43,7 +43,7 @@ class LinearPredictiveControl(object):
 
         \\begin{eqnarray}
         x_0 & = & x_\\mathrm{init} \\\\
-        \\forall k, \\ G_k u_k & \\leq & h_k \\\\
+        \\forall k, \\ C_k u_k & \\leq & d_k \\\\
         \\forall k, \\ E_k p_k & \\leq & f_k
         \\end{eqnarray}
 
@@ -61,26 +61,24 @@ class LinearPredictiveControl(object):
         State linear dynamics matrix.
     B : array, shape=(n, dim(u))
         Control linear dynamics matrix.
-    G : array, shape=(m, dim(u) or nb_steps * dim(u))
-        Matrix for control inequality constraints.
-    h : array, shape=(m,)
-        Vector for control inequality constraints.
     x_init : array, shape=(n,)
         Initial state as stacked position and velocity.
     x_goal : array, shape=(n,)
         Goal state as stacked position and velocity.
     nb_steps : int
         Number of discretization steps in the preview window.
-    E : array, shape=(l, n), optional
-        Matrix for state inequality constraints.
-    f : array, shape=(l,), optional
-        Vector for state inequality constraints.
-    wx : scalar, optional, default=1000.
-        Weight :math:`w_x` on the end-state error
-        :math:`\\|x - x_\\mathrm{goal}\\|^2`.
-    wu : scalar, optional, default=1.
-        Weight :math:`w_u` on the cumulated control cost
-        :math:`\\sum_k \\|u_k\\|^2`.
+    C : array, shape=(m, dim(u)), or list of arrays, optional
+        Matrices for control inequality constraints. When this argument is an
+        array, the same matrix `C` is applied at each step `k`.
+    d : array, shape=(m,), or list of arrays, optional
+        Vectors for control inequality constraints. When this argument is an
+        array, the same vector `d` is applied at each step `k`.
+    E : array, shape=(l, n), or list of arrays, optional
+        Matrix for state inequality constraints. When this argument is an
+        array, the same matrix `E` is applied at each step `k`.
+    f : array, shape=(l,), or list of arrays, optional
+        Vector for state inequality constraints. When this argument is an array,
+        the same vector `f` is applied at each step `k`.
 
     Notes
     -----
@@ -91,18 +89,17 @@ class LinearPredictiveControl(object):
     <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 
-    def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
-                 wx=1000., wu=1.):
+    def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None, E=None,
+                 f=None):
         u_dim = B.shape[1]
         x_dim = A.shape[1]
-        assert G.shape[1] in [u_dim, nb_steps * u_dim]
         self.A = A
         self.B = B
+        self.C = C
         self.E = E
-        self.G = G
         self.U_dim = u_dim * nb_steps
+        self.d = d
         self.f = f
-        self.h = h
         self.nb_steps = nb_steps
         self.phi_last = None
         self.psi_last = None
@@ -111,8 +108,6 @@ class LinearPredictiveControl(object):
         self.x_dim = x_dim
         self.x_goal = x_goal
         self.x_init = x_init
-        self.wu = wu
-        self.wx = wx
 
     def compute_dynamics(self):
         """
@@ -137,32 +132,51 @@ class LinearPredictiveControl(object):
         self.t_build_start = time()
         phi = eye(self.x_dim)
         psi = zeros((self.x_dim, self.U_dim))
-        G_state, h_state = [], []
+        G_list, h_list = [], []
         for k in xrange(self.nb_steps):
             # Loop invariant: x_k = phi * x_init + psi * U
-            # Thus, {E * x_k <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
+            if self.C is not None:
+                # {C * u_k <= d} iff {C_ext * U <= d}
+                C = self.C if type(self.C) is ndarray else self.C[k]
+                d = self.d if type(self.d) is ndarray else self.d[k]
+                C_ext = zeros((C.shape[0], self.U_dim))
+                C_ext[:, k * self.u_dim:(k + 1) * self.u_dim] = C
+                G_list.append(C_ext)
+                h_list.append(d)
             if self.E is not None:
-                G_state.append(dot(self.E, psi))
-                h_state.append(self.f - dot(dot(self.E, phi), self.x_init))
+                # {E * x_k <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
+                E = self.E if type(self.E) is ndarray else self.E[k]
+                f = self.f if type(self.f) is ndarray else self.f[k]
+                G_list.append(dot(E, psi))
+                h_list.append(f - dot(dot(E, phi), self.x_init))
             phi = dot(self.A, phi)
             psi = dot(self.A, psi)
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
-        self.G_state = G_state
-        self.h_state = h_state
+        self.G = vstack(G_list)
+        self.h = hstack(h_list)
         self.phi_last = phi
         self.psi_last = psi
 
-    def compute_control(self):
+    def compute_controls(self, wx=1000., wu=1.):
         """
         Compute the stacked control vector `U` minimizing the preview QP.
+
+        Parameters
+        ----------
+        wx : scalar, optional
+            Weight :math:`w_x` on the end-state error
+            :math:`\\|x - x_\\mathrm{goal}\\|^2`.
+        wu : scalar, optional
+            Weight :math:`w_u` on the cumulated control cost
+            :math:`\\sum_k \\|u_k\\|^2`.
         """
         assert self.psi_last is not None, "Call compute_dynamics() first"
         A = self.psi_last
         b = self.x_goal - dot(self.phi_last, self.x_init)
         Pu, qu = eye(self.U_dim), zeros(self.U_dim)  # sum_k |u_k|^2
         Px, qx = dot(A.T, A), -dot(b.T, A)  # |x_N - x_goal|^2 = |A * x - b|^2
-        P = self.wx * Px + self.wu * Pu
-        q = self.wx * qx + self.wu * qu
+        P = wx * Px + wu * Pu
+        q = wx * qx + wu * qu
         G = self.G if self.E is None else vstack([self.G] + self.G_state)
         h = self.h if self.E is None else hstack([self.h] + self.h_state)
         t_solve_start = time()

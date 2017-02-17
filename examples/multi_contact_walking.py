@@ -47,7 +47,6 @@ import time
 from numpy import arange, array, bmat, cross, dot, eye, hstack, vstack, zeros
 from numpy import cos, pi, sin
 from numpy.random import random, seed
-from scipy.linalg import block_diag
 from threading import Lock
 from warnings import warn
 
@@ -69,12 +68,13 @@ from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
 from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
 
-try:
-    from pymanoid.mpc import VSLMPC as LinearPredictiveControl
-    print "using VSLMPC"
-except ImportError:
-    from pymanoid.mpc import LinearPredictiveControl
-    print "using vanilla LinearPredictiveControl"
+# try:
+#     from pymanoid.mpc import VSLMPC as LinearPredictiveControl
+#     print "using VSLMPC (C++)"
+# except ImportError:
+#     from pymanoid.mpc import LinearPredictiveControl
+#     print "using vanilla LinearPredictiveControl (Python)"
+from pymanoid.mpc import LinearPredictiveControl
 
 
 def generate_staircase(radius, angular_step, height, roughness, friction,
@@ -539,7 +539,6 @@ class COMTubePredictiveControl(pymanoid.Process):
         except Exception as e:
             print "COMTubePredictiveControl error: %s" % str(e)
             return
-        # sim.log_comp_time('qp_solve', self.preview_control.solve_time)
         sim.log_comp_time(
             'qp_solve_and_build', self.preview_control.solve_and_build_time)
 
@@ -578,30 +577,27 @@ class COMTubePredictiveControl(pymanoid.Process):
         x_init = hstack([cur_com, cur_comd])
         x_goal = hstack([target_com, target_comd])
         switch_step = int(switch_time / dT)
-        G_list = []
-        h_list = []
+        C_list, d_list = [], []
         C1, d1 = self.tube.dual_hrep[0]
-        E, f = None, None
-        if state_constraints:
-            E, f = self.tube.full_hrep
         if 0 <= switch_step < self.nb_mpc_steps - 1:
             C2, d2 = self.tube.dual_hrep[1]
         for k in xrange(self.nb_mpc_steps):
             if k <= switch_step:
-                G_list.append(C1)
-                h_list.append(d1)
+                C_list.append(C1)
+                d_list.append(d1)
             else:  # k > switch_step
-                G_list.append(C2)
-                h_list.append(d2)
-        G = block_diag(*G_list)
-        h = hstack(h_list)
+                C_list.append(C2)
+                d_list.append(d2)
+        E, f = None, None
+        if state_constraints:
+            E, f = self.tube.full_hrep
         self.preview_control = LinearPredictiveControl(
-            A, B, G, h, x_init, x_goal, self.nb_mpc_steps, E, f)
+            A, B, x_init, x_goal, self.nb_mpc_steps, C_list, d_list, E, f)
         self.preview_control.switch_step = switch_step
         self.preview_control.timestep = dT
         self.preview_control.compute_dynamics()
         try:
-            self.preview_control.compute_control()
+            self.preview_control.compute_controls(wx=1000., wu=1.)
             U = self.preview_control.U.flatten()
             dT = [self.preview_control.timestep] * self.nb_mpc_steps
             self.preview_buffer.update_preview(U, dT)
