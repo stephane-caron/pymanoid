@@ -47,13 +47,15 @@ class LinearPredictiveControl(object):
         \\forall k, \\ E_k p_k & \\leq & f_k
         \\end{eqnarray}
 
-    The output control law will minimize, by decreasing priority:
+    The output control law minimizes a weighted combination of two types of
+    costs:
 
-    - :math:`\\|x_\\mathrm{nb\\_steps} - x_\\mathrm{goal}\\|^2` with weight
-      :math:`w_x`
-    - :math:`\\sum_k \\|u_k\\|^2` with weight :math:`w_u`
-
-    Where the minimization is weighted (not prioritized).
+    - Terminal state error
+        :math:`\\|x_\\mathrm{nb\\_steps} - x_\\mathrm{goal}\\|^2`
+      or cumulated state error:
+        :math:`\\sum_k \\|x_k - x_\\mathrm{goal}\\|^2`
+    - Cumulated control costs:
+        :math:`\\sum_k \\|u_k\\|^2`
 
     Parameters
     ----------
@@ -79,6 +81,8 @@ class LinearPredictiveControl(object):
     f : array, shape=(l,), or list of arrays, optional
         Vector for state inequality constraints. When this argument is an array,
         the same vector `f` is applied at each step `k`.
+    state_cost : string, optional
+        Switch between "terminal" or "cumulated" state costs.
 
     Notes
     -----
@@ -90,17 +94,21 @@ class LinearPredictiveControl(object):
     """
 
     def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None, E=None,
-                 f=None):
+                 f=None, state_cost='terminal'):
+        assert state_cost in ['cumulated', 'terminal']
         u_dim = B.shape[1]
         x_dim = A.shape[1]
         self.A = A
         self.B = B
         self.C = C
         self.E = E
+        self.Phi = None
+        self.Psi = None
         self.U = None
         self.U_dim = u_dim * nb_steps
         self.d = d
         self.f = f
+        self.is_terminal = state_cost == 'terminal'
         self.nb_steps = nb_steps
         self.phi_last = None
         self.psi_last = None
@@ -135,10 +143,14 @@ class LinearPredictiveControl(object):
         phi = eye(self.x_dim)
         psi = zeros((self.x_dim, self.U_dim))
         G_list, h_list = [], []
+        phi_list, psi_list = [], []
         for k in xrange(self.nb_steps):
-            # Loop invariant: x_k = phi * x_init + psi * U
+            # Loop invariant: x = phi * x_init + psi * U
+            if not self.is_terminal:
+                phi_list.append(phi)
+                psi_list.append(psi)
             if self.C is not None:
-                # {C * u_k <= d} iff {C_ext * U <= d}
+                # {C * u <= d} iff {C_ext * U <= d}
                 C = self.C if type(self.C) is ndarray else self.C[k]
                 d = self.d if type(self.d) is ndarray else self.d[k]
                 C_ext = zeros((C.shape[0], self.U_dim))
@@ -146,7 +158,7 @@ class LinearPredictiveControl(object):
                 G_list.append(C_ext)
                 h_list.append(d)
             if self.E is not None:
-                # {E * x_k <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
+                # {E * x <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
                 E = self.E if type(self.E) is ndarray else self.E[k]
                 f = self.f if type(self.f) is ndarray else self.f[k]
                 G_list.append(dot(E, psi))
@@ -154,35 +166,40 @@ class LinearPredictiveControl(object):
             phi = dot(self.A, phi)
             psi = dot(self.A, psi)
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
+        if self.is_terminal:
+            self.phi_last = phi
+            self.psi_last = psi
+        else:  # not self.is_terminal:
+            self.Phi = vstack(phi_list)
+            self.Psi = vstack(psi_list)
         self.G = vstack(G_list)
         self.h = hstack(h_list)
-        self.phi_last = phi
-        self.psi_last = psi
 
-    def compute_controls(self, wx=1000., wu=1.):
+    def compute_controls(self, wx=1., wu=1e-3):
         """
-        Compute the stacked control vector `U` minimizing the preview QP.
+        Compute the series of controls that minimizes the preview QP.
 
         Parameters
         ----------
         wx : scalar, optional
-            Weight :math:`w_x` on the end-state error
-            :math:`\\|x - x_\\mathrm{goal}\\|^2`.
+            Weight on (cumulated or terminal) state costs.
         wu : scalar, optional
-            Weight :math:`w_u` on the cumulated control cost
-            :math:`\\sum_k \\|u_k\\|^2`.
+            Weight on cumulated control costs.
 
         Note
         ----
-        This function can only be called after ``compute_dynamics()``.
+        This function should be called after ``compute_dynamics()``.
         """
-        assert self.psi_last is not None, "call compute_dynamics() first"
-        A = self.psi_last
-        b = self.x_goal - dot(self.phi_last, self.x_init)
-        Pu, qu = eye(self.U_dim), zeros(self.U_dim)  # sum_k |u_k|^2
-        Px, qx = dot(A.T, A), -dot(b.T, A)  # |x_N - x_goal|^2 = |A * x - b|^2
-        P = wx * Px + wu * Pu
-        q = wx * qx + wu * qu
+        P = wu * eye(self.U_dim)
+        q = zeros(self.U_dim)
+        if self.is_terminal:
+            A = self.psi_last
+            b = dot(self.phi_last, self.x_init) - self.x_goal
+        else:  # not self.is_terminal:
+            A = self.Psi
+            b = dot(self.Phi, self.x_init)
+        P += wx * dot(A.T, A)
+        q += wx * dot(b.T, A)
         t_solve_start = time()
         U = solve_qp(P, q, self.G, self.h)
         t_done = time()
@@ -192,11 +209,11 @@ class LinearPredictiveControl(object):
 
     def compute_states(self):
         """
-        Compute the stacked state vector `X` over the preview window.
+        Compute the series of system states over the preview window.
 
         Note
         ----
-        This function can only be called after ``compute_controls()``.
+        This function should be called after ``compute_controls()``.
         """
         assert self.U is not None, "call compute_controls() first"
         X = zeros((self.nb_steps + 1, self.x_dim))
