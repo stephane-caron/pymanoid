@@ -95,6 +95,7 @@ class LinearPredictiveControl(object):
 
     def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None, E=None,
                  f=None, state_cost='terminal'):
+        assert C is not None or E is not None, "use LQR for unconstrained case"
         assert state_cost in ['cumulated', 'terminal']
         u_dim = B.shape[1]
         x_dim = A.shape[1]
@@ -194,6 +195,7 @@ class LinearPredictiveControl(object):
         ----
         This function should be called after ``compute_dynamics()``.
         """
+        assert wu > 0., "non-negative control weight needed for regularization"
         P = wu * eye(self.U_dim)
         q = zeros(self.U_dim)
         if self.is_terminal:
