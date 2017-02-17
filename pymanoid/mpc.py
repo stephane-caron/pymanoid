@@ -112,13 +112,16 @@ class LinearPredictiveControl(object):
         self.C = C
         self.E = E
         self.G = None
+        self.P = None
         self.U = None
         self.U_dim = u_dim * nb_steps
+        self.__X = None
         self.build_time = None
         self.d = d
         self.f = f
         self.h = None
         self.nb_steps = nb_steps
+        self.q = None
         self.solve_time = None
         self.u_dim = u_dim
         self.wu = wu
@@ -202,26 +205,35 @@ class LinearPredictiveControl(object):
     def solve(self):
         """
         Compute the series of controls that minimizes the preview QP.
+
+        Note
+        ----
+        This function can only be called after ``build()``.
         """
+        assert self.P is not None, "you need to build() the MPC problem first"
         t_solve_start = time()
         U = solve_qp(self.P, self.q, self.G, self.h)
         self.U = U.reshape((self.nb_steps, self.u_dim))
         self.solve_time = time() - t_solve_start
 
-    def compute_states(self):
+    @property
+    def X(self):
         """
-        Compute the series of system states over the preview window.
+        Series of system states over the preview window.
 
         Note
         ----
-        This function should be called after ``compute_controls()``.
+        This property is only available after ``solve()`` has been called.
         """
-        assert self.U is not None, "call compute_controls() first"
+        if self.__X is not None:
+            return self.__X
+        assert self.U is not None, "you need to solve() the MPC problem first"
         X = zeros((self.nb_steps + 1, self.x_dim))
         X[0] = self.x_init
         for k in xrange(self.nb_steps):
             X[k + 1] = dot(self.A, X[k]) + dot(self.B, self.U[k])
-        self.X = X
+        self.__X = X
+        return X
 
 
 try:
