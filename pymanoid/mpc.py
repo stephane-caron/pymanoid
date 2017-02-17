@@ -107,6 +107,7 @@ class LinearPredictiveControl(object):
         self.Psi = None
         self.U = None
         self.U_dim = u_dim * nb_steps
+        self.X_goal = None
         self.d = d
         self.f = f
         self.h = None
@@ -174,6 +175,7 @@ class LinearPredictiveControl(object):
         else:  # not self.is_terminal:
             self.Phi = vstack(phi_list)
             self.Psi = vstack(psi_list)
+            self.X_goal = hstack([self.x_goal] * self.nb_steps)
         self.G = vstack(G_list)
         self.h = hstack(h_list)
 
@@ -199,7 +201,7 @@ class LinearPredictiveControl(object):
             b = dot(self.phi_last, self.x_init) - self.x_goal
         else:  # not self.is_terminal:
             A = self.Psi
-            b = dot(self.Phi, self.x_init)
+            b = dot(self.Phi, self.x_init) - self.X_goal
         P += wx * dot(A.T, A)
         q += wx * dot(b.T, A)
         t_solve_start = time()
