@@ -248,45 +248,37 @@ try:
             State linear dynamics matrix.
         B : array, shape=(n, dim(u))
             Control linear dynamics matrix.
-        G : array, shape=(m, dim(u) or nb_steps * dim(u))
-            Matrix for control inequality constraints.
-        h : array, shape=(m,)
-            Vector for control inequality constraints.
         x_init : array, shape=(n,)
             Initial state, i.e. stacked position and velocity.
         x_goal : array, shape=(n,)
             Goal state, i.e. stacked position and velocity.
         nb_steps : int
             Number of discretization steps in the preview window.
+        C : array, shape=(m, dim(u) or nb_steps * dim(u))
+            Matrix for control inequality constraints.
+        d : array, shape=(m,)
+            Vector for control inequality constraints.
         E : array, shape=(l, n), optional
             Matrix for state inequality constraints.
         f : array, shape=(l,), optional
             Vector for state inequality constraints.
-        wx : scalar, optional
-            Weight :math:`w_x` on the state error
-            :math:`\\|x - x_\\mathrm{goal}\\|^2`.
-        wu : scalar, optional
-            Weight :math:`w_u` on cumulated controls
-            :math:`\\sum_k \\|u_k\\|^2`.
         solver : vsmpc.SolverFlag, optional
             Backend QP solver to use.
         """
 
-        def __init__(self, A, B, G, h, x_init, x_goal, nb_steps, E=None, f=None,
-                     wx=1000., wu=1., solver=vsmpc.SolverFlag.QuadProgDense):
-            u_dim = B.shape[1]
+        def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None,
+                     E=None, f=None, solver=vsmpc.SolverFlag.QuadProgDense):
             self.A = array_to_MatrixXd(A)
             self.B = array_to_MatrixXd(B)
-            self.G = array_to_MatrixXd(G)
+            self.C = array_to_MatrixXd(C)
             self.c = VectorXd.Zero(A.shape[0])  # no bias term for now
             self.controller = None
-            self.h = array_to_VectorXd(h)
+            self.d = array_to_VectorXd(d)
             self.nb_steps = nb_steps
             self.ps = None
             self.solver = solver
-            self.u_dim = u_dim
-            self.wu = VectorXd.Ones(B.shape[1]) * wu
-            self.wx = VectorXd.Ones(A.shape[1]) * wx
+            self.u_dim = B.shape[1]
+            self.x_dim = A.shape[1]
             self.x_goal = array_to_VectorXd(x_goal)
             self.x_init = array_to_VectorXd(x_init)
 
@@ -298,15 +290,28 @@ try:
             self.ps.system(
                 self.A, self.B, self.c, self.x_init, self.x_goal, self.nb_steps)
             self.controller = vsmpc.MPCTypeLast(self.ps, self.solver)
-            self.control_ineq = vsmpc.NewControlConstraint(self.G, self.h, True)
+            self.control_ineq = vsmpc.NewControlConstraint(self.C, self.d, True)
             self.controller.addConstraint(self.control_ineq)
-            self.controller.weights(self.wx, self.wu)
 
-        def compute_control(self):
+        def compute_controls(self, wx=1., wu=1e-3):
             """
-            Compute the stacked control vector ``U`` minimizing the preview QP.
+            Compute the series of controls that minimizes the preview QP.
+
+            Parameters
+            ----------
+            wx : scalar, optional
+                Weight on (cumulated or terminal) state costs.
+            wu : scalar, optional
+                Weight on cumulated control costs.
+
+            Note
+            ----
+            This function should be called after ``compute_dynamics()``.
             """
             assert self.controller is not None, "Call compute_dynamics() first"
+            wu = VectorXd.Ones(self.u_dim) * wu
+            wx = VectorXd.Ones(self.x_dim) * wx
+            self.controller.weights(wx, wu)
             ret = self.controller.solve()
             if not ret:
                 raise Exception("MPC failed to solve QP")
