@@ -183,10 +183,8 @@ class LinearPredictiveControl(object):
         Px, qx = dot(A.T, A), -dot(b.T, A)  # |x_N - x_goal|^2 = |A * x - b|^2
         P = wx * Px + wu * Pu
         q = wx * qx + wu * qu
-        G = self.G if self.E is None else vstack([self.G] + self.G_state)
-        h = self.h if self.E is None else hstack([self.h] + self.h_state)
         t_solve_start = time()
-        U = solve_qp(P, q, G, h)
+        U = solve_qp(P, q, self.G, self.h)
         t_done = time()
         self.U = U.reshape((self.nb_steps, self.u_dim))
         self.solve_time = t_done - t_solve_start
