@@ -97,6 +97,7 @@ class LinearPredictiveControl(object):
         self.B = B
         self.C = C
         self.E = E
+        self.U = None
         self.U_dim = u_dim * nb_steps
         self.d = d
         self.f = f
@@ -170,8 +171,12 @@ class LinearPredictiveControl(object):
         wu : scalar, optional
             Weight :math:`w_u` on the cumulated control cost
             :math:`\\sum_k \\|u_k\\|^2`.
+
+        Note
+        ----
+        This function can only be called after ``compute_dynamics()``.
         """
-        assert self.psi_last is not None, "Call compute_dynamics() first"
+        assert self.psi_last is not None, "call compute_dynamics() first"
         A = self.psi_last
         b = self.x_goal - dot(self.phi_last, self.x_init)
         Pu, qu = eye(self.U_dim), zeros(self.U_dim)  # sum_k |u_k|^2
@@ -186,6 +191,21 @@ class LinearPredictiveControl(object):
         self.U = U.reshape((self.nb_steps, self.u_dim))
         self.solve_time = t_done - t_solve_start
         self.solve_and_build_time = t_done - self.t_build_start
+
+    def compute_states(self):
+        """
+        Compute the stacked state vector `X` over the preview window.
+
+        Note
+        ----
+        This function can only be called after ``compute_controls()``.
+        """
+        assert self.U is not None, "call compute_controls() first"
+        X = zeros((self.nb_steps + 1, self.x_dim))
+        X[0] = self.x_init
+        for k in xrange(self.nb_steps):
+            X[k + 1] = dot(self.A, X[k]) + dot(self.B, self.U[k])
+        self.X = X
 
 
 try:
