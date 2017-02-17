@@ -51,23 +51,35 @@ def solve_lp(c, G, h, A=None, b=None, solver=LP_SOLVER):
     """
     Solve a Linear Program defined by:
 
-        minimize
-            c.T * x
+    .. math::
 
-        subject to
-            G * x <= h
-            A * x == b  (optional)
+        \\begin{eqnarray}
+        \\mathrm{minimize} & & c^T x \\\\
+        \\mathrm{subject\\ to} & & G x \leq h \\\\
+            & & A x = b
+        \\end{eqnarray}
 
     using CVXOPT <http://cvxopt.org/userguide/coneprog.html#linear-programming>.
 
-    INPUT:
+    Parameters
+    ----------
+    c : array, shape=(n,)
+        Cost vector.
+    G : array, shape=(m, n)
+        Linear inequality constraint matrix.
+    h : array, shape=(m,)
+        Linear inequality constraint vector.
+    A : array, shape=(meq, n), optional
+        Linear equality constraint matrix.
+    b : array, shape=(meq,), optional
+        Linear equality constraint vector.
+    solver : string, optional
+        Solver to use, default is GLPK if available
 
-    - ``c`` -- cost vector
-    - ``G`` -- inequality matrix
-    - ``h`` -- inequality vector
-    - ``A`` -- (optional) equality matrix
-    - ``b`` -- (optional) equality vector
-    - ``solver`` -- (optional) solver to use, defaults to GLPK if available
+    Returns
+    -------
+    x : array, shape=(n,)
+        Solution to the LP, if found, otherwise ``None``.
     """
     args = [cvxmat(c), cvxmat(G), cvxmat(h)]
     if A is not None:
@@ -112,15 +124,15 @@ try:
             Linear inequality constraint matrix.
         h : array, shape=(m,)
             Linear inequality constraint vector.
-        A : array, shape=(meq, n), default=None
+        A : array, shape=(meq, n), optional
             Linear equality constraint matrix.
-        b : array, shape=(meq,), default=None
+        b : array, shape=(meq,), optional
             Linear equality constraint vector.
 
         Returns
         -------
         x : array, shape=(n,)
-            Solution to the QP, if found, otherwise None.
+            Solution to the QP, if found, otherwise ``None``.
 
         References
         ----------
@@ -152,30 +164,40 @@ def cvxopt_solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
     """
     Solve a Quadratic Program defined as:
 
-        minimize
-            (1/2) * x.T * P * x + q.T * x
+    .. math::
 
-        subject to
-            G * x <= h
-            A * x == b  (optional)
+        \\begin{eqnarray}
+        \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
+        \\mathrm{subject\\ to} & & G x \leq h \\\\
+            & & A x = b
+        \\end{eqnarray}
 
     using CVXOPT
     <http://cvxopt.org/userguide/coneprog.html#quadratic-programming>.
 
-    INPUT:
+    Parameters
+    ----------
+    P : array, shape=(n, n)
+        Primal quadratic cost matrix.
+    q : array, shape=(n,)
+        Primal quadratic cost vector.
+    G : array, shape=(m, n)
+        Linear inequality constraint matrix.
+    h : array, shape=(m,)
+        Linear inequality constraint vector.
+    A : array, shape=(meq, n), optional
+        Linear equality constraint matrix.
+    b : array, shape=(meq,), optional
+        Linear equality constraint vector.
+    solver : string, optional
+        Set to 'mosek' to run MOSEK rather than CVXOPT.
+    initvals : array, shape=(n,), optional
+        Warm-start guess vector.
 
-    - ``P`` -- primal quadratic cost matrix
-    - ``q`` -- primal quadratic cost vector
-    - ``G`` -- linear inequality constraint matrix
-    - ``h`` -- linear inequality constraint vector
-    - ``A`` -- (optional) linear equality constraint matrix
-    - ``b`` -- (optional) linear equality constraint vector
-    - ``solver`` -- (optional) use 'mosek' to run MOSEK rather than CVXOPT
-    - ``initvals`` -- (optional) warm-start guess
-
-    OUTPUT:
-
-    A numpy.array with the solution ``x``, if found, otherwise None.
+    Returns
+    -------
+    x : array, shape=(n,)
+        Solution to the QP, if found, otherwise ``None``.
     """
     # CVXOPT only considers the lower entries of P so we project on its
     # symmetric part beforehand
