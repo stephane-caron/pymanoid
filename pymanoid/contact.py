@@ -78,20 +78,21 @@ class Contact(Box):
     """
 
     def grasp_matrix(self, p):
-        """Compute the grasp matrix for a given destination point.
+        """
+        Compute the grasp matrix for a given destination point.
 
-        The grasp matrix :math:`G_P` converts the local contact wrench :math:`w`
-        to the contact wrench :math:`w_P` at another point :math:`P`:
+        The grasp matrix :math:`G_P` converts the local contact wrench `w` to
+        the contact wrench :math:`w_P` at another point `P`:
 
         .. math::
 
             w_P = G_P w
 
-        All wrenches are expressed with respect to the world frame.
+        All wrench coordinates being taken in the world frame.
 
         Parameters
         ----------
-        p : ndarray
+        p : array, shape=(3,)
             Point, in world frame coordinates, where the wrench is taken.
 
         Returns
@@ -114,7 +115,7 @@ class Contact(Box):
     ===================
 
     All linearized friction cones in pymanoid use the inner (conservative)
-    approximation. See <https://scaron.info/teaching/friction-model.html>
+    approximation. See <https://scaron.info/teaching/friction-model.html>.
     """
 
     @property
@@ -130,12 +131,12 @@ class Contact(Box):
         Face (H-rep) of the force friction cone in world frame.
         """
         mu = self.static_friction / sqrt(2)  # inner approximation
-        local_cone = array([
+        face_local = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
             [0, -1, -mu],
             [0, +1, -mu]])
-        return dot(local_cone, self.R.T)
+        return dot(face_local, self.R.T)
 
     @property
     def force_rays(self):
@@ -170,9 +171,11 @@ class Contact(Box):
 
     @property
     def wrench_face(self):
-        """Matrix :math:`F` of static-friction inequalities in world frame.
+        """
+        Matrix `F` of friction inequalities in world frame.
 
-        This matrix describes the linearized Coulomb friction model by:
+        This matrix describes the linearized Coulomb friction model (in the
+        fixed contact mode) by:
 
         .. math::
 
@@ -217,12 +220,10 @@ class Contact(Box):
         """
         Rays (V-rep) of the contact wrench cone in world frame.
         """
-        rays = []
-        for v in self.vertices:
-            x, y, z = v - self.p
-            for f in self.force_rays:
-                rays.append(hstack([f, cross(v - self.p, f)]))
-        return rays
+        return [
+            hstack([f, cross(v - self.p, f)])
+            for v in self.vertices
+            for f in self.force_rays]
 
     @property
     def wrench_span(self):
@@ -251,8 +252,6 @@ class Contact(Box):
         contact points (one for each vertex of the rectangular area) with
         4-sided friction pyramids at each.
         """
-        span_blocks = []
-        for v in self.vertices:
-            G = vstack([eye(3), crossmat(v - self.p)])
-            span_blocks.append(dot(G, self.force_span))
-        return hstack(span_blocks)
+        return hstack([
+            dot(vstack([eye(3), crossmat(v - self.p)]), self.force_span)
+            for v in self.vertices])

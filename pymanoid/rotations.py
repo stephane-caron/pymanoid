@@ -45,41 +45,41 @@ def crossmat(x):
 
     Parameters
     ----------
-    x : ndarray
+    x : array, shape=(3,)
         3D vector to take the cross-product with.
     """
     return array([
-        [0, -x[2], x[1]],
-        [x[2], 0, -x[0]],
-        [-x[1], x[0], 0]])
+        [0., -x[2], x[1]],
+        [x[2], 0., -x[0]],
+        [-x[1], x[0], 0.]])
 
 
-def rpy_from_quat(q):
+def rpy_from_quat(quat):
     """
     Roll-pitch-yaw angles of a quaternion.
 
     Parameters
     ----------
-    q : array
+    quat : array, shape=(4,)
         Quaternion in `[w x y z]` format.
 
     Returns
     -------
-    rpy : array
-        3D array of roll-pitch-yaw angles, in [rad].
+    rpy : array, shape=(3,)
+        Array of roll-pitch-yaw angles, in [rad].
 
     Notes
     -----
     Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
     """
     roll = atan2(
-        2 * q[2] * q[3] + 2 * q[0] * q[1],
-        q[3] ** 2 - q[2] ** 2 - q[1] ** 2 + q[0] ** 2)
+        2 * quat[2] * quat[3] + 2 * quat[0] * quat[1],
+        quat[3] ** 2 - quat[2] ** 2 - quat[1] ** 2 + quat[0] ** 2)
     pitch = -asin(
-        2 * q[1] * q[3] - 2 * q[0] * q[2])
+        2 * quat[1] * quat[3] - 2 * quat[0] * quat[2])
     yaw = atan2(
-        2 * q[1] * q[2] + 2 * q[0] * q[3],
-        q[1] ** 2 + q[0] ** 2 - q[3] ** 2 - q[2] ** 2)
+        2 * quat[1] * quat[2] + 2 * quat[0] * quat[3],
+        quat[1] ** 2 + quat[0] ** 2 - quat[3] ** 2 - quat[2] ** 2)
     return array([roll, pitch, yaw])
 
 
@@ -98,7 +98,7 @@ def quat_from_rpy(roll, pitch, yaw):
 
     Returns
     -------
-    quat : array
+    quat : array, shape=(4,)
         Quaternion in `[w x y z]` format.
 
     Notes
@@ -129,7 +129,7 @@ def rotation_matrix_from_rpy(roll, pitch, yaw):
 
     Returns
     -------
-    R : array
+    R : array, shape=(3, 3)
         Rotation matrix.
     """
     return rotation_matrix_from_quat(quat_from_rpy(roll, pitch, yaw))
@@ -146,8 +146,8 @@ def rpy_from_rotation_matrix(R):
 
     Returns
     -------
-    rpy : array
-        3D array of roll-pitch-yaw angles, in [rad].
+    rpy : array, shape=(3,)
+        Array of roll-pitch-yaw angles, in [rad].
 
     Notes
     -----
