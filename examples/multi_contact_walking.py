@@ -592,12 +592,13 @@ class COMTubePredictiveControl(pymanoid.Process):
         if state_constraints:
             E, f = self.tube.full_hrep
         self.preview_control = LinearPredictiveControl(
-            A, B, x_init, x_goal, self.nb_mpc_steps, C_list, d_list, E, f)
+            A, B, x_init, x_goal, self.nb_mpc_steps, C_list, d_list, E, f,
+            wxt=1000., wu=1.)
         self.preview_control.switch_step = switch_step
         self.preview_control.timestep = dT
-        self.preview_control.compute_dynamics()
+        self.preview_control.build()
         try:
-            self.preview_control.compute_controls(wx=1000., wu=1.)
+            self.preview_control.solve()
             U = self.preview_control.U.flatten()
             dT = [self.preview_control.timestep] * self.nb_mpc_steps
             self.preview_buffer.update_preview(U, dT)

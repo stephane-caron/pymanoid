@@ -52,10 +52,13 @@ class LinearPredictiveControl(object):
 
     - Terminal state error
         :math:`\\|x_\\mathrm{nb\\_steps} - x_\\mathrm{goal}\\|^2`
-      or cumulated state error:
+        with weight :math:`w_{xt}`.
+    - Cumulated state error:
         :math:`\\sum_k \\|x_k - x_\\mathrm{goal}\\|^2`
+        with weight :math:`w_{xc}`.
     - Cumulated control costs:
         :math:`\\sum_k \\|u_k\\|^2`
+        with weight :math:`w_{u}`.
 
     Parameters
     ----------
@@ -81,8 +84,12 @@ class LinearPredictiveControl(object):
     f : array, shape=(l,), or list of arrays, optional
         Vector for state inequality constraints. When this argument is an array,
         the same vector `f` is applied at each step `k`.
-    state_cost : string, optional
-        Switch between "terminal" or "cumulated" state costs.
+    wxt : scalar, optional
+        Weight on terminal state cost, or ``None`` to disable.
+    wxc : scalar, optional
+        Weight on cumulated state costs, or ``None`` to disable (default).
+    wu : scalar, optional
+        Weight on cumulated control costs.
 
     Notes
     -----
@@ -94,9 +101,10 @@ class LinearPredictiveControl(object):
     """
 
     def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None, E=None,
-                 f=None, state_cost='terminal'):
+                 f=None, wxt=None, wxc=None, wu=1e-3):
         assert C is not None or E is not None, "use LQR for unconstrained case"
-        assert state_cost in ['cumulated', 'terminal']
+        assert wu > 0., "non-negative control weight needed for regularization"
+        assert wxt is not None or wxc is not None, "set either wxt or wxc"
         u_dim = B.shape[1]
         x_dim = A.shape[1]
         self.A = A
@@ -104,25 +112,27 @@ class LinearPredictiveControl(object):
         self.C = C
         self.E = E
         self.G = None
-        self.Phi = None
-        self.Psi = None
         self.U = None
         self.U_dim = u_dim * nb_steps
-        self.X_goal = None
+        self.build_time = None
         self.d = d
         self.f = f
         self.h = None
-        self.is_terminal = state_cost == 'terminal'
         self.nb_steps = nb_steps
-        self.phi_last = None
-        self.psi_last = None
-        self.t_build_start = None
+        self.solve_time = None
         self.u_dim = u_dim
+        self.wu = wu
+        self.wxc = wxc
+        self.wxt = wxt
         self.x_dim = x_dim
         self.x_goal = x_goal
         self.x_init = x_init
 
-    def compute_dynamics(self):
+    @property
+    def solve_and_build_time(self):
+        return self.build_time + self.solve_time
+
+    def build(self):
         """
         Compute internal matrices defining the preview QP.
 
@@ -143,14 +153,14 @@ class LinearPredictiveControl(object):
             `[pdf]
             <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`__
         """
-        self.t_build_start = time()
+        t_build_start = time()
         phi = eye(self.x_dim)
         psi = zeros((self.x_dim, self.U_dim))
         G_list, h_list = [], []
         phi_list, psi_list = [], []
         for k in xrange(self.nb_steps):
             # Loop invariant: x = phi * x_init + psi * U
-            if not self.is_terminal:
+            if self.wxc is not None:
                 phi_list.append(phi)
                 psi_list.append(psi)
             if self.C is not None:
@@ -170,48 +180,33 @@ class LinearPredictiveControl(object):
             phi = dot(self.A, phi)
             psi = dot(self.A, psi)
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
-        if self.is_terminal:
-            self.phi_last = phi
-            self.psi_last = psi
-        else:  # not self.is_terminal:
-            self.Phi = vstack(phi_list)
-            self.Psi = vstack(psi_list)
-            self.X_goal = hstack([self.x_goal] * self.nb_steps)
+        P = self.wu * eye(self.U_dim)
+        q = zeros(self.U_dim)
+        if self.wxt is not None:
+            c = dot(phi, self.x_init) - self.x_goal
+            P += self.wxt * dot(psi.T, psi)
+            q += self.wxt * dot(c.T, psi)
+        if self.wxc is not None:
+            Phi = vstack(phi_list)
+            Psi = vstack(psi_list)
+            X_goal = hstack([self.x_goal] * self.nb_steps)
+            c = dot(Phi, self.x_init) - X_goal
+            P += self.wxc * dot(Psi.T, Psi)
+            q += self.wxc * dot(c.T, Psi)
+        self.P = P
+        self.q = q
         self.G = vstack(G_list)
         self.h = hstack(h_list)
+        self.build_time = time() - t_build_start
 
-    def compute_controls(self, wx=1., wu=1e-3):
+    def solve(self):
         """
         Compute the series of controls that minimizes the preview QP.
-
-        Parameters
-        ----------
-        wx : scalar, optional
-            Weight on (cumulated or terminal) state costs.
-        wu : scalar, optional
-            Weight on cumulated control costs.
-
-        Note
-        ----
-        This function should be called after ``compute_dynamics()``.
         """
-        assert wu > 0., "non-negative control weight needed for regularization"
-        P = wu * eye(self.U_dim)
-        q = zeros(self.U_dim)
-        if self.is_terminal:
-            A = self.psi_last
-            b = dot(self.phi_last, self.x_init) - self.x_goal
-        else:  # not self.is_terminal:
-            A = self.Psi
-            b = dot(self.Phi, self.x_init) - self.X_goal
-        P += wx * dot(A.T, A)
-        q += wx * dot(b.T, A)
         t_solve_start = time()
-        U = solve_qp(P, q, self.G, self.h)
-        t_done = time()
+        U = solve_qp(self.P, self.q, self.G, self.h)
         self.U = U.reshape((self.nb_steps, self.u_dim))
-        self.solve_time = t_done - t_solve_start
-        self.solve_and_build_time = t_done - self.t_build_start
+        self.solve_time = time() - t_solve_start
 
     def compute_states(self):
         """
