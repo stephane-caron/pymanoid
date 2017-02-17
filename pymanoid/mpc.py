@@ -115,7 +115,8 @@ class LinearPredictiveControl(object):
 
         Notes
         -----
-        See [Aud+14]_ for details, as we use the same notations below.
+        See [Aud+14]_ for details on the matrices :math:`\\Phi` and
+        :math:`\\Psi`, as we use similar notations below.
 
         References
         ----------
