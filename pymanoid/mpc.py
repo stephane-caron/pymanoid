@@ -102,12 +102,14 @@ class LinearPredictiveControl(object):
         self.B = B
         self.C = C
         self.E = E
+        self.G = None
         self.Phi = None
         self.Psi = None
         self.U = None
         self.U_dim = u_dim * nb_steps
         self.d = d
         self.f = f
+        self.h = None
         self.is_terminal = state_cost == 'terminal'
         self.nb_steps = nb_steps
         self.phi_last = None
