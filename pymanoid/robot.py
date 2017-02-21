@@ -23,9 +23,10 @@ from os.path import basename, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
+from ik import VelocitySolver
 from misc import norm
 from rotations import crossmat, rpy_from_quat
-from sim import Process, get_openrave_env
+from sim import get_openrave_env
 
 
 class Robot(object):
@@ -61,8 +62,7 @@ class Robot(object):
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)
 
         self.has_free_flyer = False
-        self.ik = None  # created by self.init_ik()
-        self.ik_process = None  # created by self.init_ik()
+        self.ik = None  # call init_ik() to instantiate
         self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
@@ -71,7 +71,6 @@ class Robot(object):
         self.q_max.flags.writeable = False
         self.q_min = q_min
         self.q_min.flags.writeable = False
-        self.qdd_max = None  # set in child class
         self.rave = rave
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
@@ -349,14 +348,7 @@ class Robot(object):
         doflim_gain : scalar
             Gain between 0 and 1 used for DOF limits.
         """
-        from ik import VelocitySolver
-
-        class IKProcess(Process):
-            def on_tick(_, sim):
-                self.step_ik(sim.dt)
-
         self.ik = VelocitySolver(self, active_dofs, doflim_gain)
-        self.ik_process = IKProcess()
 
     def step_ik(self, dt, method='safe', verbose=False):
         """
