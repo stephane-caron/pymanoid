@@ -266,7 +266,7 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None):
     return cvxopt_solve_qp(P, q, G, h, A, b)
 
 
-def solve_marginal_qp(P, q, G, h, mreg, mlin, solver='mosek'):
+def solve_safer_qp(P, q, G, h, w_reg, w_lin, solver='mosek'):
     """
     Solve the relaxed Quadratic Program defined as:
 
@@ -280,7 +280,7 @@ def solve_marginal_qp(P, q, G, h, mreg, mlin, solver='mosek'):
         \\end{eqnarray}
 
     Slack variables `s` are increased by an additional term in the cost
-    function, so that the solution of this marginal QP is further inside the
+    function, so that the solution of this "safer" QP is further inside the
     constraint region.
 
     Parameters
@@ -293,13 +293,13 @@ def solve_marginal_qp(P, q, G, h, mreg, mlin, solver='mosek'):
         Linear inequality constraint matrix.
     h : array, shape=(m,)
         Linear inequality constraint vector.
-    mreg : scalar
+    w_reg : scalar
         Regularization term :math:`(1/2) \\epsilon` in the cost function. Set
-        this parameter as small as possible (e.g. 1e-8), and increase in case of
-        numerical instability.
-    mlin : scalar
-        Weight `w` of the linear cost on slack variables. Higher values bring
-        the solution further inside the constraint region but disregard
+        this parameter as small as possible (e.g. 1e-8), and increase it in case
+        of numerical instability.
+    w_lin : scalar
+        Weight of the linear cost on slack variables. Higher values bring the
+        solution further inside the constraint region but override the
         minimization of the original objective.
     solver : string, optional
         Name of the QP solver to use (default is MOSEK).
@@ -316,8 +316,8 @@ def solve_marginal_qp(P, q, G, h, mreg, mlin, solver='mosek'):
     """
     n, m = P.shape[0], G.shape[0]
     E, Z = eye(m), zeros((m, n))
-    P2 = vstack([hstack([P, Z.T]), hstack([Z, mreg * eye(m)])])
-    q2 = hstack([q, -mlin * ones(m)])
+    P2 = vstack([hstack([P, Z.T]), hstack([Z, w_reg * eye(m)])])
+    q2 = hstack([q, -w_lin * ones(m)])
     G2 = hstack([Z, E])
     h2 = zeros(m)
     A2 = hstack([G, -E])
