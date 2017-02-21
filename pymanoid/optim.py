@@ -23,7 +23,7 @@ import cvxopt.solvers
 from cvxopt import matrix as cvxmat
 from cvxopt.solvers import lp as cvxopt_lp
 from cvxopt.solvers import qp as cvxopt_qp
-from numpy import array, dot, hstack, vstack
+from numpy import array, eye, hstack, ones, vstack, zeros
 from warnings import warn
 
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
@@ -156,7 +156,7 @@ try:
             meq = 0
         return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
 except ImportError:
-    warn("QP solver: quadprog not found, falling back to CVXOPT")
+    warn("quadprog QP solver not found, falling back to CVXOPT")
     quadprog_solve_qp = None
 
 
@@ -223,71 +223,103 @@ except ImportError:
     pass
 
 
-if quadprog_solve_qp is not None:
-    solve_qp = quadprog_solve_qp
-else:  # fallback option is CVXOPT
-    solve_qp = cvxopt_solve_qp
-
-
-def solve_relaxed_qp(P, q, G, h, A, b, tol=None, W=100000.):
-    """Solve a Quadratic Program with relaxed equality constraints.
-
-    The reference QP is defined by:
+def solve_qp(P, q, G, h, A=None, b=None, solver=None):
+    """
+    Solve a Quadratic Program defined as:
 
     .. math::
 
         \\begin{eqnarray}
-        \\mathrm{minimize} & & c_1(x) \\\\
-        \\mathrm{s.t.} & & G x \leq h \\\\
-            & & c_2(x) = 0
+        \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
+        \\mathrm{subject\\ to} & & G x \leq h \\\\
+            & & A x = b
         \\end{eqnarray}
-
-    where the cost function and linear equalities are given by:
-
-    .. math::
-
-        \\begin{eqnarray}
-        c_1(x) & = & (1/2) x^T P x + q^T x \\\\
-        c_2(x) & = & \\|A x - b\\|^2
-        \\end{eqnarray}
-
-    The relaxed problem is defined by
-
-    .. math::
-
-        \\begin{eqnarray}
-        \\mathrm{minimize} & & c_1(x) + W c_2(x) \\\\
-        \\mathrm{s.t.} & & G x \leq h
-        \\end{eqnarray}
-
-    where :math:`W` is a very large weight.
 
     Parameters
     ----------
-    P : ndarray
-        Quadratic cost matrix.
-    q : ndarray
-        Quadratic cost vector.
-    G : ndarray
+    P : array, shape=(n, n)
+        Primal quadratic cost matrix.
+    q : array, shape=(n,)
+        Primal quadratic cost vector.
+    G : array, shape=(m, n)
         Linear inequality constraint matrix.
-    h : ndarray
+    h : array, shape=(m,)
         Linear inequality constraint vector.
-    A : ndarray
+    A : array, shape=(meq, n), optional
         Linear equality constraint matrix.
-    b : ndarray
+    b : array, shape=(meq,), optional
         Linear equality constraint vector.
-    tol : double, optional
-        If provided, the solution will only be returned if the relative
-        variation between :math:`A x` and :math:`b` is less than ``tol``.
-    W : double, optional
-        Large weight :math:`W`. Defaults to :math:`10^5`.
+    solver : string, optional
+        Name of the QP solver to use (default is quadprog).
+
+    Returns
+    -------
+    x : array, shape=(n,)
+        Solution to the QP, if found, otherwise ``None``.
     """
-    P2 = P + W * dot(A.T, A)
-    q2 = q + W * dot(-b.T, A)
-    x = solve_qp(P2, q2, G, h)
-    if x is not None and tol is not None:
-        def sq(v):
-            return dot(v, v)
-        if sq(dot(A, x) - b) / sq(b) > tol * tol:
-            return None
-    return x
+    if solver == 'cvxopt':
+        return cvxopt_solve_qp(P, q, G, h, A, b)
+    elif solver == 'mosek':
+        return mosek_solve_qp(P, q, G, h, A, b)
+    if quadprog_solve_qp is not None:
+        return quadprog_solve_qp(P, q, G, h, A, b)
+    return cvxopt_solve_qp(P, q, G, h, A, b)
+
+
+def solve_marginal_qp(P, q, G, h, mreg, mlin, solver='mosek'):
+    """
+    Solve the relaxed Quadratic Program defined as:
+
+    .. math::
+
+        \\begin{eqnarray}
+        \\mathrm{minimize} & & (1/2) x^T P x + (1/2) \\epsilon \\| s \\|^2 q^T x
+        - w 1^T s\\\\
+        \\mathrm{subject\\ to} & & G x + s \\leq h \\\\
+            & & s \\geq 0
+        \\end{eqnarray}
+
+    Slack variables `s` are increased by an additional term in the cost
+    function, so that the solution of this marginal QP is further inside the
+    constraint region.
+
+    Parameters
+    ----------
+    P : array, shape=(n, n)
+        Primal quadratic cost matrix.
+    q : array, shape=(n,)
+        Primal quadratic cost vector.
+    G : array, shape=(m, n)
+        Linear inequality constraint matrix.
+    h : array, shape=(m,)
+        Linear inequality constraint vector.
+    mreg : scalar
+        Regularization term :math:`(1/2) \\epsilon` in the cost function. Set
+        this parameter as small as possible (e.g. 1e-8), and increase in case of
+        numerical instability.
+    mlin : scalar
+        Weight `w` of the linear cost on slack variables. Higher values bring
+        the solution further inside the constraint region but disregard
+        minimization of the original objective.
+    solver : string, optional
+        Name of the QP solver to use (default is MOSEK).
+
+    Returns
+    -------
+    x : array, shape=(n,)
+        Solution to the relaxed QP, if found, otherwise ``None``.
+
+    Notes
+    -----
+    The default solver for this method is MOSEK, as it seems to perform better
+    on such relaxed problems.
+    """
+    n, m = P.shape[0], G.shape[0]
+    E, Z = eye(m), zeros((m, n))
+    P2 = vstack([hstack([P, Z.T]), hstack([Z, mreg * eye(m)])])
+    q2 = hstack([q, -mlin * ones(m)])
+    G2 = hstack([Z, E])
+    h2 = zeros(m)
+    A2 = hstack([G, -E])
+    b2 = h
+    return solve_qp(P2, q2, G2, h2, A2, b2, solver=solver)[:n]
