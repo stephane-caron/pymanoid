@@ -223,6 +223,9 @@ class Simulation(object):
             raise Exception("viewer is already set")
         self.env.SetViewer(plugin)
         self.viewer = self.env.GetViewer()
+        if self.viewer is None:  # seldom happens that GetViewer() is not
+            time.sleep(0.01)     # immediately available after SetViewer()
+            self.viewer = self.env.GetViewer()
         self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
         self.set_camera_back(x=-3, y=0, z=0.7)
 
