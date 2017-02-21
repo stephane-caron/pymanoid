@@ -22,6 +22,7 @@ from threading import Lock
 from warnings import warn
 
 from optim import solve_qp
+from sim import Process
 
 
 class IKError(Exception):
@@ -29,7 +30,7 @@ class IKError(Exception):
     pass
 
 
-class VelocitySolver(object):
+class VelocitySolver(Process):
 
     """
     Compute velocities bringing the system closer to fulfilling a set of tasks.
@@ -61,6 +62,7 @@ class VelocitySolver(object):
     """
 
     def __init__(self, robot, active_dofs, doflim_gain):
+        super(VelocitySolver, self).__init__()
         assert 0. <= doflim_gain <= 1.
         nb_active_dofs = len(active_dofs)
         self.active_dofs = active_dofs
@@ -314,3 +316,6 @@ class VelocitySolver(object):
         if method == 'fast':
             return self.compute_velocity_fast(dt)
         return self.compute_velocity_safe(dt)
+
+    def on_tick(self, sim):
+        self.robot.step_ik(sim.dt)
