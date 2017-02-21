@@ -20,6 +20,7 @@
 from numpy import hstack, zeros
 from time import time
 
+from body import PointMass
 from draw import draw_line, draw_polygon, draw_polyhedron
 from draw import draw_wrench
 from misc import norm
@@ -118,6 +119,21 @@ class TrajectoryDrawer(Process):
         for i in xrange(len(self.handles)):
             if i % 2 == 0:
                 self.handles[i] = None
+
+
+class COMTrajectoryDrawer(TrajectoryDrawer):
+
+    def __init__(self, robot, combined='b-', color=None, linewidth=3,
+                 linestyle=None):
+        body = PointMass(
+            robot.com, robot.mass, name='RobotCOMState', visible=False)
+        super(COMTrajectoryDrawer, self).__init__(
+            body, combined, color, linewidth, linestyle)
+        self.robot = robot
+
+    def on_tick(self, sim):
+        self.body.set_pos(self.robot.com)
+        super(COMTrajectoryDrawer, self).on_tick(sim)
 
 
 """
