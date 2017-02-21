@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot, hstack, sqrt
+from numpy import array, dot, hstack, sqrt, zeros
 
 from rotations import quat_slerp
 
@@ -112,6 +112,13 @@ class PoseWrap(object):
     def __init__(self, pose):
         assert len(pose) == 7, "Argument is not a pose"
         self.pose = array(pose)
+
+
+def eyevec(i, n):
+    """Unit basis vector for coordinate `i` in dimension `n`."""
+    u = zeros(n)
+    u[i] = 1.
+    return u
 
 
 def norm(v):

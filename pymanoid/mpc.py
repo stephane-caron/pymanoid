@@ -43,8 +43,7 @@ class LinearPredictiveControl(object):
 
         \\begin{eqnarray}
         x_0 & = & x_\\mathrm{init} \\\\
-        \\forall k, \\ C_k u_k & \\leq & d_k \\\\
-        \\forall k, \\ E_k p_k & \\leq & f_k
+        \\forall k, \\ C_k x_k + D_k u_k & \\leq & e_k \\\\
         \\end{eqnarray}
 
     The output control law minimizes a weighted combination of two types of
@@ -72,18 +71,17 @@ class LinearPredictiveControl(object):
         Goal state as stacked position and velocity.
     nb_steps : int
         Number of discretization steps in the preview window.
-    C : array, shape=(m, dim(u)), or list of arrays, optional
-        Matrices for control inequality constraints. When this argument is an
-        array, the same matrix `C` is applied at each step `k`.
-    d : array, shape=(m,), or list of arrays, optional
-        Vectors for control inequality constraints. When this argument is an
-        array, the same vector `d` is applied at each step `k`.
-    E : array, shape=(l, n), or list of arrays, optional
-        Matrix for state inequality constraints. When this argument is an
-        array, the same matrix `E` is applied at each step `k`.
-    f : array, shape=(l,), or list of arrays, optional
-        Vector for state inequality constraints. When this argument is an array,
-        the same vector `f` is applied at each step `k`.
+    C : array, shape=(m, dim(u)), list of arrays, or None
+        Constraint matrix on state variables. When this argument is an array,
+        the same matrix `C` is applied at each step `k`. When it is ``None``,
+        the null matrix is applied.
+    D : array, shape=(l, n), or list of arrays, or None
+        Constraint matrix on control variables. When this argument is an array,
+        the same matrix `D` is applied at each step `k`. When it is ``None``,
+        the null matrix is applied.
+    e : array, shape=(m,), list of arrays
+        Constraint vector. When this argument is an array, the same vector `e`
+        is applied at each step `k`.
     wxt : scalar, optional
         Weight on terminal state cost, or ``None`` to disable.
     wxc : scalar, optional
@@ -100,9 +98,9 @@ class LinearPredictiveControl(object):
     <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 
-    def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None, E=None,
-                 f=None, wxt=None, wxc=None, wu=1e-3):
-        assert C is not None or E is not None, "use LQR for unconstrained case"
+    def __init__(self, A, B, C, D, e, x_init, x_goal, nb_steps, wxt=None,
+                 wxc=None, wu=1e-3):
+        assert C is not None or D is not None, "use LQR for unconstrained case"
         assert wu > 0., "non-negative control weight needed for regularization"
         assert wxt is not None or wxc is not None, "set either wxt or wxc"
         u_dim = B.shape[1]
@@ -110,15 +108,14 @@ class LinearPredictiveControl(object):
         self.A = A
         self.B = B
         self.C = C
-        self.E = E
+        self.D = D
         self.G = None
         self.P = None
         self.U = None
         self.U_dim = u_dim * nb_steps
         self.__X = None
         self.build_time = None
-        self.d = d
-        self.f = f
+        self.e = e
         self.h = None
         self.nb_steps = nb_steps
         self.q = None
@@ -162,24 +159,24 @@ class LinearPredictiveControl(object):
         G_list, h_list = [], []
         phi_list, psi_list = [], []
         for k in xrange(self.nb_steps):
-            # Loop invariant: x = phi * x_init + psi * U
+            # Loop invariant: x == psi * U + phi * x_init
             if self.wxc is not None:
                 phi_list.append(phi)
                 psi_list.append(psi)
+            e = self.e if type(self.e) is ndarray else self.e[k]
+            G = zeros((e.shape[0], self.U_dim))
+            h = e.copy()
             if self.C is not None:
-                # {C * u <= d} iff {C_ext * U <= d}
                 C = self.C if type(self.C) is ndarray else self.C[k]
-                d = self.d if type(self.d) is ndarray else self.d[k]
-                C_ext = zeros((C.shape[0], self.U_dim))
-                C_ext[:, k * self.u_dim:(k + 1) * self.u_dim] = C
-                G_list.append(C_ext)
-                h_list.append(d)
-            if self.E is not None:
-                # {E * x <= f} iff {(E * psi) * U <= f - (E * phi) * x_init}
-                E = self.E if type(self.E) is ndarray else self.E[k]
-                f = self.f if type(self.f) is ndarray else self.f[k]
-                G_list.append(dot(E, psi))
-                h_list.append(f - dot(dot(E, phi), self.x_init))
+                if C is not None:  # state constraint term in C * x
+                    G += dot(C, psi)
+                    h -= dot(dot(C, phi), self.x_init)
+            if self.D is not None:
+                D = self.D if type(self.D) is ndarray else self.D[k]
+                if D is not None:  # control constraint term in D * u
+                    G[:, k * self.u_dim:(k + 1) * self.u_dim] += D
+            G_list.append(G)
+            h_list.append(h)
             phi = dot(self.A, phi)
             psi = dot(self.A, psi)
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
@@ -249,7 +246,37 @@ try:
         Wrapper to Vincent Samy's LMPC library.
 
         Source code and installation instructions are available from
-        <https://github.com/vsamy/preview_controller>.
+        <https://github.com/vsamy/preview_controller>. In this library, the
+        discretized dynamics of a linear system are written as:
+
+        .. math::
+
+            x_{k+1} = A x_k + B u_k
+
+        where :math:`x` is assumed to be the first-order state of a
+        configuration variable :math:`p`, i.e., it stacks both the position
+        :math:`p` and its time-derivative :math:`\\dot{p}`. Meanwhile, the
+        system is linearly constrained by:
+
+        .. math::
+
+            \\begin{eqnarray}
+            x_0 & = & x_\\mathrm{init} \\\\
+            \\forall k, \\ C_k u_k & \\leq & d_k \\\\
+            \\end{eqnarray}
+
+        The output control law minimizes a weighted combination of two types of
+        costs:
+
+        - Terminal state error
+            :math:`\\|x_\\mathrm{nb\\_steps} - x_\\mathrm{goal}\\|^2`
+            with weight :math:`w_{xt}`.
+        - Cumulated state error:
+            :math:`\\sum_k \\|x_k - x_\\mathrm{goal}\\|^2`
+            with weight :math:`w_{xc}`.
+        - Cumulated control costs:
+            :math:`\\sum_k \\|u_k\\|^2`
+            with weight :math:`w_{u}`.
 
         Parameters
         ----------
@@ -267,16 +294,12 @@ try:
             Matrix for control inequality constraints.
         d : array, shape=(m,)
             Vector for control inequality constraints.
-        E : array, shape=(l, n), optional
-            Matrix for state inequality constraints.
-        f : array, shape=(l,), optional
-            Vector for state inequality constraints.
         solver : vsmpc.SolverFlag, optional
             Backend QP solver to use.
         """
 
         def __init__(self, A, B, x_init, x_goal, nb_steps, C=None, d=None,
-                     E=None, f=None, solver=vsmpc.SolverFlag.QuadProgDense):
+                     solver=vsmpc.SolverFlag.QuadProgDense):
             self.A = array_to_MatrixXd(A)
             self.B = array_to_MatrixXd(B)
             self.C = array_to_MatrixXd(C)
