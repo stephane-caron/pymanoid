@@ -309,7 +309,7 @@ class ContactSet(object):
 
         Parameters
         ----------
-        com : array, shape=(3,)
+        com : array, shape=(3,), or list of such arrays
             COM position, or list of COM vertices.
         zdd_max : scalar, optional
             Maximum vertical acceleration in the output cone.

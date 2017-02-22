@@ -146,8 +146,8 @@ class Simulation(object):
             t0 = time.time()
             self._tick_processes()
             rem_time = self.dt - (time.time() - t0)
-            if rem_time < 0.:
-                print "sim.step(%d): warning: cycle time budget" % n,
+            if __debug__ and rem_time < 0.:
+                print "Simulation warning: cycle time budget",
                 print "(%.1f ms) depleted!" % (self.dt * 1000.)
             self._tick_extras()
             rem_time = self.dt - (time.time() - t0)

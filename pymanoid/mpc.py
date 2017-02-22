@@ -180,11 +180,11 @@ class LinearPredictiveControl(object):
             psi[:, self.u_dim * k:self.u_dim * (k + 1)] = self.B
         P = self.wu * eye(self.U_dim)
         q = zeros(self.U_dim)
-        if self.wxt is not None:
+        if self.wxt is not None and self.wxt > 1e-10:
             c = dot(phi, self.x_init) - self.x_goal
             P += self.wxt * dot(psi.T, psi)
             q += self.wxt * dot(c.T, psi)
-        if self.wxc is not None:
+        if self.wxc is not None and self.wxc > 1e-10:
             Phi = vstack(phi_list)
             Psi = vstack(psi_list)
             X_goal = hstack([self.x_goal] * self.nb_steps)
