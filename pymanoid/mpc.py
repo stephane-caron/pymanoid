@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot, eye, hstack, ndarray, vstack, zeros
+from numpy import dot, eye, hstack, vstack, zeros
 
 from optim import solve_qp
 from time import time as time
@@ -163,18 +163,17 @@ class LinearPredictiveControl(object):
             if self.wxc is not None:
                 phi_list.append(phi)
                 psi_list.append(psi)
-            e = self.e if type(self.e) is ndarray else self.e[k]
-            G = zeros((e.shape[0], self.U_dim))
-            h = e.copy()
-            if self.C is not None:
-                C = self.C if type(self.C) is ndarray else self.C[k]
-                if C is not None:  # state constraint term in C * x
-                    G += dot(C, psi)
-                    h -= dot(dot(C, phi), self.x_init)
-            if self.D is not None:
-                D = self.D if type(self.D) is ndarray else self.D[k]
-                if D is not None:  # control constraint term in D * u
-                    G[:, k * self.u_dim:(k + 1) * self.u_dim] += D
+            C = self.C[k] if type(self.C) is list else self.C
+            D = self.D[k] if type(self.D) is list else self.D
+            e = self.e[k] if type(self.e) is list else self.e
+            if C is not None:
+                G = dot(C, psi)
+                h = e - dot(dot(C, phi), self.x_init)
+            else:  # simpler formulae with C=0
+                G = zeros((e.shape[0], self.U_dim))
+                h = e
+            if D is not None:
+                G[:, k * self.u_dim:(k + 1) * self.u_dim] += D
             G_list.append(G)
             h_list.append(h)
             phi = dot(self.A, phi)
