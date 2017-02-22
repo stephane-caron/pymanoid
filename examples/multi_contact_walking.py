@@ -581,23 +581,20 @@ class COMTubePredictiveControl(pymanoid.Process):
         x_init = hstack([cur_com, cur_comd])
         x_goal = hstack([target_com, target_comd])
         switch_step = int(switch_time / dT)
-        C_list, d_list = [], []
-        C1, d1 = self.tube.dual_hrep[0]
+        C = [None] * self.nb_mpc_steps
+        D = [None] * self.nb_mpc_steps
+        e = [None] * self.nb_mpc_steps
+        D1, e1 = self.tube.dual_hrep[0]
         if 0 <= switch_step < self.nb_mpc_steps - 1:
-            C2, d2 = self.tube.dual_hrep[1]
+            D2, e2 = self.tube.dual_hrep[1]
         for k in xrange(self.nb_mpc_steps):
-            if k <= switch_step:
-                C_list.append(C1)
-                d_list.append(d1)
-            else:  # k > switch_step
-                C_list.append(C2)
-                d_list.append(d2)
-        E, f = None, None
+            D[k] = D1 if k <= switch_step else D2
+            e[k] = e1 if k <= switch_step else e2
         if state_constraints:
-            E, f = self.tube.full_hrep
+            E, f = self.tube.full_hrep  # E * com[k] <= f
+            raise NotImplementedError("add state constraints to [CDe]_list")
         self.preview_control = LinearPredictiveControl(
-            A, B, x_init, x_goal, self.nb_mpc_steps, C_list, d_list, E, f,
-            wxt=1000., wu=1.)
+            A, B, C, D, e, x_init, x_goal, self.nb_mpc_steps, wxt=1000., wu=1.)
         self.preview_control.switch_step = switch_step
         self.preview_control.timestep = dT
         self.preview_control.build()
