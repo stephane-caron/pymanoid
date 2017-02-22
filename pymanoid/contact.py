@@ -56,7 +56,7 @@ class Contact(Box):
 
     def __init__(self, shape, pos=None, rpy=None, pose=None,
                  static_friction=None, kinetic_friction=None, visible=True,
-                 name=None, color='r'):
+                 name=None, color='r', link=None):
         X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
@@ -68,6 +68,7 @@ class Contact(Box):
         v3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
         v4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
         self.kinetic_friction = kinetic_friction
+        self.link = link
         self.shape = shape
         self.static_friction = static_friction
         self.vertices = [v1, v2, v3, v4]
