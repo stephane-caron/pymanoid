@@ -95,7 +95,7 @@ if __name__ == '__main__':
     move_com_back_and_forth(10)
 
     # Finally, we start the simulation with the IK on
-    sim.schedule(robot.ik_process)
+    sim.schedule(robot.ik)
     sim.start()
 
     # Don't forget to give the user a prompt

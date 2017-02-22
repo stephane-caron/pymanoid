@@ -94,7 +94,7 @@ if __name__ == "__main__":
     robot.generate_posture(stance, debug=True)
 
     cone_drawer = COMAccelConeDrawer(stance)
-    sim.schedule(robot.ik_process)
+    sim.schedule(robot.ik)
     sim.schedule_extra(cone_drawer)
     sim.schedule_extra(COMSync())
     sim.start()

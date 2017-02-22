@@ -99,7 +99,7 @@ if __name__ == "__main__":
     robot.generate_posture(stance, debug=True)
 
     area_drawer = ZMPSupportAreaDrawer(stance, z_polygon)
-    sim.schedule(robot.ik_process)
+    sim.schedule(robot.ik)
     sim.schedule_extra(area_drawer)
     sim.schedule_extra(COMSync())
     sim.start()

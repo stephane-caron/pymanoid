@@ -119,7 +119,7 @@ if __name__ == "__main__":
     wrench_drawer = StaticWrenchDrawer(com_target, stance)
     sep_drawer = SEPDrawer(stance, z_polygon)
 
-    sim.schedule(robot.ik_process)
+    sim.schedule(robot.ik)
     sim.schedule(wrench_drawer)
     sim.schedule(sep_drawer)
     sim.schedule(COMSync())

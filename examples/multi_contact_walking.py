@@ -540,6 +540,10 @@ class COMTubePredictiveControl(pymanoid.Process):
             print "COMTubePredictiveControl error: %s" % str(e)
             return
         sim.log_comp_time(
+            'qp_build', self.preview_control.build_time)
+        sim.log_comp_time(
+            'qp_solve', self.preview_control.solve_time)
+        sim.log_comp_time(
             'qp_solve_and_build', self.preview_control.solve_and_build_time)
 
     def compute_preview_tube(self):
@@ -951,7 +955,7 @@ if __name__ == "__main__":
     sim.schedule(fsm)
     sim.schedule(mpc)
     sim.schedule(preview_buffer)
-    sim.schedule(robot.ik_process)
+    sim.schedule(robot.ik)
 
     com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
