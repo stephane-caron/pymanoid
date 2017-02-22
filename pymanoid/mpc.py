@@ -166,14 +166,13 @@ class LinearPredictiveControl(object):
             C = self.C[k] if type(self.C) is list else self.C
             D = self.D[k] if type(self.D) is list else self.D
             e = self.e[k] if type(self.e) is list else self.e
-            if C is not None:
-                G = dot(C, psi)
-                h = e - dot(dot(C, phi), self.x_init)
-            else:  # simpler formulae with C=0
-                G = zeros((e.shape[0], self.U_dim))
-                h = e
+            G = zeros((e.shape[0], self.U_dim))
+            h = e if C is None else e - dot(dot(C, phi), self.x_init)
             if D is not None:
-                G[:, k * self.u_dim:(k + 1) * self.u_dim] += D
+                # we rely on G == 0 to avoid a slower +=
+                G[:, k * self.u_dim:(k + 1) * self.u_dim] = D
+            if C is not None:
+                G += dot(C, psi)
             G_list.append(G)
             h_list.append(h)
             phi = dot(self.A, phi)
