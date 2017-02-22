@@ -78,8 +78,8 @@ class TimeStats(object):
         elif self.n == 1:
             return "%.2f %s" % (scale * self.avg, unit)
         return "%.2f +/- %.2f %s (max: %.2f %s, min: %.2f %s) over %d items" % (
-            scale * self.avg, scale * self.std, unit, self.x_max, unit,
-            self.x_min, unit, self.n)
+            scale * self.avg, scale * self.std, unit, scale * self.x_max, unit,
+            scale * self.x_min, unit, self.n)
 
 
 class PointWrap(object):

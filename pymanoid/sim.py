@@ -326,18 +326,20 @@ class Simulation(object):
         self.bodies.append(body)
         return body
 
-    def log_comp_time(self, pname, ctime):
+    def log_comp_time(self, label, ctime):
         """
         Log computation time for a given process.
 
-        INPUT:
-
-        - ``pname`` -- Process name
-        - ``ctime`` -- computation time in [s] to log
+        Parameters
+        ----------
+        label : string
+            Label of the operation.
+        ctime : scalar
+            Computation time in [s].
         """
-        if pname not in self.comp_times:
-            self.comp_times[pname] = TimeStats()
-        self.comp_times[pname].add(ctime)
+        if label not in self.comp_times:
+            self.comp_times[label] = TimeStats()
+        self.comp_times[label].add(ctime)
 
     def print_comp_times(self, unit='ms'):
         total_avg, total_std = 0., 0.
