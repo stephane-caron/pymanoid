@@ -37,27 +37,33 @@ def __compute_polygon_hull(B, c):
     """
     Compute the vertex representation of a polygon defined by:
 
-        B * x <= c
+    .. math::
 
-    where x is a 2D vector.
+        B x \\leq c
 
-    NB: the origin [0, 0] should lie inside the polygon (c >= 0) in order to
-    build the polar form. If you don't have this guarantee, call
-    compute_polar_polygon() instead.
+    where `x` is a 2D vector.
 
-    INPUT:
+    Parameters
+    ----------
+    B : array, shape=(2, K)
+        Linear inequality matrix.
+    c : array, shape=(K,)
+        Linear inequality vector with positive coordinates.
 
-    - ``B`` -- (2 x K) matrix
-    - ``c`` -- vector of length K and positive coordinates
+    Returns
+    -------
+    vertices : list of arrays
+        List of 2D vertices in counterclowise order.
 
-    OUTPUT:
+    Notes
+    -----
+    The origin [0, 0] should lie inside the polygon (:math:`c \\geq 0`) in order
+    to build the polar form. If you don't have this guarantee, call
+    ``compute_polar_polygon()`` instead.
 
-    List of 2D vertices in counterclowise order.
-
-    .. NOTE::
-
-        Checking that (c > 0) is not optional. The rest of the algorithm can be
-        executed when some coordinates c_i < 0, but the result would be wrong.
+    Checking that :math:`c > 0` is not optional. The rest of the algorithm can
+    be executed when some coordinates :math:`c_i < 0`, but the result would be
+    wrong.
     """
     assert B.shape[1] == 2, \
         "Input (B, c) is not a polygon: B.shape = %s" % str(B.shape)
@@ -123,7 +129,7 @@ def compute_polygon_hull(B, c):
         x = Polytope.compute_chebyshev_center(B, c)
         c = c - dot(B, x)
     if not all(c > 0):
-        raise Exception("Polygon is empty (min(c) = %.1f)" % min(c))
+        raise Exception("Polygon is empty (min. dist. to edge %.2f)" % min(c))
     vertices = __compute_polygon_hull(B, c)
     if x is not None:
         vertices = [v + x for v in vertices]
@@ -134,14 +140,17 @@ def intersect_line_polygon_shapely(line, vertices):
     """
     Intersect a line segment with a polygon.
 
-    INPUT:
+    Parameters
+    ----------
+    line : couple of arrays
+        Both end points of the line.
+    vertices : list of arrays
+        Vertices of the polygon.
 
-    - ``line`` -- list of two points
-    - ``vertices`` -- vertices of the polygon
-
-    OUTPUT:
-
-    Returns a numpy array of shape (2,).
+    Returns
+    -------
+    coords : array, shape=(2,), or []
+        Intersection between the line and the polygon.
     """
     def in_line(p):
         for q in line:
@@ -164,20 +173,25 @@ def intersect_line_polygon(p1, p2, points):
     Intersect the line segment [p1, p2] with a polygon. If the intersection has
     two points, returns the one closest to p1.
 
-    INPUT:
+    Parameters
+    ----------
+    p1 : array, shape=(2,) or (3,)
+        End point of line segment (2D or 3D).
+    p2 : array, shape=(2,) or (3,)
+        End point of line segment (2D or 3D).
+    points : list of arrays
+        Points contained in the polygon (not necessarily a convex hull).
 
-    - ``p1`` -- end point of line segment (2D or 3D)
-    - ``p2`` -- end point of line segment (2D or 3D)
-    - ``points`` -- vertices of the polygon
+    Returns
+    -------
+    closest_point : array, or None
+        None if the intersection is empty, otherwise its point closest to p1.
 
-    OUTPUT:
-
-    None if the intersection is empty, otherwise its point closest to p1.
-
-    .. NOTE::
-
-        Adapted from <http://stackoverflow.com/a/20679579>. This variant
-        %timeits around 90 us on my machine, vs. 170 us when using shapely.
+    Note
+    ----
+    This code is adapted from <http://stackoverflow.com/a/20679579>. This
+    variant %timeits around 90 us on my machine, vs. 170 us when using the
+    Shapely library <http://toblerity.org/shapely/>.
     """
     def line(p1, p2):
         A = (p1[1] - p2[1])
