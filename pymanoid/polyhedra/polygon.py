@@ -122,6 +122,8 @@ def compute_polygon_hull(B, c):
     if not all(c > 0):
         x = Polytope.compute_chebyshev_center(B, c)
         c = c - dot(B, x)
+    if not all(c > 0):
+        raise Exception("Polygon is empty (min(c) = %.1f)" % min(c))
     vertices = __compute_polygon_hull(B, c)
     if x is not None:
         vertices = [v + x for v in vertices]

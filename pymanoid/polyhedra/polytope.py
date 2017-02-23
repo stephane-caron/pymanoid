@@ -23,11 +23,14 @@ import sys
 
 from numpy import array, dot, hstack, ones, vstack, sqrt, zeros
 
-script_path = os.path.realpath(__file__)
-sys.path.append(os.path.dirname(script_path) + '/..')
-
-from optim import solve_lp
-from polyhedron import Polyhedron
+try:
+    from optim import solve_lp
+    from polyhedron import Polyhedron
+except ImportError:
+    script_path = os.path.realpath(__file__)
+    sys.path.append(os.path.dirname(script_path) + '/..')
+    from optim import solve_lp
+    from polyhedron import Polyhedron
 
 
 def norm(v):
@@ -36,7 +39,10 @@ def norm(v):
 
 class Polytope(Polyhedron):
 
-    """Polytopes are bounded polyhedra, i.e., with only vertices and no ray."""
+    """
+    Polytopes are bounded polyhedra. Their V-representation has only vertices
+    and no ray.
+    """
 
     def __init__(self, hrep=None, vrep=None, vertices=None):
         if vrep is None:
@@ -49,11 +55,24 @@ class Polytope(Polyhedron):
     @staticmethod
     def hrep(vertices):
         """
-        Compute the half-space representation (A, b) of a polytope defined as
-        convex hull of a set of vertices, that is:
+        Compute the half-space representation (`A`, `b`) of a polytope defined
+        as convex hull of a set `V` of vertices, that is:
 
-            {A * x <= b}  if and only if  {x \in conv(vertices)}
+        .. math::
 
+            A x \\leq b \\quad \\Leftrightarrow \\quad x \\in \\mathrm{conv}(V)
+
+        Parameters
+        ----------
+        vertices : list of arrays
+            List of polytope vertices.
+
+        Returns
+        -------
+        A : array, shape=(m, k)
+            Matrix of linear inequalities.
+        b : array, shape=(m,)
+            Vector of linear inequalities.
         """
         V = vstack(vertices)
         t = ones((V.shape[0], 1))  # first column is 1 for vertices
@@ -72,9 +91,7 @@ class Polytope(Polyhedron):
     def vrep(A, b):
         """
         Compute the vertices of a polytope given in half-space representation by
-
-            A * x <= b
-
+        :math:`A x \\leq b`.
         """
         b = b.reshape((b.shape[0], 1))
         mat = cdd.Matrix(hstack([b, -A]), number_type='float')
@@ -96,19 +113,22 @@ class Polytope(Polyhedron):
         Compute the Chebyshev center of a polyhedron, that is, the point
         furthest away from all inequalities.
 
-        INPUT:
+        Parameters
+        ----------
+        A : array, shape=(m, k)
+            Matrix of polytope H-representation.
+        b : array, shape=(m,)
+            Vector of polytope H-representation.
 
-        - ``A`` -- matrix of polytope H-representation
-        - ``b`` -- vector of polytope H-representation
+        Returns
+        -------
+        z : array, shape=(k,)
+            Point further away from all inequalities.
 
-        OUTPUT:
-
-        A numpy array of shape ``(A.shape[1],)``.
-
-        REFERENCES:
-
-        Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
-        Section 4.3.1, p. 148.
+        References
+        ----------
+        .. [BV04] Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
+                  Section 4.3.1, p. 148.
         """
         cost = zeros(A.shape[1] + 1)
         cost[-1] = -1.
@@ -116,5 +136,5 @@ class Polytope(Polyhedron):
         A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
         z = solve_lp(cost, A_cheby, b)
         if z[-1] < -1e-1:  # last coordinate is distance to boundaries
-            raise Exception("Chebyshev center violation by %.2f" % z[-1])
+            raise Exception("Polytope is empty (margin violation %.2f)" % z[-1])
         return z[:-1]
