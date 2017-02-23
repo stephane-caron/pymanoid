@@ -64,7 +64,10 @@ class PointMassWrenchDrawer(Process):
         """Find supporting contact forces at each COM acceleration update."""
         if self.point_mass.pdd is None:  # needs to be stored by the user
             return
-        support = self.find_supporting_wrenches(sim.gravity)
+        try:
+            support = self.find_supporting_wrenches(sim.gravity)
+        except ValueError:
+            support = []
         if not support:
             self.handles = []
             sim.viewer.SetBkgndColor(self.KO_COLOR)

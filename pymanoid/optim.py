@@ -79,14 +79,19 @@ def solve_lp(c, G, h, A=None, b=None, solver=LP_SOLVER):
     Returns
     -------
     x : array, shape=(n,)
-        Solution to the LP, if found, otherwise ``None``.
+        Optimal solution to the LP, if found, otherwise ``None``.
+
+    Raises
+    ------
+    ValueError
+        If the LP is not feasible.
     """
     args = [cvxmat(c), cvxmat(G), cvxmat(h)]
     if A is not None:
         args.extend([cvxmat(A), cvxmat(b)])
     sol = cvxopt_lp(*args, solver=solver)
     if 'optimal' not in sol['status']:
-        return None
+        raise ValueError("LP optimum not found: %s" % sol['status'])
     return array(sol['x']).reshape((c.shape[0],))
 
 
@@ -132,7 +137,12 @@ try:
         Returns
         -------
         x : array, shape=(n,)
-            Solution to the QP, if found, otherwise ``None``.
+            Optimal solution to the QP, if found.
+
+        Raises
+        ------
+        ValueError
+            If the QP is not feasible.
 
         References
         ----------
@@ -154,10 +164,7 @@ try:
             qp_C = -G.T
             qp_b = -h
             meq = 0
-        try:
-            return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
-        except ValueError:
-            return None
+        return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
 except ImportError:
     warn("quadprog QP solver not found, falling back to CVXOPT")
     quadprog_solve_qp = None
@@ -210,8 +217,7 @@ def cvxopt_solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
         args.extend([cvxmat(A), cvxmat(b)])
     sol = cvxopt_qp(*args, solver=solver, initvals=initvals)
     if not ('optimal' in sol['status']):
-        warn("QP optimum not found: %s" % sol['status'])
-        return None
+        raise ValueError("QP optimum not found: %s" % sol['status'])
     return array(sol['x']).reshape((P.shape[1],))
 
 
@@ -258,7 +264,12 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None):
     Returns
     -------
     x : array, shape=(n,)
-        Solution to the QP, if found, otherwise ``None``.
+        Optimal solution to the QP, if found.
+
+    Raises
+    ------
+    ValueError
+        If the QP is not feasible.
     """
     if solver == 'cvxopt':
         return cvxopt_solve_qp(P, q, G, h, A, b)
@@ -310,7 +321,12 @@ def solve_safer_qp(P, q, G, h, w_reg, w_lin, solver='mosek'):
     Returns
     -------
     x : array, shape=(n,)
-        Solution to the relaxed QP, if found, otherwise ``None``.
+        Optimal solution to the relaxed QP, if found.
+
+    Raises
+    ------
+    ValueError
+        If the QP is not feasible.
 
     Notes
     -----
