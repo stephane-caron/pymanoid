@@ -44,11 +44,10 @@ import os
 import sys
 import time
 
-from numpy import arange, array, bmat, cross, dot, eye, hstack, vstack, zeros
+from numpy import arange, array, bmat, cross, dot, eye, hstack, zeros
 from numpy import cos, pi, sin
 from numpy.random import random, seed
 from threading import Lock
-from warnings import warn
 
 try:
     import pymanoid
@@ -60,7 +59,7 @@ except ImportError:
 from pymanoid import Contact, ContactSet, PointMass, Polytope, Stance
 from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
-from pymanoid.draw import draw_polyhedron, draw_polygon
+from pymanoid.draw import draw_cone, draw_polyhedron
 from pymanoid.misc import interpolate_pose_linear, normalize
 from pymanoid.polyhedra import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
@@ -820,56 +819,15 @@ class TubeDrawer(pymanoid.Process):
             color = colors[stance_id]
             vscale = [self.acc_scale * array(v) + self.trans
                       for v in cone_vertices]
-            self.cone_handles.extend(
-                self.draw_cone_fast(
-                    apex=apex, axis=[0, 0, 1], section=vscale[1:],
-                    combined='r-#', color=color))
+            self.cone_handles.extend(draw_cone(
+                apex=apex, axis=[0, 0, 1], section=vscale[1:], combined='r-#',
+                color=color))
 
     def draw_comdd(self):
         comdd = self.acc_scale * preview_buffer.cur_control + self.trans
         self.comdd_handle = [
             draw_line(self.trans, comdd, color='r', linewidth=3),
             draw_points([self.trans, comdd], color='r', pointsize=0.005)]
-
-    def draw_cone_fast(self, apex, axis, section, combined='r-#', color=None,
-                       linewidth=2., pointsize=0.05):
-        """
-        Draw a 3D cone defined from its apex, axis vector and a cross-section
-        polygon (defined in the plane orthogonal to the axis vector).
-
-        Parameters
-        ----------
-        apex : array
-            Position of the origin of the cone in world coordinates.
-        axis : array
-            Unit vector directing the cone axis and lying inside.
-        combined : string, default='g-#'
-            Drawing spec in matplotlib fashion.
-        linewidth : scalar
-            Thickness of the edges of the cone.
-        pointsize : scalar
-            Point size in [m].
-
-        Returns
-        -------
-        handles : list of GUI handles
-            Must be stored in some variable, otherwise the drawn object will
-            vanish instantly.
-        """
-        if len(section) < 1:
-            warn("Trying to draw an empty cone")
-            return []
-        from pymanoid.draw import matplotlib_to_rgba
-        color = color if color is not None else matplotlib_to_rgba(combined[0])
-        handles = draw_polygon(
-            points=section, normal=axis, combined=combined, color=color)
-        edges = vstack([[apex, vertex] for vertex in section])
-        edges = array(edges)
-        edge_color = array(color) * 0.7
-        edge_color[3] = 1.
-        handles.append(sim.env.drawlinelist(
-            edges, linewidth=linewidth, colors=edge_color))
-        return handles
 
 
 class UpdateCOMTargetAccel(pymanoid.Process):

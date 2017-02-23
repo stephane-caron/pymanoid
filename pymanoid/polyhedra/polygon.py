@@ -104,19 +104,18 @@ def compute_polygon_hull(B, c):
 
         B x \leq c
 
-    where :math:`x` is a 2D vector.
+    where `x` is a 2D vector.
 
     Parameters
     ----------
-
-    B : ndarray
-        (2 x K) linear inequality matrix
-    c : ndarray
-        vector of length K and positive coordinates
+    B : array, shape=(2, K)
+        Linear inequality matrix.
+    c : array, shape=(K,)
+        Linear inequality vector.
 
     Returns
     -------
-    vertices : sequence of 2D ndarrays
+    vertices : list of arrays
         List of 2D vertices in counterclowise order.
     """
     x = None

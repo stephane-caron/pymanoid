@@ -101,6 +101,47 @@ def draw_arrow(p1, p2, color='r', linewidth=0.02):
     return env.drawarrow(p1, p2, linewidth=linewidth, color=color)
 
 
+def draw_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
+              pointsize=0.05):
+    """
+    Draw a 3D cone defined from its apex, axis vector and a cross-section
+    polygon (defined in the plane orthogonal to the axis vector).
+
+    Parameters
+    ----------
+    apex : array
+        Position of the origin of the cone in world coordinates.
+    axis : array
+        Unit vector directing the cone axis and lying inside.
+    combined : string, default='g-#'
+        Drawing spec in matplotlib fashion.
+    linewidth : scalar
+        Thickness of the edges of the cone.
+    pointsize : scalar
+        Point size in [m].
+
+    Returns
+    -------
+    handles : list of GUI handles
+        Must be stored in some variable, otherwise the drawn object will
+        vanish instantly.
+    """
+    if len(section) < 1:
+        warn("Trying to draw an empty cone")
+        return []
+    from pymanoid.draw import matplotlib_to_rgba
+    color = color if color is not None else matplotlib_to_rgba(combined[0])
+    handles = draw_polygon(
+        points=section, normal=axis, combined=combined, color=color)
+    edges = vstack([[apex, vertex] for vertex in section])
+    edges = array(edges)
+    edge_color = array(color) * 0.7
+    edge_color[3] = 1.
+    handles.append(get_openrave_env().drawlinelist(
+        edges, linewidth=linewidth, colors=edge_color))
+    return handles
+
+
 def draw_force(point, force, scale=0.005, linewidth=0.015):
     """
     Draw a force acting at a given point.
