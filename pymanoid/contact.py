@@ -67,6 +67,10 @@ class Contact(Box):
         v2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
         v3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
         v4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
+        v1.flags.writeable = False
+        v2.flags.writeable = False
+        v3.flags.writeable = False
+        v4.flags.writeable = False
         self.kinetic_friction = kinetic_friction
         self.link = link
         self.shape = shape
