@@ -154,7 +154,10 @@ try:
             qp_C = -G.T
             qp_b = -h
             meq = 0
-        return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
+        try:
+            return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
+        except ValueError:
+            return None
 except ImportError:
     warn("quadprog QP solver not found, falling back to CVXOPT")
     quadprog_solve_qp = None
