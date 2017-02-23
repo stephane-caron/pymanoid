@@ -344,7 +344,8 @@ class Simulation(object):
     def print_comp_times(self, unit='ms'):
         total_avg, total_std = 0., 0.
         scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
-        for (key, times) in self.comp_times.iteritems():
+        for key in sorted(self.comp_times):
+            times = self.comp_times[key]
             print "%20s: %s" % (key, times.as_comp_times(unit))
             total_avg += scale * times.avg  # legit
             total_std += scale * times.std  # worst-case assumption
