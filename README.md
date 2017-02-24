@@ -1,7 +1,7 @@
 # pymanoid
 
-Python library for humanoid robotics. Extends
-[OpenRAVE](https://github.com/rdiankov/openrave) with:
+Python library for humanoid robotics based on
+[OpenRAVE](https://github.com/rdiankov/openrave):
 
 - Whole-body inverse kinematics (IK) based on the [weight-prioritized
   multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
@@ -37,7 +37,8 @@ First, you will need to install
 for Ubuntu
 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html)
 and [Ubuntu
-16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html)).
+16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html).
+
 Next, install all Python dependencies with:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
