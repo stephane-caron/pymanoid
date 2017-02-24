@@ -59,19 +59,29 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
     Draw a 2D cone defined from its rays and vertices. The normal vector n of
     the plane containing the cone must also be supplied.
 
-    INPUT:
+    Parameters
+    ----------
+    vertices : list of 3D arrays
+        Vertices of the 2D cone in the world frame.
+    rays : list of 3D arrays
+        Rays of the 2D cone in the world frame.
+    normal : array, shape=(3,)
+        Unit vector normal to the drawing plane.
+    combined : string
+        Drawing spec in matplotlib fashion: color letter, followed by characters
+        representing the faces of the cone to draw ('.' for vertices, '-' for
+        edges, '#' for facets). Default is 'g-#'.
+    color : char or RGBA tuple
+        Drawing color.
+    faces : string
+        Specifies the faces of the polyhedron to draw. Format is the same as
+        ``combined``.
 
-    - ``vertices`` -- list of 3D points
-    - ``rays`` -- list of 3D vectors
-    - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-    - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string indicating the faces of the polyhedron to draw
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handle : openravepy.GraphHandle
+        OpenRAVE graphical handle. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     if not rays:
         return draw_polygon(vertices, normal, combined, color, faces)
@@ -79,26 +89,31 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
     return draw_polygon(plot_vertices, normal, combined, color, faces)
 
 
-def draw_arrow(p1, p2, color='r', linewidth=0.02):
+def draw_arrow(origin, end, color='r', linewidth=0.02):
     """
     Draw an arrow between two points.
 
-    INPUT:
+    Parameters
+    ----------
+    origin : array, shape=(3,)
+        World coordinates of the origin of the arrow.
+    end : array, shape=(3,)
+        World coordinates of the end of the arrow.
+    color : char or RGB triplet, optional
+        Drawing color.
+    linewidth : scalar, optional
+        Thickness of arrow.
 
-    - ``p1`` -- 3D coordinates of the origin of the arrow
-    - ``p2`` -- 3D coordinates of the end of the arrow
-    - ``color`` -- (default: 'r') matplotlib color letter or RGB triplet
-    - ``linewidth`` -- thickness of force vector
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handle : openravepy.GraphHandle
+        OpenRAVE graphical handle. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     if type(color) is str:
         color = matplotlib_to_rgb(color)
     env = get_openrave_env()
-    return env.drawarrow(p1, p2, linewidth=linewidth, color=color)
+    return env.drawarrow(origin, end, linewidth=linewidth, color=color)
 
 
 def draw_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
@@ -146,17 +161,22 @@ def draw_force(point, force, scale=0.005, linewidth=0.015):
     """
     Draw a force acting at a given point.
 
-    INPUT:
+    Parameters
+    ----------
+    point : array, shape=(3,)
+        Point where the force is acting.
+    force : array, shape=(3,)
+        Force vector, in [N].
+    scale : scalar, optional
+        Force-to-distance scaling factor in [N] / [m].
+    linewidth : scalar, optional
+        Thickness of force vector.
 
-    - ``point`` -- point where the force is acting
-    - ``force`` -- 3D force vector
-    - ``scale`` -- force-to-distance scaling factor in [N] / [m]
-    - ``linewidth`` -- thickness of force vector
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handles : list of GUI handles
+        Must be stored in some variable, otherwise the drawn object will
+        vanish instantly.
     """
     f_scale = scale * force
     if dot(f_scale, f_scale) < 1e-6:
@@ -182,8 +202,8 @@ def draw_line(start_point, end_point, color='g', linewidth=1.):
     Returns
     -------
     handle : openravepy.GraphHandle
-        OpenRAVE handle that must be stored in some variable, otherwise the
-        drawn object will vanish instantly.
+        OpenRAVE graphical handle. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     if type(color) is str:
         color = matplotlib_to_rgb(color)
@@ -205,8 +225,8 @@ def draw_point(point, color='g', pointsize=0.025):
     Returns
     -------
     handle : openravepy.GraphHandle
-        OpenRAVE handle that must be stored in some variable, otherwise the
-        drawn object will vanish instantly.
+        OpenRAVE graphical handle. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     return draw_points([point], color, pointsize)
 
@@ -225,8 +245,8 @@ def draw_points(points, color='g', pointsize=0.05):
     Returns
     -------
     handle : openravepy.GraphHandle
-        OpenRAVE handle that must be stored in some variable, otherwise the
-        drawn object will vanish instantly.
+        OpenRAVE graphical handle. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     if type(color) is str:
         color = matplotlib_to_rgba(color, alpha=1.)

@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, tensordot, zeros
+from numpy import array, cross, dot, zeros
 from numpy import concatenate, eye, maximum, minimum, vstack
 from os.path import basename, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
 from ik import VelocitySolver
-from misc import norm
+from misc import middot, norm
 from rotations import crossmat, rpy_from_quat
 from sim import get_openrave_env
 
@@ -925,14 +925,24 @@ class Humanoid(Robot):
 
     def compute_angular_momentum_hessian(self, p):
         """
-        Returns a matrix H(q) such that the rate of change of the angular
-        momentum with respect to point p is
+        Returns the Hessian tensor :math:`H(q)` such that the rate of change of
+        the angular momentum with respect to point `P` is
 
-            Ld_p(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd)),
+        .. math::
 
-        where J(q) is the angular-momentum jacobian.
+            \\dot{L}_P(q, \\dot{q}) = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q},
 
-        p -- application point in world coordinates
+        where :math:`J(q)` is the angular-momentum jacobian.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Application point in world coordinates.
+
+        Returns
+        -------
+        H : array, shape=(3, 3, 3)
+            Hessian tensor of the angular momentum at the application point.
         """
         def crosstens(M):
             assert M.shape[0] == 3
@@ -942,24 +952,12 @@ class Humanoid(Robot):
                        [-M[1, :], M[0, :], Z]])
             return T.transpose([2, 0, 1])  # T.shape == (M.shape[1], 3, 3)
 
-        def middot(M, T):
-            """
-            Dot product of a matrix with the mid-coordinate of a 3D tensor.
-
-            M -- matrix with shape (n, m)
-            T -- tensor with shape (a, m, b)
-
-            Outputs a tensor of shape (a, n, b).
-            """
-            return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
-
         H = zeros((self.nb_dofs, 3, self.nb_dofs))
         for link in self.rave.GetLinks():
             m = link.GetMass()
             i = link.GetIndex()
             c = link.GetGlobalCOM()
             R = link.GetTransform()[0:3, 0:3]
-            # J_trans = self.rave.ComputeJacobianTranslation(i, c)
             J_rot = self.rave.ComputeJacobianAxisAngle(i)
             H_trans = self.rave.ComputeHessianTranslation(i, c)
             H_rot = self.rave.ComputeHessianAxisAngle(i)
@@ -978,7 +976,7 @@ class Humanoid(Robot):
 
     @property
     def cam(self):
-        """Centroidal Angular Momentum."""
+        """Centroidal angular momentum."""
         if self.__cam is None:
             self.__cam = self.compute_cam()
         return self.__cam

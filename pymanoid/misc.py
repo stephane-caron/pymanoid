@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot, hstack, sqrt, zeros
+from numpy import array, dot, hstack, sqrt, tensordot, zeros
 
 from rotations import quat_slerp
 
@@ -119,6 +119,25 @@ def eyevec(i, n):
     u = zeros(n)
     u[i] = 1.
     return u
+
+
+def middot(M, T):
+    """
+    Dot product of a matrix with the mid-coordinate of a 3D tensor.
+
+    Parameters
+    ----------
+    M : array, shape=(n, m)
+        Matrix to multiply.
+    T : array, shape=(a, m, b)
+        Tensor to multiply.
+
+    Returns
+    -------
+    U : array, shape=(a, n, b)
+        Dot product between `M` and `T`.
+    """
+    return tensordot(M, T, axes=(1, 1)).transpose([1, 0, 2])
 
 
 def norm(v):
