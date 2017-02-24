@@ -5,7 +5,7 @@ Python library for humanoid robotics based on
 
 - Whole-body inverse kinematics (IK) based on the [weight-prioritized
   multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- Contact-stability areas and volumes: [generalized ZMP
+- Contact-stability areas and volumes: [multi-contact ZMP
   support areas](https://scaron.info/research/tro-2016.html), [COM acceleration
   cones](https://scaron.info/research/humanoids-2016.html), etc.
 - Linear Model Predictive Control (MPC) and state machines for locomotion
@@ -26,7 +26,7 @@ Python library for humanoid robotics based on
 
 ## Getting started
 
-- [Installation instructions](#Installation)
+- [Installation instructions](#installation)
 - [Examples](/examples)
 - [API documentation](https://scaron.info/doc/pymanoid/)
 
