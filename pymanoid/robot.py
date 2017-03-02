@@ -19,7 +19,7 @@
 
 from numpy import array, cross, dot, zeros
 from numpy import concatenate, eye, maximum, minimum, vstack
-from os.path import basename, splitext
+from os.path import basename, isfile, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
@@ -624,6 +624,8 @@ class Humanoid(Robot):
         root_body : string
             Name of the root body in the kinematic chain.
         """
+        if not isfile(path):
+            raise Exception("Model file '%s' not found" % path)
         name = basename(splitext(path)[0])
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
         super(Humanoid, self).__init__(path, xml=xml)
