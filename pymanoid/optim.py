@@ -147,12 +147,8 @@ try:
         References
         ----------
         .. [GI83] D. Goldfarb and A. Idnani, "A numerically stable dual method
-            for solving strictly convex quadratic programs," Mathematical
-            Programming, vol. 27, pp. 1-33, 1983.
-            `[doi]
-            <http://doai.io/10.1007/BF02591962>`__
-            `[pdf]
-            <http://download.springer.com/static/pdf/284/art%3A10.1007%2FBF02591962.pdf?originUrl=http://link.springer.com/article/10.1007/BF02591962&token2=exp=1484583587~acl=/static/pdf/284/art%253A10.1007%252FBF02591962.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Farticle%2F10.1007%2FBF02591962*~hmac=d46ab943f1858d7bf70ab68270f1b3ba355551fc79047f2f0f6c6863c936c0a2>`__
+           for solving strictly convex quadratic programs," Mathematical
+           Programming, vol. 27, pp. 1-33, 1983.
         """
         qp_G = .5 * (P + P.T)   # quadprog assumes that P is symmetric
         qp_a = -q

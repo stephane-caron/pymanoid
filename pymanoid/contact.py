@@ -192,11 +192,9 @@ class Contact(Box):
         References
         ----------
         .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
-            humanoid robots: Closed-form formulae of the contact wrench cone for
-            rectangular support areas." 2015 IEEE International Conference on
-            Robotics and Automation (ICRA).
-            `[doi] <http://doai.io/10.1109/ICRA.2015.7139910>`__
-            `[pdf] <https://scaron.info/papers/conf/caron-icra-2015.pdf>`__
+           humanoid robots: Closed-form formulae of the contact wrench cone for
+           rectangular support areas." 2015 IEEE International Conference on
+           Robotics and Automation (ICRA).
         """
         X, Y = self.X, self.Y
         mu = self.static_friction / sqrt(2)  # inner approximation

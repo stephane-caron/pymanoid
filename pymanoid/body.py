@@ -270,13 +270,7 @@ class Body(object):
         References
         ----------
         .. [Die+06] James Diebel, "Representing Attitude: Euler Angles, Unit
-            Quaternions, and Rotation Vectors." |Die+06doi|
-
-        .. |Die+06doi| raw:: html
-
-            <a
-            href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134">
-            [doi]</a>
+           Quaternions, and Rotation Vectors."
         """
         return rpy_from_quat(self.quat)
 

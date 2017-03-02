@@ -144,14 +144,10 @@ class LinearPredictiveControl(object):
         References
         ----------
         .. [Aud+14] Hervé Audren, Joris Vaillant, Aberrahmane Kheddar, Adrien
-            Escande, Kenji Kaneko, Eiichi Yoshida, "Model preview control in
-            multi-contact motion-application to a humanoid robot," 2014 IEEE/RSJ
-            International Conference on Intelligent Robots and Systems, Chicago,
-            IL, 2014, pp. 4030-4035.
-            `[doi]
-            <http://doai.io/10.1109/IROS.2014.6943129>`__
-            `[pdf]
-            <https://staff.aist.go.jp/e.yoshida/papers/Audren_iros2014.pdf>`__
+           Escande, Kenji Kaneko, Eiichi Yoshida, "Model preview control in
+           multi-contact motion-application to a humanoid robot," 2014 IEEE/RSJ
+           International Conference on Intelligent Robots and Systems, Chicago,
+           IL, 2014, pp. 4030-4035.
         """
         t_build_start = time()
         phi = eye(self.x_dim)
