@@ -257,6 +257,8 @@ class WalkingFSM(pymanoid.Process):
         self.stances = stances
         self.swing_foot = SwingFoot(swing_height)
         self.verbose = True
+        self.__time_ds = 0
+        self.__time_nonqs = 0
 
     @property
     def next_stance(self):
@@ -307,6 +309,19 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.is_over:
             return
+
+        if self.cur_stance.label.startswith('DS'):
+            self.__time_ds += 1
+        else:
+            try:
+                p = com_target.p
+                self.cur_stance.find_static_supporting_wrenches(p, robot.mass)
+            except ValueError:
+                self.__time_nonqs += 1
+        print "Fraction of time in DS: %.2f%%" % (
+            100. * (1 + self.__time_ds) / (1 + sim.nb_steps))
+        print "Fraction of time in non-QS: %.2f%%" % (
+            100. * (1 + self.__time_nonqs) / (1 + sim.nb_steps))
 
         def can_switch_to_ss():
             com = self.robot.com
