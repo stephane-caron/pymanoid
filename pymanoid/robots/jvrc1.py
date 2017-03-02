@@ -144,12 +144,15 @@ class JVRC1(Humanoid):
         """
         Add the JVRC-1 model to the environment.
 
-        INPUT:
-
-        - ``path`` -- path to the COLLADA model of the robot
-        - ``root_body`` -- name of the root (first) body in the model
-        - ``download_if_needed`` -- if True and there is no model file in
-          ``path``, will attempt to download it from JVRC1.MODEL_URL
+        Parameters
+        ----------
+        path : string, optional
+            Path to the COLLADA model of the robot.
+        root_body : string, optional
+            Name of the root body in the kinematic chain.
+        download_if_needed : bool, optional
+            If True and there is no model file in ``path``, will attempt to
+            download it from ``JVRC1.MODEL_URL``.
         """
         if download_if_needed and not isfile(path):
             rc = system('wget %s -O %s' % (JVRC1.MODEL_URL, path))

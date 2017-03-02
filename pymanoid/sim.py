@@ -301,20 +301,21 @@ class Simulation(object):
     =============
     """
 
-    def load_mesh(self, path, *args, **kwargs):
+    def load_mesh(self, path):
         """
         Load a pymanoid.Body from a DAE or VRML model.
 
-        INPUT:
-
-        - ``path`` -- path to DAE or VRML model
+        Parameters
+        ----------
+        path : string
+            Path to DAE or VRML model.
         """
         from body import Body
         assert path.endswith('.dae') or path.endswith('.wrl')
         if not self.env.Load(path):
             raise Exception("failed to load %s" % path)
         rave_body = self.env.GetBodies()[-1]
-        body = Body(rave_body, *args, **kwargs)
+        body = Body(rave_body)
         self.bodies.append(body)
         return body
 

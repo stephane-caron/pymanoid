@@ -152,13 +152,15 @@ class PolytopeProjector(PolyhedronProjector):
         """
         Project polytope.
 
-        INPUT:
+        Parameters
+        ----------
+        method : string
+            Algorithm to use, to choose between 'bretl' and 'cdd'.
 
-        - ``method`` -- algorithm to use, to choose between 'bretl' and 'cdd'
-
-        OUTPUT:
-
-        List of vertices.
+        Returns
+        -------
+        projection : list of arrays
+            List of vertices of the projected polytope.
         """
         assert method in ['bretl', 'cdd']
         if method == 'cdd':
@@ -169,20 +171,18 @@ class PolytopeProjector(PolyhedronProjector):
 
     def project_bretl(self, solver='glpk'):
         """
-        Project polytope using the incremental projection algorithm
-        from [BL08]_.
+        Project polytope using the incremental projection algorithm from
+        [BL08]_.
 
-        INPUT:
+        Parameters
+        ----------
+        solver : string, optional
+            LP solver to use (default is GLPK).
 
-        - ``solver`` -- (optional) LP backend for CVXOPT, 'glpk' is recommended
-
-        OUTPUT:
-
-        List of vertices.
-
-        REFERENCES:
-
-        .. [BL08] http://doai.io/10.1109/TRO.2008.2001360
+        Returns
+        -------
+        projection : list of arrays
+            List of vertices of the projected polytope.
         """
         A, b, C, d, E, f = self._prepare()
 

@@ -512,9 +512,16 @@ class Robot(object):
         """
         Compute static-equilibrium torques for the manipulator.
 
-        INPUT:
+        Parameters
+        ----------
+        external_torque : array
+            Vector of external joint torques.
 
-        ``external_torque`` -- (optional) vector of external joint torques
+        Returns
+        -------
+        tg : array
+            Vector of static joint torques compensating gravity, and
+            ``external_torque`` if applicable.
         """
         qd = self.qd
         qz = zeros(self.nb_dofs)
@@ -885,11 +892,17 @@ class Humanoid(Robot):
 
     def compute_angular_momentum(self, p):
         """
-        Compute the angular momentum with respect to point p.
+        Compute the angular momentum with respect to point `p`.
 
-        INPUT:
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Application point `p` in world coordinates.
 
-        - ``p`` -- application point in world coordinates
+        Returns
+        -------
+        am : array, shape=(3,)
+            Angular momentum of the robot at `p`.
         """
         am = zeros(3)
         for link in self.rave.GetLinks():
@@ -911,9 +924,15 @@ class Humanoid(Robot):
 
             L_p(q, qd) = J(q) * qd
 
-        INPUT:
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Application point `p` in world coordinates.
 
-        - ``p`` -- application point in world coordinates
+        Returns
+        -------
+        J_am : array, shape=(3,)
+            Jacobian giving the angular momentum of the robot at `p`.
         """
         J_am = zeros((3, self.nb_dofs))
         for link in self.rave.GetLinks():
@@ -991,9 +1010,16 @@ class Humanoid(Robot):
 
     def compute_cam_jacobian(self):
         """
-        Compute the jacobian matrix J(q) such that the CAM is given by:
+        Compute the jacobian matrix `J(q)` such that the CAM is given by:
 
-            L_G(q, qd) = J(q) * qd
+        .. math::
+
+            L_G(q, \\dot{q}) = J(q) \\dot{q}
+
+        Returns
+        -------
+        J_cam : array
+            Jacobian matrix mapping to the centroidal angular momentum.
         """
         return self.compute_angular_momentum_jacobian(self.com)
 
@@ -1024,7 +1050,9 @@ class Humanoid(Robot):
         """
         Compute the matrix H(q) such that the rate of change of the CAM is
 
-            Ld_G(q, qd) = dot(J(q), qdd) + dot(qd.T, dot(H(q), qd))
+        .. math::
+
+            \\dot{L}_G(q, \\dot{q}) = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}
 
         Parameters
         ----------
@@ -1045,19 +1073,36 @@ class Humanoid(Robot):
 
     def compute_gravito_inertial_wrench(self, qdd, p):
         """
-        Compute the gravito-inertial wrench:
+        Compute the gravito-inertial wrench at point `P`:
 
-            w(p) = [ f      ] = [ m (g - pdd_G)                    ]
-                   [ tau(p) ]   [ (p_G - p) x m (g - pdd_G) - Ld_G ]
+        .. math::
 
-        with m the robot mass, g the gravity vector, G the COM, pdd_G the
-        acceleration of the COM, and Ld_GG the rate of change of the angular
-        momentum (taken at the COM).
+            w_P = \\left[\\begin{array}{c}
+                f^{gi} \\\\
+                \\tau^{gi}_P\\end{array}\\right]
+            = \\left[\\begin{array}{c}
+                m (g - \\ddot{p}_G) \\\\
+                (p_G - p_P) \\times m (g - \\ddot{p}_G) - \\dot{L}_G
+                \\right]
 
-        INPUT:
+        with `m` the robot mass, `g` the gravity vector, `G` the center of mass,
+        :math:`\\ddot{p}_G` the COM acceleration, and :math:`\\dot{L}_G` the
+        rate of change of the centroidal angular momentum.
 
-        - ``qdd`` -- array of DOF accelerations
-        - ``p`` -- reference point at which the wrench is taken
+        Parameters
+        ----------
+        qdd : array
+            Vector of DOF accelerations.
+        p : array, shape=(3,)
+            Application point of the gravito-inertial wrench.
+
+        Returns
+        -------
+        f_gi : array, shape=(3,)
+            Resultant force of the gravito-inertial wrench.
+        tau_gi : array, shape=(3,)
+            Moment :math:`\\tau^{gi}_P` of the gravito-inertial wrench at point
+            `P`.
         """
         g = array([0, 0, -9.81])
         f_gi = self.mass * g

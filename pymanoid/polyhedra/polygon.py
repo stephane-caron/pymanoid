@@ -242,15 +242,19 @@ def intersect_line_cylinder(p1, p2, points):
     cross-section. If the intersection has two points, returns the one closest
     to p1.
 
-    INPUT:
+    Parameters
+    ----------
+    p1 : array, shape=(3,)
+        End point of the line segment.
+    p2 : array, shape=(3,)
+        Other end point of the line segment.
+    points : list of arrays
+        2D vertices of the polygon.
 
-    - ``p1`` -- 3D end point of line segment
-    - ``p2`` -- 3D end point of line segment
-    - ``points`` -- 2D vertices of the polygon
-
-    OUTPUT:
-
-    None if the intersection is empty, otherwise its point closest to p1.
+    Returns
+    -------
+    pi : array, shape=(3,), or None
+        Point closest to p1 if the intersection is not empty, None otherwise.
     """
     p = intersect_line_polygon(p1, p2, points)
     if p is None:
@@ -266,14 +270,17 @@ def intersect_polygons(polygon1, polygon2):
     """
     Intersect two polygons.
 
-    INPUT:
+    Parameters
+    ----------
+    polygon1 : list of arrays
+        Vertices of the first polygon in counterclockwise order.
+    polygon1 : list of arrays
+        Vertices of the second polygon in counterclockwise order.
 
-    - ``polygon1`` -- list of vertices in counterclockwise order
-    - ``polygon2`` -- same
-
-    OUTPUT:
-
-    Vertices of the intersection in counterclockwise order.
+    Returns
+    -------
+    intersection : list of arrays
+        Vertices of the intersection in counterclockwise order.
     """
     # could be accelerated by removing the scale_to/from_clipper()
     subj, clip = (polygon1,), polygon2

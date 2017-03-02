@@ -126,18 +126,24 @@ class Cone(Polyhedron):
         """
         Draw cone with apex at a given world position.
 
-        INPUT:
+        Parameters
+        ----------
+        apex : array
+            Position of the origin of the cone in world coordinates.
+        size : scalar, optional
+            Scale factor.
+        combined : string, optional
+            Drawing spec in matplotlib fashion. Default is 'g-#'.
+        color : char or triplet, optional
+            Color letter or RGB values, default is 'g' for green.
+        linewidth : scalar
+            Thickness of drawn line.
 
-        - ``apex`` -- position of the apex of the cone in world coordinates
-        - ``size`` -- scale factor (default: 1.)
-        - ``combined`` -- drawing spec in matplotlib fashion (default: 'g-#')
-        - ``color`` -- color letter or RGBA tuple
-        - ``linewidth`` -- thickness of the edges of the cone
-
-        OUTPUT:
-
-        A list of OpenRAVE handles. Must be stored in some variable, otherwise
-        the drawn object will vanish instantly.
+        Returns
+        -------
+        handles : list of openravepy.GraphHandle
+            OpenRAVE graphical handles. Must be stored in some variable,
+            otherwise the drawn object will vanish instantly.
         """
         assert len(apex) == 3, "apex is not a 3D point"
         assert len(self.rays[0]) == 3, "only 3D cones can be drawn"

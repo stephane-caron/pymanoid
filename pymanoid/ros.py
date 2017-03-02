@@ -46,10 +46,12 @@ def TransformStamped_from_pose(pose, seq=None):
     """
     Create a geometry_msgs/TransformStamped from a given pose.
 
-    INPUT:
-
-    - ``pose`` -- pose in OpenRAVE format (7 coordinates)
-    - ``seq`` -- (optional) sequence number for transform's header
+    Parameters
+    ----------
+    pose : array, shape=(7,)
+        Pose in OpenRAVE format.
+    seq : integer, optional
+        Sequence number for the transform header.
     """
     ts = TransformStamped()
     if seq is not None:
@@ -74,10 +76,12 @@ class ROSWrapper(object):
         """
         Update robot configuration from ROS topics and tfs.
 
-        INPUT:
-
-        - ``robot`` -- a pymanoid.Robot object
-        - ``ignore_dofs`` -- list of DOFs not updated by ROS
+        Parameters
+        ----------
+        robot : pymanoid.Robot
+            Wrapped robot model.
+        ignore_dofs : list of integers
+            List of DOFs not updated by ROS.
         """
         import rospy  # not global, will be initialized by child script
         self.dof_mapping = type(robot).__dict__
@@ -89,7 +93,14 @@ class ROSWrapper(object):
         self.zero_time = rospy.Time(0)
 
     def joint_state_callback(self, msg):
-        """Update DOF values from a sensor_msgs/JointState."""
+        """
+        Update DOF values from a sensor_msgs/JointState.
+
+        Parameters
+        ----------
+        msg : sensor_msgs.JointState
+            Callback message.
+        """
         q = self.robot.q
         for (i, joint_name) in enumerate(msg.name):
             dof = self.dof_mapping[joint_name]
@@ -100,14 +111,25 @@ class ROSWrapper(object):
             self.update_free_flyer()
 
     def set_free_flyer_tf(self, map_tf, flyer_tf):
-        """Set ROS tf used to update the robot's free-flyer coordinates."""
+        """
+        Set ROS tf used to update the robot's free-flyer coordinates.
+
+        Parameters
+        ----------
+        map_tf : string
+            Name of the world frame.
+        flyer_tf : string
+            Name of the free-flyer frame.
+        """
         import tf  # not global, will be initialized by child script
         self.flyer_tf = flyer_tf
         self.map_tf = map_tf
         self.tf_listener = tf.TransformListener()
 
     def update_free_flyer(self):
-        """Update free-flyer coordinates."""
+        """
+        Update free-flyer coordinates.
+        """
         try:
             pos, rq = self.tf_listener.lookupTransform(
                 self.map_tf, self.flyer_tf, self.zero_time)
