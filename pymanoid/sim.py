@@ -19,7 +19,6 @@
 
 import openravepy
 import time
-import traceback
 
 from numpy import array
 from os import chmod, popen, system
@@ -175,15 +174,8 @@ class Simulation(object):
         if not self.extras:
             return
         for process in self.extras:
-            try:
-                if not process.paused:
-                    process.on_tick(self)
-            except Exception:
-                msg = "SIMULATION: exception raised by extra process '%s'" % \
-                    type(process).__name__
-                print "\n%s\n%s" % ("-" * len(msg), msg)
-                traceback.print_exc()
-                print "%s\n" % ("-" * len(msg))
+            if not process.paused:
+                process.on_tick(self)
 
     """
     Threading
