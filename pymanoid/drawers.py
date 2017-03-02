@@ -101,23 +101,29 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
 class TrajectoryDrawer(Process):
 
     def __init__(self, body, combined='b-', color=None, linewidth=3,
-                 linestyle=None):
+                 linestyle=None, buffer_size=100):
         super(TrajectoryDrawer, self).__init__()
         color = color if color is not None else combined[0]
         linestyle = linestyle if linestyle is not None else combined[1]
         assert linestyle in ['-', '.']
         self.body = body
+        self.buffer_size = buffer_size
         self.color = color
-        self.handles = []
+        self.handles = [None] * buffer_size
+        self.next_index = 0
         self.last_pos = body.p
         self.linestyle = linestyle
         self.linewidth = linewidth
 
     def on_tick(self, sim):
         if self.linestyle == '-':
-            self.handles.append(draw_line(
+            h = self.handles[self.next_index]
+            if h is not None:
+                h.Close()
+            self.handles[self.next_index] = draw_line(
                 self.last_pos, self.body.p, color=self.color,
-                linewidth=self.linewidth))
+                linewidth=self.linewidth)
+            self.next_index = (self.next_index + 1) % self.buffer_size
         self.last_pos = self.body.p
 
     def dash_graph_handles(self):
