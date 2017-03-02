@@ -22,10 +22,10 @@ from numpy import array, dot, hstack, sqrt, tensordot, zeros
 from rotations import quat_slerp
 
 
-class TimeStats(object):
+class Statistics(object):
 
     """
-    Online estimator for various statistics of a time series of scalar values.
+    Online estimator for statistics of a time series of scalar values.
     """
 
     def __init__(self):
@@ -70,6 +70,10 @@ class TimeStats(object):
             return 0.
         unbiased = sqrt(self.n * 1. / (self.n - 1))
         return unbiased * sqrt(self.x2 / self.n - self.avg ** 2)
+
+    def __str__(self):
+        return "%f +/- %f (max: %f, min: %f) over %d items" % (
+            self.avg, self.std, self.x_max, self.x_min, self.n)
 
     def as_comp_times(self, unit):
         scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]

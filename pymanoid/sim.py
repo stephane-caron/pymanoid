@@ -28,7 +28,7 @@ from re import search
 from stat import S_IEXEC
 from threading import Thread
 
-from misc import TimeStats
+from misc import Statistics
 
 
 env = None  # global OpenRAVE environment
@@ -120,13 +120,13 @@ class Simulation(object):
         self.gravity = gravity
         self.is_running = False
         self.processes = []
-        self.tick_time = 0
+        self.nb_steps = 0
         self.viewer = None
         self.window_id = None
 
     @property
     def time(self):
-        return self.tick_time * self.dt
+        return self.nb_steps * self.dt
 
     def __del__(self):
         """Close thread at shutdown."""
@@ -153,7 +153,7 @@ class Simulation(object):
             rem_time = self.dt - (time.time() - t0)
             if rem_time > 1e-4:
                 time.sleep(rem_time)
-            self.tick_time += 1
+            self.nb_steps += 1
 
     def _tick_processes(self):
         for process in self.processes:
@@ -338,7 +338,7 @@ class Simulation(object):
             Computation time in [s].
         """
         if label not in self.comp_times:
-            self.comp_times[label] = TimeStats()
+            self.comp_times[label] = Statistics()
         self.comp_times[label].add(ctime)
 
     def print_comp_times(self, unit='ms'):
