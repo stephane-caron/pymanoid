@@ -381,6 +381,36 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     return handles
 
 
+def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
+    """
+    Draw a trajectory as a set of points connected by line segments.
+
+    Parameters
+    ----------
+    points = array, shape=(N, 3)
+        List of points or 2D array.
+    color : char or RGBA tuple, optional
+        Color of the polygon.
+    linewidth : scalar
+        Thickness of drawn line.
+    pointsize : scalar
+        Vertex size.
+
+    Returns
+    -------
+    handles : list of openravepy.GraphHandle
+        OpenRAVE graphical handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
+    """
+    handles = []
+    prev = points[0]
+    for (i, point) in enumerate(points):
+        handles.append(draw_point(point, color=color, pointsize=pointsize))
+        handles.append(draw_line(prev, point, color=color, linewidth=linewidth))
+        prev = point
+    return handles
+
+
 def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
     """
     Draw a wrench acting on a given rigid body.
