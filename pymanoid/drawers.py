@@ -49,6 +49,7 @@ class PointMassWrenchDrawer(Process):
         self.contact_set = contact_set
         self.handles = []
         self.last_bkgnd_switch = None
+        self.nb_fails = 0
         self.point_mass = point_mass
         self.scale = scale
 
@@ -70,6 +71,7 @@ class PointMassWrenchDrawer(Process):
             support = []
         if not support:
             self.handles = []
+            self.nb_fails += 1
             sim.viewer.SetBkgndColor(self.KO_COLOR)
             self.last_bkgnd_switch = time()
         else:
