@@ -617,10 +617,12 @@ class Humanoid(Robot):
         """
         Create a new humanoid robot model.
 
-        INPUT:
-
-        - ``path`` -- path to the COLLADA model of the robot
-        - ``root_body`` -- name of the root (first) body in the model
+        Parameters
+        ----------
+        path : string
+            Path to the COLLADA model of the robot.
+        root_body : string
+            Name of the root body in the kinematic chain.
         """
         name = basename(splitext(path)[0])
         xml = Humanoid.__free_flyer_xml % (path, name, root_body)
@@ -1086,16 +1088,17 @@ class Humanoid(Robot):
         """
         Compute the Zero-tilting Moment Point (ZMP).
 
-        INPUT:
+        Parameters
+        ----------
+        qdd : array
+            Vector of joint accelerations.
 
-        ``qdd`` -- vector of joint accelerations
-
-        .. NOTE::
-
-            For an excellent introduction to the concepts of ZMP and center of
-            pressure, see “Forces acting on a biped robot. center of
-            pressure-zero moment point” by P. Sardain and G. Bessonnet
-            <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
+        Notes
+        -----
+        For an excellent introduction to the concepts of ZMP and center of
+        pressure, see “Forces acting on a biped robot. center of
+        pressure-zero moment point” by P. Sardain and G. Bessonnet
+        <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
         """
         O, n = zeros(3), array([0, 0, 1])
         f_gi, tau_gi = self.compute_gravito_inertial_wrench(qdd, O)

@@ -141,15 +141,17 @@ class HRP4(Humanoid):
         """
         Add the HRP4R model to the environment.
 
-        INPUT:
+        Parameters
+        ----------
+        path : string
+            Path to the COLLADA model of the robot.
+        root_body : string
+            Name of the root body in the kinematic chain.
 
-        - ``path`` -- path to the COLLADA model of the robot
-        - ``root_body`` -- name of the root (first) body in the model
-
-        .. NOTE::
-
-            Unfortunately it is unclear whether we can release the COLLADA file
-            "HRP4R.dae" due to copyright.
+        Note
+        ----
+        Unfortunately it is unclear whether we can release the COLLADA file
+        ``HRP4R.dae`` due to copyright.
         """
         super(HRP4, self).__init__(path, root_body)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
@@ -163,7 +165,14 @@ class HRP4(Humanoid):
             self.rave.GetManipulator("right_hand_palm"))
 
     def suntan(self, amount=0.3):
-        """Prepare model for screenshots on white background ;)"""
+        """
+        Prepare model for screenshots on white background ;)
+
+        Parameters
+        ----------
+        amount : scalar
+            Number between 0. (no suntan) and 1. (full burn).
+        """
         ambient, diffuse = 0., 1. - amount
         for link in self.rave.GetLinks():
             if len(link.GetGeometries()) > 0:

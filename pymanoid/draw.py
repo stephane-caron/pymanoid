@@ -128,11 +128,11 @@ def draw_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
         Position of the origin of the cone in world coordinates.
     axis : array
         Unit vector directing the cone axis and lying inside.
-    combined : string, default='g-#'
-        Drawing spec in matplotlib fashion.
-    linewidth : scalar
+    combined : string, optional
+        Drawing spec in matplotlib fashion. Default is 'g-#'.
+    linewidth : scalar, optional
         Thickness of the edges of the cone.
-    pointsize : scalar
+    pointsize : scalar, optional
         Point size in [m].
 
     Returns
@@ -261,20 +261,29 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
     Draw a polygon defined as the convex hull of a set of points. The normal
     vector n of the plane containing the polygon must also be supplied.
 
-    INPUT:
+    Parameters
+    ----------
+    points : list of arrays
+        List of coplanar 3D points.
+    normal : array, shape=(3,)
+        Unit vector normal to the drawing plane.
+    combined : string, optional
+        Drawing spec in matplotlib fashion. Default: 'g-#'.
+    color : char or RGBA tuple
+        Color of the polygon.
+    faces : string
+        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
+        '#' for facets.
+    linewidth : scalar
+        Thickness of drawn line.
+    pointsize : scalar
+        Vertex size.
 
-    - ``points`` -- list of coplanar 3D points
-    - ``normal`` -- unit vector normal to the drawing plane
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-    - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string indicating the faces of the polyhedron to draw
-    - ``linewidth`` -- (default: 1.) thickness of drawn line
-    - ``pointsize`` -- (default: 0.02) vertex size
-
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
+    Returns
+    -------
+    handles : list of openravepy.GraphHandle
+        OpenRAVE graphical handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
     """
     assert abs(1. - norm(normal)) < 1e-10
     n = normal
@@ -299,25 +308,35 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
-    INPUT:
+    Parameters
+    ----------
+    points : list of arrays
+        List of 3D points in the world frame.
+    combined : string, optional
+        Drawing spec in matplotlib fashion. Default: 'g-#'.
+    color : char or RGBA tuple, optional
+        Color of the polygon.
+    faces : string, optional
+        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
+        '#' for facets.
+    hull : scipy.spatial.ConvexHull
+        2D convex hull provided when drawing polygons, in which case the 3D hull
+        has zero volume.
+    linewidth : scalar
+        Thickness of drawn line.
+    pointsize : scalar
+        Vertex size.
 
-    - ``points`` -- list of 3D points
-    - ``combined`` -- (default: 'g-#') drawing spec in matplotlib fashion
-    - ``color`` -- color letter or RGBA tuple
-    - ``faces`` -- string indicating the faces of the polyhedron to draw
-    - ``hull`` -- used in the 2D case where the hull has zero volume
-    - ``linewidth`` -- line thickness in meters
-    - ``pointsize`` -- point size in meters
+    Returns
+    -------
+    handles : list of openravepy.GraphHandle
+        OpenRAVE graphical handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
 
-    OUTPUT:
-
-    And OpenRAVE handle. Must be stored in some variable, otherwise the drawn
-    object will vanish instantly.
-
-    .. NOTE::
-
-        In the ``faces`` or ``combined`` strings, use '.' for vertices, '-' for
-        edges and '#' for facets.
+    Notes
+    -----
+    In the ``faces`` or ``combined`` strings, use '.' for vertices, '-' for
+    edges and '#' for facets.
     """
     is_2d = hull is not None
     if color is None:

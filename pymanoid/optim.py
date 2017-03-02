@@ -24,7 +24,6 @@ from cvxopt import matrix as cvxmat
 from cvxopt.solvers import lp as cvxopt_lp
 from cvxopt.solvers import qp as cvxopt_qp
 from numpy import array, eye, hstack, ones, vstack, zeros
-from warnings import warn
 
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
@@ -44,6 +43,7 @@ try:
     cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
     cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
 except ImportError:
+    print "\033[1;33m[pymanoid] Warning: GLPK solver not found\033[0;0m"
     LP_SOLVER = None
 
 
@@ -166,7 +166,7 @@ try:
             meq = 0
         return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
 except ImportError:
-    warn("quadprog QP solver not found, falling back to CVXOPT")
+    print "\033[1;33m[pymanoid] Warning: quadprog solver not found\033[0;0m"
     quadprog_solve_qp = None
 
 
@@ -229,7 +229,7 @@ try:
     def mosek_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
         return cvxopt_solve_qp(P, q, G, h, A, b, 'mosek', initvals)
 except ImportError:
-    pass
+    print "\030[1;33m[pymanoid] Info: MOSEK solver not found\033[0;0m"
 
 
 def solve_qp(P, q, G, h, A=None, b=None, solver=None):

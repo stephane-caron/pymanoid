@@ -213,22 +213,19 @@ class ContactSet(object):
         ----------
 
         .. [BL08] T. Bretl and S. Lall, "Testing Static Equilibrium for Legged
-            Robots," IEEE Transactions on Robotics, vol. 24, no. 4, pp. 794-807,
-            Aug. 2008.
-            `[doi] <http://doai.io/10.1109/TRO.2008.2001360>`__
+           Robots," IEEE Transactions on Robotics, vol. 24, no. 4, pp. 794-807,
+           August 2008.
 
         .. [CPN16] Stéphane Caron, Quang-Cuong Pham and Yoshihiko Nakamura, "ZMP
-            support areas for multi-contact mobility under frictional
-            constraints," IEEE Transactions on Robotics, Dec. 2016.
-            `[doi] <http://doai.io/10.1109/TRO.2016.2623338>`__
-            `[pdf] <https://scaron.info/papers/journal/caron-tro-2016.pdf>`__
+           support areas for multi-contact mobility under frictional
+           constraints," IEEE Transactions on Robotics, Dec. 2016.
+           `[pdf] <https://scaron.info/papers/journal/caron-tro-2016.pdf>`__
 
         .. [CK16] Stéphane Caron and Abderrahmane Kheddar, "Multi-contact
-            Walking Pattern Generation based on Model Preview Control of 3D COM
-            Accelerations," 2016 IEEE-RAS 16th International Conference on
-            Humanoid Robots (Humanoids), Cancun, Mexico, 2016, pp. 550-557.
-            `[doi] <http://doai.io/10.1109/HUMANOIDS.2016.7803329>`__
-            `[pdf] <https://hal.archives-ouvertes.fr/hal-01349880>`__
+           Walking Pattern Generation based on Model Preview Control of 3D COM
+           Accelerations," 2016 IEEE-RAS 16th International Conference on
+           Humanoid Robots (Humanoids), Cancun, Mexico, 2016, pp. 550-557.
+           `[pdf] <https://hal.archives-ouvertes.fr/hal-01349880>`__
         """
         if method == 'hull':
             A_O = self.compute_wrench_face([0, 0, 0])
