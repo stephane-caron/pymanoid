@@ -139,6 +139,10 @@ class JVRC1(Humanoid):
         0., 0., 0., 0., 0., 0., -0.052, 0.17, 0., -0.52, 0., 0., 0., 0., 0., 0.,
         0., 0., 0., 0., 0., 0., 0., 0., 0.])
 
+    # Compatibility
+    chest_p_name = 'WAIST_P'
+    chest_y_name = 'WAIST_Y'
+
     def __init__(self, path='JVRC-1.dae', root_body='PELVIS_S',
                  download_if_needed=True):
         """

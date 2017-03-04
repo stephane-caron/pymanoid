@@ -137,6 +137,10 @@ class HRP4(Humanoid):
          0., 0., 0., 0., -3., 10., 0., -30., 0., 0., 0., 0.,  0., 0., 0., 0.,
          0., 0., 0.])
 
+    # Compatibility
+    chest_p_name = 'CHEST_P'
+    chest_y_name = 'CHEST_Y'
+
     def __init__(self, path='HRP4R.dae', root_body='BODY'):
         """
         Add the HRP4R model to the environment.
