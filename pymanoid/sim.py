@@ -398,3 +398,17 @@ class CameraRecorder(Process):
         fname = '%s/%05d.png' % (self.output_folder, self.frame_index)
         sim.take_screenshot(fname)
         self.frame_index += 1
+
+    def wait_for(self, wait_time, sim):
+        """
+        Pause the video by repeating the last frame for a certain duration.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        wait_time : scalar
+            Duration in [s].
+        """
+        for _ in xrange(int(wait_time / sim.dt)):
+            self.on_tick(sim)
