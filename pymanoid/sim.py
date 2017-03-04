@@ -348,6 +348,29 @@ class Simulation(object):
 
 class CameraRecorder(Process):
 
+    """
+    Video recording process.
+
+    When created, this process will ask the user to click on the OpenRAVE GUI to
+    get its window ID. Then, it will save a screenshot in the camera folder at
+    each tick of the simulation (don't expect real-time recording...). When your
+    simulation is over, go to the camera folder and run the script called
+    ``make_video.sh``
+
+    Parameters
+    ----------
+    sim : Simulation
+        Global simulation.
+    output_folder : string
+        Path where screenshots will be recorded.
+    fname : string
+        Video file name.
+
+    Note
+    ----
+    Creating videos requires the following dependencies (here listed as package
+    names for Ubuntu 14.04): x11-utils, imagemagick, libav-tools.
+    """
     def __init__(self, sim, output_folder, fname='video.mp4'):
         super(CameraRecorder, self).__init__()
         while output_folder.endswith('/'):
@@ -355,8 +378,8 @@ class CameraRecorder(Process):
         sim.read_window_id()
         script_path = '%s/make_video.sh' % output_folder
         with open(script_path, 'w') as script:
-            frate = 1. / sim.dt
-            avconv = "avconv -r %f -qscale 1 -i %%05d.png %s" % (frate, fname)
+            frate = int(1. / sim.dt)
+            avconv = "avconv -r %d -qscale 1 -i %%05d.png %s" % (frate, fname)
             script.write("#!/bin/sh\n%s" % avconv)
         st = fstat(script_path)
         chmod(script_path, st.st_mode | S_IEXEC)
@@ -364,6 +387,14 @@ class CameraRecorder(Process):
         self.output_folder = output_folder
 
     def on_tick(self, sim):
+        """
+        The process takes one screenshot per simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
         fname = '%s/%05d.png' % (self.output_folder, self.frame_index)
         sim.take_screenshot(fname)
         self.frame_index += 1

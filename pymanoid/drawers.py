@@ -101,7 +101,7 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
 class TrajectoryDrawer(Process):
 
     def __init__(self, body, combined='b-', color=None, linewidth=3,
-                 linestyle=None, buffer_size=100):
+                 linestyle=None, buffer_size=1000):
         super(TrajectoryDrawer, self).__init__()
         color = color if color is not None else combined[0]
         linestyle = linestyle if linestyle is not None else combined[1]
