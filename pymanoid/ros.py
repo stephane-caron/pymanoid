@@ -134,7 +134,7 @@ class ROSWrapper(object):
             pos, rq = self.tf_listener.lookupTransform(
                 self.map_tf, self.flyer_tf, self.zero_time)
             quat = [rq[3], rq[0], rq[1], rq[2]]  # ROS quat is (x, y, z, w)
-            self.robot.set_ff_pos(pos)
-            self.robot.set_ff_quat(quat)
+            self.robot.set_pos(pos)
+            self.robot.set_quat(quat)
         except Exception as e:
             print "update_free_flyer():", e

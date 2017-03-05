@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, zeros
-from numpy import concatenate, eye, maximum, minimum, vstack
+from numpy import array, cross, dot, eye, hstack, vstack, zeros
+from numpy import concatenate, maximum, minimum
 from os.path import basename, isfile, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
 from ik import VelocitySolver
 from misc import middot, norm
-from rotations import crossmat, rpy_from_quat
+from rotations import crossmat, quat_from_rpy, rpy_from_quat
 from sim import get_openrave_env
 
 
@@ -692,55 +692,53 @@ class Humanoid(Robot):
         """
         return str(self.rave.GetJointFromDOFIndex(index).GetName())
 
-    def set_ff_pos(self, pos):
+    @property
+    def p(self):
         """
-        Set the position of the free-flyer, a.k.a. free-floating or base frame
-        of the robot.
+        Position of the free-flyer in the world frame.
 
-        Parameters
-        ----------
-        pos : array, shape=(3,)
+        Returns
+        -------
+        p : array, shape=(3,)
             Position coordinates in the world frame.
         """
-        self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
+        return self.get_dof_values([self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
 
-    def set_ff_rpy(self, rpy):
+    @property
+    def rpy(self):
         """
-        Set the orientation of the free-flyer, a.k.a. free-floating or base
-        frame of the robot.
+        Orientation of the free-flyer in the world frame.
 
-        Parameters
-        ----------
+        Returns
+        -------
         rpy : array, shape=(3,)
             Roll-pitch-yaw angles, corresponding to Euler sequence (1, 2, 3).
         """
-        self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
+        return self.get_dof_values([self.ROT_R, self.ROT_P, self.ROT_Y])
 
-    def set_ff_quat(self, quat):
+    @property
+    def quat(self):
         """
-        Set the orientation of the free-flyer, a.k.a. free-floating or base
-        frame of the robot.
+        Quaternion of the free-flyer orientation in the world frame.
 
-        Parameters
-        ----------
+        Returns
+        -------
         quat : array, shape=(4,)
             Quaternion vector (`w`, `x`, `y`, `z`).
         """
-        self.set_ff_rpy(rpy_from_quat(quat))
+        return quat_from_rpy(self.rpy)
 
-    def set_ff_pose(self, pose):
+    @property
+    def pose(self):
         """
-        Set the pose of the free-flyer, a.k.a. free-floating or base frame of
-        the robot.
+        Pose of the free-flyer in the world frame.
 
-        Parameters
+        Returns
         ----------
         pose : array, shape=(7,)
-            Frame pose in OpenRAVE format (`qw`, `qx`, `qy`, `qz`, `x`, `y`,
-            `z`).
+            Pose in OpenRAVE format (`qw`, `qx`, `qy`, `qz`, `x`, `y`, `z`).
         """
-        self.set_ff_quat(pose[:4])
-        self.set_ff_pos(pose[4:])
+        return hstack([self.quat, self.p])
 
     def set_dof_values(self, q, dof_indices=None, clamp=False):
         """
@@ -782,6 +780,55 @@ class Humanoid(Robot):
         if self.__show_comd:
             self.show_comd()
 
+    def set_pos(self, pos):
+        """
+        Set the position of the free-flyer, a.k.a. free-floating or base frame
+        of the robot.
+
+        Parameters
+        ----------
+        pos : array, shape=(3,)
+            Position coordinates in the world frame.
+        """
+        self.set_dof_values(pos, [self.TRANS_X, self.TRANS_Y, self.TRANS_Z])
+
+    def set_rpy(self, rpy):
+        """
+        Set the orientation of the free-flyer, a.k.a. free-floating or base
+        frame of the robot.
+
+        Parameters
+        ----------
+        rpy : array, shape=(3,)
+            Roll-pitch-yaw angles, corresponding to Euler sequence (1, 2, 3).
+        """
+        self.set_dof_values(rpy, [self.ROT_R, self.ROT_P, self.ROT_Y])
+
+    def set_quat(self, quat):
+        """
+        Set the orientation of the free-flyer, a.k.a. free-floating or base
+        frame of the robot.
+
+        Parameters
+        ----------
+        quat : array, shape=(4,)
+            Quaternion vector (`w`, `x`, `y`, `z`).
+        """
+        self.set_rpy(rpy_from_quat(quat))
+
+    def set_pose(self, pose):
+        """
+        Set the pose of the free-flyer, a.k.a. free-floating or base frame of
+        the robot.
+
+        Parameters
+        ----------
+        pose : array, shape=(7,)
+            Pose in OpenRAVE format (`qw`, `qx`, `qy`, `qz`, `x`, `y`, `z`).
+        """
+        self.set_quat(pose[:4])
+        self.set_pos(pose[4:])
+
     """
     Center Of Mass
     ==============
@@ -789,12 +836,14 @@ class Humanoid(Robot):
 
     @property
     def com(self):
+        """Position of the center of mass in the world frame."""
         if self.__com is None:
             self.__com = self.compute_com()
         return self.__com
 
     @property
     def comd(self):
+        """Velocity of the center of mass in the world frame."""
         if self.__comd is None:
             self.__comd = self.compute_com_velocity()
         return self.__comd
@@ -821,12 +870,17 @@ class Humanoid(Robot):
 
     def compute_com_jacobian(self):
         """
-        Compute the Jacobian matrix `J(q)` of the center of mass `G`, such that
-        the velocity of `G` in the world frame is:
+        Compute the Jacobian matrix :math:`J_\\mathrm{com}(q)` of the center of
+        mass `G`, such that the velocity of `G` in the world frame is:
 
         .. math::
 
-                \\dot{p}_G = J(q) \\dot{q}
+                \\dot{p}_G = J_\\mathrm{com}(q) \\dot{q}
+
+        Returns
+        -------
+        J_com : array
+            Jacobian of the center of mass.
         """
         J_com = zeros((3, self.nb_dofs))
         for link in self.rave.GetLinks():
@@ -1109,15 +1163,15 @@ class Humanoid(Robot):
 
         Returns
         -------
-        f_gi : array, shape=(3,)
+        f : array, shape=(3,)
             Resultant force of the gravito-inertial wrench.
-        tau_gi : array, shape=(3,)
+        tau_P : array, shape=(3,)
             Moment :math:`\\tau^{gi}_P` of the gravito-inertial wrench at point
             `P`.
         """
         g = array([0, 0, -9.81])
-        f_gi = self.mass * g
-        tau_gi = zeros(3)
+        f = self.mass * g
+        tau_P = zeros(3)
         link_velocities = self.rave.GetLinkVelocities()
         link_accelerations = self.rave.GetLinkAccelerations(qdd)
         for link in self.rave.GetLinks():
@@ -1133,9 +1187,9 @@ class Humanoid(Robot):
                 + cross(angvel, cross(angvel, ri)) \
                 + cross(angacc, ri)
             angmmt = dot(I_ci, angacc) - cross(dot(I_ci, angvel), angvel)
-            f_gi -= mi * ci_ddot[2]
-            tau_gi += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
-        return f_gi, tau_gi
+            f -= mi * ci_ddot[2]
+            tau_P += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
+        return f, tau_P
 
     """
     Zero-tilting Moment Point

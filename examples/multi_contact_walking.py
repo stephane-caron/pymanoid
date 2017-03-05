@@ -885,7 +885,7 @@ if __name__ == "__main__":
         tube_radius=0.01)
 
     robot.init_ik(robot.whole_body)
-    robot.set_ff_pos([0, 0, 2])  # start IK with the robot above contacts
+    robot.set_pos([0, 0, 2])  # start IK with the robot above contacts
     robot.generate_posture(fsm.cur_stance, max_it=50)
 
     com_target.set_pos(robot.com)
