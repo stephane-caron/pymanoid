@@ -26,6 +26,7 @@ from draw import draw_force, draw_point
 from ik import VelocitySolver
 from misc import middot, norm
 from rotations import crossmat, quat_from_rpy, rpy_from_quat
+from rotations import rotation_matrix_from_rpy
 from sim import get_openrave_env
 
 
@@ -676,6 +677,11 @@ class Humanoid(Robot):
     ==========
     """
 
+    @property
+    def b(self):
+        """Binormal vector directing the `y`-axis of the free-flyer frame."""
+        return self.R[:, 1]
+
     def get_dof_name_from_index(self, index):
         """
         Get DOF name from its index in the kinematic chain.
@@ -691,6 +697,11 @@ class Humanoid(Robot):
             DOF name.
         """
         return str(self.rave.GetJointFromDOFIndex(index).GetName())
+
+    @property
+    def n(self):
+        """Normal vector directing the `z`-axis of the free-flyer frame."""
+        return self.R[:, 2]
 
     @property
     def p(self):
@@ -734,11 +745,23 @@ class Humanoid(Robot):
         Pose of the free-flyer in the world frame.
 
         Returns
-        ----------
+        -------
         pose : array, shape=(7,)
             Pose in OpenRAVE format (`qw`, `qx`, `qy`, `qz`, `x`, `y`, `z`).
         """
         return hstack([self.quat, self.p])
+
+    @property
+    def R(self):
+        """
+        Rotation matrix `R` of from free-flyer to the world frame.
+
+        Returns
+        -------
+        R : array, shape=(3, 3)
+            Rotation matrix.
+        """
+        return rotation_matrix_from_rpy(*self.rpy)
 
     def set_dof_values(self, q, dof_indices=None, clamp=False):
         """
@@ -828,6 +851,11 @@ class Humanoid(Robot):
         """
         self.set_quat(pose[:4])
         self.set_pos(pose[4:])
+
+    @property
+    def t(self):
+        """Tangent vector directing the `x`-axis of the free-flyer frame."""
+        return self.R[:, 0]
 
     """
     Center Of Mass
