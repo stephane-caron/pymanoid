@@ -56,9 +56,8 @@ class VelocitySolver(Process):
     References
     ----------
     .. [Kanoun2012] Oussama Kanoun, "Real-time prioritized kinematic control
-        under inequality constraints for redundant manipulators," Robotics:
-        Science and Systems. Vol. 7. 2012.
-        `[pdf] <http://www.roboticsproceedings.org/rss07/p21.pdf>`__
+       under inequality constraints for redundant manipulators," Robotics:
+       Science and Systems. Vol. 7. 2012.
     """
 
     def __init__(self, robot, active_dofs, doflim_gain):

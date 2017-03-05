@@ -64,7 +64,6 @@ class Robot(object):
         self.has_free_flyer = False
         self.ik = None  # call init_ik() to instantiate
         self.ik_thread = None
-        self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dofs = nb_dofs
         self.q_max = q_max
@@ -81,25 +80,43 @@ class Robot(object):
     """
 
     def hide(self):
+        """Make the robot invisible."""
         self.rave.SetVisible(False)
 
     def set_color(self, r, g, b):
+        """
+        Update the RGB properties of each link of the robot.
+
+        Parameters
+        ----------
+        r : scalar
+            Red value between 0 and 1.
+        g : scalar
+            Green value between 0 and 1.
+        b : scalar
+            Blue value between 0 and 1.
+        """
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
                 geom.SetAmbientColor([r, g, b])
                 geom.SetDiffuseColor([r, g, b])
 
     def set_transparency(self, transparency):
+        """
+        Update robot transparency.
+
+        Parameters
+        ----------
+        transparency : scalar
+            Transparency value from 0 (opaque) to 1 (invisible).
+        """
         self.transparency = transparency
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
                 geom.SetTransparency(transparency)
 
-    def set_visible(self, visible):
-        self.is_visible = visible
-        self.rave.SetVisible(visible)
-
     def show(self):
+        """Make the robot visible."""
         self.rave.SetVisible(True)
 
     """
@@ -112,20 +129,29 @@ class Robot(object):
 
     @property
     def q(self):
+        """Vector of DOF values."""
         return self.rave.GetDOFValues()
 
     @property
     def qd(self):
+        """Vector of DOF velocities."""
         return self.rave.GetDOFVelocities()
 
     def get_dof_limits(self, dof_indices=None):
         """
-        Get the couple (q_min, q_max) of DOF limits.
+        Get the couple :math:`(q_\\mathrm{min}, q_\\mathrm{max})` of DOF limits.
 
         Parameters
         ----------
         dof_indices : list of DOF indexes, optional
             Only compute limits for these indices.
+
+        Returns
+        -------
+        q_min : array
+            Vector of minimal DOF values.
+        q_max : array
+            Vector of maximal DOF values.
 
         Notes
         -----
@@ -463,8 +489,8 @@ class Robot(object):
         References
         ----------
         .. [WO82] M.Walker and D. Orin. "Efficient dynamic computer simulation
-                  of robotic mechanisms." ASME Trans. J. dynamics Systems,
-                  Measurement and Control 104 (1982): 205-211.
+           of robotic mechanisms." ASME Trans. J. dynamics Systems, Measurement
+           and Control 104 (1982): 205-211.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
         for (i, e_i) in enumerate(eye(self.nb_dofs)):
@@ -753,41 +779,6 @@ class Humanoid(Robot):
         self.__cam = None
         self.__comd = None
         super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
-        if self.__show_comd:
-            self.show_comd()
-
-    def set_active_dof_values(self, q_active):
-        """
-        Set the active joint values of the robot.
-
-        Parameters
-        ----------
-        q : array
-            Vector of joint angle values (ordered by DOF indices).
-        dof_indices : list of integers, optional
-            List of DOF indices to update.
-        """
-        self.__cam = None
-        self.__com = None
-        self.__comd = None
-        super(Humanoid, self).set_active_dof_values(q_active)
-        if self.__show_com:
-            self.show_com()
-        if self.__show_comd:
-            self.show_comd()
-
-    def set_active_dof_velocities(self, qd_active):
-        """
-        Set the active joint velocities of the robot.
-
-        Parameters
-        ----------
-        q : array
-            Vector of active joint angular velocities.
-        """
-        self.__cam = None
-        self.__comd = None
-        super(Humanoid, self).set_active_dof_velocities(qd_active)
         if self.__show_comd:
             self.show_comd()
 

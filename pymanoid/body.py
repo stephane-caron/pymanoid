@@ -75,10 +75,9 @@ class Body(object):
         if color is not None:
             self.set_color(color)
         if not visible:
-            self.set_visible(False)
+            self.hide()
         if transparency is not None:
             self.set_transparency(transparency)
-        self.is_visible = visible
 
     def __str__(self):
         return "pymanoid.Body('%s')" % self.name
@@ -129,28 +128,12 @@ class Body(object):
                 geom.SetTransparency(transparency)
 
     def show(self):
-        """
-        Make the body visible.
-        """
+        """Make the body visible."""
         self.rave.SetVisible(True)
 
     def hide(self):
-        """
-        Make the body invisible.
-        """
+        """Make the body invisible."""
         self.rave.SetVisible(False)
-
-    def set_visible(self, visible):
-        """
-        Change the visibility of the rigid body.
-
-        Parameters
-        ----------
-        visible : bool
-            New visibility.
-        """
-        self.is_visible = visible
-        self.rave.SetVisible(visible)
 
     @property
     def index(self):
