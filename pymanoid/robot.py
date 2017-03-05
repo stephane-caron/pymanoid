@@ -488,8 +488,8 @@ class Robot(object):
 
         References
         ----------
-        .. [WO82] M.Walker and D. Orin. "Efficient dynamic computer simulation
-           of robotic mechanisms." ASME Trans. J. dynamics Systems, Measurement
+        .. [WO82] M. Walker and D. Orin. “Efficient dynamic computer simulation
+           of robotic mechanisms.” ASME Trans. J. dynamics Systems, Measurement
            and Control 104 (1982): 205-211.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
@@ -931,20 +931,22 @@ class Humanoid(Robot):
 
     def compute_angular_momentum_jacobian(self, p):
         """
-        Compute the jacobian matrix J(q) such that the angular momentum of the
-        robot at p is given by:
+        Compute the Jacobian matrix J(q) such that the angular momentum of the
+        robot at `P` is given by:
 
-            L_p(q, qd) = J(q) * qd
+        .. math::
+
+            L_P(q, \\dot{q}) = J(q) \\dot{q}
 
         Parameters
         ----------
         p : array, shape=(3,)
-            Application point `p` in world coordinates.
+            Application point `P` in world coordinates.
 
         Returns
         -------
         J_am : array, shape=(3,)
-            Jacobian giving the angular momentum of the robot at `p`.
+            Jacobian giving the angular momentum of the robot at `P`.
         """
         J_am = zeros((3, self.nb_dofs))
         for link in self.rave.GetLinks():
@@ -1003,10 +1005,8 @@ class Humanoid(Robot):
         return H
 
     """
-    Centroidal Angular Momentum (CAM)
-    =================================
-
-    It is simply the angular momentum taken at the center of mass.
+    Centroidal Angular Momentum
+    ===========================
     """
 
     @property
@@ -1053,10 +1053,9 @@ class Humanoid(Robot):
         ----
         This function is not optimized.
         """
-        qd = self.qd
         J = self.compute_cam_jacobian()
         H = self.compute_cam_hessian()
-        return dot(J, qdd) + dot(qd, dot(H, qd))
+        return dot(J, qdd) + dot(self.qd, dot(H, self.qd))
 
     def compute_cam_hessian(self, q):
         """
@@ -1143,7 +1142,7 @@ class Humanoid(Robot):
     =========================
     """
 
-    def compute_zmp(self, qdd):
+    def compute_zmp(self, qdd, origin=None, normal=None):
         """
         Compute the Zero-tilting Moment Point (ZMP).
 
@@ -1151,17 +1150,37 @@ class Humanoid(Robot):
         ----------
         qdd : array
             Vector of joint accelerations.
+        origin : array, shape=(3,), optional
+            Origin `O` of the ZMP plane. Defaults to the origin of the world
+            frame.
+        normal : array, shape=(3,), optional
+            Normal `n` of the ZMP plane. Defaults to the vertical.
+
+        Returns
+        -------
+        zmp : array, shape=(3,)
+            ZMP of the gravito-inertial wrench in the plane (`O`, `n`).
 
         Notes
         -----
-        For an excellent introduction to the concepts of ZMP and center of
-        pressure, see “Forces acting on a biped robot. center of
-        pressure-zero moment point” by P. Sardain and G. Bessonnet
-        <http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.138.8014&rep=rep1&type=pdf>.
+        See [SB04]_ for an excellent introduction to the concepts of ZMP and
+        center of pressure. See [CPN17]_ for the more general definition of ZMP
+        support areas in arbitrary planes.
+
+        References
+        ----------
+        .. [SB04] P. Sardain and G. Bessonnet, “Forces acting on a biped robot.
+           center of pressure-zero moment point,” IEEE Transactions on Systems,
+           Man and Cybernetics, vol. 34, no. 5, pp. 630-637, Sep. 2004.
+
+        .. [CPN17] S. Caron, Q. C. Pham and Y. Nakamura, “ZMP Support Areas for
+           Multicontact Mobility Under Frictional Constraints,” in IEEE
+           Transactions on Robotics, vol. 33, no. 1, pp. 67-80, Feb. 2017.
         """
-        O, n = zeros(3), array([0, 0, 1])
-        f_gi, tau_gi = self.compute_gravito_inertial_wrench(qdd, O)
-        return cross(n, tau_gi) * 1. / dot(n, f_gi)
+        p_O = origin if origin is not None else zeros(3)
+        n = normal if normal is not None else array([0, 0, 1])
+        f, tau_O = self.compute_gravito_inertial_wrench(qdd, p_O)
+        return cross(n, tau_O) / dot(n, f) + p_O
 
     """
     Posture generation
