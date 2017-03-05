@@ -821,14 +821,12 @@ class Humanoid(Robot):
 
     def compute_com_jacobian(self):
         """
-        Compute the jacobian matrix J(q) of the position of the center of mass G
-        of the robot, i.e. the velocity of the G is given by:
+        Compute the Jacobian matrix `J(q)` of the center of mass `G`, such that
+        the velocity of `G` in the world frame is:
 
-                pd_G(q, qd) = J(q) * qd
+        .. math::
 
-        q -- vector of joint angles
-        qd -- vector of joint velocities
-        pd_G -- velocity of the center of mass G
+                \\dot{p}_G = J(q) \\dot{q}
         """
         J_com = zeros((3, self.nb_dofs))
         for link in self.rave.GetLinks():
@@ -842,12 +840,31 @@ class Humanoid(Robot):
         return J_com
 
     def compute_com_acceleration(self, qdd):
-        qd = self.qd
+        """
+        Compute the acceleration :math:`\\ddot{p}_G` of the center of mass.
+
+        Parameters
+        ----------
+        qdd : array
+            Vector of DOF accelerations.
+
+        Note
+        ----
+        This function is not optimized.
+        """
         J = self.compute_com_jacobian()
         H = self.compute_com_hessian()
         return dot(J, qdd) + dot(qd, dot(H, qdd))
 
     def compute_com_hessian(self):
+        """
+        Compute the Hessian matrix `H(q)` of the center of mass `G`, such that
+        the acceleration of `G` in the world frame is:
+
+        .. math::
+
+                \\ddot{p}_G = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}
+        """
         H_com = zeros((self.nb_dofs, 3, self.nb_dofs))
         for link in self.rave.GetLinks():
             m = link.GetMass()
@@ -860,19 +877,23 @@ class Humanoid(Robot):
         return H_com
 
     def show_com(self):
+        """Show a red ball at the COM location."""
         self.__show_com = True
         self.__com_handle = draw_point(
             self.com, pointsize=0.0005 * self.mass, color='r')
 
     def hide_com(self):
+        """Hide COM ball."""
         self.__show_com = False
         self.__com_handle = None
 
     def show_comd(self):
+        """Show an arrow representing COM velocity."""
         self.__show_comd = True
         self.__comd_handle = draw_force(self.com, self.comd, scale=1.)
 
     def hide_comd(self):
+        """Hide COM velocity display."""
         self.__show_comd = False
         self.__comd_handle = None
 
