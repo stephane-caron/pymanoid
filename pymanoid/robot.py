@@ -854,7 +854,7 @@ class Humanoid(Robot):
         """
         J = self.compute_com_jacobian()
         H = self.compute_com_hessian()
-        return dot(J, qdd) + dot(qd, dot(H, qdd))
+        return dot(J, qdd) + dot(self.qd, dot(H, self.qd))
 
     def compute_com_hessian(self):
         """
