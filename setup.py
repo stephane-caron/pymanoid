@@ -40,6 +40,5 @@ setup(
     packages=[
         'pymanoid',
         'pymanoid.polyhedra',
-        'pymanoid.robots',
-        'pymanoid.tasks']
+        'pymanoid.robots']
 )
