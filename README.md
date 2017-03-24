@@ -55,8 +55,8 @@ sudo python setup.py install
 
 ## Frequently Asked Questions
 
-**Q: Do you implement dynamics simulation in Pymanoid? If yes, could you give
-me some pointers? If no, how do you verify the stability of the robot?**
+**Q: Do you implement dynamics simulation in Pymanoid? If no, how do you verify
+the stability of the robot?**
 
 Forward dynamics need a reaction-force model, which is a tricky thing to do in
 rigid body dynamics. This stems from an essential "contradiction" of the model:
