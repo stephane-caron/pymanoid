@@ -71,7 +71,7 @@ dynamics](https://en.wikipedia.org/wiki/Contact_dynamics).
 Pymanoid does not provide forward dynamics. The stability that is checked in
 simulations is a feasibility criterion called [contact
 stability](https://scaron.info/teaching/contact-stability.html), namely, that
-at each instant there exists feasible contact forces that support the robot
-motion. To enforce this check, you can instantiate a [wrench
+at each timestep there exists feasible contact forces that support the robot
+motion. To perform this check, you can instantiate a [wrench
 drawer](/pymanoid/drawers.py) or call the ``find_supporting_wrenches()``
 function from a [ContactSet](/pymanoid/contact_set.py).
