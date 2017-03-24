@@ -27,6 +27,7 @@ Python library for humanoid robotics based on
 ## Getting started
 
 - [Installation instructions](#installation)
+- [FAQ](#frequently-asked-questions)
 - [Examples](/examples)
 - [API documentation](https://scaron.info/doc/pymanoid/)
 
@@ -51,3 +52,26 @@ the library system-wide:
 git clone https://github.com/stephane-caron/pymanoid.git && cd pymanoid
 sudo python setup.py install
 ```
+
+## Frequently Asked Questions
+
+**Q: Do you implement dynamics simulation in Pymanoid? If yes, could you give
+me some pointers? If no, how do you verify the stability of the robot?**
+
+Forward dynamics need a reaction-force model, which is a tricky thing to do in
+rigid body dynamics. This stems from an essential "contradiction" of the model:
+physically, reaction forces depend on local deformations between bodies in
+contact, while the main assumption of rigid body dynamics is that bodies are
+not deformable. To overcome this, two main approaches have been explored:
+regularized reaction-force models (a.k.a. "jedi" physics) and non-smooth
+approaches. Both have pros and cons in terms of realism and numerical
+integration. For more details, check out the Wikipedia page on [contact
+dynamics](https://en.wikipedia.org/wiki/Contact_dynamics).
+
+Pymanoid does not provide forward dynamics. The stability that is checked in
+simulations is a feasibility criterion called [contact
+stability](https://scaron.info/teaching/contact-stability.html), namely, that
+at each instant there exists feasible contact forces that support the robot
+motion. To enforce this check, you can instantiate a [wrench
+drawer](/pymanoid/drawers.py) or call the ``find_supporting_wrenches()``
+function from a [ContactSet](/pymanoid/contact_set.py).
