@@ -65,6 +65,7 @@ class Robot(object):
         self.has_free_flyer = False
         self.ik = None  # call init_ik() to instantiate
         self.ik_thread = None
+        self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dofs = nb_dofs
         self.q_max = q_max
@@ -82,6 +83,7 @@ class Robot(object):
 
     def hide(self):
         """Make the robot invisible."""
+        self.is_visible = False
         self.rave.SetVisible(False)
 
     def set_color(self, r, g, b):
@@ -118,6 +120,7 @@ class Robot(object):
 
     def show(self):
         """Make the robot visible."""
+        self.is_visible = True
         self.rave.SetVisible(True)
 
     """

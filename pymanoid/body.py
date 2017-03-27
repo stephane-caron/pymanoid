@@ -66,6 +66,7 @@ class Body(object):
                 Body.count += 1
             kinbody.SetName(name)
         self.rave = kinbody
+        self.is_visible = visible
         if pos is not None:
             self.set_pos(pos)
         if rpy is not None:
@@ -129,10 +130,12 @@ class Body(object):
 
     def show(self):
         """Make the body visible."""
+        self.is_visible = True
         self.rave.SetVisible(True)
 
     def hide(self):
         """Make the body invisible."""
+        self.is_visible = False
         self.rave.SetVisible(False)
 
     @property
