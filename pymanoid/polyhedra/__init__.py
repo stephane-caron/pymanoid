@@ -25,17 +25,17 @@ from misc import is_redundant
 from polygon import intersect_polygons
 from polyhedron import Polyhedron
 from polytope import Polytope
-from projection import PolyhedronProjector
-from projection import PolytopeProjector
+from projection import project_polyhedron
+from projection import project_polytope
 
 __all__ = [
     'Cone',
     'Polyhedron',
-    'PolyhedronProjector',
     'Polytope',
-    'PolytopeProjector',
     'intersect_polygons',
     'is_positive_combination',
     'is_redundant',
-    'polygon'
+    'polygon',
+    'project_polyhedron',
+    'project_polytope',
 ]
