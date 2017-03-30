@@ -26,7 +26,8 @@ from scipy.spatial.qhull import QhullError
 from optim import solve_qp
 from polyhedra import Cone
 from polyhedra.polygon import compute_polygon_hull
-from polyhedra import Polytope, PolytopeProjector
+from polyhedra import Polytope
+from polyhedra import project_polytope
 from sim import gravity
 
 
@@ -237,17 +238,12 @@ class ContactSet(object):
         F = block_diag(*[contact.wrench_face for contact in self.contacts])
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, see Section IV.B in [CK16]_
-        pp = PolytopeProjector()
-        pp.set_inequality(
-            F,
-            zeros(F.shape[0]))
-        pp.set_equality(
-            G[(0, 1, 2, 5), :],
-            array([0, 0, mass * 9.81, 0]))
-        pp.set_output(
-            1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]]),
-            array([p[0], p[1]]))
-        return pp.project(method)
+        E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
+        f = array([p[0], p[1]])
+        return project_polytope(
+            ineq=(F, zeros(F.shape[0])),
+            eq=(G[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
+            proj=(E, f), method=method)
 
     def compute_zmp_support_area(self, com, plane, method='bretl'):
         """
@@ -282,20 +278,15 @@ class ContactSet(object):
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, c.f. Section IV.C in
         # <https://hal.archives-ouvertes.fr/hal-01349880>
-        pp = PolytopeProjector()
-        pp.set_inequality(
-            F,
-            zeros(F.shape[0]))
         B = vstack([
             hstack([z_com * eye(3), crossmat_n]),
             hstack([zeros(3), com])])  # \sim hstack([-(cross(n, p_in)), n])])
-        pp.set_equality(
-            1. / (mass * 9.81) * dot(B, G),
-            hstack([com, [0]]))
-        pp.set_output(
-            (z_zmp - z_com) / (mass * 9.81) * G[:2, :],
-            array([com[0], com[1]]))
-        return pp.project(method)
+        C = 1. / (mass * 9.81) * dot(B, G)
+        d = hstack([com, [0]])
+        E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
+        f = array([com[0], com[1]])
+        return project_polytope(
+            ineq=(F, zeros(F.shape[0])), eq=(C, d), proj=(E, f), method=method)
 
     def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
         """
