@@ -112,7 +112,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
                  radius * sin(theta),
                  radius + .5 * height * sin(theta)],
             rpy=(roughness * (random(3) - 0.5) + [0, 0, theta + .5 * pi]),
-            static_friction=friction,
+            friction=friction,
             visible=True)
         if first_left_foot is None:
             first_left_foot = left_foot
@@ -122,7 +122,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
                  1.2 * radius * sin(theta + .5 * angular_step),
                  radius + .5 * height * sin(theta + .5 * angular_step)],
             rpy=(roughness * (random(3) - 0.5) + [0, 0, theta + .5 * pi]),
-            static_friction=friction,
+            friction=friction,
             visible=True)
         if prev_right_foot is not None:
             com_target = left_foot.p + [0., 0., JVRC1.leg_length]

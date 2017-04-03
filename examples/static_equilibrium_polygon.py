@@ -67,19 +67,19 @@ if __name__ == "__main__":
             shape=robot.sole_shape,
             pos=[0.20, 0.15, 0.1],
             rpy=[0, 0, 0],
-            static_friction=0.5,
+            friction=0.5,
             visible=True),
         right_foot=Contact(
             shape=robot.sole_shape,
             pos=[-0.2, -0.195, 0.],
             rpy=[0, 0, 0],
-            static_friction=0.5,
+            friction=0.5,
             visible=True),
         left_hand=Contact(
             shape=robot.sole_shape,
             pos=[0.45, 0.46, 0.96],
             rpy=[0., -0.8, 0.5],
-            static_friction=0.5,
+            friction=0.5,
             visible=True))
 
     robot.init_ik(active_dofs=robot.whole_body)

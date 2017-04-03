@@ -1290,25 +1290,8 @@ class Humanoid(Robot):
         debug : bool, optional
             Print extra debug info, default is False.
         """
-        from tasks import COMTask, ContactTask, PostureTask
-        if stance.left_foot is not None:
-            self.ik.add_task(
-                ContactTask(
-                    self, self.left_foot, stance.left_foot, weight=1.))
-        if stance.right_foot is not None:
-            self.ik.add_task(
-                ContactTask(
-                    self, self.right_foot, stance.right_foot, weight=1.))
-        if stance.left_hand is not None:
-            self.ik.add_task(
-                ContactTask(
-                    self, self.left_hand, stance.left_hand, weight=1.))
-        if stance.right_hand is not None:
-            self.ik.add_task(
-                ContactTask(
-                    self, self.right_hand, stance.right_hand, weight=1.))
-        com_task = COMTask(self, stance.com, weight=1e-2)
-        posture_task = PostureTask(self, self.q_halfsit, weight=1e-4)
-        self.ik.add_task(com_task)
-        self.ik.add_task(posture_task)
+        from tasks import PostureTask
+        self.bind_stance(stance)
+        self.ik.remove_task('MIN_VEL')
+        self.ik.add_task(PostureTask(self, self.q_halfsit, weight=1e-6))
         self.solve_ik(max_it, conv_tol, dt, debug)

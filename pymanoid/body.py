@@ -439,16 +439,27 @@ class Manipulator(Body):
         Initial visibility.
     transparency : double, optional
         Transparency value from 0 (opaque) to 1 (invisible).
-    name : string, optional
-        Body name in OpenRAVE scope.
+    shape : (scalar, scalar)
+        Dimensions (half-length, half-width) of a contact patch in [m].
+    friction : scalar
+        Static friction coefficient for potential contacts.
     """
 
     def __init__(self, rave_manipulator, pos=None, rpy=None, pose=None,
-                 color=None, visible=True, transparency=None):
+                 color=None, visible=True, transparency=None, shape=None,
+                 friction=None):
         super(Manipulator, self).__init__(
             rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
             visible=visible)
         self.end_effector = rave_manipulator.GetEndEffector()
+        self.friction = friction
+        self.shape = shape
+
+    def get_contact(self, visible=True, color='r'):
+        from contact import Contact
+        return Contact(
+            self.shape, pose=self.pose, friction=self.friction, visible=visible,
+            color=color, link=self)
 
     @property
     def index(self):

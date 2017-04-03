@@ -31,7 +31,7 @@ class Contact(Box):
 
     Parameters
     ----------
-    shape : double couple
+    shape : (scalar, scalar)
         Surface dimensions (half-length, half-width) in [m].
     pos : ndarray
         Contact position in world frame.
@@ -40,10 +40,8 @@ class Contact(Box):
     pose : ndarray
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at the
         same time.
-    static_friction : double
+    friction : scalar
         Static friction coefficient.
-    kinetic_friction : double
-        Kinetic friction coefficient.
     visible : bool, optional
         Initial visibility. Defaults to ``True``.
     name : string, optional
@@ -53,15 +51,12 @@ class Contact(Box):
     THICKNESS = 0.01
     """Thickness in [m] of the contact patch."""
 
-    def __init__(self, shape, pos=None, rpy=None, pose=None,
-                 static_friction=None, kinetic_friction=None, visible=True,
-                 name=None, color='r', link=None):
+    def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
+                 visible=True, name=None, color='r', link=None):
         X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
             visible=visible, dZ=-self.THICKNESS, name=name)
-        if kinetic_friction is None and static_friction is not None:
-            kinetic_friction = static_friction
         v1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
         v2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
         v3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
@@ -70,10 +65,9 @@ class Contact(Box):
         v2.flags.writeable = False
         v3.flags.writeable = False
         v4.flags.writeable = False
-        self.kinetic_friction = kinetic_friction
+        self.friction = friction
         self.link = link
         self.shape = shape
-        self.static_friction = static_friction
         self.vertices = [v1, v2, v3, v4]
 
     """
@@ -127,7 +121,7 @@ class Contact(Box):
         """
         Face (H-rep) of the force friction cone in world frame.
         """
-        mu = self.static_friction / sqrt(2)  # inner approximation
+        mu = self.friction / sqrt(2)  # inner approximation
         face_local = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
@@ -140,7 +134,7 @@ class Contact(Box):
         """
         Rays (V-rep) of the force friction cone in world frame.
         """
-        mu = self.static_friction / sqrt(2)  # inner approximation
+        mu = self.friction / sqrt(2)  # inner approximation
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
@@ -182,7 +176,7 @@ class Contact(Box):
            Robotics and Automation (ICRA).
         """
         X, Y = self.X, self.Y
-        mu = self.static_friction / sqrt(2)  # inner approximation
+        mu = self.friction / sqrt(2)  # inner approximation
         local_cone = array([
             # fx fy             fz taux tauy tauz
             [-1,  0,           -mu,   0,   0,   0],

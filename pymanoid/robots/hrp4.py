@@ -36,6 +36,7 @@ class HRP4(Humanoid):
     leg_length = 0.8           # [m]   (roughly, for a strechted leg)
     mass = 39.                 # [kg]  (includes batteries)
     sole_shape = (0.11, 0.05)  # (half-length [m], half-width [m]) of foot sole
+    palm_shape = (0.03, 0.04)  # (half-length [m], half-width [m]) of palm patch
 
     # DOF indexes with respect to COLLADA model
     L_F53 = 0
@@ -160,13 +161,17 @@ class HRP4(Humanoid):
         super(HRP4, self).__init__(path, root_body)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.left_foot = Manipulator(
-            self.rave.GetManipulator("left_foot_center"))
+            self.rave.GetManipulator("left_foot_center"), shape=self.sole_shape,
+            friction=0.8)
         self.right_foot = Manipulator(
-            self.rave.GetManipulator("right_foot_center"))
+            self.rave.GetManipulator("right_foot_center"),
+            shape=self.sole_shape, friction=0.8)
         self.left_hand = Manipulator(
-            self.rave.GetManipulator("left_hand_palm"))
+            self.rave.GetManipulator("left_hand_palm"), shape=self.palm_shape,
+            friction=0.8)
         self.right_hand = Manipulator(
-            self.rave.GetManipulator("right_hand_palm"))
+            self.rave.GetManipulator("right_hand_palm"), shape=self.palm_shape,
+            friction=0.8)
 
     def suntan(self, amount=0.3):
         """
