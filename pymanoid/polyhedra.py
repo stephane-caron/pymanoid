@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import bretl
 import cdd
 import cvxopt
 
 from numpy import array, dot, hstack, ones, vstack, zeros
 
+from algorithms import bretl
 from misc import norm
 from optim import solve_lp
 
