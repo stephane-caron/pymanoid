@@ -46,13 +46,6 @@ class Stance(ContactSet):
         Label for the current contact phase.
     duration : double, optional
         Timing information.
-
-    Note
-    ----
-    Stances proactively compute their contact wrench cone and static-equilibrium
-    polygon when they are instanciated. The Stance class is therefore
-    best-suited for planning; under time constraints, consider using bare
-    ContactSets instead.
     """
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
@@ -72,6 +65,10 @@ class Stance(ContactSet):
         self.sep = None
 
     def compute_contact_polyhedra(self):
+        """
+        Compute the contact wrench cone (CWC) and static-equilibrium polygon
+        (SEP) of the stance.
+        """
         self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
         sep_vertices = self.compute_static_equilibrium_polygon()
         self.sep_hrep = compute_polytope_hrep(sep_vertices)
@@ -79,8 +76,19 @@ class Stance(ContactSet):
 
     def dist_to_sep_edge(self, com):
         """
-        Algebraic distance to the edge of the static-equilibrium polygon
-        (positive inside, negative outside).
+        Algebraic distance of a COM position to the edge of the
+        static-equilibrium polygon [BL08]_.
+
+        Parameters
+        ----------
+        com : array, shape=(3,)
+            COM position to evaluate the distance from.
+
+        Returns
+        -------
+        dist : scalar
+            Algebraic distance to the edge of the polygon. Inner points get a
+            positive value, outer points a negative one.
         """
         A, b = self.sep_hrep
         alg_dists = (b - dot(A, com[:2])) / self.sep_norm
