@@ -23,7 +23,7 @@ from body import Manipulator
 from body import Point
 from body import PointMass
 from contact import Contact
-from contact_set import ContactSet
+from contact import ContactSet
 from optim import solve_lp
 from optim import solve_qp
 from robot import Humanoid

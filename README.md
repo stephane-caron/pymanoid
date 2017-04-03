@@ -74,4 +74,4 @@ stability](https://scaron.info/teaching/contact-stability.html), namely, that
 at each timestep there exists feasible contact forces that support the robot
 motion. To perform this check, you can instantiate a [wrench
 drawer](/pymanoid/drawers.py) or call the ``find_supporting_wrenches()``
-function from a [ContactSet](/pymanoid/contact_set.py).
+function from a [ContactSet](/pymanoid/contact.py).

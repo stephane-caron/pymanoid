@@ -20,7 +20,7 @@
 from numpy import array, dot
 
 from body import Point
-from contact_set import ContactSet
+from contact import ContactSet
 from misc import norm
 from polyhedra import compute_polytope_hrep
 
@@ -93,3 +93,25 @@ class Stance(ContactSet):
         A, b = self.sep_hrep
         alg_dists = (b - dot(A, com[:2])) / self.sep_norm
         return min(alg_dists)
+
+    def hide(self):
+        self.com.hide()
+        if self.left_foot is not None:
+            self.left_foot.hide()
+        if self.left_hand is not None:
+            self.left_hand.hide()
+        if self.right_foot is not None:
+            self.right_foot.hide()
+        if self.right_hand is not None:
+            self.right_hand.hide()
+
+    def show(self):
+        self.com.show()
+        if self.left_foot is not None:
+            self.left_foot.show()
+        if self.left_hand is not None:
+            self.left_hand.show()
+        if self.right_foot is not None:
+            self.right_foot.show()
+        if self.right_hand is not None:
+            self.right_hand.show()
