@@ -24,10 +24,8 @@ from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
 from optim import solve_qp
-from polyhedra import Cone
-from polyhedra.polygon import compute_polygon_hull
-from polyhedra import Polytope
-from polyhedra import project_polytope
+from polyhedra import compute_cone_face_matrix, project_polytope
+from polygons import compute_polygon_hull
 from sim import gravity
 
 
@@ -81,8 +79,8 @@ class ContactSet(object):
             :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
             `p`.
         """
-        S = self.compute_wrench_span(p)
-        return Cone.face_of_span(S)
+        span_matrix = self.compute_wrench_span(p)
+        return compute_cone_face_matrix(span_matrix)
 
     def compute_wrench_span(self, p):
         """
@@ -347,4 +345,4 @@ class ContactSet(object):
         vertices_at_zdd = [
             array([a * (g + zdd), b * (g + zdd), zdd])
             for (a, b) in reduced_hull]
-        return Polytope(vertices=[gravity] + vertices_at_zdd)
+        return [gravity] + vertices_at_zdd

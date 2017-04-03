@@ -26,9 +26,6 @@ from contact import Contact
 from contact_set import ContactSet
 from optim import solve_lp
 from optim import solve_qp
-from polyhedra import Cone
-from polyhedra import Polyhedron
-from polyhedra import Polytope
 from robot import Humanoid
 from robot import Robot
 from sim import Process
@@ -40,7 +37,6 @@ import robots
 
 __all__ = [
     'Box',
-    'Cone',
     'Contact',
     'ContactSet',
     'Cube',
@@ -49,8 +45,6 @@ __all__ = [
     'Manipulator',
     'Point',
     'PointMass',
-    'Polyhedron',
-    'Polytope',
     'Process',
     'Robot',
     'Simulation',

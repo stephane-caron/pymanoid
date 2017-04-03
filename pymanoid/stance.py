@@ -22,13 +22,13 @@ from numpy import array, dot
 from body import Point
 from contact_set import ContactSet
 from misc import norm
-from polyhedra import Polytope
+from polyhedra import compute_polytope_hrep
 
 
 class Stance(ContactSet):
 
     """
-    Stances extend contact sets with COM locations.
+    Stances are contact sets with COM locations.
 
     Parameters
     ----------
@@ -49,10 +49,10 @@ class Stance(ContactSet):
 
     Note
     ----
-    Stances proactively computed their contact wrench cone and
-    static-equilibrium polygon when they are instanciated. The Stance class is
-    therefore best-suited for planning; under time constraints, consider using
-    bare ContactSets instead.
+    Stances proactively compute their contact wrench cone and static-equilibrium
+    polygon when they are instanciated. The Stance class is therefore
+    best-suited for planning; under time constraints, consider using bare
+    ContactSets instead.
     """
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,

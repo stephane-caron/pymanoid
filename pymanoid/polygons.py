@@ -19,18 +19,15 @@
 
 from __future__ import division
 
-from numpy import array, dot, hstack, sqrt
+from numpy import array, dot, hstack
 from pyclipper import Pyclipper, PT_CLIP, PT_SUBJECT, CT_INTERSECTION
 from pyclipper import scale_to_clipper, scale_from_clipper
 from scipy.spatial import ConvexHull
 from shapely.geometry import LineString as ShapelyLineString
 from shapely.geometry import Polygon as ShapelyPolygon
 
-from polytope import Polytope
-
-
-def norm(v):
-    return sqrt(dot(v, v))
+from misc import norm
+from polyhedra import compute_chebyshev_center
 
 
 def __compute_polygon_hull(B, c):
@@ -126,7 +123,7 @@ def compute_polygon_hull(B, c):
     """
     x = None
     if not all(c > 0):
-        x = Polytope.compute_chebyshev_center(B, c)
+        x = compute_chebyshev_center(B, c)
         c = c - dot(B, x)
     if not all(c > 0):
         raise Exception("Polygon is empty (min. dist. to edge %.2f)" % min(c))

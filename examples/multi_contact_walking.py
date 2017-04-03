@@ -56,12 +56,13 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
-from pymanoid import Contact, ContactSet, PointMass, Polytope, Stance
+from pymanoid import Contact, ContactSet, PointMass, Stance
 from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_cone, draw_polyhedron
 from pymanoid.misc import interpolate_pose_linear, normalize
-from pymanoid.polyhedra import intersect_polygons
+from pymanoid.polyhedra import compute_polytope_hrep
+from pymanoid.polygons import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
@@ -125,30 +126,42 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             visible=True)
         if prev_right_foot is not None:
             com_target = left_foot.p + [0., 0., JVRC1.leg_length]
-            stances.append(Stance(
+            dsl_stance = Stance(
                 com_target, left_foot=left_foot, right_foot=prev_right_foot,
-                label='DS-L', duration=ds_duration))
-            stances.append(Stance(
+                label='DS-L', duration=ds_duration)
+            ssl_stance = Stance(
                 com_target, left_foot=left_foot, label='SS-L',
-                duration=ss_duration))
+                duration=ss_duration)
+            dsl_stance.compute_contact_polyhedra()
+            ssl_stance.compute_contact_polyhedra()
+            stances.append(dsl_stance)
+            stances.append(ssl_stance)
         com_target = right_foot.p + [0., 0., JVRC1.leg_length]
         if init_com_offset is not None:
             com_target += init_com_offset
             init_com_offset = None
-        stances.append(Stance(
+        dsr_stance = Stance(
             com_target, left_foot=left_foot, right_foot=right_foot,
-            label='DS-R', duration=ds_duration))
-        stances.append(Stance(
+            label='DS-R', duration=ds_duration)
+        ssr_stance = Stance(
             com_target, right_foot=right_foot, label='SS-R',
-            duration=ss_duration))
+            duration=ss_duration)
+        dsr_stance.compute_contact_polyhedra()
+        ssr_stance.compute_contact_polyhedra()
+        stances.append(dsr_stance)
+        stances.append(ssr_stance)
         prev_right_foot = right_foot
     com_target = first_left_foot.p + [0., 0., JVRC1.leg_length]
-    stances.append(Stance(
+    dsl_stance = Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot,
-        label='DS-L', duration=ds_duration))
-    stances.append(Stance(
+        label='DS-L', duration=ds_duration)
+    ssl_stance = Stance(
         com_target, left_foot=first_left_foot, label='SS-L',
-        duration=ss_duration))
+        duration=ss_duration)
+    dsl_stance.compute_contact_polyhedra()
+    ssl_stance.compute_contact_polyhedra()
+    stances.append(dsl_stance)
+    stances.append(ssl_stance)
     return stances
 
 
@@ -445,16 +458,16 @@ class COMTube(object):
     def compute_primal_hrep(self):
         """Compute halfspaces of the primal tube."""
         try:
-            self.full_hrep = (Polytope.hrep(self.full_vrep))
+            self.full_hrep = (compute_polytope_hrep(self.full_vrep))
         except RuntimeError as e:
             raise Exception("Could not compute primal hrep: %s" % str(e))
 
     def compute_dual_vrep(self):
         """Compute vertices of the dual cones."""
         if len(self.primal_vrep) == 1:
-            dual = self.start_stance.compute_pendular_accel_cone(
+            dual_vertices = self.start_stance.compute_pendular_accel_cone(
                 com=self.primal_vrep[0])
-            self.dual_vrep = [dual.vertices]
+            self.dual_vrep = [dual_vertices]
             return
         # now, len(self.primal_vrep) == 2
         ds_then_ss = len(self.primal_vrep[0]) > 1
@@ -472,14 +485,14 @@ class COMTube(object):
         ds_cone = ContactSet._expand_reduced_pendular_cone(ds_vertices_2d)
         ss_cone = ContactSet._expand_reduced_pendular_cone(ss_vertices_2d)
         if ds_then_ss:
-            self.dual_vrep = [ds_cone.vertices, ss_cone.vertices]
+            self.dual_vrep = [ds_cone, ss_cone]
         else:  # SS, then DS
-            self.dual_vrep = [ss_cone.vertices, ds_cone.vertices]
+            self.dual_vrep = [ss_cone, ds_cone]
 
     def compute_dual_hrep(self):
         """Compute halfspaces of the dual cones."""
         for (stance_id, cone_vertices) in enumerate(self.dual_vrep):
-            B, c = Polytope.hrep(cone_vertices)
+            B, c = compute_polytope_hrep(cone_vertices)
             self.dual_hrep.append((B, c))
 
 

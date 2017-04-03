@@ -21,7 +21,149 @@ import bretl
 import cdd
 import cvxopt
 
-from numpy import array, dot, hstack, zeros
+from numpy import array, dot, hstack, ones, vstack, zeros
+
+from misc import norm
+from optim import solve_lp
+
+
+def compute_chebyshev_center(A, b):
+    """
+    Compute the Chebyshev center of a polyhedron, that is, the point furthest
+    away from all inequalities.
+
+    Parameters
+    ----------
+    A : array, shape=(m, k)
+        Matrix of halfspace representation.
+    b : array, shape=(m,)
+        Vector of halfspace representation.
+
+    Returns
+    -------
+    z : array, shape=(k,)
+        Point further away from all inequalities.
+
+    References
+    ----------
+    .. [BV04] Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
+              Section 4.3.1, p. 148.
+    """
+    cost = zeros(A.shape[1] + 1)
+    cost[-1] = -1.
+    a_cheby = array([norm(A[i, :]) for i in xrange(A.shape[0])])
+    A_cheby = hstack([A, a_cheby.reshape((A.shape[0], 1))])
+    z = solve_lp(cost, A_cheby, b)
+    if z[-1] < -1e-1:  # last coordinate is distance to boundaries
+        raise Exception("Polytope is empty (margin violation %.2f)" % z[-1])
+    return z[:-1]
+
+
+def compute_cone_face_matrix(S):
+    """
+    Compute the face matrix of a polyhedral convex cone from its span matrix.
+
+    Parameters
+    ----------
+    S : array, shape=(n, m)
+        Span matrix defining the cone as :math:`x = S \\lambda` with
+        :math:`\\lambda \\geq 0`.
+
+    Returns
+    -------
+    F : array, shape=(k, n)
+        Face matrix defining the cone equivalently by :math:`F x \\leq 0`.
+    """
+    V = vstack([
+        hstack([zeros((S.shape[1], 1)), S.T]),
+        hstack([1, zeros(S.shape[0])])])
+    # V-representation: first column is 0 for rays
+    mat = cdd.Matrix(V, number_type='float')
+    mat.rep_type = cdd.RepType.GENERATOR
+    P = cdd.Polyhedron(mat)
+    ineq = P.get_inequalities()
+    H = array(ineq)
+    if H.shape == (0,):  # H == []
+        return H
+    A = []
+    for i in xrange(H.shape[0]):
+        # H matrix is [b, -A] for A * x <= b
+        if norm(H[i, 1:]) < 1e-10:
+            continue
+        elif abs(H[i, 0]) > 1e-10:  # b should be zero for a cone
+            raise Exception("Polyhedron is not a cone")
+        elif i not in ineq.lin_set:
+            A.append(-H[i, 1:])
+    return array(A)
+
+
+def compute_polytope_hrep(vertices):
+    """
+    Compute the halfspace representation of a polytope defined as
+    convex hull of a set of vertices:
+
+    .. math::
+
+        A x \\leq b
+        \\quad \\Leftrightarrow \\quad
+        x \\in \\mathrm{conv}(\\mathrm{vertices})
+
+    Parameters
+    ----------
+    vertices : list of arrays
+        List of polytope vertices.
+
+    Returns
+    -------
+    A : array, shape=(m, k)
+        Matrix of halfspace representation.
+    b : array, shape=(m,)
+        Vector of halfspace representation.
+    """
+    V = vstack(vertices)
+    t = ones((V.shape[0], 1))  # first column is 1 for vertices
+    tV = hstack([t, V])
+    mat = cdd.Matrix(tV, number_type='float')
+    mat.rep_type = cdd.RepType.GENERATOR
+    P = cdd.Polyhedron(mat)
+    bA = array(P.get_inequalities())
+    if bA.shape == (0,):  # bA == []
+        return bA
+    # the polyhedron is given by b + A x >= 0 where bA = [b|A]
+    b, A = array(bA[:, 0]), -array(bA[:, 1:])
+    return (A, b)
+
+
+def compute_polytope_vertices(A, b):
+    """
+    Compute the vertices of a polytope given in halfspace representation by
+    :math:`A x \\leq b`.
+
+    Parameters
+    ----------
+    A : array, shape=(m, k)
+        Matrix of halfspace representation.
+    b : array, shape=(m,)
+        Vector of halfspace representation.
+
+    Returns
+    -------
+    vertices : list of arrays
+        List of polytope vertices.
+    """
+    b = b.reshape((b.shape[0], 1))
+    mat = cdd.Matrix(hstack([b, -A]), number_type='float')
+    mat.rep_type = cdd.RepType.INEQUALITY
+    P = cdd.Polyhedron(mat)
+    g = P.get_generators()
+    V = array(g)
+    vertices = []
+    for i in xrange(V.shape[0]):
+        if V[i, 0] != 1:  # 1 = vertex, 0 = ray
+            raise Exception("Polyhedron is not a polytope")
+        elif i not in g.lin_set:
+            vertices.append(V[i, 1:])
+    return vertices
 
 
 def project_polyhedron(ineq, eq, proj):

@@ -21,7 +21,6 @@ from numpy import array, cross, dot, eye, hstack, sqrt, vstack
 from scipy.linalg import block_diag
 
 from body import Box
-from polyhedra import Cone
 from rotations import crossmat
 
 
@@ -124,13 +123,6 @@ class Contact(Box):
     """
 
     @property
-    def force_cone(self):
-        """
-        Contact force friction cone.
-        """
-        return Cone(face=self.force_face, rays=self.force_rays)
-
-    @property
     def force_face(self):
         """
         Face (H-rep) of the force friction cone in world frame.
@@ -166,13 +158,6 @@ class Contact(Box):
     Wrench Friction Cone
     ====================
     """
-
-    @property
-    def wrench_cone(self):
-        """
-        Contact wrench friction cone (CWC).
-        """
-        return Cone(face=self.wrench_face, rays=self.wrench_rays)
 
     @property
     def wrench_face(self):

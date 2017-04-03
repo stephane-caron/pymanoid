@@ -228,9 +228,9 @@ class COMAccelConeDrawer(ZMPSupportAreaDrawer):
     def update_polygon(self):
         self.handle = None
         try:
-            cone = self.contact_set.compute_pendular_accel_cone(
+            cone_vertices = self.contact_set.compute_pendular_accel_cone(
                 self.stance.com.p)
-            vscale = [self.stance.com.p + 0.1 * acc for acc in cone.vertices]
+            vscale = [self.stance.com.p + 0.1 * acc for acc in cone_vertices]
             self.handle = draw_polyhedron(vscale, 'r.-#')
         except Exception as e:
             print "COMAccelConeDrawer:", e
