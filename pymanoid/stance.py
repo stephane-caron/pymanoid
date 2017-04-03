@@ -62,30 +62,26 @@ class Stance(ContactSet):
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)
         self.com = com
+        self.cwc = None
         self.duration = duration
         self.label = label
         self.left_foot = left_foot
         self.left_hand = left_hand
         self.right_foot = right_foot
         self.right_hand = right_hand
-        self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
-        self.sep = Polytope(vertices=self.compute_static_equilibrium_polygon())
-        self.sep.compute_hrep()
-        A, _ = self.sep.hrep_pair
-        self.sep_norm = array([norm(a) for a in A])
+        self.sep = None
 
-    @property
-    def contact(self):
-        """Unique contact if the Stance is single-support."""
-        assert self.nb_contacts == 1
-        for contact in self.contacts:
-            return contact
+    def compute_contact_polyhedra(self):
+        self.cwc = self.compute_wrench_face([0, 0, 0])  # calls cdd
+        sep_vertices = self.compute_static_equilibrium_polygon()
+        self.sep_hrep = compute_polytope_hrep(sep_vertices)
+        self.sep_norm = array([norm(a) for a in self.sep_hrep[0]])
 
     def dist_to_sep_edge(self, com):
         """
         Algebraic distance to the edge of the static-equilibrium polygon
         (positive inside, negative outside).
         """
-        A, b = self.sep.hrep_pair
+        A, b = self.sep_hrep
         alg_dists = (b - dot(A, com[:2])) / self.sep_norm
         return min(alg_dists)
