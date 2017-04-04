@@ -1203,19 +1203,20 @@ class Humanoid(Robot):
         link_velocities = self.rave.GetLinkVelocities()
         link_accelerations = self.rave.GetLinkAccelerations(qdd)
         for link in self.rave.GetLinks():
-            m = link.GetMass()
-            c = link.GetGlobalCOM()
+            i = link.GetIndex()
             I_local = link.GetLocalInertia()
             R = link.GetTransform()[0:3, 0:3]
+            c = link.GetGlobalCOM()
+            m = link.GetMass()
+            omega = link_velocities[i][3:]
+            omegad = link_accelerations[i][3:]
+            pdd = link_accelerations[i][:3]
             r = dot(R, link.GetLocalCOM())
-            omega = link_velocities[link.GetIndex()][3:]
-            pdd = link_accelerations[link.GetIndex()][:3]
-            omegad = link_accelerations[link.GetIndex()][3:]
             cdd = pdd + cross(omega, cross(omega, r)) + cross(omegad, r)
             f_link = m * (gravity - cdd)
             L_local = dot(I_local, omegad) - cross(dot(I_local, omega), omega)
             f += f_link
-            tau_P += cross(c, f_link) - dot(R, L_local)
+            tau_P += cross(c - p, f_link) - dot(R, L_local)
         return hstack([f, tau_P])
 
     """
