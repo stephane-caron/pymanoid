@@ -459,9 +459,9 @@ def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
     h1 = draw_point(cop, pointsize=pointsize)
     h2 = draw_force(cop, f, scale=scale, linewidth=linewidth)
     if abs(tau_z) > 1e-1:
-        h3 = draw_arrow(
+        h3 = draw_line(
             cop, cop + 10 * scale * tau_z * body.n, color='b',
-            linewidth=linewidth)
+            linewidth=5.)
         return [h1, h2, h3]
     return [h1, h2]
 

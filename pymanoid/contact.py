@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, dot, eye, hstack, sqrt, vstack, zeros
+from numpy import array, cross, diag, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
@@ -338,7 +338,8 @@ class ContactSet(object):
         return S
 
     def find_static_supporting_wrenches(self, com, mass):
-        """Find supporting contact wrenches in static-equilibrium.
+        """
+        Find supporting contact wrenches in static-equilibrium.
 
         Parameters
         ----------
@@ -358,8 +359,10 @@ class ContactSet(object):
         wrench = hstack([f, tau_G])
         return self.find_supporting_wrenches(wrench, com)
 
-    def find_supporting_wrenches(self, wrench, point):
-        """Find supporting contact wrenches for a given net contact wrench.
+    def find_supporting_wrenches(self, wrench, point, friction_weight=1e-2,
+                                 cop_weight=1., yaw_weight=1e-4):
+        """
+        Find supporting contact wrenches for a given net contact wrench.
 
         Parameters
         ----------
@@ -367,14 +370,17 @@ class ContactSet(object):
             Resultant contact wrench :math:`w_P` to be realized.
         point : array, shape=(3,)
             Point `P` where the wrench is expressed.
+        friction_weight : scalar, optional
+            Weight on friction minimization.
+        cop_weight : scalar, optional
+            Weight on COP deviations from the center of the contact patch.
 
         Returns
         -------
         support : list of (Contact, array) pairs
-            Mapping between each contact `i` in the contact set and a supporting
-            contact wrench :math:`w^i_{C_i}`. All contact wrenches satisfy
-            friction constraints and sum up to the net wrench: :math:`\\sum_c
-            w^i_P = w_P``.
+            Mapping between each contact `i` and a supporting contact wrench
+            :math:`w^i_{C_i}`. All contact wrenches satisfy friction constraints
+            and sum up to the net wrench: :math:`\\sum_c w^i_P = w_P``.
 
         Note
         ----
@@ -383,7 +389,14 @@ class ContactSet(object):
         :math:`w_P` is given.
         """
         n = 6 * self.nb_contacts
-        P = eye(n)
+        epsilon = min(friction_weight, cop_weight, yaw_weight) * 1e-3
+        W_f = diag([friction_weight, friction_weight, epsilon])
+        W_tau = diag([cop_weight, cop_weight, yaw_weight])
+        P = block_diag(*[
+            block_diag(
+                dot(c.R, dot(W_f, c.R.T)),
+                dot(c.R, dot(W_tau, c.R.T)))
+            for c in self.contacts])
         q = zeros((n,))
         G = block_diag(*[c.wrench_face for c in self.contacts])
         h = zeros((G.shape[0],))  # G * x <= h
