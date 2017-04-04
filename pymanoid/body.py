@@ -21,6 +21,7 @@ import openravepy
 
 from numpy import array, dot, ndarray, zeros
 
+from draw import matplotlib_to_rgb
 from misc import norm
 from rotations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 from sim import get_openrave_env
@@ -89,31 +90,16 @@ class Body(object):
 
         Parameters
         ----------
-        color : char
-            Color code in `Matplotlib convention
+        color : tuple or string
+            RGB tuple, or color code in `matplotlib convention
             <http://matplotlib.org/api/colors_api.html>`_.
         """
-        if color == 'w':
-            acolor = array([1., 1., 1.])
-            dcolor = array([1., 1., 1.])
-        else:  # add other colors above black
-            acolor = array([.2, .2, .2])
-            dcolor = array([.2, .2, .2])
-            rgb, cmy = ['r', 'g', 'b'], ['c', 'm', 'y']
-            if color in rgb:
-                cdim = rgb.index(color)
-                acolor[cdim] += .2
-                dcolor[cdim] += .4
-            elif color in cmy:
-                cdim = cmy.index(color)
-                acolor[(cdim + 1) % 3] += .2
-                acolor[(cdim + 2) % 3] += .2
-                dcolor[(cdim + 1) % 3] += .4
-                dcolor[(cdim + 2) % 3] += .4
+        if type(color) is str:
+            color = matplotlib_to_rgb(color)
         for link in self.rave.GetLinks():
             for g in link.GetGeometries():
-                g.SetAmbientColor(acolor)
-                g.SetDiffuseColor(dcolor)
+                g.SetAmbientColor(color)
+                g.SetDiffuseColor(color)
 
     def set_transparency(self, transparency):
         """

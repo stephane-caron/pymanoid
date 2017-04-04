@@ -37,14 +37,30 @@ class UnboundedPolyhedron(Exception):
 
 
 def matplotlib_to_rgb(color):
+    """
+    Convert matplotlib color string to RGB tuple.
+
+    Parameters
+    ----------
+    color : string
+        Color code in `matplotlib convention
+        <http://matplotlib.org/api/colors_api.html>`_.
+
+    Returns
+    -------
+    rgb : tuple
+        Red-green-blue tuple with values between 0 and 1.
+    """
     acolor = [0., 0., 0.]
     if color == 'k':
         return acolor
-    if color in ['r', 'm', 'y']:
+    if color == 'w':
+        return [1., 1., 1.]
+    if color in ['r', 'm', 'y', 'w']:
         acolor[0] += 0.5
-    if color in ['g', 'y', 'c']:
+    if color in ['g', 'y', 'c', 'w']:
         acolor[1] += 0.5
-    if color in ['b', 'c', 'm']:
+    if color in ['b', 'c', 'm', 'w']:
         acolor[2] += 0.5
     return acolor
 
