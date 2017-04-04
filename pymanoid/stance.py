@@ -50,8 +50,7 @@ class Stance(ContactSet):
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
                  right_hand=None, label=None, duration=None):
-        contacts = filter(None, [left_foot, right_foot, left_hand, right_hand])
-        super(Stance, self).__init__(contacts)
+        # not calling the parent (ContactSet) constructor
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)
         self.com = com
@@ -63,6 +62,24 @@ class Stance(ContactSet):
         self.right_foot = right_foot
         self.right_hand = right_hand
         self.sep = None
+
+    @property
+    def contacts(self):
+        return filter(None, [
+            self.left_foot, self.left_hand, self.right_foot, self.right_hand])
+
+    @property
+    def nb_contacts(self):
+        nb_contacts = 0
+        if self.left_foot is not None:
+            nb_contacts += 1
+        if self.left_hand is not None:
+            nb_contacts += 1
+        if self.right_foot is not None:
+            nb_contacts += 1
+        if self.right_hand is not None:
+            nb_contacts += 1
+        return nb_contacts
 
     def compute_contact_polyhedra(self):
         """
