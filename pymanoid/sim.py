@@ -25,7 +25,7 @@ from os import chmod, popen, system
 from os import stat as fstat
 from re import search
 from stat import S_IEXEC
-from threading import Thread
+from threading import Lock, Thread
 
 from misc import Statistics
 
@@ -46,7 +46,7 @@ class Process(object):
 
     def __init__(self):
         self._log_comp_times = False
-        self.paused = False
+        self.is_paused = False
 
     def log_comp_times(self, active=True):
         """
@@ -67,20 +67,16 @@ class Process(object):
         ----------
         sim : Simulation
             Current simulation instance.
-
-        Note
-        ----
-        This function needs to be implemented by child classes.
         """
-        raise NotImplementedError
+        raise NotImplementedError("should be implemented by child class")
 
     def pause(self):
         """Stop calling the process at new clock ticks."""
-        self.paused = True
+        self.is_paused = True
 
     def resume(self):
         """Resume calling the process at new clock ticks."""
-        self.paused = False
+        self.is_paused = False
 
 
 class Simulation(object):
@@ -118,6 +114,7 @@ class Simulation(object):
         self.extras = []
         self.gravity = gravity
         self.is_running = False
+        self.lock = None
         self.processes = []
         self.nb_steps = 0
         self.viewer = None
@@ -157,12 +154,12 @@ class Simulation(object):
 
     def _tick_processes(self):
         for process in self.processes:
-            if not hasattr(process, 'paused'):
+            if not hasattr(process, 'is_paused'):
                 most_likely_explanation = \
                     "did '%s' " % type(process).__name__ + \
                     "forget to call its parent constructor?"
                 raise AttributeError(most_likely_explanation)
-            if not process.paused:
+            if not process.is_paused:
                 if process._log_comp_times:
                     t0i = time.time()
                     process.on_tick(self)
@@ -175,7 +172,7 @@ class Simulation(object):
         if not self.extras:
             return
         for process in self.extras:
-            if not process.paused:
+            if not process.is_paused:
                 process.on_tick(self)
 
     """
@@ -186,11 +183,13 @@ class Simulation(object):
     def run_thread(self):
         """Run simulation thread."""
         while self.is_running:
-            self.step()
+            with self.lock:
+                self.step()
 
     def start(self):
         """Start simulation thread. """
         self.is_running = True
+        self.lock = Lock()
         self.thread = Thread(target=self.run_thread, args=())
         self.thread.daemon = True
         self.thread.start()

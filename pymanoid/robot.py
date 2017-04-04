@@ -64,7 +64,6 @@ class Robot(object):
 
         self.has_free_flyer = False
         self.ik = None  # call init_ik() to instantiate
-        self.ik_thread = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dofs = nb_dofs
@@ -512,24 +511,36 @@ class Robot(object):
 
         The function returns three terms tm, tc and tg such that
 
-            tm = M(q) * qdd
-            tc = qd.T * C(q) * qd
-            tg = g(q)
+        .. math::
+
+            \\begin{eqnarray}
+                tm & = & M(q) \\ddot{q} \\\\
+                tc & = & \\dot{q}^T C(q) \\dot{q} \\\\
+                tg & = & g(q)
+            \\end{eqnarray}
 
         where the equations of motion are written:
 
-            tm + tc + tg = F + external_torque
+        .. math::
+
+            tm + tc + tg = F + \\tau_\\mathrm{ext}
 
         Parameters
         ----------
         qdd : array, optional
-            Vector of joint accelerations.
+            Vector :math:`\\ddot{q}` of joint accelerations.
         external_torque : array, optional
-            Vector of external joint torques.
+            Vector :math:`\\tau_\\mathrm{ext}` of external joint torques.
 
-        Note
-        ----
-        When ``qdd`` is not provided, the value returned for ``tm`` is ``None``.
+        Returns
+        -------
+        tm : array
+            Torques due to inertial accelerations. Will be ``None`` if ``qdd``
+            is not provided.
+        tc : array
+            Torques due to nonlinear (centrifugal and Coriolis) effects.
+        tg : array
+            Torques due to gravity.
         """
         if qdd is None:
             _, tc, tg = self.rave.ComputeInverseDynamics(

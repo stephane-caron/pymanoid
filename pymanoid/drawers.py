@@ -46,6 +46,9 @@ class WrenchDrawer(Process):
         self.nb_fails = 0
         self.scale = scale
 
+    def clear(self):
+        self.handles = []
+
     def find_supporting_wrenches(self, sim):
         raise NotImplementedError("should be implemented by child classes")
 
