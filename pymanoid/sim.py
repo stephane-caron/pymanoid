@@ -121,6 +121,7 @@ class Simulation(object):
         self.processes = []
         self.nb_steps = 0
         self.viewer = None
+        self.watch_comp_times = False
         self.window_id = None
 
     @property
@@ -145,9 +146,9 @@ class Simulation(object):
             t0 = time.time()
             self._tick_processes()
             rem_time = self.dt - (time.time() - t0)
-            if __debug__ and rem_time < 0.:
+            if __debug__ and self.watch_comp_times and rem_time < 0.:
                 print "Simulation warning: cycle time budget",
-                print "(%.1f ms) depleted!" % (self.dt * 1000.)
+                print "(%.1f ms) depleted" % (self.dt * 1000.)
             self._tick_extras()
             rem_time = self.dt - (time.time() - t0)
             if rem_time > 1e-4:
