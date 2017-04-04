@@ -27,7 +27,48 @@ from misc import norm
 from sim import Process
 
 
-class PointMassWrenchDrawer(Process):
+"""
+Wrench drawers
+==============
+"""
+
+
+class WrenchDrawer(Process):
+
+    DEFAULT_SCALE = 0.0025
+    KO_COLOR = [.8, .4, .4]
+
+    def __init__(self, scale=None):
+        super(WrenchDrawer, self).__init__()
+        scale = self.DEFAULT_SCALE if scale is None else scale
+        self.handles = []
+        self.last_bkgnd_switch = None
+        self.nb_fails = 0
+        self.scale = scale
+
+    def find_supporting_wrenches(self, sim):
+        raise NotImplementedError("should be implemented by child classes")
+
+    def on_tick(self, sim):
+        """Find supporting contact forces at each COM acceleration update."""
+        try:
+            support = self.find_supporting_wrenches(sim)
+            self.handles = [
+                draw_wrench(contact, w_c, scale=self.scale)
+                for (contact, w_c) in support]
+        except ValueError:
+            self.handles = []
+            self.nb_fails += 1
+            sim.viewer.SetBkgndColor(self.KO_COLOR)
+            self.last_bkgnd_switch = time()
+        if self.last_bkgnd_switch is not None \
+                and time() - self.last_bkgnd_switch > 0.2:
+            # let's keep epilepsy at bay
+            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
+            self.last_bkgnd_switch = None
+
+
+class PointMassWrenchDrawer(WrenchDrawer):
 
     """
     Draw contact wrenches for a point-mass system in multi-contact.
@@ -42,47 +83,41 @@ class PointMassWrenchDrawer(Process):
         Force-to-distance conversion ratio in [m] / [N].
     """
 
-    KO_COLOR = [.8, .4, .4]
-
-    def __init__(self, point_mass, contact_set, scale=0.0025):
-        super(PointMassWrenchDrawer, self).__init__()
+    def __init__(self, point_mass, contact_set, scale=None):
+        super(PointMassWrenchDrawer, self).__init__(scale)
         self.contact_set = contact_set
-        self.handles = []
-        self.last_bkgnd_switch = None
-        self.nb_fails = 0
         self.point_mass = point_mass
-        self.scale = scale
 
-    def find_supporting_wrenches(self, gravity):
+    def find_supporting_wrenches(self, sim):
         mass = self.point_mass.mass
         p = self.point_mass.p
         pdd = self.point_mass.pdd
-        wrench = hstack([mass * (pdd - gravity), zeros(3)])
+        wrench = hstack([mass * (pdd - sim.gravity), zeros(3)])
         support = self.contact_set.find_supporting_wrenches(wrench, p)
         return support
 
     def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
         if self.point_mass.pdd is None:  # needs to be stored by the user
             return
-        try:
-            support = self.find_supporting_wrenches(sim.gravity)
-        except ValueError:
-            support = []
-        if not support:
-            self.handles = []
-            self.nb_fails += 1
-            sim.viewer.SetBkgndColor(self.KO_COLOR)
-            self.last_bkgnd_switch = time()
-        else:
-            self.handles = [
-                draw_wrench(contact, w_c, scale=self.scale)
-                for (contact, w_c) in support]
-        if self.last_bkgnd_switch is not None \
-                and time() - self.last_bkgnd_switch > 0.2:
-            # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
-            self.last_bkgnd_switch = None
+        super(PointMassWrenchDrawer, self).on_tick(sim)
+
+
+class RobotWrenchDrawer(WrenchDrawer):
+
+    def __init__(self, robot, scale=None):
+        super(RobotWrenchDrawer, self).__init__(scale)
+        self.robot = robot
+        self.qd_prev = robot.qd
+
+    def find_supporting_wrenches(self, sim):
+        qd = self.robot.qd
+        qdd = (qd - self.qd_prev) / sim.dt
+        self.qd_prev = qd
+        com = self.robot.com
+        stance = self.robot.stance
+        contact_wrench = -self.robot.compute_gravito_inertial_wrench(qdd, com)
+        support = stance.find_supporting_wrenches(contact_wrench, com)
+        return support
 
 
 class StaticWrenchDrawer(PointMassWrenchDrawer):
@@ -91,11 +126,17 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
         super(StaticWrenchDrawer, self).__init__(pm, cs, scale)
         self.point_mass.pdd = zeros((3,))
 
-    def find_supporting_wrenches(self, gravity):
+    def find_supporting_wrenches(self, sim):
         mass = self.point_mass.mass
         p = self.point_mass.p
         support = self.contact_set.find_static_supporting_wrenches(p, mass)
         return support
+
+
+"""
+Trajectory drawers
+==================
+"""
 
 
 class TrajectoryDrawer(Process):

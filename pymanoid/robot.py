@@ -27,7 +27,7 @@ from ik import VelocitySolver
 from misc import middot, norm
 from rotations import crossmat, quat_from_rpy, rpy_from_quat
 from rotations import rotation_matrix_from_rpy
-from sim import get_openrave_env
+from sim import get_openrave_env, gravity
 
 
 class Robot(object):
@@ -73,6 +73,7 @@ class Robot(object):
         self.q_min = q_min
         self.q_min.flags.writeable = False
         self.rave = rave
+        self.stance = None
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
 
@@ -1194,33 +1195,28 @@ class Humanoid(Robot):
 
         Returns
         -------
-        f : array, shape=(3,)
-            Resultant force of the gravito-inertial wrench.
-        tau_P : array, shape=(3,)
-            Moment :math:`\\tau^{gi}_P` of the gravito-inertial wrench at point
-            `P`.
+        w_P : array, shape=(6,)
+            Coordinates of the gravito-inertial wrench expressed at point P in
+            the world frame.
         """
-        g = array([0, 0, -9.81])
-        f = self.mass * g
-        tau_P = zeros(3)
+        f, tau_P = zeros(3), zeros(3)
         link_velocities = self.rave.GetLinkVelocities()
         link_accelerations = self.rave.GetLinkAccelerations(qdd)
         for link in self.rave.GetLinks():
-            mi = link.GetMass()
-            ci = link.GetGlobalCOM()
-            I_ci = link.GetLocalInertia()
-            Ri = link.GetTransform()[0:3, 0:3]
-            ri = dot(Ri, link.GetLocalCOM())
-            angvel = link_velocities[link.GetIndex()][3:]
-            linacc = link_accelerations[link.GetIndex()][:3]
-            angacc = link_accelerations[link.GetIndex()][3:]
-            ci_ddot = linacc \
-                + cross(angvel, cross(angvel, ri)) \
-                + cross(angacc, ri)
-            angmmt = dot(I_ci, angacc) - cross(dot(I_ci, angvel), angvel)
-            f -= mi * ci_ddot[2]
-            tau_P += mi * cross(ci, g - ci_ddot) - dot(Ri, angmmt)
-        return f, tau_P
+            m = link.GetMass()
+            c = link.GetGlobalCOM()
+            I_local = link.GetLocalInertia()
+            R = link.GetTransform()[0:3, 0:3]
+            r = dot(R, link.GetLocalCOM())
+            omega = link_velocities[link.GetIndex()][3:]
+            pdd = link_accelerations[link.GetIndex()][:3]
+            omegad = link_accelerations[link.GetIndex()][3:]
+            cdd = pdd + cross(omega, cross(omega, r)) + cross(omegad, r)
+            f_link = m * (gravity - cdd)
+            L_local = dot(I_local, omegad) - cross(dot(I_local, omega), omega)
+            f += f_link
+            tau_P += cross(c, f_link) - dot(R, L_local)
+        return hstack([f, tau_P])
 
     """
     Zero-tilting Moment Point
@@ -1295,6 +1291,7 @@ class Humanoid(Robot):
                 self, self.right_hand, stance.right_hand, weight=1.))
         self.ik.add_task(COMTask(self, stance.com, weight=1e-2))
         self.ik.add_task(MinVelTask(self, weight=1e-6))
+        self.stance = stance
 
     def generate_posture(self, stance, max_it=1000, conv_tol=1e-5, dt=5e-3,
                          debug=False):
