@@ -27,13 +27,16 @@ from misc import norm
 from sim import Process
 
 
-"""
-Wrench drawers
-==============
-"""
-
-
 class WrenchDrawer(Process):
+
+    """
+    Draw contact wrenches applied to the robot.
+
+    Parameters
+    ----------
+    scale : scalar
+        Force-to-distance conversion ratio in [m] / [N].
+    """
 
     DEFAULT_SCALE = 0.0025
     KO_COLOR = [.8, .4, .4]
@@ -74,7 +77,7 @@ class WrenchDrawer(Process):
 class PointMassWrenchDrawer(WrenchDrawer):
 
     """
-    Draw contact wrenches for a point-mass system in multi-contact.
+    Draw contact wrenches applied to a point-mass system in multi-contact.
 
     Parameters
     ----------
@@ -107,6 +110,17 @@ class PointMassWrenchDrawer(WrenchDrawer):
 
 class RobotWrenchDrawer(WrenchDrawer):
 
+    """
+    Draw contact wrenches applied to a humanoid in multi-contact.
+
+    Parameters
+    ----------
+    robot : Humanoid
+        Humanoid robot model.
+    scale : scalar
+        Force-to-distance conversion ratio in [m] / [N].
+    """
+
     def __init__(self, robot, scale=None):
         super(RobotWrenchDrawer, self).__init__(scale)
         self.robot = robot
@@ -125,8 +139,21 @@ class RobotWrenchDrawer(WrenchDrawer):
 
 class StaticWrenchDrawer(PointMassWrenchDrawer):
 
-    def __init__(self, pm, cs, scale=0.0025):
-        super(StaticWrenchDrawer, self).__init__(pm, cs, scale)
+    """
+    Draw contact wrenches applied to a robot in static-equilibrium.
+
+    Parameters
+    ----------
+    point_mass : PointMass
+        Point-mass to which forces are applied.
+    contact_set : ContactSet
+        Set of contacts providing interaction forces.
+    scale : scalar
+        Force-to-distance conversion ratio in [m] / [N].
+    """
+
+    def __init__(self, point_mass, contact_set, scale=0.0025):
+        super(StaticWrenchDrawer, self).__init__(point_mass, contact_set, scale)
         self.point_mass.pdd = zeros((3,))
 
     def find_supporting_wrenches(self, sim):
@@ -143,6 +170,26 @@ Trajectory drawers
 
 
 class TrajectoryDrawer(Process):
+
+    """
+    Draw the trajectory of a rigid body.
+
+    Parameters
+    ----------
+    body : Body
+        Rigid body whose trajectory to draw.
+    combined : string, optional
+        Drawing spec of the trajectory in matplotlib fashion.
+    color : char or RGBA tuple, optional
+        Drawing color.
+    linewidth : scalar, optional
+        Thickness of drawn lines.
+    linestyle : char, optional
+        Choix between '-' for continuous and '.' for dotted.
+    buffer_size : int, optional
+        Number of trajectory segments to display. Old segments will be replaced
+        by new ones.
+    """
 
     def __init__(self, body, combined='b-', color=None, linewidth=3,
                  linestyle=None, buffer_size=1000):
@@ -178,8 +225,28 @@ class TrajectoryDrawer(Process):
 
 class COMTrajectoryDrawer(TrajectoryDrawer):
 
+    """
+    Draw the COM trajectory of a robot.
+
+    Parameters
+    ----------
+    robot : Robot
+        Robot model to track.
+    combined : string, optional
+        Drawing spec of the trajectory in matplotlib fashion.
+    color : char or RGBA tuple
+        Drawing color.
+    linewidth : scalar, optional
+        Thickness of drawn lines.
+    linestyle : char, optional
+        Choix between '-' for continuous and '.' for dotted.
+    buffer_size : int, optional
+        Number of trajectory segments to display. Old segments will be replaced
+        by new ones.
+    """
+
     def __init__(self, robot, combined='b-', color=None, linewidth=3,
-                 linestyle=None):
+                 linestyle=None, buffer_size=1000):
         body = PointMass(
             robot.com, robot.mass, name='RobotCOMState', visible=False)
         super(COMTrajectoryDrawer, self).__init__(
@@ -199,7 +266,16 @@ Support areas and volumes
 
 class SupportAreaDrawer(Process):
 
-    """Draw a given support area of a contact set."""
+    """
+    Draw a given support area of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet
+        Contact set to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    """
 
     def __init__(self, contact_set, z=0.):
         super(SupportAreaDrawer, self).__init__()
@@ -227,6 +303,17 @@ class SupportAreaDrawer(Process):
 
 class SEPDrawer(SupportAreaDrawer):
 
+    """
+    Draw the static-equilibrium polygon of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet
+        Contact set to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    """
+
     def update_polygon(self):
         self.handle = None
         try:
@@ -240,7 +327,16 @@ class SEPDrawer(SupportAreaDrawer):
 
 class ZMPSupportAreaDrawer(SupportAreaDrawer):
 
-    """Draw the pendular ZMP support area of a contact set."""
+    """
+    Draw the pendular ZMP area of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet
+        Contact set to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    """
 
     def __init__(self, stance, z=0.):
         self.last_com = stance.com.p
@@ -268,6 +364,18 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
 
 
 class COMAccelConeDrawer(ZMPSupportAreaDrawer):
+
+    """
+    Draw the COM acceleration cone of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet
+        Contact set to track.
+    """
+
+    def __init__(self, contact_set):
+        super(COMAccelConeDrawer, self).__init__(contact_set)
 
     def update_polygon(self):
         self.handle = None

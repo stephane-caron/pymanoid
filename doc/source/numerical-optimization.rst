@@ -19,4 +19,3 @@ Nonlinear Programming
 
 .. autoclass:: pymanoid.optim.NonlinearProgram
     :members:
-    :undoc-members:

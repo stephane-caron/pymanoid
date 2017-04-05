@@ -126,7 +126,6 @@ class Simulation(object):
         return self.nb_steps * self.dt
 
     def __del__(self):
-        """Close thread at shutdown."""
         self.stop()
 
     def schedule(self, process):
@@ -138,7 +137,14 @@ class Simulation(object):
         self.extras.append(process)
 
     def step(self, n=1):
-        """Perform one simulation step."""
+        """
+        Perform a given number of simulation steps (default is one).
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of simulation steps.
+        """
         for _ in xrange(n):
             t0 = time.time()
             self._tick_processes()
@@ -351,12 +357,6 @@ class CameraRecorder(Process):
     """
     Video recording process.
 
-    When created, this process will ask the user to click on the OpenRAVE GUI to
-    get its window ID. Then, it will save a screenshot in the camera folder at
-    each tick of the simulation (don't expect real-time recording...). When your
-    simulation is over, go to the camera folder and run the script called
-    ``make_video.sh``
-
     Parameters
     ----------
     sim : Simulation
@@ -369,7 +369,15 @@ class CameraRecorder(Process):
     Note
     ----
     Creating videos requires the following dependencies (here listed as package
-    names for Ubuntu 14.04): x11-utils, imagemagick, libav-tools.
+    names for Ubuntu 14.04): ``x11-utils``, ``imagemagick``, ``libav-tools``.
+
+    Notes
+    -----
+    When created, this process will ask the user to click on the OpenRAVE GUI to
+    get its window ID. Then, it will save a screenshot in the camera folder at
+    each tick of the simulation (don't expect real-time recording...). When your
+    simulation is over, go to the camera folder and run the script called
+    ``make_video.sh``.
     """
     def __init__(self, sim, output_folder, fname='video.mp4'):
         super(CameraRecorder, self).__init__()
@@ -387,14 +395,6 @@ class CameraRecorder(Process):
         self.output_folder = output_folder
 
     def on_tick(self, sim):
-        """
-        The process takes one screenshot per simulation tick.
-
-        Parameters
-        ----------
-        sim : Simulation
-            Current simulation instance.
-        """
         fname = '%s/%05d.png' % (self.output_folder, self.frame_index)
         sim.take_screenshot(fname)
         self.frame_index += 1

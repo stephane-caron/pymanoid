@@ -8,12 +8,13 @@ pymanoid documentation
 
 .. toctree::
 
-    rigid-body-dynamics.rst
+    rigid-bodies.rst
     robot.rst
-    contact.rst
+    contact-physics.rst
     inverse-kinematics.rst
     model-predictive-control.rst
     numerical-optimization.rst
     polyhedral-computations.rst
-    other-features.rst
+    simulation.rst
+    miscellany.rst
     references.rst

@@ -348,6 +348,11 @@ except ImportError:
 
 class NonlinearProgram(object):
 
+    """
+    Wrapper around `CasADi <http://casadi.org>`_ to formulate and solve
+    nonlinear optimization problems.
+    """
+
     infty = 1e10
 
     casadi_expand = True
@@ -458,18 +463,45 @@ class NonlinearProgram(object):
         self.var_ubounds = []
 
     def extend_cost(self, expr):
+        """
+        Add a new expression term to the cost function of the problem.
+
+        Parameters
+        ----------
+        expr : casadi.MX
+            Python or CasADi symbolic expression.
+        """
         self.cost_function = self.cost_function + expr
 
     def warm_start(self, initvals):
+        """
+        Warm-start the problem with a new vector of initial values.
+
+        Parameters
+        ----------
+        initvals : array
+            Vector of initial values for all problem variables.
+        """
         assert len(self.initvals) == len(initvals)
         self.initvals = list(initvals)
 
-    """
-    Variables
-    =========
-    """
-
     def new_variable(self, name, dim, init, lb, ub):
+        """
+        Add a new variable to the problem.
+
+        Parameters
+        ----------
+        name : string
+            Variable name.
+        dim : int
+            Number of dimensions.
+        init : array, shape=(dim,)
+            Initial values.
+        lb : array, shape=(dim,)
+            Vector of lower bounds on variable values.
+        ub : array, shape=(dim,)
+            Vector of upper bounds on variable values.
+        """
         assert len(init) == len(lb) == len(ub) == dim
         var = MX.sym(name, dim)
         self.var_symbols.append(var)
@@ -480,9 +512,36 @@ class NonlinearProgram(object):
         return var
 
     def new_constant(self, name, dim, value):
+        """
+        Add a new constant to the problem.
+
+        Parameters
+        ----------
+        name : string
+            Name of the constant.
+        dim : int
+            Number of dimensions.
+        value : array, shape=(dim,)
+            Value of the constant.
+
+        Note
+        ----
+        Constants are implemented as variables with matching lower and upper
+        bounds.
+        """
         return self.new_variable(name, dim, init=value, lb=value, ub=value)
 
     def update_constant(self, name, value):
+        """
+        Update the value of an existing constant.
+
+        Parameters
+        ----------
+        name : string
+            Name of the constant.
+        value : array, shape=(dim,)
+            Vector of new values for the constant.
+        """
         i = self.var_index[name]
         for j, v in enumerate(value):
             self.initvals[i + j] = v
@@ -490,18 +549,40 @@ class NonlinearProgram(object):
             self.var_ubounds[i + j] = v
 
     def update_variable_bounds(self, name, lb, ub):
+        """
+        Update the lower- and upper-bounds on an existing variable.
+
+        Parameters
+        ----------
+        name : string
+            Name of the variable.
+        lb : array, shape=(dim,)
+            Vector of lower bounds on variable values.
+        ub : array, shape=(dim,)
+            Vector of upper bounds on variable values.
+        """
         assert len(lb) == len(ub)
         i = self.var_index[name]
         for j in xrange(len(lb)):
             self.var_lbounds[i + j] = lb[j]
             self.var_ubounds[i + j] = ub[j]
 
-    """
-    Constraints
-    ===========
-    """
-
     def add_constraint(self, expr, lb, ub, name=None):
+        """
+        Add a new constraint to the problem.
+
+        Parameters
+        ----------
+        expr : casadi.MX
+            Python or CasADi symbolic expression.
+        lb : array
+            Lower-bound on the expression.
+        ub : array
+            Upper-bound on the expression.
+        name : string, optional
+            If provided, will stored the expression under this name for future
+            updates.
+        """
         self.cons_exprs.append(expr)
         if name is not None:
             self.cons_index[name] = len(self.cons_lbounds)
@@ -509,6 +590,19 @@ class NonlinearProgram(object):
         self.cons_ubounds += ub
 
     def add_equality_constraint(self, expr1, expr2, name=None):
+        """
+        Add an equality constraint between two expressions.
+
+        Parameters
+        ----------
+        expr1 : casadi.MX
+            Expression on problem variables.
+        expr2 : casadi.MX
+            Expression on problem variables.
+        name : string, optional
+            If provided, will stored the expression under this name for future
+            updates.
+        """
         diff = expr1 - expr2
         dim = diff.shape[0]
         assert diff.shape[1] == 1
@@ -516,18 +610,28 @@ class NonlinearProgram(object):
         self.add_constraint(diff, zeros, zeros, name)
 
     def has_constraint(self, name):
+        """
+        Check if a given name identifies a problem constraint.
+        """
         return name in self.cons_index
 
     def update_constraint_bounds(self, name, lb, ub):
+        """
+        Update lower- and upper-bounds on an existing constraint.
+
+        Parameters
+        ----------
+        name : string
+            Identifier of the constraint.
+        lb : array
+            New lower-bound of the constraint.
+        ub : array
+            New upper-bound of the constraint.
+        """
         i = self.cons_index[name]
         for j in xrange(len(lb)):
             self.cons_lbounds[i + j] = lb[j]
             self.cons_ubounds[i + j] = ub[j]
-
-    """
-    Solver
-    ======
-    """
 
     def create_solver(self, solver='ipopt'):
         """
@@ -568,6 +672,14 @@ class NonlinearProgram(object):
         self.solver = nlpsol('solver', solver, problem, options)
 
     def solve(self):
+        """
+        Call the nonlinear solver.
+
+        Returns
+        -------
+        x : array
+            Vector of variable coordinates for the best solution found.
+        """
         self.res = self.solver(
             x0=self.initvals, lbx=self.var_lbounds, ubx=self.var_ubounds,
             lbg=self.cons_lbounds, ubg=self.cons_ubounds)

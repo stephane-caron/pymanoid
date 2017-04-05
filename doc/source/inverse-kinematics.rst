@@ -2,8 +2,8 @@
 Inverse Kinematics
 ******************
 
-Solving the IK problem
-======================
+Solving the inverse problem
+===========================
 
 .. autoclass:: pymanoid.ik.VelocitySolver
     :members:
