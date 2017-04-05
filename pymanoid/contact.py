@@ -172,13 +172,6 @@ class Contact(Box):
 
         where `w` is the contact wrench at the contact point (``self.p``) in the
         world frame. See [CPN15]_ for the derivation of the formula for `F`.
-
-        References
-        ----------
-        .. [CPN15] Caron, Pham, Nakamura, "Stability of surface contacts for
-           humanoid robots: Closed-form formulae of the contact wrench cone for
-           rectangular support areas." 2015 IEEE International Conference on
-           Robotics and Automation (ICRA).
         """
         X, Y = self.X, self.Y
         mu = self.friction / sqrt(2)  # inner approximation
@@ -433,26 +426,8 @@ class ContactSet(object):
         -----
         The method 'bretl' is adapted from in [BL08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN16]_. See the
+        to the double-description approach described in [CPN17]_. See the
         Appendix from [CK16]_ for a performance comparison.
-
-        References
-        ----------
-
-        .. [BL08] T. Bretl and S. Lall, "Testing Static Equilibrium for Legged
-           Robots," IEEE Transactions on Robotics, vol. 24, no. 4, pp. 794-807,
-           August 2008.
-
-        .. [CPN16] Stéphane Caron, Quang-Cuong Pham and Yoshihiko Nakamura, "ZMP
-           support areas for multi-contact mobility under frictional
-           constraints," IEEE Transactions on Robotics, Dec. 2016.
-           `[pdf] <https://scaron.info/papers/journal/caron-tro-2016.pdf>`__
-
-        .. [CK16] Stéphane Caron and Abderrahmane Kheddar, "Multi-contact
-           Walking Pattern Generation based on Model Preview Control of 3D COM
-           Accelerations," 2016 IEEE-RAS 16th International Conference on
-           Humanoid Robots (Humanoids), Cancun, Mexico, 2016, pp. 550-557.
-           `[pdf] <https://hal.archives-ouvertes.fr/hal-01349880>`__
         """
         if method == 'hull':
             A_O = self.compute_wrench_face([0, 0, 0])
@@ -494,7 +469,7 @@ class ContactSet(object):
         -----
         The method 'bretl' is adapted from in [BL08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN16]_. See the
+        to the double-description approach described in [CPN17]_. See the
         Appendix from [CK16]_ for a performance comparison.
         """
         z_com, z_zmp = com[2], plane[2]

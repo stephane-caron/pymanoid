@@ -140,14 +140,6 @@ class LinearPredictiveControl(object):
         -----
         See [Aud+14]_ for details on the matrices :math:`\\Phi` and
         :math:`\\Psi`, as we use similar notations below.
-
-        References
-        ----------
-        .. [Aud+14] Hervé Audren, Joris Vaillant, Aberrahmane Kheddar, Adrien
-           Escande, Kenji Kaneko, Eiichi Yoshida, "Model preview control in
-           multi-contact motion-application to a humanoid robot," 2014 IEEE/RSJ
-           International Conference on Intelligent Robots and Systems, Chicago,
-           IL, 2014, pp. 4030-4035.
         """
         t_build_start = time()
         phi = eye(self.x_dim)

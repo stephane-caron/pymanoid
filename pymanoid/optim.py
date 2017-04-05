@@ -59,7 +59,9 @@ def solve_lp(c, G, h, A=None, b=None, solver=LP_SOLVER):
             & & A x = b
         \\end{eqnarray}
 
-    using CVXOPT <http://cvxopt.org/userguide/coneprog.html#linear-programming>.
+    using the `CVXOPT
+    <http://cvxopt.org/userguide/coneprog.html#linear-programming>`_ interface
+    to LP solvers.
 
     Parameters
     ----------
@@ -143,12 +145,6 @@ try:
         ------
         ValueError
             If the QP is not feasible.
-
-        References
-        ----------
-        .. [GI83] D. Goldfarb and A. Idnani, "A numerically stable dual method
-           for solving strictly convex quadratic programs," Mathematical
-           Programming, vol. 27, pp. 1-33, 1983.
         """
         qp_G = .5 * (P + P.T)   # quadprog assumes that P is symmetric
         qp_a = -q

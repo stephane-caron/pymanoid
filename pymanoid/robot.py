@@ -489,12 +489,6 @@ class Robot(object):
         in [WO82]_. It is not efficient, so if you are looking for performance,
         you should consider more recent libraries such as `pinocchio
         <https://github.com/stack-of-tasks/pinocchio>`_.
-
-        References
-        ----------
-        .. [WO82] M. Walker and D. Orin. “Efficient dynamic computer simulation
-           of robotic mechanisms.” ASME Trans. J. dynamics Systems, Measurement
-           and Control 104 (1982): 205-211.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
         for (i, e_i) in enumerate(eye(self.nb_dofs)):
@@ -1259,16 +1253,6 @@ class Humanoid(Robot):
         See [SB04]_ for an excellent introduction to the concepts of ZMP and
         center of pressure. See [CPN17]_ for the more general definition of ZMP
         support areas in arbitrary planes.
-
-        References
-        ----------
-        .. [SB04] P. Sardain and G. Bessonnet, “Forces acting on a biped robot.
-           center of pressure-zero moment point,” IEEE Transactions on Systems,
-           Man and Cybernetics, vol. 34, no. 5, pp. 630-637, Sep. 2004.
-
-        .. [CPN17] S. Caron, Q. C. Pham and Y. Nakamura, “ZMP Support Areas for
-           Multicontact Mobility Under Frictional Constraints,” in IEEE
-           Transactions on Robotics, vol. 33, no. 1, pp. 67-80, Feb. 2017.
         """
         p_O = origin if origin is not None else zeros(3)
         n = normal if normal is not None else array([0, 0, 1])

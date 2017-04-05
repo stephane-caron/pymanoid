@@ -42,9 +42,9 @@ class VelocitySolver(Process):
     active_dofs : list of integers
         List of DOFs updated by the IK solver.
     doflim_gain : real value between 0 and 1
-        DOF-limit gain as described in [Kanoun2012]_. In `this
-        implementation <https://scaron.info/teaching/inverse-kinematics.html>`_,
-        it should be between zero and one.
+        DOF-limit gain as described in [Kan+12]_. In `this implementation
+        <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
+        between zero and one.
 
     Notes
     -----
@@ -52,12 +52,6 @@ class VelocitySolver(Process):
     robot when approaching DOF limits. For instance, it may slow down a foot
     motion when approaching the knee singularity, despite the robot being able
     to move faster with a fully extended knee.
-
-    References
-    ----------
-    .. [Kanoun2012] Oussama Kanoun, "Real-time prioritized kinematic control
-       under inequality constraints for redundant manipulators," Robotics:
-       Science and Systems. Vol. 7. 2012.
     """
 
     def __init__(self, robot, active_dofs, doflim_gain):
@@ -274,16 +268,9 @@ class VelocitySolver(Process):
         Notes
         -----
         Variation on the QP from ``compute_velocity_fast()`` reported in Equ.
-        (10) of [Nozawa2016]_. DOF limits are better taken care of by margin
+        (10) of [Noz+16]_. DOF limits are better taken care of by margin
         variables, but the variable count doubles and the QP takes roughly 50%
         more time to solve.
-
-        References
-        ----------
-        .. [Nozawa2016] Nozawa, Shunichi, et al. "Three-dimensional humanoid
-           motion planning using COM feasible region and its application to
-           ladder climbing tasks." Humanoid Robots (Humanoids), 2016 IEEE-RAS
-           16th International Conference on. IEEE, 2016.
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))

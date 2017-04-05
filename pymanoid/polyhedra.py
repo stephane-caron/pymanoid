@@ -44,10 +44,9 @@ def compute_chebyshev_center(A, b):
     z : array, shape=(k,)
         Point further away from all inequalities.
 
-    References
-    ----------
-    .. [BV04] Stephen Boyd and Lieven Vandenberghe, "Convex Optimization",
-              Section 4.3.1, p. 148.
+    Notes
+    -----
+    The Chebyshev center is discussed in [BV04]_, Section 4.3.1, p. 148.
     """
     cost = zeros(A.shape[1] + 1)
     cost[-1] = -1.
@@ -174,7 +173,7 @@ def project_polyhedron(ineq, eq, proj):
     .. math::
 
         \\begin{eqnarray}
-        A x & \\leq & b \\
+        A x & \\leq & b \\\\
         C x & = & d
         \\end{eqnarray}
 
@@ -235,7 +234,7 @@ def project_polytope(ineq, eq, proj, method='cdd'):
     .. math::
 
         \\begin{eqnarray}
-        A x & \\leq & b \\
+        A x & \\leq & b \\\\
         C x & = & d
         \\end{eqnarray}
 
@@ -271,7 +270,7 @@ def project_polytope_bretl(ineq, eq, proj, solver='glpk', max_radius=42.):
     .. math::
 
         \\begin{eqnarray}
-        A x & \\leq & b \\
+        A x & \\leq & b \\\\
         C x & = & d
         \\end{eqnarray}
 

@@ -238,11 +238,6 @@ class Body(object):
 
         They correspond to Euleur angles for the sequence (1, 2, 3). See
         [Die+06]_ for details.
-
-        References
-        ----------
-        .. [Die+06] James Diebel, "Representing Attitude: Euler Angles, Unit
-           Quaternions, and Rotation Vectors."
         """
         return rpy_from_quat(self.quat)
 

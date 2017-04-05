@@ -42,14 +42,12 @@ class Task(object):
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
 
-    Note
-    ----
+    Notes
+    -----
     Residuals returned by the ``residual`` function must have the unit of a
     velocity. For instance, ``qd`` and ``(q1 - q2) / dt`` are valid residuals,
     but ``0.5 * q`` is not.
 
-    References
-    ----------
     See <https://scaron.info/teaching/inverse-kinematics.html> for an
     introduction to the concepts used here.
     """
