@@ -1192,7 +1192,7 @@ class Humanoid(Robot):
     """
 
     def bind_stance(self, stance):
-        from tasks import COMTask, ContactTask, MinVelTask
+        from tasks import COMTask, ContactTask, PostureTask
         self.ik.remove_task('COM')
         self.ik.remove_task('MIN_VEL')
         self.ik.remove_task('POSTURE')
@@ -1213,7 +1213,8 @@ class Humanoid(Robot):
             self.ik.add_task(ContactTask(
                 self, self.right_hand, stance.right_hand, weight=1.))
         self.ik.add_task(COMTask(self, stance.com, weight=1e-2))
-        self.ik.add_task(MinVelTask(self, weight=1e-6))
+        self.ik.add_task(PostureTask(self, self.q_halfsit, weight=1e-6))
+        # self.ik.add_task(MinVelTask(self, weight=1e-6))
         self.stance = stance
 
     def generate_posture(self, stance, max_it=1000, cost_stop=1e-10,
@@ -1237,8 +1238,5 @@ class Humanoid(Robot):
         debug : bool, optional
             Print extra debug info, default is False.
         """
-        from tasks import PostureTask
         self.bind_stance(stance)
-        self.ik.remove_task('MIN_VEL')
-        self.ik.add_task(PostureTask(self, self.q_halfsit, weight=1e-6))
         self.ik.solve(max_it, cost_stop, impr_stop, dt)
