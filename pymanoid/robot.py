@@ -23,8 +23,8 @@ from os.path import basename, isfile, splitext
 from warnings import warn
 
 from draw import draw_force, draw_point
-from ik import VelocitySolver
-from misc import middot, norm
+from ik import IKSolver
+from misc import middot
 from rotations import crossmat, quat_from_rpy, rpy_from_quat
 from rotations import rotation_matrix_from_rpy
 from sim import get_openrave_env, gravity
@@ -75,6 +75,22 @@ class Robot(object):
         self.stance = None
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
+
+    def init_ik(self, active_dofs, doflim_gain=0.5, verbosity=0):
+        """
+        Initialize the IK solver.
+
+        Parameters
+        ----------
+        active_dofs : list
+            Specifies DOFs used by the IK.
+        doflim_gain : scalar, optional
+            Gain between 0 and 1 used for DOF limits.
+        verbosity : int, optional
+            Verbosity level.
+        """
+        self.ik = IKSolver(self, active_dofs, doflim_gain)
+        self.ik.verbosity = verbosity
 
     """
     Visualization
@@ -361,95 +377,6 @@ class Robot(object):
         p = p if type(link) is int else link.p
         H = self.rave.ComputeHessianTranslation(link_index, p)
         return H
-
-    """
-    Inverse Kinematics
-    ==================
-    """
-
-    def init_ik(self, active_dofs, doflim_gain=0.5):
-        """
-        Initialize the IK solver.
-
-        Parameters
-        ----------
-        active_dofs : list
-            Specifies DOFs used by the IK.
-        doflim_gain : scalar
-            Gain between 0 and 1 used for DOF limits.
-        """
-        self.ik = VelocitySolver(self, active_dofs, doflim_gain)
-
-    def step_ik(self, dt, method='safe', verbose=False):
-        """
-        Apply velocities computed by inverse kinematics.
-
-        Parameters
-        ----------
-        dt : scalar
-            Time step in [s].
-        method : string, optional
-            Choice between 'fast' and 'safe' (default).
-        """
-        qd = self.ik.compute_velocity(dt, method)
-        if verbose:
-            print "\n                TASK      COST",
-            print "\n------------------------------"
-            for task in self.ik.tasks.itervalues():
-                J = task.jacobian()
-                r = task.residual(dt)
-                print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
-            print ""
-        self.set_dof_values(self.q + qd * dt, clamp=True)
-        self.set_dof_velocities(qd)
-
-    def solve_ik(self, max_it=1000, conv_tol=1e-5, dt=5e-3, debug=True,
-                 method='fast'):
-        """
-        Compute joint-angles q satisfying all kinematic constraints at best.
-
-        Parameters
-        ----------
-        max_it : integer, optional
-            Maximum number of solver iterations.
-        conv_tol : scalar, optional
-            Stop when cost improvement is less than this threshold.
-        dt : scalar, optional
-            Time step in [s].
-        debug : bool, optional
-            Print extra debug info.
-        method : string, optional
-            Either 'fast', or 'safe' for more joint-limit avoidance
-
-        Returns
-        -------
-        (itnum, cost) : (integer, scalar)
-            Number of iterations taken, followed by final IK cost.
-
-        Note
-        ----
-        Good values of dt depend on the weights of the IK tasks. Small values
-        make convergence slower, while big values make the optimization unstable
-        (in which case there may be no convergence at all).
-        """
-        if debug:
-            print "solve_ik(max_it=%d, conv_tol=%e)" % (max_it, conv_tol)
-        cost = 100000.
-        self.ik.qd_max *= 1000
-        self.ik.qd_min *= 1000
-        for itnum in xrange(max_it):
-            prev_cost = cost
-            cost = self.ik.compute_cost(dt)
-            cost_relvar = abs(cost - prev_cost) / prev_cost
-            if debug:
-                print "%2d: %.3f (%+.2e)" % (itnum, cost, cost_relvar)
-            if cost_relvar < conv_tol:
-                break
-            self.step_ik(dt, method)
-        self.set_dof_velocities(zeros(self.qd.shape))
-        self.ik.qd_max /= 1000
-        self.ik.qd_min /= 1000
-        return itnum, cost
 
     """
     Inverse Dynamics
@@ -1265,7 +1192,7 @@ class Humanoid(Robot):
     """
 
     def bind_stance(self, stance):
-        from tasks import COMTask, ContactTask, MinVelTask
+        from tasks import COMTask, ContactTask, PostureTask
         self.ik.remove_task('COM')
         self.ik.remove_task('MIN_VEL')
         self.ik.remove_task('POSTURE')
@@ -1286,11 +1213,12 @@ class Humanoid(Robot):
             self.ik.add_task(
                 ContactTask(self, self.right_hand, stance.right_hand))
         self.ik.add_task(COMTask(self, stance.com))
-        self.ik.add_task(MinVelTask(self))
+        # self.ik.add_task(MinVelTask(self))
+        self.ik.add_task(PostureTask(self, self.q_halfsit))
         self.stance = stance
 
-    def generate_posture(self, stance, max_it=1000, conv_tol=1e-5, dt=5e-3,
-                         debug=False):
+    def generate_posture(self, stance, max_it=1000, cost_stop=1e-10,
+                         impr_stop=1e-5, dt=5e-3):
         """
         Generate robot posture (joint-angles + free-flyer) for a given Stance.
 
@@ -1300,15 +1228,15 @@ class Humanoid(Robot):
             Contacts and COM configurations to generate the posture from.
         max_it : integer
             Maximum number of IK iterations.
-        conv_tol : scalar
-            Stop when cost improvement is less than this threshold.
+        cost_stop : scalar
+            Stop when cost value is below this threshold.
+        conv_tol : scalar, optional
+            Stop when cost improvement (relative variation from one iteration to
+            the next) is less than this threshold.
         dt : scalar
             Time step for the differential IK.
         debug : bool, optional
             Print extra debug info, default is False.
         """
-        from tasks import PostureTask
         self.bind_stance(stance)
-        self.ik.remove_task('MIN_VEL')
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
-        self.solve_ik(max_it, conv_tol, dt, debug)
+        self.ik.solve(max_it, cost_stop, impr_stop, dt)

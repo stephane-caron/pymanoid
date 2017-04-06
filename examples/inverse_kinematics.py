@@ -40,7 +40,7 @@ def move_com_back_and_forth(duration, dt=1e-2):
         loop_start = time.time()
         com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
         com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
-        robot.step_ik(dt)
+        robot.ik.step(dt)
         rem_time = dt - (time.time() - loop_start)
         if rem_time > 0:
             time.sleep(rem_time)
@@ -83,13 +83,18 @@ if __name__ == '__main__':
 
     # IK setup
     robot.init_ik(active_dofs=robot.whole_body)
-    robot.ik.add_tasks([lf_task, rf_task, com_task, reg_task])
+    robot.ik.add_task(lf_task)
+    robot.ik.add_task(rf_task)
+    robot.ik.add_task(com_task)
+    robot.ik.add_task(reg_task)
     for (dof_id, dof_ref) in dof_targets:
         robot.ik.add_task(
             DOFTask(robot, dof_id, dof_ref, gain=0.5, weight=0.1))
 
     # First, generate an initial posture
-    robot.solve_ik(max_it=100, conv_tol=1e-4, debug=True)
+    robot.ik.verbosity = 2
+    robot.ik.solve(max_it=100, impr_stop=1e-4)
+    robot.ik.verbosity = 0
 
     # Next, we move the COM back and forth for 10 seconds
     move_com_back_and_forth(10)

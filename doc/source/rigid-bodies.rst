@@ -7,7 +7,6 @@ Generic rigid bodies
 
 .. autoclass:: pymanoid.body.Body
     :members:
-    :undoc-members:
 
 Boxes
 =====

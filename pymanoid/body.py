@@ -55,9 +55,6 @@ class Body(object):
     """
 
     count = 0
-    """
-    Counter for anonymous bodies.
-    """
 
     def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
                  visible=True, transparency=None, name=None):
@@ -163,9 +160,10 @@ class Body(object):
         Notes
         -----
         More precisely, `T` is the transformation matrix *from* the body frame
-        *to* the world frame: if :math:`\\tilde{p}_\\mathrm{body} = [x y z 1]`
-        denotes the homogeneous coordinates of a point in the body frame, then
-        the homogeneous coordinates of this point in the world frame are
+        *to* the world frame: if
+        :math:`\\tilde{p}_\\mathrm{body} = [x\\ y\\ z\\ 1]` denotes the
+        homogeneous coordinates of a point in the body frame, then the
+        homogeneous coordinates of this point in the world frame are
         :math:`\\tilde{p}_\\mathrm{world} = T \\tilde{p}_\\mathrm{body}`.
         """
         return self.rave.GetTransform()
@@ -382,7 +380,8 @@ class Body(object):
 
     def apply_twist(self, v, omega, dt):
         """
-        Apply a twist [v, omega] defined in the local coordinate frame.
+        Apply a twist :math:`[v\\ \\omega]` defined in the local coordinate
+        frame.
 
         Parameters
         ----------

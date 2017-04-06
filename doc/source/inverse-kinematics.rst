@@ -5,7 +5,7 @@ Inverse Kinematics
 Solving the inverse problem
 ===========================
 
-.. autoclass:: pymanoid.ik.VelocitySolver
+.. autoclass:: pymanoid.ik.IKSolver
     :members:
     :undoc-members:
 
