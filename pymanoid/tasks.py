@@ -24,6 +24,14 @@ from misc import PointWrap, PoseWrap
 _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
+DEFAULT_WEIGHTS = {
+    'CONTACT': 1.,
+    'COM': 1e-2,
+    'EFFECTOR': 1e-3,
+    'REGULARIZATION': 1e-6,
+}
+
+
 class Task(object):
 
     """
@@ -125,6 +133,8 @@ class COMTask(Task):
 
     def __init__(self, robot, target, weight=None, gain=0.85,
                  exclude_dofs=None):
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['COM']
         super(COMTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'COM'
         self.robot = robot
@@ -427,6 +437,8 @@ class MinVelTask(Task):
     """
 
     def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'MIN_VEL'
@@ -545,6 +557,8 @@ class PostureTask(Task):
     """
 
     def __init__(self, robot, q_ref, weight=None, gain=0.85, exclude_dofs=None):
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(PostureTask, self).__init__(weight, gain, exclude_dofs)
         J = eye(robot.nb_dofs)
         if exclude_dofs is None:
@@ -571,4 +585,9 @@ class PostureTask(Task):
 
 class ContactTask(LinkPoseTask):
 
-    pass
+    def __init__(self, robot, link, target, weight=None, gain=0.85,
+                 exclude_dofs=None):
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['CONTACT']
+        super(ContactTask, self).__init__(
+            robot, link, target, weight, gain, exclude_dofs)

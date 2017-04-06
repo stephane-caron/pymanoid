@@ -33,7 +33,7 @@ class Stance(ContactSet):
     Parameters
     ----------
     com : array or Point
-        COM given by coordinates or a Point object.
+        COM position.
     left_foot : Contact, optional
         Left foot contact.
     right_foot : Contact, optional
@@ -44,13 +44,13 @@ class Stance(ContactSet):
         Right hand contact.
     label : string, optional
         Label for the current contact phase.
-    duration : double, optional
-        Timing information.
+    duration : scalar, optional
+        Optional time duration.
     """
 
     def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
                  right_hand=None, label=None, duration=None):
-        # not calling the parent (ContactSet) constructor
+        # do not call the parent (ContactSet) constructor
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)
         self.com = com
