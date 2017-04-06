@@ -25,11 +25,6 @@ from optim import solve_qp
 from sim import Process
 
 
-class IKError(Exception):
-
-    pass
-
-
 class VelocitySolver(Process):
 
     """
@@ -101,15 +96,6 @@ class VelocitySolver(Process):
             self.add_task(task)
 
     def __get_task_name(self, ident):
-        """
-        Produce a task name from a string, or any object with a ``name`` field
-        (such as a robot Link).
-
-        Parameters
-        ----------
-        ident : string or object
-            Name or object with a ``name`` field identifying the task.
-        """
         name = ident if type(ident) is str else ident.name
         if not name.isupper():
             name = name.upper()
@@ -148,7 +134,7 @@ class VelocitySolver(Process):
         name = self.__get_task_name(ident)
         with self.tasks_lock:
             if name not in self.tasks:
-                print "Warning: no task '%s' to remove" % name
+                # print "Warning: no task '%s' to remove" % name
                 return
             del self.tasks[name]
 
@@ -200,8 +186,9 @@ class VelocitySolver(Process):
             self.qd[self.active_dofs] = qd_active
         except ValueError as e:
             if "matrix G is not positive definite" in e:
-                msg = "rank deficiency. Did you add a regularization task?"
-                raise IKError(msg)
+                raise Exception(
+                    "rank deficiency in IK problem, "
+                    "did you add a regularization task?")
             raise
         return self.qd
 
