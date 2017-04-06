@@ -76,6 +76,22 @@ class Robot(object):
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
 
+    def init_ik(self, active_dofs, doflim_gain=0.5, verbosity=0):
+        """
+        Initialize the IK solver.
+
+        Parameters
+        ----------
+        active_dofs : list
+            Specifies DOFs used by the IK.
+        doflim_gain : scalar, optional
+            Gain between 0 and 1 used for DOF limits.
+        verbosity : int, optional
+            Verbosity level.
+        """
+        self.ik = IKSolver(self, active_dofs, doflim_gain)
+        self.ik.verbosity = verbosity
+
     """
     Visualization
     =============
@@ -361,24 +377,6 @@ class Robot(object):
         p = p if type(link) is int else link.p
         H = self.rave.ComputeHessianTranslation(link_index, p)
         return H
-
-    """
-    Inverse Kinematics
-    ==================
-    """
-
-    def init_ik(self, active_dofs, doflim_gain=0.5):
-        """
-        Initialize the IK solver.
-
-        Parameters
-        ----------
-        active_dofs : list
-            Specifies DOFs used by the IK.
-        doflim_gain : scalar
-            Gain between 0 and 1 used for DOF limits.
-        """
-        self.ik = IKSolver(self, active_dofs, doflim_gain)
 
     """
     Inverse Dynamics
