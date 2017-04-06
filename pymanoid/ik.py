@@ -19,8 +19,10 @@
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
+from time import time
 from warnings import warn
 
+from misc import norm
 from optim import solve_qp
 from sim import Process
 
@@ -30,7 +32,7 @@ class IKError(Exception):
     pass
 
 
-class VelocitySolver(Process):
+class IKSolver(Process):
 
     """
     Compute velocities bringing the system closer to fulfilling a set of tasks.
@@ -55,7 +57,7 @@ class VelocitySolver(Process):
     """
 
     def __init__(self, robot, active_dofs, doflim_gain):
-        super(VelocitySolver, self).__init__()
+        super(IKSolver, self).__init__()
         assert 0. <= doflim_gain <= 1.
         nb_active_dofs = len(active_dofs)
         self.active_dofs = active_dofs
@@ -69,6 +71,8 @@ class VelocitySolver(Process):
         self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
+        self.unsafe = False
+        self.verbosity = 0
 
     def add_task(self, task):
         """
@@ -87,18 +91,6 @@ class VelocitySolver(Process):
             raise Exception("Task '%s' already present in IK" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
-
-    def add_tasks(self, tasks):
-        """
-        Add new tasks.
-
-        Parameters
-        ----------
-        tasks : list of Tasks
-            List of tasks to add.
-        """
-        for task in tasks:
-            self.add_task(task)
 
     def __get_task_name(self, ident):
         """
@@ -207,8 +199,7 @@ class VelocitySolver(Process):
 
     def compute_velocity_fast(self, dt):
         """
-        Compute a new velocity satisfying all tasks at best, while staying
-        within joint-velocity limits.
+        Compute a new velocity satisfying all tasks at best.
 
         Parameters
         ----------
@@ -220,25 +211,31 @@ class VelocitySolver(Process):
         qd : array
             Active joint velocity vector.
 
-        Notes
-        -----
-        The returned velocity minimizes squared residuals as in the weighted
-        cost function, which corresponds to the Gauss-Newton algorithm. Indeed,
-        expanding the square expression in cost(task, qd) yields
-
-            minimize
-                qd * (J.T * J) * qd - 2 * residual * J * qd
-
-        Differentiating with respect to ``qd`` shows that the minimum is
-        attained for (J.T * J) * qd == residual, where we recognize the
-        Gauss-Newton update rule.
-
         Note
         ----
+        This QP formulation is the default for
+        :func:`pymanoid.ik.IKSolver.solve` (posture generation) as it converges
+        faster.
+
+        Notes
+        -----
         The method implemented in this function is reasonably fast but may
         become unstable when some tasks are widely infeasible and the optimum
-        saturates joint limits. In such situations, you can use
-        ``compute_velocity_safe()`` instead.
+        saturates joint limits. In such situations, it is better to use
+        :func:`pymanoid.ik.IKSolver.compute_velocity_safe`.
+
+        The returned velocity minimizes squared residuals as in the weighted
+        cost function, which corresponds to the Gauss-Newton algorithm. Indeed,
+        expanding the square expression in ``cost(task, qd)`` yields
+
+        .. math::
+
+            \\mathrm{minimize} \\quad
+                \\dot{q} J^T J \\dot{q} - 2 r^T J \\dot{q}
+
+        Differentiating with respect to :math:`\\dot{q}` shows that the minimum
+        is attained for :math:`J^T J \\dot{q} = r`, where we recognize the
+        Gauss-Newton update rule.
         """
         n = self.nb_active_dofs
         qp_P, qp_q, qd_max, qd_min = self.__compute_qp_common(dt)
@@ -248,8 +245,8 @@ class VelocitySolver(Process):
 
     def compute_velocity_safe(self, dt, margin_reg=1e-5, margin_lin=1e-3):
         """
-        Compute a new velocity satisfying all tasks at best, while staying
-        within joint-velocity limits.
+        Compute a new velocity satisfying all tasks at best, while trying to
+        stay away from kinematic constraints.
 
         Parameters
         ----------
@@ -265,12 +262,18 @@ class VelocitySolver(Process):
         qd : array
             Active joint velocity vector.
 
+        Note
+        ----
+        This QP formulation is the default for :func:`pymanoid.ik.IKSolver.step`
+        as it has a more numerically-stable behavior.
+
         Notes
         -----
-        Variation on the QP from ``compute_velocity_fast()`` reported in Equ.
-        (10) of [Noz+16]_. DOF limits are better taken care of by margin
-        variables, but the variable count doubles and the QP takes roughly 50%
-        more time to solve.
+        This is a variation of the QP from
+        :func:`pymanoid.ik.IKSolver.compute_velocity_fast` that was reported in
+        Equation (10) of [Noz+16]_. DOF limits are better taken care of by
+        margin variables, but the variable count doubles and the QP takes
+        roughly 50% more time to solve.
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
@@ -282,26 +285,86 @@ class VelocitySolver(Process):
         qp_h = hstack([qd_max, -qd_min, zeros(n)])
         return self.__solve_qp(qp_P, qp_q, qp_G, qp_h)
 
-    def compute_velocity(self, dt, method):
+    def step(self, dt, unsafe=False):
         """
-        Compute a new velocity satisfying all tasks at best, while staying
-        within joint-velocity limits.
+        Apply velocities computed by inverse kinematics.
 
         Parameters
         ----------
         dt : scalar
             Time step in [s].
-        method : string
-            Choice between 'fast' and 'safe'.
+        unsafe : bool, optional
+            When set, use the faster but less numerically-stable method
+            implemented in :func:`pymanoid.ik.IKSolver.compute_velocity_fast`.
+        """
+        q = self.robot.q
+        if unsafe or self.unsafe:
+            qd = self.compute_velocity_fast(dt)
+        else:  # safe formulation is the default
+            qd = self.compute_velocity_safe(dt)
+        if self.verbosity >= 3:
+            print "\n                TASK      COST",
+            print "\n------------------------------"
+            for task in self.tasks.itervalues():
+                J = task.jacobian()
+                r = task.residual(dt)
+                print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
+            print ""
+        self.robot.set_dof_values(q + qd * dt, clamp=True)
+        self.robot.set_dof_velocities(qd)
+
+    def solve(self, max_it, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3):
+        """
+        Compute joint-angles that satisfy all kinematic constraints at best.
+
+        Parameters
+        ----------
+        max_it : integer
+            Maximum number of solver iterations.
+        cost_stop : scalar
+            Stop when cost value is below this threshold.
+        conv_tol : scalar, optional
+            Stop when cost improvement (relative variation from one iteration to
+            the next) is less than this threshold.
+        dt : scalar, optional
+            Time step in [s].
 
         Returns
         -------
-        qd : array
-            Active joint velocity vector.
+        itnum : int
+            Number of solver iterations.
+        cost : scalar
+            Final value of the cost function.
+
+        Note
+        ----
+        Good values of `dt` depend on the weights of the IK tasks. Small values
+        make convergence slower, while big values make the optimization unstable
+        (in which case there may be no convergence at all).
         """
-        if method == 'fast':
-            return self.compute_velocity_fast(dt)
-        return self.compute_velocity_safe(dt)
+        t0 = time()
+        if self.verbosity >= 1:
+            print "Solving IK with max_it=%d, conv_stop=%e, impr_stop=%e" % (
+                max_it, cost_stop, impr_stop)
+        cost = 100000.
+        self.qd_max *= 1000
+        self.qd_min *= 1000
+        for itnum in xrange(max_it):
+            prev_cost = cost
+            cost = self.compute_cost(dt)
+            impr = abs(cost - prev_cost) / prev_cost
+            if self.verbosity >= 2:
+                print "%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr)
+            if abs(cost) < cost_stop or impr < impr_stop:
+                break
+            self.step(dt, unsafe=True)
+        self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
+        self.qd_max /= 1000
+        self.qd_min /= 1000
+        if self.verbosity >= 1:
+            print "IK solved in %d iterations (%.1f ms) with cost %e" % (
+                itnum, 1000 * (time() - t0), cost)
+        return itnum, cost
 
     def on_tick(self, sim):
-        self.robot.step_ik(sim.dt)
+        self.step(sim.dt)

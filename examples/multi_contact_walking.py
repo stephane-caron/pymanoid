@@ -899,7 +899,7 @@ if __name__ == "__main__":
 
     robot.init_ik(robot.whole_body)
     robot.set_pos([0, 0, 2])  # start IK with the robot above contacts
-    robot.generate_posture(fsm.cur_stance, max_it=50)
+    robot.generate_posture(fsm.cur_stance, max_it=200)
 
     com_target.set_pos(robot.com)
     robot.ik.tasks['COM'].update_target(com_target)
