@@ -585,6 +585,12 @@ class PostureTask(Task):
 
 class ContactTask(LinkPoseTask):
 
+    """
+    In essence, a contact task is a :class:`pymanoid.tasks.LinkPoseTask` with a
+    much (much) larger weight. For plausible motions, no task should have a
+    weight higher than (or even comparable to) that of contact tasks.
+    """
+
     def __init__(self, robot, link, target, weight=None, gain=0.85,
                  exclude_dofs=None):
         if weight is None:

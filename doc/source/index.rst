@@ -5,7 +5,7 @@ pymanoid documentation
 ######################
 
 .. **Release 0.6.0 -- December 16, 2016**
-**Release: ongoing work on master branch**
+**Branch: master**
 
 .. toctree::
 

@@ -264,11 +264,11 @@ class Robot(object):
 
         .. math::
 
-            \\left[\\begin{array}{c} v_p \\\\ \\varomega} \\end{array}\\right]
+            \\left[\\begin{array}{c} v_p \\\\ \\omega \\end{array}\\right]
             = J(q) \\dot{q}
 
         where :math:`v_p` is the linear velocity of the link at point `p`
-        (default is the origin of the link frame) and :math:`\\varomega` is the
+        (default is the origin of the link frame) and :math:`\\omega` is the
         angular velocity of the link.
 
         Parameters
@@ -292,7 +292,7 @@ class Robot(object):
 
         .. math::
 
-            \\left[\\begin{array}{c} \\dot{\\xi} \\\\ v_L} \\end{array}\\right]
+            \\left[\\begin{array}{c} \\dot{\\xi} \\\\ v_L \\end{array}\\right]
             = J(q) \\dot{q},
 
         with :math:`\\xi` a quaternion for the link orientation and :math:`v_L =
@@ -336,11 +336,11 @@ class Robot(object):
 
         .. math::
 
-            \\left[\\begin{array}{c} a_p \\\\ \\dot{\\varomega}
+            \\left[\\begin{array}{c} a_p \\\\ \\dot{\\omega}
             \\end{array}\\right] = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}
 
         where :math:`a_p` is the linear acceleration of the point `p` (default
-        is the origin of the link frame) and :math:`\\dot{\\varomega}` is the
+        is the origin of the link frame) and :math:`\\dot{\\omega}` is the
         angular accelerations of the frame.
 
         Parameters
@@ -383,24 +383,15 @@ class Robot(object):
     ================
     """
 
-    def compute_inertia_matrix(self, external_torque=None):
+    def compute_inertia_matrix(self):
         """
-        Compute the inertia matrix of the robot.
-
-        Parameters
-        ----------
-        external_torque : array, optional
-            Vector of external torques.
-
-        Notes
-        -----
-        The inertia matrix is the matrix :math:`M(q)` such that the equations of
-        motion are written as:
+        Compute the inertia matrix :math:`M(q)` of the robot, that is, the
+        matrix such that the equations of motion can be written:
 
         .. math::
 
-            M(q) \\ddot{q} + \\dot{q}^T C(q) \\dot{q} + g(q) = F +
-            \\tau_\\mathrm{ext}
+            M(q) \\ddot{q} + \\dot{q}^T C(q) \\dot{q} + g(q) = S^T \\tau +
+            J_c(q)^T F
 
         with:
 
@@ -409,49 +400,59 @@ class Robot(object):
         - :math:`\\ddot{q}` -- vector of joint accelerations
         - :math:`C(q)` -- Coriolis tensor (derivative of M(q) w.r.t. q)
         - :math:`g(q)` -- gravity vector
-        - :math:`F` -- generalized forces (joint torques, contact wrenches, ...)
-        - :math:`\\tau_\\mathrm{ext}` -- additional torque vector
+        - :math:`S` -- selection matrix on actuated joints
+        - :math:`\\tau` -- vector of actuated joint torques
+        - :math:`J_c(q)` -- matrix of stacked contact Jacobians
+        - :math:`F` -- vector of stacked contact wrenches
 
+        Returns
+        -------
+        M : array
+            Inertia matrix for the robot's current joint angles.
+
+        Notes
+        -----
         This function applies the unit-vector method described by Walker & Orin
         in [WO82]_. It is not efficient, so if you are looking for performance,
         you should consider more recent libraries such as `pinocchio
-        <https://github.com/stack-of-tasks/pinocchio>`_.
+        <https://github.com/stack-of-tasks/pinocchio>`_ or `RBDyn
+        <https://github.com/jrl-umi3218/RBDyn>`_.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
         for (i, e_i) in enumerate(eye(self.nb_dofs)):
             tm, _, _ = self.rave.ComputeInverseDynamics(
-                e_i, external_torque, returncomponents=True)
+                e_i, None, returncomponents=True)
             M[:, i] = tm
         return M
 
     def compute_inverse_dynamics(self, qdd=None, external_torque=None):
         """
-        Wrapper around OpenRAVE's ComputeInverseDynamics function, which
-        implements the Recursive Newton-Euler algorithm by Walker & Orin
-        <http://doai.io/10.1115/1.3139699>.
-
-        The function returns three terms tm, tc and tg such that
+        Wrapper around OpenRAVE's inverse dynamics function, which implements
+        the Recursive Newton-Euler algorithm by Walker & Orin [WO82]_. It
+        returns the three terms :math:`t_m`, :math:`t_c` and :math:`t_g` such
+        that:
 
         .. math::
 
             \\begin{eqnarray}
-                tm & = & M(q) \\ddot{q} \\\\
-                tc & = & \\dot{q}^T C(q) \\dot{q} \\\\
-                tg & = & g(q)
+                t_m & = & M(q) \\ddot{q} \\\\
+                t_c & = & \\dot{q}^T C(q) \\dot{q} \\\\
+                t_g & = & g(q)
             \\end{eqnarray}
 
         where the equations of motion are written:
 
         .. math::
 
-            tm + tc + tg = F + \\tau_\\mathrm{ext}
+            t_m + t_c + t_g = S^T \\tau + J_c(q)^T F
 
         Parameters
         ----------
         qdd : array, optional
             Vector :math:`\\ddot{q}` of joint accelerations.
         external_torque : array, optional
-            Vector :math:`\\tau_\\mathrm{ext}` of external joint torques.
+            Additional vector of external joint torques for the right-hand side
+            of the equations of motion.
 
         Returns
         -------
@@ -1108,11 +1109,12 @@ class Humanoid(Robot):
 
             w_P = \\left[\\begin{array}{c}
                 f^{gi} \\\\
-                \\tau^{gi}_P\\end{array}\\right]
+                \\tau^{gi}_P
+            \\end{array}\\right]
             = \\left[\\begin{array}{c}
                 m (g - \\ddot{p}_G) \\\\
                 (p_G - p_P) \\times m (g - \\ddot{p}_G) - \\dot{L}_G
-                \\right]
+                \\end{array}\\right]
 
         with `m` the robot mass, `g` the gravity vector, `G` the center of mass,
         :math:`\\ddot{p}_G` the COM acceleration, and :math:`\\dot{L}_G` the
