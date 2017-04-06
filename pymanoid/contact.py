@@ -60,7 +60,7 @@ class Contact(Box):
                  visible=True, name=None, color='r', link=None):
         X, Y = shape
         super(Contact, self).__init__(
-            X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose,
+            X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose, color=color,
             visible=visible, dZ=-self.THICKNESS, name=name)
         v1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
         v2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
