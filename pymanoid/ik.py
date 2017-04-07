@@ -87,6 +87,9 @@ class IKSolver(Process):
         with self.tasks_lock:
             self.tasks[task.name] = task
 
+    def clear_tasks(self):
+        self.tasks = {}
+
     def __get_task_name(self, ident):
         name = ident if type(ident) is str else ident.name
         if not name.isupper():

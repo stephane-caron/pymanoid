@@ -1195,13 +1195,7 @@ class Humanoid(Robot):
 
     def bind_stance(self, stance):
         from tasks import COMTask, ContactTask, PostureTask
-        self.ik.remove_task('COM')
-        self.ik.remove_task('MIN_VEL')
-        self.ik.remove_task('POSTURE')
-        self.ik.remove_task(self.left_foot)
-        self.ik.remove_task(self.left_hand)
-        self.ik.remove_task(self.right_foot)
-        self.ik.remove_task(self.right_hand)
+        self.ik.clear_tasks()
         if stance.left_foot is not None:
             self.ik.add_task(
                 ContactTask(self, self.left_foot, stance.left_foot))
