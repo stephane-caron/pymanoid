@@ -54,7 +54,6 @@ class Contact(Box):
     """
 
     THICKNESS = 0.01
-    """Thickness in [m] of the contact patch."""
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
                  visible=True, name=None, color='r', link=None):
@@ -74,6 +73,15 @@ class Contact(Box):
         self.link = link
         self.shape = shape
         self.vertices = [v1, v2, v3, v4]
+
+    def copy(self, visible=None, name=None, color='r', link=None):
+        if visible is None:
+            visible = self.is_visible
+        if link is None:
+            link = self.link
+        return Contact(
+            self.shape, pose=self.pose, friction=self.friction, visible=visible,
+            name=name, color=color, link=link)
 
     """
     Geometry
