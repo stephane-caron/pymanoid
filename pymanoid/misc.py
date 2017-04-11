@@ -243,25 +243,54 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
     ax.add_patch(patch)
 
 
-def interpolate_pose_linear(pose0, pose1, t):
+def interpolate_pose_linear(pose0, pose1, x):
     """
     Linear pose interpolation.
 
     Parameters
     ----------
-    pose0 : array
+    pose0 : array, shape=(7,)
         First pose.
-    pose1 : array
+    pose1 : array, shape=(7,)
         Second pose.
-    t : scalar
-        Any number between 0 and 1.
+    x : scalar
+        Number between 0 and 1.
 
     Returns
-    pose : array
+    -------
+    pose : array, shape=(7,)
         Linear interpolation between the first two arguments.
     """
-    pos = pose0[4:] + t * (pose1[4:] - pose0[4:])
-    quat = quat_slerp(pose0[:4], pose1[:4], t)
+    pos = pose0[4:] + x * (pose1[4:] - pose0[4:])
+    quat = quat_slerp(pose0[:4], pose1[:4], x)
+    return hstack([quat, pos])
+
+
+def interpolate_pose_quadratic(pose0, pose1, x):
+    """
+    Pose interpolation that is linear in orientation (SLERP) and
+    quadratic (Bezier) in position.
+
+    Parameters
+    ----------
+    pose0 : array, shape=(7,)
+        First pose.
+    pose1 : array, shape=(7,)
+        Second pose.
+    x : scalar
+        Number between 0 and 1.
+
+    Returns
+    -------
+    pose : array, shape=(7,)
+        Linear interpolation between the first two arguments.
+
+    Note
+    ----
+    Initial and final linear velocities on the interpolated trajectory are zero.
+    """
+    pos = x ** 2 * (3 - 2 * x) * (pose1[4:] - pose0[4:]) + pose0[4:]
+    quat = quat_slerp(pose0[:4], pose1[:4], x)
     return hstack([quat, pos])
 
 
