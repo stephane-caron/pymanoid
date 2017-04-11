@@ -119,13 +119,6 @@ class PoseWrap(object):
         self.pose = array(pose)
 
 
-def eyevec(i, n):
-    """Unit basis vector for coordinate `i` in dimension `n`."""
-    u = zeros(n)
-    u[i] = 1.
-    return u
-
-
 def is_positive_combination(b, A):
     """
     Check if b can be written as a positive combination of lines from A.
