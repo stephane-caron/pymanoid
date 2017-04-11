@@ -32,10 +32,7 @@ from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
 from pymanoid.drawers import SEPDrawer, StaticWrenchDrawer
 
-K_doflim = 5.
 com_height = 0.9  # [m]
-polygon_handle = None
-qd_lim = 10.
 z_polygon = 2.
 
 
@@ -101,7 +98,10 @@ if __name__ == "__main__":
         -3.17943723e-15,  -6.28036983e-16,  -6.88979202e-02,
         -4.90099381e-02,   8.17415141e-01,  -8.71841480e-02,
         -1.36966665e-01,  -4.26226421e-02])
-    robot.generate_posture(stance, debug=True)
+
+    robot.ik.verbosity = 2
+    robot.generate_posture(stance)
+    robot.ik.verbosity = 0
 
     print ""
     print "In this example, we display the static-equilibrium COM polygon"
