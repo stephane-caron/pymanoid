@@ -129,7 +129,6 @@ class IKSolver(Process):
         name = self.__get_task_name(ident)
         with self.tasks_lock:
             if name not in self.tasks:
-                # print "Warning: no task '%s' to remove" % name
                 return
             del self.tasks[name]
 
