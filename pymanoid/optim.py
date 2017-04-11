@@ -35,7 +35,7 @@ Linear Programming
 
 try:
     import cvxopt.glpk
-    LP_SOLVER = 'glpk'
+    GLPK_IF_AVAILABLE = 'glpk'
     # GLPK is the fastest LP solver I could find so far:
     # <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
     # ... however, it's verbose by default, so tell it to STFU:
@@ -43,11 +43,12 @@ try:
     cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
     cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
 except ImportError:
+    # issue a warning as GLPK is the best LP solver in practice
     print "\033[1;33m[pymanoid] Warning: GLPK solver not found\033[0;0m"
-    LP_SOLVER = None
+    GLPK_IF_AVAILABLE = None
 
 
-def solve_lp(c, G, h, A=None, b=None, solver=LP_SOLVER):
+def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
     """
     Solve a Linear Program defined by:
 
@@ -103,8 +104,9 @@ Quadratic Programming
 """
 
 try:
-    # quadprog is the fastest QP solver I could find so far
     from quadprog import solve_qp as _quadprog_solve_qp
+
+    QUADPROG_IF_AVAILABLE = 'quadprog'
 
     def quadprog_solve_qp(P, q, G, h, A=None, b=None):
         """
@@ -158,8 +160,9 @@ try:
             meq = 0
         return _quadprog_solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
 except ImportError:
-    print "\033[1;33m[pymanoid] Warning: quadprog solver not found\033[0;0m"
-    quadprog_solve_qp = None
+    # issue a warning as quadprog is the best QP solver in practice
+    print "\033[1;33m[pymanoid] Warning: quadprog not found\033[0;0m"
+    QUADPROG_IF_AVAILABLE = None
 
 
 def cvxopt_solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
@@ -216,15 +219,17 @@ def cvxopt_solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
 try:
     import cvxopt.msk
     import mosek
+
+    MOSEK_IF_AVAILABLE = 'mosek'
     cvxopt.solvers.options['mosek'] = {mosek.iparam.log: 0}
 
     def mosek_solve_qp(P, q, G, h, A=None, b=None, initvals=None):
         return cvxopt_solve_qp(P, q, G, h, A, b, 'mosek', initvals)
 except ImportError:
-    print "\030[1;33m[pymanoid] Info: MOSEK solver not found\033[0;0m"
+    MOSEK_IF_AVAILABLE = None
 
 
-def solve_qp(P, q, G, h, A=None, b=None, solver=None):
+def solve_qp(P, q, G, h, A=None, b=None, solver=QUADPROG_IF_AVAILABLE):
     """
     Solve a Quadratic Program defined as:
 
@@ -263,16 +268,16 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None):
     ValueError
         If the QP is not feasible.
     """
-    if solver == 'cvxopt':
+    if solver == 'quadprog':
+        return quadprog_solve_qp(P, q, G, h, A, b)
+    elif solver == 'cvxopt':
         return cvxopt_solve_qp(P, q, G, h, A, b)
     elif solver == 'mosek':
         return mosek_solve_qp(P, q, G, h, A, b)
-    if quadprog_solve_qp is not None:
-        return quadprog_solve_qp(P, q, G, h, A, b)
     return cvxopt_solve_qp(P, q, G, h, A, b)
 
 
-def solve_safer_qp(P, q, G, h, w_reg, w_lin, solver='mosek'):
+def solve_safer_qp(P, q, G, h, w_reg, w_lin, solver=MOSEK_IF_AVAILABLE):
     """
     Solve the relaxed Quadratic Program defined as:
 
@@ -342,8 +347,9 @@ Nonlinear Programming
 
 try:
     from casadi import MX, nlpsol, vertcat
+    CASADI_FOUND = True
 except ImportError:
-    print "\033[1;33m[pymanoid] Warning: CasADi not found\033[0;0m"
+    CASADI_FOUND = False
 
 
 class NonlinearProgram(object):
@@ -450,6 +456,7 @@ class NonlinearProgram(object):
     """
 
     def __init__(self):
+        assert CASADI_FOUND, "CasADi not found"
         self.cons_exprs = []
         self.cons_index = {}
         self.cons_lbounds = []
