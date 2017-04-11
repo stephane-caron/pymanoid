@@ -1153,6 +1153,47 @@ class Humanoid(Robot):
             tau_P += cross(c - p, f_link) - dot(R, L_local)
         return hstack([f, tau_P])
 
+    def compute_net_contact_wrench(self, qdd, p):
+        """
+        Compute the gravito-inertial wrench at point `P`:
+
+        .. math::
+
+            w_P = \\left[\\begin{array}{c}
+                f^{c} \\\\
+                \\tau^{c}_P
+            \\end{array}\\right]
+            = \sum_i \\left[\\begin{array}{c}
+                f_i \\\\
+                (p_i - p_P) \\times f_i + \\tau_i
+                \\end{array}\\right]
+
+        with the contact wrench :math:`(f_i, \\tau_i)` is applied at the
+        :math:`i^\\mathrm{th}` contact point located at :math:`p_i`.
+
+        Parameters
+        ----------
+        qdd : array
+            Vector of DOF accelerations.
+        p : array, shape=(3,)
+            Application point of the gravito-inertial wrench.
+
+        Returns
+        -------
+        w_P : array, shape=(6,)
+            Coordinates of the gravito-inertial wrench expressed at point P in
+            the world frame.
+
+        Notes
+        -----
+        From the `Newton-Euler equations
+        <https://scaron.info/teaching/newton-euler-equations.html>`_ of the
+        system, the net contact wrench is opposite to the gravito-inertial
+        wrench computed by
+        :func:`pymanoid.robot.Humanoid.compute_gravito_inertial_wrench`.
+        """
+        return -self.compute_gravito_inertial_wrench(qdd, p)
+
     """
     Zero-tilting Moment Point
     =========================
