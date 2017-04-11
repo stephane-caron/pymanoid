@@ -63,6 +63,7 @@ class Body(object):
                 name = "%s%s" % (type(self).__name__, Body.count)
                 Body.count += 1
             kinbody.SetName(name)
+        self.color = color
         self.rave = kinbody
         self.is_visible = visible
         if pos is not None:
@@ -97,6 +98,7 @@ class Body(object):
             for g in link.GetGeometries():
                 g.SetAmbientColor(color)
                 g.SetDiffuseColor(color)
+        self.color = color
 
     def set_transparency(self, transparency):
         """
@@ -482,9 +484,6 @@ class Box(Body):
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
                  visible=True, transparency=None, name=None, dZ=0.):
-        self.X = X
-        self.Y = Y
-        self.Z = Z
         aabb = [0., 0., dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
@@ -494,6 +493,9 @@ class Box(Body):
                 box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
                 transparency=transparency, name=name)
             env.Add(box, True)
+        self.length = 2 * X
+        self.thickness = 2 * Z
+        self.width = 2 * Y
 
 
 class Cube(Box):

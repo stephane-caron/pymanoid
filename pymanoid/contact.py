@@ -29,6 +29,9 @@ from rotations import crossmat
 from sim import gravity
 
 
+CONTACT_THICKNESS = 0.01
+
+
 class Contact(Box):
 
     """
@@ -53,18 +56,16 @@ class Contact(Box):
         Name in OpenRAVE scope.
     """
 
-    THICKNESS = 0.01
-
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
                  visible=True, name=None, color='r', link=None):
         X, Y = shape
         super(Contact, self).__init__(
-            X, Y, Z=self.THICKNESS, pos=pos, rpy=rpy, pose=pose, color=color,
-            visible=visible, dZ=-self.THICKNESS, name=name)
-        v1 = dot(self.T, array([+self.X, +self.Y, -self.Z, 1.]))[:3]
-        v2 = dot(self.T, array([+self.X, -self.Y, -self.Z, 1.]))[:3]
-        v3 = dot(self.T, array([-self.X, -self.Y, -self.Z, 1.]))[:3]
-        v4 = dot(self.T, array([-self.X, +self.Y, -self.Z, 1.]))[:3]
+            X, Y, Z=CONTACT_THICKNESS, pos=pos, rpy=rpy, pose=pose, color=color,
+            visible=visible, dZ=-CONTACT_THICKNESS, name=name)
+        v1 = dot(self.T, array([+X, +Y, -self.thickness, 1.]))[:3]
+        v2 = dot(self.T, array([+X, -Y, -self.thickness, 1.]))[:3]
+        v3 = dot(self.T, array([-X, -Y, -self.thickness, 1.]))[:3]
+        v4 = dot(self.T, array([-X, +Y, -self.thickness, 1.]))[:3]
         v1.flags.writeable = False
         v2.flags.writeable = False
         v3.flags.writeable = False
@@ -74,9 +75,11 @@ class Contact(Box):
         self.shape = shape
         self.vertices = [v1, v2, v3, v4]
 
-    def copy(self, visible=None, name=None, color='r', link=None):
+    def copy(self, visible=None, name=None, color=None, link=None):
         if visible is None:
             visible = self.is_visible
+        if color is None:
+            color = self.color
         if link is None:
             link = self.link
         return Contact(
@@ -181,7 +184,7 @@ class Contact(Box):
         where `w` is the contact wrench at the contact point (``self.p``) in the
         world frame. See [CPN15]_ for the derivation of the formula for `F`.
         """
-        X, Y = self.X, self.Y
+        X, Y = self.shape
         mu = self.friction / sqrt(2)  # inner approximation
         local_cone = array([
             # fx fy             fz taux tauy tauz
