@@ -62,18 +62,9 @@ class Contact(Box):
         super(Contact, self).__init__(
             X, Y, Z=CONTACT_THICKNESS, pos=pos, rpy=rpy, pose=pose, color=color,
             visible=visible, dZ=-CONTACT_THICKNESS, name=name)
-        v1 = dot(self.T, array([+X, +Y, -self.thickness, 1.]))[:3]
-        v2 = dot(self.T, array([+X, -Y, -self.thickness, 1.]))[:3]
-        v3 = dot(self.T, array([-X, -Y, -self.thickness, 1.]))[:3]
-        v4 = dot(self.T, array([-X, +Y, -self.thickness, 1.]))[:3]
-        v1.flags.writeable = False
-        v2.flags.writeable = False
-        v3.flags.writeable = False
-        v4.flags.writeable = False
         self.friction = friction
         self.link = link
         self.shape = shape
-        self.vertices = [v1, v2, v3, v4]
 
     def copy(self, visible=None, name=None, color=None, link=None):
         if visible is None:
@@ -123,6 +114,15 @@ class Contact(Box):
             [0,  -z,  y,   1,   0,   0],
             [z,   0, -x,   0,   1,   0],
             [-y,  x,  0,   0,   0,   1]])
+
+    @property
+    def vertices(self):
+        X, Y = self.shape
+        v1 = dot(self.T, array([+X, +Y, -self.thickness, 1.]))[:3]
+        v2 = dot(self.T, array([+X, -Y, -self.thickness, 1.]))[:3]
+        v3 = dot(self.T, array([-X, -Y, -self.thickness, 1.]))[:3]
+        v4 = dot(self.T, array([-X, +Y, -self.thickness, 1.]))[:3]
+        return [v1, v2, v3, v4]
 
     """
     Force Friction Cone
@@ -426,7 +426,7 @@ class ContactSet(object):
         Parameters
         ----------
         method : string, optional
-            choice between 'bretl', 'cdd' or 'hull'
+            Choice between 'bretl', 'cdd' or 'hull'.
 
         Returns
         -------

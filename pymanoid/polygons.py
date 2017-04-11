@@ -119,7 +119,7 @@ def compute_polygon_hull(B, c):
     Returns
     -------
     vertices : list of arrays
-        List of 2D vertices in counterclowise order.
+        List of 2D vertices in counterclockwise order.
     """
     x = None
     if not all(c > 0):

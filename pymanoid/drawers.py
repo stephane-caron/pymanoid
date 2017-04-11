@@ -297,6 +297,8 @@ class SupportAreaDrawer(Process):
         self.handle = None
 
     def on_tick(self, sim):
+        if self.handle is None:
+            self.update_polygon()
         for contact in self.contact_set.contacts:
             if norm(contact.pose - self.contact_poses[contact.name]) > 1e-10:
                 self.update_contact_poses()
