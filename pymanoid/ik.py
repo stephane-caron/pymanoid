@@ -332,7 +332,7 @@ class IKSolver(Process):
         (in which case there may be no convergence at all).
         """
         t0 = time()
-        if self.verbosity >= 1:
+        if self.verbosity >= 2:
             print "Solving IK with max_it=%d, conv_stop=%e, impr_stop=%e" % (
                 max_it, cost_stop, impr_stop)
         cost = 100000.
