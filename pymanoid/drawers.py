@@ -21,8 +21,8 @@ from numpy import hstack, zeros
 from time import time
 
 from body import PointMass
-from draw import draw_line, draw_polygon, draw_polyhedron
-from draw import draw_wrench
+from draw import draw_line, draw_polygon, draw_polyhedron, draw_wrench
+from draw import matplotlib_to_rgb
 from misc import norm
 from sim import Process
 
@@ -270,20 +270,31 @@ class SupportAreaDrawer(Process):
 
     Parameters
     ----------
-    contact_set : ContactSet
+    contact_set : ContactSet, optional
         Contact set to track.
     z : scalar, optional
         Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
     """
 
-    def __init__(self, contact_set, z=0.):
+    def __init__(self, contact_set=None, z=0., color=None):
+        if color is None:
+            color = (0., 0.5, 0., 0.5)
+        if type(color) is str:
+            color = matplotlib_to_rgb(color) + [0.5]
         super(SupportAreaDrawer, self).__init__()
+        self.color = color
         self.contact_poses = {}
         self.contact_set = contact_set
         self.handle = None
         self.z = z
-        self.update_contact_poses()
-        self.update_polygon()
+        if contact_set is not None:
+            self.update_contact_poses()
+            self.update_polygon()
+
+    def clear(self):
+        self.handle = None
 
     def on_tick(self, sim):
         for contact in self.contact_set.contacts:
@@ -296,8 +307,17 @@ class SupportAreaDrawer(Process):
         for contact in self.contact_set.contacts:
             self.contact_poses[contact.name] = contact.pose
 
+    def update_contact_set(self, contact_set):
+        self.contact_set = contact_set
+        self.update_contact_poses()
+        self.update_polygon()
+
     def update_polygon(self):
         raise NotImplementedError
+
+    def update_z(self, z):
+        self.z = z
+        self.update_polygon()
 
 
 class SEPDrawer(SupportAreaDrawer):
@@ -307,10 +327,12 @@ class SEPDrawer(SupportAreaDrawer):
 
     Parameters
     ----------
-    contact_set : ContactSet
+    contact_set : ContactSet, optional
         Contact set to track.
     z : scalar, optional
         Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
     """
 
     def update_polygon(self):
@@ -319,7 +341,7 @@ class SEPDrawer(SupportAreaDrawer):
             vertices = self.contact_set.compute_static_equilibrium_polygon()
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
-                normal=[0, 0, 1], color=(0.5, 0., 0.5, 0.5))
+                normal=[0, 0, 1], color=self.color)
         except Exception as e:
             print "SEPDrawer:", e
 
@@ -335,13 +357,15 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
         Contact set to track.
     z : scalar, optional
         Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
     """
 
-    def __init__(self, stance, z=0.):
+    def __init__(self, stance, z=0., color=None):
+        super(ZMPSupportAreaDrawer, self).__init__(stance, z, color)
         self.last_com = stance.com.p
         self.method = 'cdd'
         self.stance = stance
-        super(ZMPSupportAreaDrawer, self).__init__(stance, z)
 
     def on_tick(self, sim):
         super(ZMPSupportAreaDrawer, self).on_tick(sim)
@@ -371,17 +395,22 @@ class COMAccelConeDrawer(ZMPSupportAreaDrawer):
     ----------
     contact_set : ContactSet
         Contact set to track.
+    scale : scalar, optional
+        Force-to-distance conversion ratio, in [m] / [N].
+    color : tuple or string, optional
+        Area color.
     """
 
-    def __init__(self, contact_set):
-        super(COMAccelConeDrawer, self).__init__(contact_set)
+    def __init__(self, contact_set, scale=0.1, color=None):
+        super(COMAccelConeDrawer, self).__init__(contact_set, color=color)
+        self.scale = scale
 
     def update_polygon(self):
         self.handle = None
         try:
-            cone_vertices = self.contact_set.compute_pendular_accel_cone(
+            vertices = self.contact_set.compute_pendular_accel_cone(
                 self.stance.com.p)
-            vscale = [self.stance.com.p + 0.1 * acc for acc in cone_vertices]
+            vscale = [self.stance.com.p + self.scale * acc for acc in vertices]
             self.handle = draw_polyhedron(vscale, 'r.-#')
         except Exception as e:
             print "COMAccelConeDrawer:", e
