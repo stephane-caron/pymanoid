@@ -1,6 +1,6 @@
-**********
-Simulation
-**********
+**********************
+Other Library Features
+**********************
 
 Processes and simulation
 ========================
@@ -32,4 +32,16 @@ Drawer processes
 ================
 
 .. automodule:: pymanoid.drawers
+    :members:
+
+Drawing primitives
+==================
+
+.. automodule:: pymanoid.draw
+    :members:
+
+Rotation conversions
+====================
+
+.. automodule:: pymanoid.rotations
     :members:

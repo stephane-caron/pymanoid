@@ -1,9 +1,9 @@
-************
-Rigid bodies
-************
+**********
+Kinematics
+**********
 
-Generic rigid bodies
-====================
+Rigid bodies
+============
 
 .. autoclass:: pymanoid.body.Body
     :members:
@@ -19,8 +19,8 @@ Boxes
     :members:
     :undoc-members:
 
-Points
-======
+Points and masses
+=================
 
 .. autoclass:: pymanoid.body.Point
     :members:

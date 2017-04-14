@@ -30,12 +30,13 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
-from pymanoid import Contact, Cube
+from pymanoid import Contact, PointMass
 from pymanoid.robots import JVRC1
 from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 
 
 def move_com_back_and_forth(duration, dt=1e-2):
+    init_com = robot.com.copy()
     for t in numpy.arange(0, duration, dt):
         loop_start = time.time()
         com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
@@ -56,30 +57,19 @@ if __name__ == '__main__':
         [-0.02267371, -0.90901857, -0.41613837,  2.06654644],
         [0.,  0.,  0.,  1.]])
 
-    # Initial robot pose
-    robot.set_transparency(0.4)
-    dof_targets = [  # will also be passed to the IK
-        (robot.R_SHOULDER_R, -.5),
-        (robot.L_SHOULDER_R, +.5)]
-    q_init = robot.q.copy()
-    for (dof_id, dof_ref) in dof_targets:
-        robot.set_dof_values([dof_ref], [dof_id])
-        q_init[dof_id] = dof_ref
-    robot.set_dof_values([-1], [robot.R_SHOULDER_P])
-    robot.set_dof_values([-1], [robot.L_SHOULDER_P])
-    robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
-    init_com = robot.com.copy()
-
     # IK targets
-    com = Cube(0.05, pos=robot.com, color='g')
     lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0], visible=True)
     rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0], visible=True)
 
+    # Initial robot pose
+    robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
+    com = PointMass(pos=robot.com, mass=robot.mass)
+
     # IK tasks
-    lf_task = ContactTask(robot, robot.left_foot, lf_target, weight=1000)
-    rf_task = ContactTask(robot, robot.right_foot, rf_target, weight=1000)
-    com_task = COMTask(robot, com, weight=10)
-    reg_task = PostureTask(robot, robot.q, weight=0.1)  # regularization task
+    lf_task = ContactTask(robot, robot.left_foot, lf_target, weight=1.)
+    rf_task = ContactTask(robot, robot.right_foot, rf_target, weight=1.)
+    com_task = COMTask(robot, com, weight=1e-2)
+    reg_task = PostureTask(robot, robot.q, weight=1e-6)  # regularization task
 
     # IK setup
     robot.init_ik(active_dofs=robot.whole_body)
@@ -87,9 +77,12 @@ if __name__ == '__main__':
     robot.ik.add_task(rf_task)
     robot.ik.add_task(com_task)
     robot.ik.add_task(reg_task)
-    for (dof_id, dof_ref) in dof_targets:
-        robot.ik.add_task(
-            DOFTask(robot, dof_id, dof_ref, gain=0.5, weight=0.1))
+
+    # Add some DOFTasks for a nicer posture
+    robot.ik.add_task(DOFTask(
+        robot, robot.R_SHOULDER_R, -0.5, gain=0.5, weight=1e-5))
+    robot.ik.add_task(DOFTask(
+        robot, robot.L_SHOULDER_R, +0.5, gain=0.5, weight=1e-5))
 
     # First, generate an initial posture
     robot.ik.verbosity = 2

@@ -4,7 +4,7 @@
 
 ### Inverse Kinematics
 
-<img align="right" src="images/inverse_kinematics.png" width="300" />
+<img align="right" src="../doc/source/images/inverse_kinematics.png" width="300" />
 
 This example shows how to use the robot IK to generate whole-body motions.
 
@@ -13,7 +13,7 @@ It loads (and downloads, if necessary) the
 
 ### Multi-contact Walking
 
-<img align="right" src="images/multi_contact_walking.png" width="300" />
+<img align="right" src="../doc/source/images/multi_contact_walking.png" width="300" />
 
 In this example, we make the JVRC-1 model walk accross a circular staircase where all contacts are tilted.
 
@@ -27,7 +27,7 @@ from slipping or detaching during motion.
 
 ### Static-equilibrium Polygon
 
-<img align="right" src="images/static_equilibrium_polygon.png" width="300" />
+<img align="right" src="../doc/source/images/static_equilibrium_polygon.png" width="300" />
 
 In this example, we display the static-equilibrium COM polygon (in magenta) for
 a given set of contacts.
@@ -42,7 +42,7 @@ the polygon.
 
 ### ZMP Support Area
 
-<img align="right" src="images/zmp_support_area.png" width="300" />
+<img align="right" src="../doc/source/images/zmp_support_area.png" width="300" />
 
 In this example, we display the pendular ZMP support area of the robot in a
 double-support configuration with titled contacts.
@@ -54,7 +54,7 @@ projection (blue box) you will see the area change as well.
 
 ### COM Acceleration Cone
 
-<img align="right" src="images/com_accel_cone.png" width="300" />
+<img align="right" src="../doc/source/images/com_accel_cone.png" width="300" />
 
 In this example, we display the pendular COM acceleration cone of the robot in
 a double-support configuration with titled contacts.
