@@ -87,8 +87,8 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
         Drawing spec in matplotlib fashion: color letter, followed by characters
         representing the faces of the cone to draw ('.' for vertices, '-' for
         edges, '#' for facets). Default is 'g-#'.
-    color : char or RGBA tuple
-        Drawing color.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
     faces : string
         Specifies the faces of the polyhedron to draw. Format is the same as
         ``combined``.
@@ -115,8 +115,8 @@ def draw_arrow(origin, end, color='r', linewidth=0.02):
         World coordinates of the origin of the arrow.
     end : array, shape=(3,)
         World coordinates of the end of the arrow.
-    color : char or RGB triplet, optional
-        Drawing color.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
     linewidth : scalar, optional
         Thickness of arrow.
 
@@ -285,8 +285,8 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
         Unit vector normal to the drawing plane.
     combined : string, optional
         Drawing spec in matplotlib fashion. Default: 'g-#'.
-    color : char or RGBA tuple
-        Color of the polygon.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
     faces : string
         Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
         '#' for facets.
@@ -330,8 +330,8 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
         List of 3D points in the world frame.
     combined : string, optional
         Drawing spec in matplotlib fashion. Default: 'g-#'.
-    color : char or RGBA tuple, optional
-        Color of the polygon.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
     faces : string, optional
         Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
         '#' for facets.
@@ -405,8 +405,8 @@ def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
     ----------
     points = array, shape=(N, 3)
         List of points or 2D array.
-    color : char or RGBA tuple, optional
-        Color of the polygon.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
     linewidth : scalar
         Thickness of drawn line.
     pointsize : scalar
