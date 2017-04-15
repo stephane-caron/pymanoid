@@ -195,12 +195,45 @@ def middot(M, T):
 
 
 def norm(v):
-    """Euclidean norm, 2x faster than numpy.linalg.norm on my machine."""
+    """
+    Euclidean norm.
+
+    Parameters
+    ----------
+    v : array
+        Any vector.
+
+    Returns
+    -------
+    n : scalar
+        Euclidean norm of `v`.
+
+    Note
+    ----
+    This straightforward function is 2x faster than :func:`numpy.linalg.norm` on
+    my machine.
+    """
     return sqrt(dot(v, v))
 
 
 def normalize(v):
-    """Normalize a vector. Don't catch ZeroDivisionError on purpose."""
+    """
+    Normalize a vector.
+
+    Parameters
+    ----------
+    v : array
+        Any vector.
+
+    Returns
+    -------
+    nv : array
+        Unit vector directing `v`.
+
+    Note
+    ----
+    This method doesn't catch ``ZeroDivisionError`` exceptions on purpose.
+    """
     return v / norm(v)
 
 
@@ -294,26 +327,53 @@ def interpolate_pose_quadratic(pose0, pose1, x):
     return hstack([quat, pos])
 
 
+class PoseInterpolator(object):
+
+    def __init__(self, start_pose, end_pose):
+        self.delta_pos = end_pose[4:] - start_pose[4:]
+        self.end_quat = end_pose[:4]
+        self.start_pos = start_pose[4:]
+        self.start_quat = start_pose[:4]
+
+    def eval_quat(self, x):
+        return quat_slerp(self.start_quat, self.end_quat, x)
+
+    def eval_pos(self, x):
+        raise NotImplementedError()
+
+    def eval(self, x):
+        return hstack([self.eval_quat(x), self.eval_pos(x)])
+
+
+class LinearPoseInterpolator(PoseInterpolator):
+
+    def eval_pos(self, x):
+        return self.start_pos + x * self.delta_pos
+
+
+class QuadraticPoseInterpolator(PoseInterpolator):
+
+    def eval_pos(self, x):
+        return self.start_pos + x ** 2 * (3 - 2 * x) * self.delta_pos
+
+
 try:
     from minieigen import MatrixXd, VectorXd
+
+    def array_to_MatrixXd(a):
+        A = MatrixXd.Zero(a.shape[0], a.shape[1])
+        for i in xrange(a.shape[0]):
+            for j in xrange(a.shape[1]):
+                A[i, j] = a[i, j]
+        return A
+
+    def array_to_VectorXd(v):
+        V = VectorXd.Zero(v.shape[0])
+        for i in xrange(v.shape[0]):
+            V[i] = v[i]
+        return V
+
+    def VectorXd_to_array(V):
+        return array([V[i] for i in xrange(V.rows())])
 except ImportError:
     pass
-
-
-def array_to_MatrixXd(a):
-    A = MatrixXd.Zero(a.shape[0], a.shape[1])
-    for i in xrange(a.shape[0]):
-        for j in xrange(a.shape[1]):
-            A[i, j] = a[i, j]
-    return A
-
-
-def array_to_VectorXd(v):
-    V = VectorXd.Zero(v.shape[0])
-    for i in xrange(v.shape[0]):
-        V[i] = v[i]
-    return V
-
-
-def VectorXd_to_array(V):
-    return array([V[i] for i in xrange(V.rows())])

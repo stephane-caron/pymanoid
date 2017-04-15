@@ -160,23 +160,23 @@ class IKSolver(Process):
     def __compute_qp_common(self, dt):
         n = self.nb_active_dofs
         q = self.robot.q[self.active_dofs]
-        qp_P = zeros((n, n))
-        qp_q = zeros(n)
+        P = zeros((n, n))
+        v = zeros(n)
         with self.tasks_lock:
             for task in self.tasks.itervalues():
                 J = task.jacobian()[:, self.active_dofs]
                 r = task.residual(dt)
-                qp_P += task.weight * dot(J.T, J)
-                qp_q += task.weight * dot(-r.T, J)
+                P += task.weight * dot(J.T, J)
+                v += task.weight * dot(-r.T, J)
         qd_max_doflim = self.doflim_gain * (self.q_max - q) / dt
         qd_min_doflim = self.doflim_gain * (self.q_min - q) / dt
         qd_max = minimum(self.qd_max, qd_max_doflim)
         qd_min = maximum(self.qd_min, qd_min_doflim)
-        return (qp_P, qp_q, qd_max, qd_min)
+        return (P, v, qd_max, qd_min)
 
-    def __solve_qp(self, qp_P, qp_q, qp_G, qp_h):
+    def __solve_qp(self, P, v, G, h):
         try:
-            qd_active = solve_qp(qp_P, qp_q, qp_G, qp_h)
+            qd_active = solve_qp(P, v, G, h)
             self.qd[self.active_dofs] = qd_active
         except ValueError as e:
             if "matrix G is not positive definite" in e:
@@ -227,10 +227,10 @@ class IKSolver(Process):
         Gauss-Newton update rule.
         """
         n = self.nb_active_dofs
-        qp_P, qp_q, qd_max, qd_min = self.__compute_qp_common(dt)
-        qp_G = vstack([+eye(n), -eye(n)])
-        qp_h = hstack([qd_max, -qd_min])
-        return self.__solve_qp(qp_P, qp_q, qp_G, qp_h)
+        P, v, qd_max, qd_min = self.__compute_qp_common(dt)
+        G = vstack([+eye(n), -eye(n)])
+        h = hstack([qd_max, -qd_min])
+        return self.__solve_qp(P, v, G, h)
 
     def compute_velocity_safe(self, dt, margin_reg=1e-5, margin_lin=1e-3):
         """
@@ -266,13 +266,13 @@ class IKSolver(Process):
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
-        qp_P0, qp_q0, qd_max, qd_min = self.__compute_qp_common(dt)
-        qp_P = vstack([hstack([qp_P0, Z]), hstack([Z, margin_reg * E])])
-        qp_q = hstack([qp_q0, -margin_lin * ones(n)])
-        qp_G = vstack([
+        P0, v0, qd_max, qd_min = self.__compute_qp_common(dt)
+        P = vstack([hstack([P0, Z]), hstack([Z, margin_reg * E])])
+        v = hstack([v0, -margin_lin * ones(n)])
+        G = vstack([
             hstack([+E, +E / dt]), hstack([-E, +E / dt]), hstack([Z, -E])])
-        qp_h = hstack([qd_max, -qd_min, zeros(n)])
-        return self.__solve_qp(qp_P, qp_q, qp_G, qp_h)
+        h = hstack([qd_max, -qd_min, zeros(n)])
+        return self.__solve_qp(P, v, G, h)
 
     def step(self, dt, unsafe=False):
         """
