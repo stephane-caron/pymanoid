@@ -43,7 +43,12 @@ def crossmat(x):
     Parameters
     ----------
     x : array, shape=(3,)
-        3D vector to take the cross-product with.
+        Vector on the left-hand side of the cross product.
+
+    Returns
+    -------
+    C : array, shape=(3, 3)
+        Cross-product matrix of `x`.
     """
     return array([
         [0., -x[2], x[1]],

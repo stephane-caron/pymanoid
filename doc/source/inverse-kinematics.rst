@@ -50,7 +50,7 @@ link) 80 cm above contacts:
 
 This being done, we initialize a point-mass that will serve as COM target for
 the IK. Its initial position is set to ``robot.com``, which will be roughly 80
-cm above contacts after the instruction above.
+cm above contacts as it is close to the waist link:
 
 .. code::
 
@@ -90,7 +90,7 @@ Finally, call the IK solver to update the robot posture:
 
     robot.ik.solve(max_it=100, impr_stop=1e-4)
 
-The resulting posture should look like this:
+The resulting posture looks like this:
 
 .. figure:: images/inverse_kinematics.png
    :align:  center
