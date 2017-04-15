@@ -13,7 +13,7 @@ Python library for humanoid robotics based on
 - Types and algorithms to manipulate polytopes and polyhedral cones
 - Interface to linear programming (LP) and quadratic programming (QP) solvers
 
-<img src="https://scaron.info/images/ijhr-2016.png" width="350" align="right" />
+<img src="doc/source/images/logo.png" width="350" align="right" />
 
 ## Use cases
 

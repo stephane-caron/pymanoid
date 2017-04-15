@@ -8,6 +8,9 @@ pymanoid documentation
 
 **Branch: master**
 
+.. figure:: images/logo.png
+   :align:  center
+
 .. toctree::
 
     inverse-kinematics.rst
