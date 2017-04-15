@@ -2,22 +2,22 @@
 Inverse Kinematics
 ******************
 
-Solving the inverse problem
-===========================
+IK Solver
+=========
 
 .. autoclass:: pymanoid.ik.IKSolver
     :members:
     :undoc-members:
 
-Tasks
-=====
+IK Tasks
+========
 
 .. automodule:: pymanoid.tasks
     :members:
     :undoc-members:
 
-Example
-=======
+Example: Posture Generation
+===========================
 
 The example script ``examples/inverse_kinematics.py`` shows how to use the
 robot IK to generate whole-body motions. Let us execute it step by step. First,

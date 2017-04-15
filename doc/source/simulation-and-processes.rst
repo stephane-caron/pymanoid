@@ -1,9 +1,9 @@
-**********************
-Other Library Features
-**********************
+************************
+Simulation and processes
+************************
 
-Processes and simulation
-========================
+Processes
+=========
 
 Simulations schedule calls to a number of "processes" into an infinite loop,
 which represents the control loop of the robot. A process is a simple wrapper
@@ -12,6 +12,9 @@ simulation loop.
 
 .. autoclass:: pymanoid.sim.Process
     :members:
+
+Simulation
+==========
 
 The simulation object is both a global environment and a process scheduler. As
 an environment, it is passed as argument when calling the :func:`on_tick`
@@ -26,22 +29,4 @@ Camera recording
 ================
 
 .. autoclass:: pymanoid.sim.CameraRecorder
-    :members:
-
-Drawer processes
-================
-
-.. automodule:: pymanoid.drawers
-    :members:
-
-Drawing primitives
-==================
-
-.. automodule:: pymanoid.draw
-    :members:
-
-Rotation conversions
-====================
-
-.. automodule:: pymanoid.rotations
     :members:
