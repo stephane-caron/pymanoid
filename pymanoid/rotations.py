@@ -27,7 +27,6 @@ humanoid-robotics convention: with an upward yaw axis) were adapted from
 from math import asin, atan2, cos, sin
 from numpy import array
 from openravepy import \
-    InterpolateQuatSlerp as quat_slerp, \
     axisAngleFromQuat as axis_angle_from_quat, \
     axisAngleFromRotationMatrix as axis_angle_from_rotation_matrix, \
     quatFromRotationMatrix as quat_from_rotation_matrix, \
@@ -166,7 +165,6 @@ __all__ = [
     'quat_from_rpy',
     'quat_inverse',
     'quat_multiply',
-    'quat_slerp',
     'rpy_from_quat',
     'rpy_from_rotation_matrix',
     'rotation_matrix_from_quat',

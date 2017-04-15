@@ -28,6 +28,12 @@ Drawing primitives
 .. automodule:: pymanoid.draw
     :members:
 
+Interpolation
+=============
+
+.. automodule:: pymanoid.interp
+    :members:
+
 Rotation conversions
 ====================
 

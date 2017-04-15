@@ -17,10 +17,36 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot, eye, hstack, sqrt, tensordot, zeros
+from numpy import array, dot, eye, sqrt, tensordot, zeros
 
 from optim import solve_qp
-from rotations import quat_slerp
+
+
+class NDPolynomial(object):
+
+    """
+    Polynomial class with vector-valued coefficients.
+
+    Parameters
+    ----------
+    coeffs : list of arrays
+        Coefficients of the polynomial.
+    """
+
+    def __init__(self, coeffs):
+        self.coeffs = coeffs
+        self.shape = coeffs[0].shape
+
+    @property
+    def degree(self):
+        return len(self.coeffs) - 1
+
+    def __call__(self, x):
+        value = zeros(self.shape)
+        for coeff in reversed(self.coeffs):
+            value *= x
+            value += coeff
+        return value
 
 
 class Statistics(object):
@@ -274,88 +300,6 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
         points, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
         linewidth=linewidth)
     ax.add_patch(patch)
-
-
-def interpolate_pose_linear(pose0, pose1, x):
-    """
-    Linear pose interpolation.
-
-    Parameters
-    ----------
-    pose0 : array, shape=(7,)
-        First pose.
-    pose1 : array, shape=(7,)
-        Second pose.
-    x : scalar
-        Number between 0 and 1.
-
-    Returns
-    -------
-    pose : array, shape=(7,)
-        Linear interpolation between the first two arguments.
-    """
-    pos = pose0[4:] + x * (pose1[4:] - pose0[4:])
-    quat = quat_slerp(pose0[:4], pose1[:4], x)
-    return hstack([quat, pos])
-
-
-def interpolate_pose_quadratic(pose0, pose1, x):
-    """
-    Pose interpolation that is linear in orientation (SLERP) and
-    quadratic (Bezier) in position.
-
-    Parameters
-    ----------
-    pose0 : array, shape=(7,)
-        First pose.
-    pose1 : array, shape=(7,)
-        Second pose.
-    x : scalar
-        Number between 0 and 1.
-
-    Returns
-    -------
-    pose : array, shape=(7,)
-        Linear interpolation between the first two arguments.
-
-    Note
-    ----
-    Initial and final linear velocities on the interpolated trajectory are zero.
-    """
-    pos = x ** 2 * (3 - 2 * x) * (pose1[4:] - pose0[4:]) + pose0[4:]
-    quat = quat_slerp(pose0[:4], pose1[:4], x)
-    return hstack([quat, pos])
-
-
-class PoseInterpolator(object):
-
-    def __init__(self, start_pose, end_pose):
-        self.delta_pos = end_pose[4:] - start_pose[4:]
-        self.end_quat = end_pose[:4]
-        self.start_pos = start_pose[4:]
-        self.start_quat = start_pose[:4]
-
-    def eval_quat(self, x):
-        return quat_slerp(self.start_quat, self.end_quat, x)
-
-    def eval_pos(self, x):
-        raise NotImplementedError()
-
-    def eval(self, x):
-        return hstack([self.eval_quat(x), self.eval_pos(x)])
-
-
-class LinearPoseInterpolator(PoseInterpolator):
-
-    def eval_pos(self, x):
-        return self.start_pos + x * self.delta_pos
-
-
-class QuadraticPoseInterpolator(PoseInterpolator):
-
-    def eval_pos(self, x):
-        return self.start_pos + x ** 2 * (3 - 2 * x) * self.delta_pos
-
 
 try:
     from minieigen import MatrixXd, VectorXd
