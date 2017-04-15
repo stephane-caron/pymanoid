@@ -39,10 +39,6 @@ class Task(object):
 
     Parameters
     ----------
-    jacobian : function
-        Function returning the task Jacobian when called with no argument.
-    residual : function
-        Function returning the task residual when called with no argument.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -50,12 +46,8 @@ class Task(object):
     exclude_dofs : list of integers, optional
         DOF indices not used by task.
 
-    Notes
-    -----
-    Residuals returned by the ``residual`` function must have the unit of a
-    velocity. For instance, ``qd`` and ``(q1 - q2) / dt`` are valid residuals,
-    but ``0.5 * q`` is not.
-
+    Note
+    ----
     See <https://scaron.info/teaching/inverse-kinematics.html> for an
     introduction to the concepts used here.
     """
@@ -67,7 +59,7 @@ class Task(object):
 
     def cost(self, dt):
         """
-        Compute cost term of the task.
+        Compute the weighted norm of the task residual.
 
         Parameters
         ----------
@@ -109,6 +101,20 @@ class Task(object):
         raise NotImplementedError("Task residual not implemented")
 
     def residual(self, dt):
+        """
+        Compute the residual of the task.
+
+        Returns
+        -------
+        r : array
+            Residual vector of the task.
+
+        Notes
+        -----
+        Residuals returned by the ``residual`` function must have the unit of a
+        velocity. For instance, :math:`\\dot{q}` and :math:`(q_1 - q_2) / dt`
+        are valid residuals, but :math:`\\frac12 q` is not.
+        """
         return self.gain * self._residual(dt)
 
 
