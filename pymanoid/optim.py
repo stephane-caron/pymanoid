@@ -358,6 +358,14 @@ class NonlinearProgram(object):
     """
     Wrapper around `CasADi <http://casadi.org>`_ to formulate and solve
     nonlinear optimization problems.
+
+    Parameters
+    ----------
+    solver : string, optional
+        Solver name. Use 'ipopt' (default) for an interior point method or
+        'sqpmethod' for sequential quadratic programming.
+    options : dict, optional
+        Dictionary of solver options.
     """
 
     infty = 1e10
@@ -379,22 +387,16 @@ class NonlinearProgram(object):
 
     ipopt_fast_step_computation = 'yes'  # default: 'no'
     """
-    Indicates if the linear system should be solved quickly.
-
     If set to yes, the algorithm assumes that the linear system that is solved
     to obtain the search direction, is solved sufficiently well. In that case,
     no residuals are computed, and the computation of the search direction is a
     little faster.
-
-    Possible values:
-        - no     [Verify solution of linear system by computing residuals.]
-        - yes    [Trust that linear systems are solved well.]
     """
 
     ipopt_fixed_variable_treatment = 'relax_bounds'
     """
     Default is "make_parameter", but "relax_bounds" seems to make computations
-    faster and numerically stabler
+    faster and numerically stabler.
     """
 
     ipopt_linear_solver = 'ma27'
@@ -404,12 +406,9 @@ class NonlinearProgram(object):
 
     ipopt_max_cpu_time = 0.1  # [s]
     """
-    Maximum number of CPU seconds.
-
-    Note
-    ----
-    This parameter corresponds to processor time, not wall time. For a CPU with
-    N cores, the former can scale as much as N times the latter.
+    Maximum number of CPU seconds. Note that this parameter corresponds to
+    processor time, not wall time. For a CPU with N cores, the latter can be as
+    much as N times lower than the former.
     """
 
     ipopt_max_iter = 100
@@ -419,45 +418,36 @@ class NonlinearProgram(object):
 
     ipopt_mu_strategy = "adaptive"  # default is "monotone"
     """
-    Update strategy for barrier parameter.
-
-    Options are "monotone" (default) and "adaptive".
-
-    Note
-    ----
-    The adaptive strategy yields ~40% faster results in practice on the COP and
-    ZMP controller, while it seems to have no effect on computation times of the
-    (slower) Wrench controller.
+    Update strategy for barrier parameter: "monotone" (default) or "adaptive".
     """
 
     ipopt_nlp_lower_bound_inf = -0.9 * infty
     """
-    Any bound less or equal this value will be considered -inf (i.e. not lower
-    bounded).
+    Any bound below this value will be considered -inf, i.e. not lower bounded.
     """
 
     ipopt_nlp_upper_bound_inf = +0.9 * infty
     """
-    Any bound greater or this value will be considered +inf (i.e. not upper
-    bounded).
+    Any bound above this value will be considered +inf, i.e. not upper bounded.
     """
 
     ipopt_print_level = 0  # default: 5
     """
-    Output verbosity level.
-
-    Integer between 0 and 12.
+    Output verbosity level between 0 and 12.
     """
 
     ipopt_warm_start_init_point = 'yes'  # default: 'no'
     """
-    Indicates whether this optimization should use a warm start initialization,
+    Indicates whether the optimization should use warm start initialization,
     where values of primal and dual variables are given (e.g. from a previous
     optimization of a related problem).
     """
 
-    def __init__(self):
+    def __init__(self, solver='ipopt', options=None):
         assert CASADI_FOUND, "CasADi not found"
+        if options is not None:
+            for option in options:
+                self.__setattr__('ipopt_%s' % option, options[option])
         self.cons_exprs = []
         self.cons_index = {}
         self.cons_lbounds = []
@@ -465,6 +455,7 @@ class NonlinearProgram(object):
         self.cost_function = 0
         self.initvals = []
         self.solver = None
+        self.solver_name = solver
         self.var_index = {}
         self.var_lbounds = []
         self.var_symbols = []
@@ -641,27 +632,21 @@ class NonlinearProgram(object):
             self.cons_lbounds[i + j] = lb[j]
             self.cons_ubounds[i + j] = ub[j]
 
-    def create_solver(self, solver='ipopt'):
+    def create_solver(self):
         """
         Create a new nonlinear solver.
-
-        Parameters
-        ----------
-        solver : string
-            Solver name. Use 'ipopt' for an interior point method or 'sqpmethod'
-            for sequential quadratic programming.
         """
         problem = {
             'f': self.cost_function,
             'x': vertcat(*self.var_symbols),
             'g': vertcat(*self.cons_exprs)}
         options = {}
-        if solver in ['scpgen', 'sqpmethod']:
+        if self.solver_name in ['scpgen', 'sqpmethod']:
             options.update({
                 'qpsol': "qpoases",
                 'qpsol_options': {"printLevel": "none"},
             })
-        elif solver == 'ipopt':
+        elif self.solver_name == 'ipopt':
             options.update({
                 'expand': self.casadi_expand,
                 'ipopt.fast_step_computation': self.ipopt_fast_step_computation,
@@ -677,7 +662,7 @@ class NonlinearProgram(object):
                 'ipopt.warm_start_init_point': self.ipopt_warm_start_init_point,
                 'verbose': False
             })
-        self.solver = nlpsol('solver', solver, problem, options)
+        self.solver = nlpsol('solver', self.solver_name, problem, options)
 
     def solve(self):
         """
