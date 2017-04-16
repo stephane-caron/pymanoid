@@ -237,7 +237,7 @@ class Body(object):
         Roll-pitch-yaw angles.
 
         They correspond to Euleur angles for the sequence (1, 2, 3). See
-        [Die+06]_ for details.
+        [Diebel06]_ for details.
         """
         return rpy_from_quat(self.quat)
 

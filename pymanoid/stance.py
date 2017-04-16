@@ -94,7 +94,7 @@ class Stance(ContactSet):
     def dist_to_sep_edge(self, com):
         """
         Algebraic distance of a COM position to the edge of the
-        static-equilibrium polygon [BL08]_.
+        static-equilibrium polygon.
 
         Parameters
         ----------

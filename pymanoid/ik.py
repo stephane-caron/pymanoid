@@ -39,7 +39,7 @@ class IKSolver(Process):
     active_dofs : list of integers
         List of DOFs updated by the IK solver.
     doflim_gain : real value between 0 and 1
-        DOF-limit gain as described in [Kan+12]_. In `this implementation
+        DOF-limit gain as described in [Kanoun12]_. In `this implementation
         <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
         between zero and one.
 
@@ -260,7 +260,7 @@ class IKSolver(Process):
         -----
         This is a variation of the QP from
         :func:`pymanoid.ik.IKSolver.compute_velocity_fast` that was reported in
-        Equation (10) of [Noz+16]_. DOF limits are better taken care of by
+        Equation (10) of [Nozawa16]_. DOF limits are better taken care of by
         margin variables, but the variable count doubles and the QP takes
         roughly 50% more time to solve.
         """

@@ -21,7 +21,7 @@
 This module mostly imports top-level rotation functions from OpenRAVE in order
 to make them visible in pymanoid. Conversions to and from roll-pitch-yaw (in
 humanoid-robotics convention: with an upward yaw axis) were adapted from
-[Die+06]_.
+[Diebel06]_.
 """
 
 from math import asin, atan2, cos, sin

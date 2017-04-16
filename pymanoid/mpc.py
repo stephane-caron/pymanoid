@@ -138,7 +138,7 @@ class LinearPredictiveControl(object):
 
         Notes
         -----
-        See [Aud+14]_ for details on the matrices :math:`\\Phi` and
+        See [Audren14]_ for details on the matrices :math:`\\Phi` and
         :math:`\\Psi`, as we use similar notations below.
         """
         t_build_start = time()

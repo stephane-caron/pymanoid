@@ -413,9 +413,9 @@ class Robot(object):
         Notes
         -----
         This function applies the unit-vector method described by Walker & Orin
-        in [WO82]_. It is not efficient, so if you are looking for performance,
-        you should consider more recent libraries such as `pinocchio
-        <https://github.com/stack-of-tasks/pinocchio>`_ or `RBDyn
+        in [Walker82]_. It is not efficient, so if you are looking for
+        performance, you should consider more recent libraries such as
+        `pinocchio <https://github.com/stack-of-tasks/pinocchio>`_ or `RBDyn
         <https://github.com/jrl-umi3218/RBDyn>`_.
         """
         M = zeros((self.nb_dofs, self.nb_dofs))
@@ -428,7 +428,7 @@ class Robot(object):
     def compute_inverse_dynamics(self, qdd=None, external_torque=None):
         """
         Wrapper around OpenRAVE's inverse dynamics function, which implements
-        the Recursive Newton-Euler algorithm by Walker & Orin [WO82]_. It
+        the Recursive Newton-Euler algorithm by Walker & Orin [Walker82]_. It
         returns the three terms :math:`t_m`, :math:`t_c` and :math:`t_g` such
         that:
 
@@ -1220,9 +1220,9 @@ class Humanoid(Robot):
 
         Notes
         -----
-        See [SB04]_ for an excellent introduction to the concepts of ZMP and
-        center of pressure. See [CPN17]_ for the more general definition of ZMP
-        support areas in arbitrary planes.
+        See [Sardain04]_ for an excellent introduction to the concepts of ZMP
+        and center of pressure. See [Caron17]_ for the more general definition
+        of ZMP support areas in arbitrary planes.
         """
         p_O = origin if origin is not None else zeros(3)
         n = normal if normal is not None else array([0, 0, 1])

@@ -46,7 +46,7 @@ def compute_chebyshev_center(A, b):
 
     Notes
     -----
-    The Chebyshev center is discussed in [BV04]_, Section 4.3.1, p. 148.
+    The Chebyshev center is discussed in [Boyd04]_, Section 4.3.1, p. 148.
     """
     cost = zeros(A.shape[1] + 1)
     cost[-1] = -1.
@@ -264,7 +264,7 @@ def project_polytope(ineq, eq, proj, method='cdd'):
 def project_polytope_bretl(ineq, eq, proj, solver='glpk', max_radius=42.):
     """
     Project a polytope into a 2D polygon using the incremental projection
-    algorithm from [BL08]_. The 2D affine projection :math:`y = E x + f` is
+    algorithm from [Bretl08]_. The 2D affine projection :math:`y = E x + f` is
     applied to the polyhedron defined by:
 
     .. math::

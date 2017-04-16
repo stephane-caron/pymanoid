@@ -182,7 +182,7 @@ class Contact(Box):
             F w \leq 0
 
         where `w` is the contact wrench at the contact point (``self.p``) in the
-        world frame. See [CPN15]_ for the derivation of the formula for `F`.
+        world frame. See [Caron15]_ for the derivation of the formula for `F`.
         """
         X, Y = self.shape
         mu = self.friction / sqrt(2)  # inner approximation
@@ -435,10 +435,10 @@ class ContactSet(object):
 
         Notes
         -----
-        The method 'bretl' is adapted from in [BL08]_ where the
+        The method 'bretl' is adapted from in [Bretl08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN17]_. See the
-        Appendix from [CK16]_ for a performance comparison.
+        to the double-description approach described in [Caron17]_. See the
+        Appendix from [Caron16]_ for a performance comparison.
         """
         if method == 'hull':
             A_O = self.compute_wrench_face([0, 0, 0])
@@ -449,7 +449,7 @@ class ContactSet(object):
         G = self.compute_grasp_matrix(p)
         F = block_diag(*[contact.wrench_face for contact in self.contacts])
         mass = 42.  # [kg]
-        # mass has no effect on the output polygon, see Section IV.B in [CK16]_
+        # mass has no effect on the output polygon, see IV.B in [Caron16]_
         E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
         f = array([p[0], p[1]])
         return project_polytope(
@@ -478,10 +478,10 @@ class ContactSet(object):
 
         Notes
         -----
-        The method 'bretl' is adapted from in [BL08]_ where the
+        The method 'bretl' is adapted from in [Bretl08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [CPN17]_. See the
-        Appendix from [CK16]_ for a performance comparison.
+        to the double-description approach described in [Caron17]_. See the
+        Appendix from [Caron16]_ for a performance comparison.
         """
         z_com, z_zmp = com[2], plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
@@ -525,11 +525,11 @@ class ContactSet(object):
         Notes
         -----
         The method is based on a rewriting of the CWC formula, followed by a 2D
-        convex hull on dual vertices. The algorithm is described in [CK16]_.
+        convex hull on dual vertices. The algorithm is described in [Caron16]_.
 
         When ``com`` is a list of vertices, the returned cone corresponds to COM
         accelerations that are feasible from *all* COM located inside the
-        polytope. See [CK16]_ for details on this conservative criterion.
+        polytope. See [Caron16]_ for details on this conservative criterion.
         """
         com_vertices = [com] if type(com) is not list else com
         CWC_O = self.compute_wrench_face([0., 0., 0.])

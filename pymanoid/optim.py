@@ -121,7 +121,8 @@ try:
             \\end{eqnarray}
 
         using the `quadprog <https://pypi.python.org/pypi/quadprog/>`_ QP
-        solver, which implements the Goldfarb-Idnani dual algorithm [GI83]_.
+        solver, which implements the Goldfarb-Idnani dual algorithm
+        [Goldfarb83]_.
 
         Parameters
         ----------
