@@ -20,7 +20,7 @@
 from numpy import arange, dot, hstack
 from openravepy import InterpolateQuatSlerp as quat_slerp
 
-from draw import draw_line, draw_point
+from draw import draw_trajectory
 from misc import NDPolynomial
 from rotations import rotation_matrix_from_quat
 
@@ -175,6 +175,7 @@ class PoseInterpolator(object):
 class LinearPoseInterpolator(PoseInterpolator):
 
     def __init__(self, start_pose, end_pose):
+        assert len(start_pose) == len(end_pose) == 7
         super(LinearPoseInterpolator, self).__init__(start_pose, end_pose)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
@@ -183,15 +184,38 @@ class LinearPoseInterpolator(PoseInterpolator):
         return self.start_pos + x * self.delta_pos
 
 
+class LinearPosInterpolator(LinearPoseInterpolator):
+
+    def __init__(self, start_pos, end_pos):
+        assert len(start_pos) == len(end_pos) == 3
+        self.delta_pos = end_pos - start_pos
+        self.start_pos = start_pos
+
+    def __call__(self, x):
+        return self.eval_pos(x)
+
+
 class QuadraticPoseInterpolator(PoseInterpolator):
 
     def __init__(self, start_pose, end_pose):
+        assert len(start_pose) == len(end_pose) == 7
         super(QuadraticPoseInterpolator, self).__init__(start_pose, end_pose)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
     def eval_pos(self, x):
         return self.start_pos + x ** 2 * (3 - 2 * x) * self.delta_pos
+
+
+class QuadraticPosInterpolator(QuadraticPoseInterpolator):
+
+    def __init__(self, start_pos, end_pos):
+        assert len(start_pos) == len(end_pos) == 3
+        self.delta_pos = end_pos - start_pos
+        self.start_pos = start_pos
+
+    def __call__(self, x):
+        return self.eval_pos(x)
 
 
 class SwingFootInterpolator(PoseInterpolator):
@@ -209,7 +233,7 @@ class SwingFootInterpolator(PoseInterpolator):
     def eval_pos(self, x):
         return self.poly(x)
 
-    def draw(self, nb_segments=25, color='b'):
+    def draw(self, nb_segments=15, color='b'):
         """
         Draw the interpolated foot path.
 
@@ -227,10 +251,5 @@ class SwingFootInterpolator(PoseInterpolator):
             otherwise the drawn object will vanish instantly.
         """
         dx = 1. / nb_segments
-        handles = [draw_point(self.poly(0), color='m', pointsize=0.007)]
-        for x in arange(dx, 1. + dx, dx):
-            handles.append(draw_point(
-                self.poly(x), color='b', pointsize=0.01))
-            handles.append(draw_line(
-                self.poly(x - dx), self.poly(x), color='b', linewidth=3))
-        return handles
+        points = [self.poly(x) for x in arange(0., 1. + dx, dx)]
+        return draw_trajectory(points, color=color)
