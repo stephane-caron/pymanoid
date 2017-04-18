@@ -171,17 +171,13 @@ class COMStepTransit(object):
             self.nlp.add_equality_constraint(p_next, p_k)
             self.nlp.add_equality_constraint(v_next, v_k)
 
-        p_last, v_last, z_last = p_k, v_k, z_k
+        p_last, v_last = p_k, v_k
         cp_last = p_last + v_last / omega + gravity / omega2
         cp_error = cp_last - cp_target
-        com_error = p_last - end_com
-        self.nlp.add_equality_constraint(z_last, self.cp_target)
         self.nlp.extend_cost(
             self.weights['match_duration'] * (T_total - self.duration) ** 2)
         self.nlp.extend_cost(
             self.weights['capture_point'] * casadi.dot(cp_error, cp_error))
-        self.nlp.extend_cost(
-            self.weights['end_com'] * casadi.dot(com_error, com_error))
         self.nlp.create_solver()
 
     def add_com_height_constraint(self, p, lb=0.8 - 0.2, ub=0.8 + 0.2):
