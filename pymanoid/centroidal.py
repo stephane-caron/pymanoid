@@ -184,7 +184,7 @@ class COMStepTransit(object):
             self.weights['end_com'] * casadi.dot(com_error, com_error))
         self.nlp.create_solver()
 
-    def add_com_height_constraint(self, p, lb=0.75, ub=1.25):
+    def add_com_height_constraint(self, p, lb=0.8 - 0.2, ub=0.8 + 0.2):
         dist = casadi.dot(p - self.foothold.p, self.foothold.n)
         self.nlp.add_constraint(dist, lb=[lb], ub=[ub])
 
