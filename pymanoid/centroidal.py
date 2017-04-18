@@ -41,10 +41,10 @@ class COMStepTransit(object):
     solution is applicable over arbitrary terrains.
 
     Implements a short-sighted optimization with a DCM boundedness constraint,
-    defined within the floating-base inverted pendulum (FIP) [Caron17]_ of
-    constant :math:`\\omega`. This model is e.g. used in the `nonlinear
-    predictive controller <https://github.com/stephane-caron/dynamic-walking>`_
-    of [Caron17]_ for dynamic walking over rough terrains.
+    defined within the floating-base inverted pendulum (FIP) of constant
+    :math:`\\omega`. This approach is used in the `nonlinear predictive
+    controller <https://github.com/stephane-caron/dynamic-walking>`_ of
+    [Caron17]_ for dynamic walking over rough terrains.
 
     Parameters
     ----------
@@ -57,7 +57,7 @@ class COMStepTransit(object):
     foothold : Contact
         Location of the stance foot contact.
     omega : scalar
-        Constant of the floating-base inverted pendulum (c.f. [Caron17]_).
+        Constant of the floating-base inverted pendulum.
     dcm_target : (3,) array
         Desired terminal divergent-component of COM motion.
     nb_steps : int
@@ -119,6 +119,9 @@ class COMStepTransit(object):
             self.cum_dT.append(t)
 
     def build(self):
+        """
+        Build the internal nonlinear program (NLP).
+        """
         self.nlp = NonlinearProgram(solver='ipopt', options=self.nlp_options)
         foothold, omega2, omega = self.foothold, self.omega2, self.omega
         dcm_target = list(self.dcm_target)
@@ -244,6 +247,9 @@ class COMStepTransit(object):
                 slackness, lb=[-self.nlp.infty], ub=[-0.0005])
 
     def solve(self):
+        """
+        Solve the nonlinear program and store the solution, if found.
+        """
         t_solve_start = time()
         X = self.nlp.solve()
         self.solve_time = time() - t_solve_start
@@ -256,22 +262,45 @@ class COMStepTransit(object):
         self.pd_last = X[-3:]
 
     def eval_state(self, t):
+        """
+        Evaluate the state (COM, COM velocity, ZMP) at time `t`.
+
+        Parameters
+        ----------
+        t : scalar
+            Time over the solution trajectory.
+
+        Returns
+        -------
+        p : (3,) array
+            COM position at time t.
+        pd : (3,) array
+            COM velocity at time t.
+        z : (3,) array
+            Floating-base ZMP at time t.
+        """
         omega2, omega = self.omega2, self.omega
         k = bisect_left(self.cum_dT, t)
         t0 = self.cum_dT[k]
-        p0, v0, z0 = self.P[k], self.V[k], self.Z[k]
-        u0 = omega2 * (p0 - z0) + gravity
+        p0, pd0, z = self.P[k], self.V[k], self.Z[k]
+        pdd = omega2 * (p0 - z) + gravity
         dt = t - t0
-        p = p0 + v0 / omega * sinh(omega * dt) \
-            + u0 / omega2 * (cosh(omega * dt) - 1.)
-        v = v0 * cosh(omega * dt) + u0 / omega * sinh(omega * dt)
-        return p, v, z0
+        p = p0 + pd0 / omega * sinh(omega * dt) \
+            + pdd / omega2 * (cosh(omega * dt) - 1.)
+        pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
+        return p, pd, z
 
     def __call__(self, t):
+        """
+        Evaluate the COM position at time `t` of the solution trajectory.
+        """
         p, _, _ = self.eval_state(t)
         return p
 
     def print_results(self):
+        """
+        Print various statistics on NLP resolution.
+        """
         dcm_last = self.p_last + self.pd_last / self.omega
         dcm_error = norm(dcm_last - self.dcm_target)
         print "\n"
