@@ -23,7 +23,7 @@ from bisect import bisect_left
 from numpy import cosh, sinh
 from time import time
 
-from draw import draw_trajectory
+from draw import draw_line, draw_point, draw_trajectory
 from misc import norm
 from optim import NonlinearProgram
 from sim import gravity
@@ -257,4 +257,16 @@ class COMStepTransit(object):
             OpenRAVE graphical handle. Must be stored in some variable,
             otherwise the drawn object will vanish instantly.
         """
-        return draw_trajectory(self.P, color=color)
+        handles = draw_trajectory(self.P, color=color)
+        com_target = self.cp_target - gravity / self.omega2
+        com_last = self.p_last
+        cp_last = self.p_last + self.v_last / self.omega + gravity / self.omega2
+        handles.extend([
+            draw_point(com_target, color='b', pointsize=0.025),
+            draw_point(self.cp_target, color='b', pointsize=0.025),
+            draw_line(com_target, self.cp_target, color='b', linewidth=1),
+            draw_point(com_last, color='g', pointsize=0.025),
+            draw_point(cp_last, color='g', pointsize=0.025),
+            draw_line(com_last, cp_last, color='g', linewidth=1),
+        ])
+        return handles
