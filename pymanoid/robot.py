@@ -860,20 +860,31 @@ class Humanoid(Robot):
 
     def compute_com_acceleration(self, qdd):
         """
-        Compute the acceleration :math:`\\ddot{p}_G` of the center of mass.
+        Compute the COM acceleration from joint accelerations :math:`\\ddot{q}`.
 
         Parameters
         ----------
         qdd : array
             Vector of DOF accelerations.
 
-        Note
-        ----
-        This function is not optimized.
+        Returns
+        -------
+        comdd : (3,) array
+            COM acceleration.
         """
-        J = self.compute_com_jacobian()
-        H = self.compute_com_hessian()
-        return dot(J, qdd) + dot(self.qd, dot(H, self.qd))
+        Pd = zeros(3)  # rate-of-change of the linear momentum
+        link_velocities = self.rave.GetLinkVelocities()
+        link_accelerations = self.rave.GetLinkAccelerations(qdd)
+        for link in self.rave.GetLinks():
+            R = link.GetTransform()[0:3, 0:3]
+            i = link.GetIndex()
+            m = link.GetMass()
+            omega = link_velocities[i][3:]
+            omegad = link_accelerations[i][3:]
+            pdd = link_accelerations[i][:3]
+            r = dot(R, link.GetLocalCOM())
+            Pd += m * (pdd + cross(omega, cross(omega, r)) + cross(omegad, r))
+        return Pd / self.mass
 
     def compute_com_hessian(self):
         """
@@ -1137,10 +1148,10 @@ class Humanoid(Robot):
         link_velocities = self.rave.GetLinkVelocities()
         link_accelerations = self.rave.GetLinkAccelerations(qdd)
         for link in self.rave.GetLinks():
-            i = link.GetIndex()
             I_local = link.GetLocalInertia()
             R = link.GetTransform()[0:3, 0:3]
             c = link.GetGlobalCOM()
+            i = link.GetIndex()
             m = link.GetMass()
             omega = link_velocities[i][3:]
             omegad = link_accelerations[i][3:]

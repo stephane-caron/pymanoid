@@ -17,14 +17,53 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import hstack, zeros
+from numpy import exp, hstack, zeros
 from time import time
 
 from body import PointMass
-from draw import draw_line, draw_polygon, draw_polyhedron, draw_wrench
+from draw import draw_force, draw_wrench
+from draw import draw_line, draw_polygon, draw_polyhedron
 from draw import matplotlib_to_rgb
 from misc import norm
 from sim import Process
+
+
+DEFAULT_FORCE_SCALE = 0.0025  # [m] / [N]
+
+
+class COMAccelDrawer(Process):
+
+    """
+    Draw COM acceleration from the robot model.
+
+    Parameters
+    ----------
+    robot : Humanoid
+        Humanoid robot model.
+    scale : scalar, optional
+        Force-to-distance conversion ratio in [m] / [N].
+    delay : int, optional
+        Delay constant, expressed in number of control cycles.
+    """
+
+    def __init__(self, robot, scale=None, delay=1):
+        super(COMAccelDrawer, self).__init__()
+        scale = DEFAULT_FORCE_SCALE if scale is None else scale
+        self.delay = delay
+        self.handle = None
+        self.qd_prev = robot.qd
+        self.qdd_prev = zeros(robot.qd.shape)
+        self.robot = robot
+        self.scale = scale
+
+    def on_tick(self, sim):
+        qd = self.robot.qd
+        qdd_disc = (qd - self.qd_prev) / sim.dt
+        self.qd_prev = qd
+        qdd = qdd_disc + exp(-1. / self.delay) * (self.qdd_prev - qdd_disc)
+        com = self.robot.com
+        Pd = self.robot.mass * self.robot.compute_com_acceleration(qdd)
+        self.handle = draw_force(com, Pd, scale=self.scale)
 
 
 class WrenchDrawer(Process):
@@ -34,16 +73,15 @@ class WrenchDrawer(Process):
 
     Parameters
     ----------
-    scale : scalar
+    scale : scalar, optional
         Force-to-distance conversion ratio in [m] / [N].
     """
 
-    DEFAULT_SCALE = 0.0025
     KO_COLOR = [.8, .4, .4]
 
     def __init__(self, scale=None):
         super(WrenchDrawer, self).__init__()
-        scale = self.DEFAULT_SCALE if scale is None else scale
+        scale = DEFAULT_FORCE_SCALE if scale is None else scale
         self.handles = []
         self.last_bkgnd_switch = None
         self.nb_fails = 0
@@ -85,7 +123,7 @@ class PointMassWrenchDrawer(WrenchDrawer):
         Point-mass to which forces are applied.
     contact_set : ContactSet
         Set of contacts providing interaction forces.
-    scale : scalar
+    scale : scalar, optional
         Force-to-distance conversion ratio in [m] / [N].
     """
 
@@ -117,22 +155,27 @@ class RobotWrenchDrawer(WrenchDrawer):
     ----------
     robot : Humanoid
         Humanoid robot model.
-    scale : scalar
+    scale : scalar, optional
         Force-to-distance conversion ratio in [m] / [N].
+    delay : int, optional
+        Delay constant, expressed in number of control cycles.
     """
 
-    def __init__(self, robot, scale=None):
+    def __init__(self, robot, scale=None, delay=1):
         super(RobotWrenchDrawer, self).__init__(scale)
-        self.robot = robot
+        self.delay = delay
         self.qd_prev = robot.qd
+        self.qdd_prev = zeros(robot.qd.shape)
+        self.robot = robot
 
     def find_supporting_wrenches(self, sim):
-        p = zeros(3)
+        o = zeros(3)
         qd = self.robot.qd
-        qdd = (qd - self.qd_prev) / sim.dt
+        qdd_disc = (qd - self.qd_prev) / sim.dt
         self.qd_prev = qd
-        contact_wrench = self.robot.compute_net_contact_wrench(qdd, p)
-        support = self.robot.stance.find_supporting_wrenches(contact_wrench, p)
+        qdd = qdd_disc + exp(-1. / self.delay) * (self.qdd_prev - qdd_disc)
+        contact_wrench = self.robot.compute_net_contact_wrench(qdd, o)
+        support = self.robot.stance.find_supporting_wrenches(contact_wrench, o)
         return support
 
 
