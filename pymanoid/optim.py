@@ -404,14 +404,14 @@ class NonlinearProgram(object):
     Linear solver used for step computations.
     """
 
-    ipopt_max_cpu_time = 0.1  # [s]
+    ipopt_max_cpu_time = 10.  # [s]
     """
     Maximum number of CPU seconds. Note that this parameter corresponds to
     processor time, not wall time. For a CPU with N cores, the latter can be as
     much as N times lower than the former.
     """
 
-    ipopt_max_iter = 100
+    ipopt_max_iter = 2000
     """
     Maximum number of iterations.
     """

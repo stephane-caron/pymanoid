@@ -73,30 +73,29 @@ class COMStepTransit(object):
     """
 
     weights = {
-        'match_duration': 1.,
-        'capture_point': 1e-2,
-        'end_com': 1e-4,
-        'min_com_accel': 1e-4,
-        'center_zmp': 1e-6,
+        'match_dcm': 1.,
+        'match_duration': 1e-2,
+        'center_zmp': 1e-4,
+        'minimize_comdd': 1e-8,
     }
 
-    dT_max = 0.1  # as low as possible
-    dT_min = 0.03   # as high as possible, but caution when > sim.dt
-    p_max = [+100, +100, +100]  # [m]
-    p_min = [-100, -100, -100]  # [m]
-    u_max = [+100, +100, +100]  # [m] / [s]^2
-    u_min = [-100, -100, -100]  # [m] / [s]^2
-    v_max = [+10, +10, +10]  # [m] / [s]
-    v_min = [-10, -10, -10]  # [m] / [s]
+    dT_max = 0.2                  # [s]
+    dT_min = 0.03                 # [s], caution when > sim.dt
+    p_max = [+100, +100, +100]    # [m]
+    p_min = [-100, -100, -100]    # [m]
+    pd_max = [+10, +10, +10]      # [m] / [s]
+    pd_min = [-10, -10, -10]      # [m] / [s]
+    pdd_max = [+100, +100, +100]  # [m] / [s]^2
+    pdd_min = [-100, -100, -100]  # [m] / [s]^2
 
-    dT_init = .5 * (dT_min + dT_max)
-
-    def __init__(self, duration, start_com, start_comd, end_com, end_comd,
-                 foothold, omega2, nb_steps, nlp_options=None):
+    def __init__(self, duration, start_com, start_comd, dcm_target, foothold,
+                 omega2, nb_steps, nlp_options=None):
+        dT_init = duration / nb_steps
         omega = sqrt(omega2)
-        self.cp_target = end_com + end_comd / omega + gravity / omega2
+        assert self.dT_min < dT_init < self.dT_max
+        self.dcm_target = dcm_target
+        self.dT_init = duration / nb_steps
         self.duration = duration
-        self.end_com = end_com
         self.foothold = foothold
         self.nb_steps = nb_steps
         self.nlp_options = nlp_options if nlp_options is not None else {}
@@ -123,20 +122,20 @@ class COMStepTransit(object):
     def build(self):
         self.nlp = NonlinearProgram(solver='ipopt', options=self.nlp_options)
         foothold, omega2, omega = self.foothold, self.omega2, self.omega
-        cp_target = list(self.cp_target)
-        end_com = list(self.end_com)
+        dcm_target = list(self.dcm_target)
         start_com = list(self.start_com)
         start_comd = list(self.start_comd)
         p_0 = self.nlp.new_constant('p_0', 3, start_com)
-        v_0 = self.nlp.new_constant('v_0', 3, start_comd)
-        p_k, v_k = p_0, v_0
+        pd_0 = self.nlp.new_constant('pd_0', 3, start_comd)
+        p_k, pd_k = p_0, pd_0
         T_total = 0
 
         for k in xrange(self.nb_steps):
-            z_min = list(foothold.p - [1, 1, 1])
-            z_max = list(foothold.p + [1, 1, 1])
-            u_k = self.nlp.new_variable(
-                'u_%d' % k, 3, init=[0, 0, 0], lb=self.u_min, ub=self.u_max)
+            z_min = list(foothold.p - [0.42, 0.42, 0.42])
+            z_max = list(foothold.p + [0.42, 0.42, 0.42])
+            pdd_k = self.nlp.new_variable(
+                'pdd_%d' % k, 3, init=[0, 0, 0], lb=self.pdd_min,
+                ub=self.pdd_max)
             z_k = self.nlp.new_variable(
                 'z_%d' % k, 3, init=list(foothold.p), lb=z_min, ub=z_max)
             dT_k = self.nlp.new_variable(
@@ -145,54 +144,96 @@ class COMStepTransit(object):
 
             CZ_k = z_k - foothold.p
             self.nlp.add_equality_constraint(
-                u_k, self.omega2 * (p_k - z_k) + gravity)
+                pdd_k, self.omega2 * (p_k - z_k) + gravity)
             self.nlp.extend_cost(
                 self.weights['center_zmp'] * casadi.dot(CZ_k, CZ_k) * dT_k)
             self.nlp.extend_cost(
-                self.weights['min_com_accel'] * casadi.dot(u_k, u_k) * dT_k)
+                self.weights['minimize_comdd'] *
+                casadi.dot(pdd_k, pdd_k) * dT_k)
 
             # Exact integration by solving the first-order ODE
-            p_next = p_k + v_k / omega * casadi.sinh(omega * dT_k) \
-                + u_k / omega2 * (casadi.cosh(omega * dT_k) - 1.)
-            v_next = v_k * casadi.cosh(omega * dT_k) \
-                + u_k / omega * casadi.sinh(omega * dT_k)
+            p_next = p_k + pd_k / omega * casadi.sinh(omega * dT_k) \
+                + pdd_k / omega2 * (casadi.cosh(omega * dT_k) - 1.)
+            pd_next = pd_k * casadi.cosh(omega * dT_k) \
+                + pdd_k / omega * casadi.sinh(omega * dT_k)
             T_total = T_total + dT_k
 
-            self.add_com_height_constraint(p_k)
+            self.add_com_height_constraint(p_k, ref_height=0.8, max_dev=0.2)
             self.add_friction_constraint(p_k, z_k)
             self.add_linear_cop_constraints(p_k, z_k)
 
             p_k = self.nlp.new_variable(
                 'p_%d' % (k + 1), 3, init=start_com, lb=self.p_min,
                 ub=self.p_max)
-            v_k = self.nlp.new_variable(
-                'v_%d' % (k + 1), 3, init=start_comd, lb=self.v_min,
-                ub=self.v_max)
+            pd_k = self.nlp.new_variable(
+                'pd_%d' % (k + 1), 3, init=start_comd, lb=self.pd_min,
+                ub=self.pd_max)
             self.nlp.add_equality_constraint(p_next, p_k)
-            self.nlp.add_equality_constraint(v_next, v_k)
+            self.nlp.add_equality_constraint(pd_next, pd_k)
 
-        p_last, v_last = p_k, v_k
-        cp_last = p_last + v_last / omega + gravity / omega2
-        cp_error = cp_last - cp_target
+        p_last, pd_last = p_k, pd_k
+        dcm_last = p_last + pd_last / omega
+        dcm_error = dcm_last - dcm_target
+        duration_error = T_total - self.duration
         self.nlp.extend_cost(
-            self.weights['match_duration'] * (T_total - self.duration) ** 2)
+            self.weights['match_dcm'] * casadi.dot(dcm_error, dcm_error))
         self.nlp.extend_cost(
-            self.weights['capture_point'] * casadi.dot(cp_error, cp_error))
+            self.weights['match_duration'] * duration_error ** 2)
         self.nlp.create_solver()
 
-    def add_com_height_constraint(self, p, lb=0.8 - 0.2, ub=0.8 + 0.2):
+    def add_com_height_constraint(self, p, ref_height, max_dev):
+        """
+        Constraint the COM to deviate by at most `max_dev` from `ref_height`.
+
+        Parameters
+        ----------
+        ref_height : scalar
+            Reference COM height.
+        max_dev : scalar
+            Maximum distance allowed from the reference.
+
+        Note
+        ----
+        The height is measured along the z-axis of the contact frame here, not
+        of the world frame's.
+        """
+        lb, ub = ref_height - max_dev, ref_height + max_dev
         dist = casadi.dot(p - self.foothold.p, self.foothold.n)
         self.nlp.add_constraint(dist, lb=[lb], ub=[ub])
 
     def add_friction_constraint(self, p, z):
+        """
+        Add a circular friction cone constraint for a COM located at `p` and a
+        (floating-base) ZMP located at `z`.
+
+        Parameters
+        ----------
+        p : casadi.MX
+            Symbol of COM position variable.
+        z : casadi.MX
+            Symbol of ZMP position variable.
+        """
         mu = self.foothold.friction
         ZG = p - z
         ZG2 = casadi.dot(ZG, ZG)
         ZGn2 = casadi.dot(ZG, self.foothold.n) ** 2
         slackness = ZG2 - (1 + mu ** 2) * ZGn2
-        self.nlp.add_constraint(slackness, lb=[-self.nlp.infty], ub=[0])
+        self.nlp.add_constraint(slackness, lb=[-self.nlp.infty], ub=[-0.005])
 
     def add_linear_cop_constraints(self, p, z, scaling=0.95):
+        """
+        Constraint the COP, located between the COM `p` and the (floating-base)
+        ZMP `z`, to lie inside the contact area.
+
+        Parameters
+        ----------
+        p : casadi.MX
+            Symbol of COM position variable.
+        z : casadi.MX
+            Symbol of ZMP position variable.
+        scaling : scalar, optional
+            Scaling factor between 0 and 1 applied to the contact area.
+        """
         GZ = z - p
         nb_vert = len(self.foothold.vertices)
         for (i, v) in enumerate(self.foothold.vertices):
@@ -213,7 +254,7 @@ class COMStepTransit(object):
         self.Z = Y[:, 9:12]
         self.dT = Y[:, 12]
         self.p_last = X[-6:-3]
-        self.v_last = X[-3:]
+        self.pd_last = X[-3:]
 
     def eval_state(self, t):
         omega2, omega = self.omega2, self.omega
@@ -233,14 +274,14 @@ class COMStepTransit(object):
         return p
 
     def print_results(self):
-        cp_last = self.p_last + self.v_last / self.omega + gravity / self.omega2
-        cp_error = norm(cp_last - self.cp_target)
+        dcm_last = self.p_last + self.pd_last / self.omega
+        dcm_error = norm(dcm_last - self.dcm_target)
         print "\n"
         print "%14s:  " % "dT's", [round(x, 3) for x in self.dT]
         print "%14s:  " % "dT_min", "%.3f s" % self.dT_min
         print "%14s:  " % "Desired TTHS", "%.3f s" % self.duration
         print "%14s:  " % "Achieved TTHS", "%.3f s" % sum(self.dT)
-        print "%14s:  " % "CP error", "%.3f cm" % (100 * cp_error)
+        print "%14s:  " % "DCM error", "%.3f cm" % (100 * dcm_error)
         print "%14s:  " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time)
         print "%14s:  " % "Iter. count", self.nlp.iter_count
         print "%14s:  " % "Status", self.nlp.return_status
@@ -262,13 +303,18 @@ class COMStepTransit(object):
             otherwise the drawn object will vanish instantly.
         """
         handles = draw_trajectory(self.P, color=color)
-        com_target = self.cp_target - gravity / self.omega2
+        handles.extend(draw_trajectory(self.Z, color='m'))
         com_last = self.p_last
-        cp_last = self.p_last + self.v_last / self.omega + gravity / self.omega2
+        dcm_last = self.p_last + self.pd_last / self.omega
+        cp_target = self.dcm_target + gravity / self.omega2
+        cp_last = dcm_last + gravity / self.omega2
+        for k in xrange(self.nb_steps):
+            p, z = self.P[k], self.Z[k]
+            handles.append(draw_line(z, p, color='c', linewidth=0.2))
         handles.extend([
-            draw_point(com_target, color='b', pointsize=0.025),
-            draw_point(self.cp_target, color='b', pointsize=0.025),
-            draw_line(com_target, self.cp_target, color='b', linewidth=1),
+            draw_point(self.dcm_target, color='b', pointsize=0.025),
+            draw_point(cp_target, color='b', pointsize=0.025),
+            draw_line(self.dcm_target, cp_target, color='b', linewidth=1),
             draw_point(com_last, color='g', pointsize=0.025),
             draw_point(cp_last, color='g', pointsize=0.025),
             draw_line(com_last, cp_last, color='g', linewidth=1),
