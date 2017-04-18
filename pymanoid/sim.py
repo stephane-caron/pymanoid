@@ -18,7 +18,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import openravepy
-import time
 
 from numpy import array
 from os import chmod, popen, system
@@ -26,6 +25,7 @@ from os import stat as fstat
 from re import search
 from stat import S_IEXEC
 from threading import Lock, Thread
+from time import sleep, time
 
 from misc import Statistics
 
@@ -117,6 +117,7 @@ class Simulation(object):
         self.lock = None
         self.processes = []
         self.nb_steps = 0
+        self.slowdown = None
         self.viewer = None
         self.watch_comp_times = False
         self.window_id = None
@@ -146,16 +147,18 @@ class Simulation(object):
             Number of simulation steps.
         """
         for _ in xrange(n):
-            t0 = time.time()
+            t0 = time()
             self._tick_processes()
-            rem_time = self.dt - (time.time() - t0)
+            rem_time = self.dt - (time() - t0)
             if __debug__ and self.watch_comp_times and rem_time < 0.:
                 print "Simulation warning: cycle time budget",
                 print "(%.1f ms) depleted" % (self.dt * 1000.)
             self._tick_extras()
-            rem_time = self.dt - (time.time() - t0)
+            rem_time = self.dt - (time() - t0)
             if rem_time > 1e-4:
-                time.sleep(rem_time)
+                sleep(rem_time)
+            if self.slowdown is not None and self.slowdown > 1.:
+                sleep((self.slowdown - 1.) * self.dt)
             self.nb_steps += 1
 
     def _tick_processes(self):
@@ -167,10 +170,10 @@ class Simulation(object):
                 raise AttributeError(most_likely_explanation)
             if not process.is_paused:
                 if process._log_comp_times:
-                    t0i = time.time()
+                    t0i = time()
                     process.on_tick(self)
                     pname = type(process).__name__
-                    self.log_comp_time(pname, time.time() - t0i)
+                    self.log_comp_time(pname, time() - t0i)
                 else:  # just do the thing
                     process.on_tick(self)
 
@@ -222,7 +225,7 @@ class Simulation(object):
         self.env.SetViewer(plugin)
         self.viewer = self.env.GetViewer()
         if self.viewer is None:  # seldom happens that GetViewer() is not
-            time.sleep(0.01)     # immediately available after SetViewer()
+            sleep(0.01)  # immediately available after SetViewer()
             self.viewer = self.env.GetViewer()
         self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
         self.set_camera_back(x=-3, y=0, z=0.7)
