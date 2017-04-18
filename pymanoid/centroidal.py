@@ -114,7 +114,7 @@ class COMStepTransit(object):
         self.build_time = t1 - t0
         self.solve_time = time() - t1
         #
-        self.cum_dT = [0.]
+        self.cum_dT = []
         t = 0.
         for k in xrange(self.nb_steps):
             t += self.dT[k]
