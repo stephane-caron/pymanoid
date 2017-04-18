@@ -40,12 +40,11 @@ class COMStepTransit(object):
     Compute a COM trajectory that transits from one footstep to the next. This
     solution is applicable over arbitrary terrains.
 
-    Implements a short-sighted optimization with a capture-point boundedness
-    constraint. The capture point is defined within the floating-base inverted
-    pendulum (FIP) [Caron17]_ of constant :math:`\\omega`. This model is e.g.
-    used in the `nonlinear predictive controller
-    <https://github.com/stephane-caron/dynamic-walking>`_ of [Caron17]_ for
-    dynamic walking over rough terrains.
+    Implements a short-sighted optimization with a DCM boundedness constraint,
+    defined within the floating-base inverted pendulum (FIP) [Caron17]_ of
+    constant :math:`\\omega`. This model is e.g. used in the `nonlinear
+    predictive controller <https://github.com/stephane-caron/dynamic-walking>`_
+    of [Caron17]_ for dynamic walking over rough terrains.
 
     Parameters
     ----------
@@ -59,8 +58,8 @@ class COMStepTransit(object):
         Location of the stance foot contact.
     omega : scalar
         Constant of the floating-base inverted pendulum (c.f. [Caron17]_).
-    cp_target : (3,) array
-        Desired terminal capture point.
+    dcm_target : (3,) array
+        Desired terminal divergent-component of COM motion.
     nb_steps : int
         Number of (variable-duration) discretization steps.
 
@@ -76,7 +75,7 @@ class COMStepTransit(object):
         'match_dcm': 1.,
         'match_duration': 1e-2,
         'center_zmp': 1e-4,
-        'minimize_comdd': 1e-8,
+        'minimize_comdd': 1e-6,
     }
 
     dT_max = 0.2                  # [s]
@@ -94,7 +93,7 @@ class COMStepTransit(object):
         omega = sqrt(omega2)
         assert self.dT_min < dT_init < self.dT_max
         self.dcm_target = dcm_target
-        self.dT_init = duration / nb_steps
+        self.dT_init = dT_init
         self.duration = duration
         self.foothold = foothold
         self.nb_steps = nb_steps
@@ -242,7 +241,7 @@ class COMStepTransit(object):
             v_next = v_next + (1. - scaling) * (self.foothold.p - v_next)
             slackness = casadi.dot(v_next - v, casadi.cross(v - p, GZ))
             self.nlp.add_constraint(
-                slackness, lb=[-self.nlp.infty], ub=[-0.005])
+                slackness, lb=[-self.nlp.infty], ub=[-0.0005])
 
     def solve(self):
         t_solve_start = time()
@@ -261,7 +260,6 @@ class COMStepTransit(object):
         k = bisect_left(self.cum_dT, t)
         t0 = self.cum_dT[k]
         p0, v0, z0 = self.P[k], self.V[k], self.Z[k]
-        return p0, v0, z0
         u0 = omega2 * (p0 - z0) + gravity
         dt = t - t0
         p = p0 + v0 / omega * sinh(omega * dt) \
