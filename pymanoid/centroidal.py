@@ -20,7 +20,7 @@
 import casadi
 
 from bisect import bisect_left
-from numpy import cosh, sinh
+from numpy import cosh, sinh, sqrt
 from time import time
 
 from draw import draw_line, draw_point, draw_trajectory
@@ -75,6 +75,7 @@ class COMStepTransit(object):
     weights = {
         'match_duration': 1.,
         'capture_point': 1e-2,
+        'end_com': 1e-4,
         'min_com_accel': 1e-4,
         'center_zmp': 1e-6,
     }
@@ -90,15 +91,17 @@ class COMStepTransit(object):
 
     dT_init = .5 * (dT_min + dT_max)
 
-    def __init__(self, duration, start_com, start_comd, foothold, omega,
-                 cp_target, nb_steps, nlp_options=None):
-        self.cp_target = cp_target
+    def __init__(self, duration, start_com, start_comd, end_com, end_comd,
+                 foothold, omega2, nb_steps, nlp_options=None):
+        omega = sqrt(omega2)
+        self.cp_target = end_com + end_comd / omega + gravity / omega2
         self.duration = duration
+        self.end_com = end_com
         self.foothold = foothold
         self.nb_steps = nb_steps
         self.nlp_options = nlp_options if nlp_options is not None else {}
         self.omega = omega
-        self.omega2 = omega**2
+        self.omega2 = omega2
         self.start_com = start_com
         self.start_comd = start_comd
         #
@@ -120,6 +123,8 @@ class COMStepTransit(object):
     def build(self):
         self.nlp = NonlinearProgram(solver='ipopt', options=self.nlp_options)
         foothold, omega2, omega = self.foothold, self.omega2, self.omega
+        cp_target = list(self.cp_target)
+        end_com = list(self.end_com)
         start_com = list(self.start_com)
         start_comd = list(self.start_comd)
         p_0 = self.nlp.new_constant('p_0', 3, start_com)
@@ -168,12 +173,15 @@ class COMStepTransit(object):
 
         p_last, v_last, z_last = p_k, v_k, z_k
         cp_last = p_last + v_last / omega + gravity / omega2
-        cp_error = cp_last - self.cp_target
+        cp_error = cp_last - cp_target
+        com_error = p_last - end_com
         self.nlp.add_equality_constraint(z_last, self.cp_target)
         self.nlp.extend_cost(
             self.weights['match_duration'] * (T_total - self.duration) ** 2)
         self.nlp.extend_cost(
             self.weights['capture_point'] * casadi.dot(cp_error, cp_error))
+        self.nlp.extend_cost(
+            self.weights['end_com'] * casadi.dot(com_error, com_error))
         self.nlp.create_solver()
 
     def add_com_height_constraint(self, p, lb=0.75, ub=1.25):
@@ -229,7 +237,7 @@ class COMStepTransit(object):
         return p
 
     def print_results(self):
-        cp_last = self.p_last + self.v_last / self.omega
+        cp_last = self.p_last + self.v_last / self.omega + gravity / self.omega2
         cp_error = norm(cp_last - self.cp_target)
         print "\n"
         print "%14s:  " % "dT's", [round(x, 3) for x in self.dT]
