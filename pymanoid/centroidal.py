@@ -78,7 +78,6 @@ class COMStepTransit(object):
         'minimize_comdd': 1e-6,
     }
 
-    dT_max = 0.2                  # [s]
     dT_min = 0.03                 # [s], caution when > sim.dt
     p_max = [+100, +100, +100]    # [m]
     p_min = [-100, -100, -100]    # [m]
@@ -90,10 +89,12 @@ class COMStepTransit(object):
     def __init__(self, duration, start_com, start_comd, dcm_target, foothold,
                  omega2, nb_steps, nlp_options=None):
         dT_init = duration / nb_steps
+        dT_max = 2 * dT_init
         omega = sqrt(omega2)
-        assert self.dT_min < dT_init < self.dT_max
+        assert self.dT_min < dT_init
         self.dcm_target = dcm_target
         self.dT_init = dT_init
+        self.dT_max = dT_max
         self.duration = duration
         self.foothold = foothold
         self.nb_steps = nb_steps
