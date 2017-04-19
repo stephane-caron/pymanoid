@@ -173,7 +173,7 @@ def draw_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
     return handles
 
 
-def draw_force(point, force, scale=0.005, linewidth=0.015):
+def draw_force(point, force, scale=0.0025, color='r', linewidth=0.015):
     """
     Draw a force acting at a given point.
 
@@ -197,7 +197,7 @@ def draw_force(point, force, scale=0.005, linewidth=0.015):
     f_scale = scale * force
     if dot(f_scale, f_scale) < 1e-6:
         return None
-    return draw_arrow(point, point + f_scale, color='r', linewidth=linewidth)
+    return draw_arrow(point, point + f_scale, color=color, linewidth=linewidth)
 
 
 def draw_line(start_point, end_point, color='g', linewidth=1.):
