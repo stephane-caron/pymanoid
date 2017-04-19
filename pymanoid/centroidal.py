@@ -281,7 +281,7 @@ class COMStepTransit(object):
         """
         omega2, omega = self.omega2, self.omega
         k = bisect_left(self.cum_dT, t)
-        t0 = self.cum_dT[k]
+        t0 = self.cum_dT[k - 1] if k > 0 else 0.
         p0, pd0, z = self.P[k], self.V[k], self.Z[k]
         pdd = omega2 * (p0 - z) + gravity
         dt = t - t0
