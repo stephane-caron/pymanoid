@@ -20,6 +20,7 @@
 
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import TransformStamped
+from numpy import hstack
 
 
 def PointStamped_from_pos(p, seq=None):
@@ -77,16 +78,18 @@ class ROSWrapper(object):
         Robot model.
     ignore_dofs : list of integers
         List of DOFs not updated by ROS.
+    tf_listener : tf.TransformListener
+        Running instance of tf listener.
     """
 
-    def __init__(self, robot, ignore_dofs=None):
+    def __init__(self, robot, ignore_dofs=None, tf_listener=None):
         import rospy  # not global, will be initialized by child script
         self.dof_mapping = type(robot).__dict__
         self.flyer_tf = None
         self.ignore_dofs = set() if ignore_dofs is None else ignore_dofs
         self.map_tf = None
         self.robot = robot
-        self.tf_listener = None
+        self.tf_listener = tf_listener
         self.zero_time = rospy.Time(0)
 
     def joint_state_callback(self, msg):
@@ -121,17 +124,23 @@ class ROSWrapper(object):
         import tf  # not global, will be initialized by child script
         self.flyer_tf = flyer_tf
         self.map_tf = map_tf
-        self.tf_listener = tf.TransformListener()
+        if self.tf_listener is None:
+            self.tf_listener = tf.TransformListener()
+
+    def get_free_flyer_pose(self):
+        try:
+            pos, rq = self.tf_listener.lookupTransform(
+                self.map_tf, self.flyer_tf, self.zero_time)
+            quat = [rq[3], rq[0], rq[1], rq[2]]  # ROS quat is (x, y, z, w)
+            return hstack([quat, pos])
+        except Exception as e:
+            print "get_free_flyer_tf():", e
+        return None
 
     def update_free_flyer(self):
         """
         Update free-flyer coordinates.
         """
-        try:
-            pos, rq = self.tf_listener.lookupTransform(
-                self.map_tf, self.flyer_tf, self.zero_time)
-            quat = [rq[3], rq[0], rq[1], rq[2]]  # ROS quat is (x, y, z, w)
-            self.robot.set_pos(pos)
-            self.robot.set_quat(quat)
-        except Exception as e:
-            print "update_free_flyer():", e
+        pose = self.get_free_flyer_pose()
+        if pose is not None:
+            self.robot.set_pose(pose)
