@@ -69,20 +69,17 @@ def TransformStamped_from_pose(pose, seq=None):
 class ROSWrapper(object):
 
     """
-    Update a robot's configuration from ROS topics
+    Update a robot's configuration from ROS topics and tfs.
+
+    Parameters
+    ----------
+    robot : Robot
+        Robot model.
+    ignore_dofs : list of integers
+        List of DOFs not updated by ROS.
     """
 
     def __init__(self, robot, ignore_dofs=None):
-        """
-        Update robot configuration from ROS topics and tfs.
-
-        Parameters
-        ----------
-        robot : pymanoid.Robot
-            Wrapped robot model.
-        ignore_dofs : list of integers
-            List of DOFs not updated by ROS.
-        """
         import rospy  # not global, will be initialized by child script
         self.dof_mapping = type(robot).__dict__
         self.flyer_tf = None
