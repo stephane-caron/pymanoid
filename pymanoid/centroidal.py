@@ -262,6 +262,25 @@ class COMStepTransit(object):
         self.dT = Y[:, 12]
         self.p_last = X[-6:-3]
         self.pd_last = X[-3:]
+        self.cp_last = self.capture_point(self.p_last, self.pd_last)
+
+    def capture_point(self, p, pd):
+        """
+        Capture point of the floating-base inverted pendulum.
+
+        Parameters
+        ----------
+        p : (3,) array
+            COM position.
+        pd : (3,) array
+            COM velocity.
+
+        Returns
+        -------
+        cp : (3,) array
+            Capture point position.
+        """
+        return p + pd / self.omega + gravity / self.omega2
 
     def __call__(self, t, field='p'):
         """
@@ -280,17 +299,19 @@ class COMStepTransit(object):
         value : (3,) array
             Value of the request field at time `t`.
         """
-        omega2, omega = self.omega2, self.omega
         k = bisect_left(self.cum_dT, t)
-        t0 = self.cum_dT[k - 1] if k > 0 else 0.
-        z = self.Z[k]
+        if k < self.nb_steps:
+            p0, pd0, z = self.P[k], self.V[k], self.Z[k]
+        else:  # t > duration of the trajectory
+            p0, pd0, z = self.p_last, self.pd_last, self.cp_last
         if field == 'z':
             return z
-        p0 = self.P[k]
+        omega2 = self.omega2
         pdd = omega2 * (p0 - z) + gravity
         if field == 'pdd':
             return pdd
-        pd0 = self.V[k]
+        omega = self.omega
+        t0 = self.cum_dT[k - 1] if k > 0 else 0.
         dt = t - t0
         if field == 'pd':
             pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
