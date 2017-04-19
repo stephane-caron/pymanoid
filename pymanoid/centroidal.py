@@ -257,45 +257,46 @@ class COMStepTransit(object):
         Y = X[:-6].reshape((self.nb_steps, 3 + 3 + 3 + 3 + 1))
         self.P = Y[:, 0:3]
         self.V = Y[:, 3:6]
+        self.U = Y[:, 6:9]
         self.Z = Y[:, 9:12]
         self.dT = Y[:, 12]
         self.p_last = X[-6:-3]
         self.pd_last = X[-3:]
 
-    def eval_state(self, t):
+    def __call__(self, t, field='p'):
         """
-        Evaluate the state (COM, COM velocity, ZMP) at time `t`.
+        Evaluate the solution's state at time `t`.
 
         Parameters
         ----------
         t : scalar
             Time over the solution trajectory.
+        field : string, optional
+            Field to return: 'p' for position, 'pd' for velocity, 'pdd' for
+            acceleration or 'z' for floating-base ZMP.
 
         Returns
         -------
-        p : (3,) array
-            COM position at time t.
-        pd : (3,) array
-            COM velocity at time t.
-        z : (3,) array
-            Floating-base ZMP at time t.
+        value : (3,) array
+            Value of the request field at time `t`.
         """
         omega2, omega = self.omega2, self.omega
         k = bisect_left(self.cum_dT, t)
         t0 = self.cum_dT[k - 1] if k > 0 else 0.
-        p0, pd0, z = self.P[k], self.V[k], self.Z[k]
+        z = self.Z[k]
+        if field == 'z':
+            return z
+        p0 = self.P[k]
         pdd = omega2 * (p0 - z) + gravity
+        if field == 'pdd':
+            return pdd
+        pd0 = self.V[k]
         dt = t - t0
+        if field == 'pd':
+            pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
+            return pd
         p = p0 + pd0 / omega * sinh(omega * dt) \
             + pdd / omega2 * (cosh(omega * dt) - 1.)
-        pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
-        return p, pd, z
-
-    def __call__(self, t):
-        """
-        Evaluate the COM position at time `t` of the solution trajectory.
-        """
-        p, _, _ = self.eval_state(t)
         return p
 
     def print_results(self):
