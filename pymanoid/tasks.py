@@ -238,7 +238,7 @@ class DOFTask(Task):
                  exclude_dofs=None):
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(index) is str:
-            index = robot.__dict__[index]
+            index = robot.__getattribute__(index)
         J = zeros((1, robot.nb_dofs))
         J[0, index] = 1.
         self.__J = J
@@ -282,7 +282,7 @@ class LinkPosTask(Task):
                  exclude_dofs=None):
         super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
-            link = robot.__dict__[link]
+            link = robot.__getattribute__(link)
         self.link = link
         self.name = self.link.name.upper()
         self.robot = robot
@@ -331,7 +331,7 @@ class LinkPoseTask(Task):
                  exclude_dofs=None):
         super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
-            link = robot.__dict__[link]
+            link = robot.__getattribute__(link)
         self.link = link
         self.name = self.link.name.upper()
         self.robot = robot
