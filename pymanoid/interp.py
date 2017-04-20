@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import arange, dot, hstack
+from numpy import arange, dot, hstack, linspace
 from openravepy import InterpolateQuatSlerp as quat_slerp
 
 from draw import draw_trajectory
@@ -170,6 +170,24 @@ class PoseInterpolator(object):
 
     def __call__(self, x):
         return hstack([self.eval_quat(x), self.eval_pos(x)])
+
+    def draw(self, color='b'):
+        """
+        Draw positions of the interpolated trajectory.
+
+        Parameters
+        ----------
+        color : char or triplet, optional
+            Color letter or RGB values, default is 'b' for green.
+
+        Returns
+        -------
+        handle : openravepy.GraphHandle
+            OpenRAVE graphical handle. Must be stored in some variable,
+            otherwise the drawn object will vanish instantly.
+        """
+        points = [self.eval_pos(x) for x in linspace(0, 1, 10)]
+        return draw_trajectory(points, color=color)
 
 
 class LinearPoseInterpolator(PoseInterpolator):
