@@ -345,7 +345,7 @@ class Body(object):
             Triplet `(r, p, y)` of roll-pitch-yaw angles.
         """
         T = self.T.copy()
-        T[0:3, 0:3] = rotation_matrix_from_rpy(*rpy)
+        T[0:3, 0:3] = rotation_matrix_from_rpy(rpy)
         self.set_transform(T)
 
     def set_roll(self, roll):

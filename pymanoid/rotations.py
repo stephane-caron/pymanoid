@@ -84,18 +84,14 @@ def rpy_from_quat(quat):
     return array([roll, pitch, yaw])
 
 
-def quat_from_rpy(roll, pitch, yaw):
+def quat_from_rpy(rpy):
     """
     Quaternion frmo roll-pitch-yaw angles.
 
     Parameters
     ----------
-    roll : scalar
-        Roll angle in [rad].
-    pitch : scalar
-        Pitch angle in [rad].
-    yaw : scalar
-        Yaw angle in [rad].
+    rpy : (3,) array
+        Vector of roll-pitch-yaw angles in [rad].
 
     Returns
     -------
@@ -106,6 +102,7 @@ def quat_from_rpy(roll, pitch, yaw):
     -----
     Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
     """
+    roll, pitch, yaw = rpy
     cr, cp, cy = cos(roll / 2), cos(pitch / 2), cos(yaw / 2)
     sr, sp, sy = sin(roll / 2), sin(pitch / 2), sin(yaw / 2)
     return array([
@@ -115,25 +112,21 @@ def quat_from_rpy(roll, pitch, yaw):
         cr * cp * sy - sr * cy * sp])
 
 
-def rotation_matrix_from_rpy(roll, pitch, yaw):
+def rotation_matrix_from_rpy(rpy):
     """
     Rotation matrix from roll-pitch-yaw angles.
 
     Parameters
     ----------
-    roll : scalar
-        Roll angle in [rad].
-    pitch : scalar
-        Pitch angle in [rad].
-    yaw : scalar
-        Yaw angle in [rad].
+    rpy : (3,) array
+        Vector of roll-pitch-yaw angles in [rad].
 
     Returns
     -------
     R : array, shape=(3, 3)
         Rotation matrix.
     """
-    return rotation_matrix_from_quat(quat_from_rpy(roll, pitch, yaw))
+    return rotation_matrix_from_quat(quat_from_rpy(rpy))
 
 
 def rpy_from_rotation_matrix(R):
