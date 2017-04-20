@@ -60,12 +60,13 @@ from pymanoid import Contact, ContactSet, PointMass, Stance
 from pymanoid.body import Box
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_cone, draw_polyhedron
-from pymanoid.misc import interpolate_pose_linear, normalize
+from pymanoid.interp import interpolate_pose_linear, quat_slerp
+from pymanoid.misc import normalize
 from pymanoid.polyhedra import compute_polytope_hrep
 from pymanoid.polygons import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
-from pymanoid.rotations import quat_slerp, rotation_matrix_from_quat
+from pymanoid.rotations import rotation_matrix_from_quat
 from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
 
 # try:
