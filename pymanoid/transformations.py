@@ -18,24 +18,24 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Conversion between rotations and homogeneous coordinates.
+Rotations and rigid-body transformations can be represented in many ways. For
+rotations, the three main formats used in pymanoid are:
 
-Rotations can be represented by:
-
-- Roll-pitch-yaw angles, that is to say Euler angles corresponding to the
+- **Roll-pitch-yaw angles:** that is to say Euler angles corresponding to the
   sequence (1, 2, 3).
-- Quaternions `[w x y z]`, with the scalar term `w` coming first following the
-  OpenRAVE convention.
-- Rotation matrices of shape :math:`3 \\times 3`.
+- **Quaternions:** 4D vectors `[w x y z]`, with the scalar term `w` coming first
+  following the OpenRAVE convention.
+- **Rotation matrices:** :math:`3 \\times 3` matrices :math:`R` whose inverse is
+  equal to their transpose.
 
 Rigid-body transformations can be represented by:
 
-- Poses in OpenRAVE format, which are simply 7D vectors consisting of the
-  quaternion of the orientation followed by its position.
-- Homogeneous transformation matrices `T` of shape :math:`4 \\times 4`.
+- **Poses:** 7D vectors consisting of the quaternion of the orientation followed
+  by its position.
+- **Transformation matrices:** :math:`4 \\times 4` matrices :math:`T`.
 
 Functions are provided to convert between all these representations. Most of
-them are adapted from the comprehensive guide by Diebel [Diebel06]_.
+them are adapted from the comprehensive guide [Diebel06]_.
 """
 
 from math import asin, atan2, cos, sin

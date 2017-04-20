@@ -34,7 +34,7 @@ Interpolation
 .. automodule:: pymanoid.interp
     :members:
 
-Rotations and transformation matrices
+Rotations and homogeneous coordinates
 =====================================
 
 .. automodule:: pymanoid.transformations
