@@ -25,7 +25,7 @@ humanoid-robotics convention: with an upward yaw axis) were adapted from
 """
 
 from math import asin, atan2, cos, sin
-from numpy import array
+from numpy import array, dot, hstack, zeros
 from openravepy import \
     axisAngleFromQuat as axis_angle_from_quat, \
     axisAngleFromRotationMatrix as axis_angle_from_rotation_matrix, \
@@ -41,12 +41,12 @@ def crossmat(x):
 
     Parameters
     ----------
-    x : array, shape=(3,)
+    x : (3,) array
         Vector on the left-hand side of the cross product.
 
     Returns
     -------
-    C : array, shape=(3, 3)
+    C : (3, 3) array
         Cross-product matrix of `x`.
     """
     return array([
@@ -61,12 +61,12 @@ def rpy_from_quat(quat):
 
     Parameters
     ----------
-    quat : array, shape=(4,)
+    quat : (4,) array
         Quaternion in `[w x y z]` format.
 
     Returns
     -------
-    rpy : array, shape=(3,)
+    rpy : (3,) array
         Array of roll-pitch-yaw angles, in [rad].
 
     Notes
@@ -95,7 +95,7 @@ def quat_from_rpy(rpy):
 
     Returns
     -------
-    quat : array, shape=(4,)
+    quat : (4,) array
         Quaternion in `[w x y z]` format.
 
     Notes
@@ -123,7 +123,7 @@ def rotation_matrix_from_rpy(rpy):
 
     Returns
     -------
-    R : array, shape=(3, 3)
+    R : (3, 3) array
         Rotation matrix.
     """
     return rotation_matrix_from_quat(quat_from_rpy(rpy))
@@ -140,7 +140,7 @@ def rpy_from_rotation_matrix(R):
 
     Returns
     -------
-    rpy : array, shape=(3,)
+    rpy : (3,) array
         Array of roll-pitch-yaw angles, in [rad].
 
     Notes
@@ -148,6 +148,68 @@ def rpy_from_rotation_matrix(R):
     Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
     """
     return rpy_from_quat(quat_from_rotation_matrix(R))
+
+
+def transformation_from_pose(pose):
+    """
+    Transformation matrix from a pose vector.
+
+    Parameters
+    ----------
+    pose : (7,) array
+        Pose vector `[qw qx qy qz x y z]`.
+
+    Returns
+    -------
+    T : (4, 4) array
+        Homogeneous transformation matrix of the pose vector.
+    """
+    T = zeros((4, 4))
+    T[:3, :3] = rotation_matrix_from_quat(pose[:4])
+    T[:3, 3] = pose[4:]
+    T[3, 3] = 1.
+    return T
+
+
+def pose_from_transformation(T):
+    """
+    Pose vector from a homogeneous transformation matrix.
+
+    Parameters
+    ----------
+    T : (4, 4) array
+        Homogeneous transformation matrix.
+
+    Returns
+    -------
+    pose : (7,) array
+        Pose vector `[qw qx qy qz x y z]` of the transformation matrix.
+    """
+    quat = quat_from_rotation_matrix(T[:3, :3])
+    return hstack([quat, T[:3, 3]])
+
+
+def transformation_inverse(T):
+    """
+    Inverse of a transformation matrix. Yields the same result but faster than
+    :func:`numpy.linalg.inv` on such matrices.
+
+    Parameters
+    ----------
+    T : (4, 4) array
+        Homogeneous transformation matrix.
+
+    Returns
+    -------
+    T_inv : (4, 4) array
+        Inverse of `T`.
+    """
+    T_inv = zeros((4, 4))
+    R_inv = T[:3, :3].T
+    T_inv[:3, :3] = R_inv
+    T_inv[:3, 3] = -dot(R_inv, T[:3, 3])
+    T_inv[3, 3] = 1.
+    return T_inv
 
 
 __all__ = [

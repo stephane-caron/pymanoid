@@ -698,7 +698,23 @@ class Humanoid(Robot):
         R : array, shape=(3, 3)
             Rotation matrix.
         """
-        return rotation_matrix_from_rpy(*self.rpy)
+        return rotation_matrix_from_rpy(self.rpy)
+
+    @property
+    def T(self):
+        """
+        Rotation matrix `R` of from free-flyer to the world frame.
+
+        Returns
+        -------
+        R : array, shape=(3, 3)
+            Rotation matrix.
+        """
+        T = zeros((4, 4))
+        T[:3, :3] = self.R
+        T[:3, 3] = self.p
+        T[3, 3] = 1.
+        return T
 
     def set_dof_values(self, q, dof_indices=None, clamp=False):
         """
