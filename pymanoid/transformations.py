@@ -18,21 +18,30 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module mostly imports top-level rotation functions from OpenRAVE in order
-to make them visible in pymanoid. Conversions to and from roll-pitch-yaw (in
-humanoid-robotics convention: with an upward yaw axis) were adapted from
-[Diebel06]_.
+Conversion between rotations and homogeneous coordinates.
+
+Rotations can be represented by:
+
+- Roll-pitch-yaw angles, that is to say Euler angles corresponding to the
+  sequence (1, 2, 3).
+- Quaternions `[w x y z]`, with the scalar term `w` coming first following the
+  OpenRAVE convention.
+- Rotation matrices of shape :math:`3 \\times 3`.
+
+Rigid-body transformations can be represented by:
+
+- Poses in OpenRAVE format, which are simply 7D vectors consisting of the
+  quaternion of the orientation followed by its position.
+- Homogeneous transformation matrices `T` of shape :math:`4 \\times 4`.
+
+Functions are provided to convert between all these representations. Most of
+them are adapted from the comprehensive guide by Diebel [Diebel06]_.
 """
 
 from math import asin, atan2, cos, sin
 from numpy import array, dot, hstack, zeros
-from openravepy import \
-    axisAngleFromQuat as axis_angle_from_quat, \
-    axisAngleFromRotationMatrix as axis_angle_from_rotation_matrix, \
-    quatFromRotationMatrix as quat_from_rotation_matrix, \
-    quatInverse as quat_inverse, \
-    quatMultiply as quat_multiply, \
-    rotationMatrixFromQuat as rotation_matrix_from_quat
+from openravepy import quatFromRotationMatrix as __quatFromRotationMatrix
+from openravepy import rotationMatrixFromQuat as __rotationMatrixFromQuat
 
 
 def crossmat(x):
@@ -110,6 +119,40 @@ def quat_from_rpy(rpy):
         -cr * sp * sy + cp * cy * sr,
         cr * cy * sp + sr * cp * sy,
         cr * cp * sy - sr * cy * sp])
+
+
+def quat_from_rotation_matrix(R):
+    """
+    Quaternion from rotation matrix.
+
+    Parameters
+    ----------
+    R : (3, 3) array
+        Rotation matrix.
+
+    Returns
+    -------
+    quat : (4,) array
+        Quaternion in `[w x y z]` format.
+    """
+    return __quatFromRotationMatrix(R)
+
+
+def rotation_matrix_from_quat(quat):
+    """
+    Rotation matrix from quaternion.
+
+    Parameters
+    ----------
+    quat : (4,) array
+        Quaternion in `[w x y z]` format.
+
+    Returns
+    -------
+    R : (3, 3) array
+        Rotation matrix.
+    """
+    return __rotationMatrixFromQuat(quat)
 
 
 def rotation_matrix_from_rpy(rpy):
@@ -213,13 +256,9 @@ def transformation_inverse(T):
 
 
 __all__ = [
-    'axis_angle_from_quat',
-    'axis_angle_from_rotation_matrix',
     'crossmat',
     'quat_from_rotation_matrix',
     'quat_from_rpy',
-    'quat_inverse',
-    'quat_multiply',
     'rpy_from_quat',
     'rpy_from_rotation_matrix',
     'rotation_matrix_from_quat',

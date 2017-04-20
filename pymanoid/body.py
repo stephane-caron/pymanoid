@@ -23,8 +23,8 @@ from numpy import array, dot, ndarray, zeros
 
 from draw import matplotlib_to_rgb
 from misc import norm
-from rotations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 from sim import get_openrave_env
+from transformations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 
 
 class Body(object):

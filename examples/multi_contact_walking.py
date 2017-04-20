@@ -66,8 +66,8 @@ from pymanoid.polyhedra import compute_polytope_hrep
 from pymanoid.polygons import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
-from pymanoid.rotations import rotation_matrix_from_quat
 from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
+from pymanoid.transformations import rotation_matrix_from_quat
 
 # try:
 #     from pymanoid.mpc import VSLMPC as LinearPredictiveControl

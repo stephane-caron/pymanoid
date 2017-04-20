@@ -25,9 +25,9 @@ from warnings import warn
 from draw import draw_force, draw_point
 from ik import IKSolver
 from misc import middot
-from rotations import crossmat, quat_from_rpy, rpy_from_quat
-from rotations import rotation_matrix_from_rpy
 from sim import get_openrave_env, gravity
+from transformations import crossmat, quat_from_rpy, rpy_from_quat
+from transformations import rotation_matrix_from_rpy
 
 
 class Robot(object):

@@ -22,7 +22,7 @@ from openravepy import InterpolateQuatSlerp as quat_slerp
 
 from draw import draw_trajectory
 from misc import NDPolynomial
-from rotations import rotation_matrix_from_quat
+from transformations import rotation_matrix_from_quat
 
 
 def interpolate_cubic_hermite(p0, v0, p1, v1):

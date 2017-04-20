@@ -25,8 +25,8 @@ from body import Box
 from optim import solve_qp
 from polygons import compute_polygon_hull
 from polyhedra import compute_cone_face_matrix, project_polytope
-from rotations import crossmat
 from sim import gravity
+from transformations import crossmat
 
 
 CONTACT_THICKNESS = 0.01

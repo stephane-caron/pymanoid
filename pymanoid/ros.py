@@ -22,8 +22,8 @@ from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import TransformStamped
 from numpy import dot, hstack
 
-from pymanoid.rotations import pose_from_transformation
-from pymanoid.rotations import transformation_from_pose
+from transformations import pose_from_transformation
+from transformations import transformation_from_pose
 
 
 def PointStamped_from_pos(p, seq=None):
@@ -138,10 +138,18 @@ class ROSWrapper(object):
             print "get_free_flyer_tf():", e
         return None
 
-    def update_free_flyer(self):
+    def update_free_flyer(self, T_offset=None):
         """
         Update free-flyer coordinates.
+
+        Parameters
+        ----------
+        T_offset : (4, 4) array, optional
+            Optional offset given as a homogeneous transformation matrix.
         """
         pose = self.get_free_flyer_pose()
+        if T_offset is not None:
+            T = dot(T_offset, transformation_from_pose(pose))
+            pose = pose_from_transformation(T)
         if pose is not None:
             self.robot.set_pose(pose)
