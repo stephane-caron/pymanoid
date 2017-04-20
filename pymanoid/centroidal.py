@@ -75,7 +75,7 @@ class COMStepTransit(object):
         'match_dcm': 1.,
         'match_duration': 1e-2,
         'center_zmp': 1e-4,
-        'minimize_comdd': 1e-6,
+        'minimize_comdd': [1e-6, 1e-6, 1e-4],  # x-y-z weights
     }
 
     dT_min = 0.03                 # [s], caution when > sim.dt
@@ -131,6 +131,8 @@ class COMStepTransit(object):
         p_0 = self.nlp.new_constant('p_0', 3, start_com)
         pd_0 = self.nlp.new_constant('pd_0', 3, start_comd)
         p_k, pd_k = p_0, pd_0
+        W_comdd = list(self.weights['minimize_comdd'])
+        assert len(W_comdd) in [1, 3]
         T_total = 0
 
         for k in xrange(self.nb_steps):
@@ -151,8 +153,7 @@ class COMStepTransit(object):
             self.nlp.extend_cost(
                 self.weights['center_zmp'] * casadi.dot(CZ_k, CZ_k) * dT_k)
             self.nlp.extend_cost(
-                self.weights['minimize_comdd'] *
-                casadi.dot(pdd_k, pdd_k) * dT_k)
+                casadi.dot(pdd_k, W_comdd * pdd_k) * dT_k)
 
             # Exact integration by solving the first-order ODE
             p_next = p_k + pd_k / omega * casadi.sinh(omega * dT_k) \

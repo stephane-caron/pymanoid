@@ -411,7 +411,7 @@ class NonlinearProgram(object):
     much as N times lower than the former.
     """
 
-    ipopt_max_iter = 2000
+    ipopt_max_iter = 1000  # default is 3000
     """
     Maximum number of iterations.
     """
