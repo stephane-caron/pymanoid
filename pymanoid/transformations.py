@@ -225,7 +225,7 @@ def rpy_from_rotation_matrix(R):
     return rpy_from_quat(quat_from_rotation_matrix(R))
 
 
-def transformation_from_pose(pose):
+def transform_from_pose(pose):
     """
     Transformation matrix from a pose vector.
 
@@ -246,7 +246,7 @@ def transformation_from_pose(pose):
     return T
 
 
-def pose_from_transformation(T):
+def pose_from_transform(T):
     """
     Pose vector from a homogeneous transformation matrix.
 
@@ -264,7 +264,7 @@ def pose_from_transformation(T):
     return hstack([quat, T[:3, 3]])
 
 
-def transformation_inverse(T):
+def transform_inverse(T):
     """
     Inverse of a transformation matrix. Yields the same result but faster than
     :func:`numpy.linalg.inv` on such matrices.
@@ -290,10 +290,13 @@ def transformation_inverse(T):
 __all__ = [
     'apply_transform',
     'crossmat',
+    'pose_from_transform',
     'quat_from_rotation_matrix',
     'quat_from_rpy',
-    'rpy_from_quat',
-    'rpy_from_rotation_matrix',
     'rotation_matrix_from_quat',
     'rotation_matrix_from_rpy',
+    'rpy_from_quat',
+    'rpy_from_rotation_matrix',
+    'transform_from_pose',
+    'transform_inverse',
 ]

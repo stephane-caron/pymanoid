@@ -22,8 +22,8 @@ from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import TransformStamped
 from numpy import dot, hstack
 
-from transformations import pose_from_transformation
-from transformations import transformation_from_pose
+from transformations import pose_from_transform
+from transformations import transform_from_pose
 
 
 def PointStamped_from_pos(p, seq=None):
@@ -145,11 +145,11 @@ class ROSWrapper(object):
         Parameters
         ----------
         T_offset : (4, 4) array, optional
-            Optional offset given as a homogeneous transformation matrix.
+            Optional offset given as a transformation matrix.
         """
         pose = self.get_free_flyer_pose()
         if T_offset is not None:
-            T = dot(T_offset, transformation_from_pose(pose))
-            pose = pose_from_transformation(T)
+            T = dot(T_offset, transform_from_pose(pose))
+            pose = pose_from_transform(T)
         if pose is not None:
             self.robot.set_pose(pose)
