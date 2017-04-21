@@ -2,12 +2,12 @@
 References
 **********
 
-.. [Caron17] `Dynamic Walking over Rough Terrains by Nonlinear Predictive
+.. [Caron17w] `Dynamic Walking over Rough Terrains by Nonlinear Predictive
    Control of the Floating-base Inverted Pendulum
    <https://hal.archives-ouvertes.fr/hal-01481052/document>`_, S. Caron and A.
    Kheddar, pre-print, March 2017.
 
-.. [Caron17] `ZMP support areas for multi-contact mobility under frictional
+.. [Caron17z] `ZMP support areas for multi-contact mobility under frictional
    constraints <https://scaron.info/papers/journal/caron-tro-2016.pdf>`_, S.
    Caron, Q.-C. Pham and Y. Nakamura, IEEE Transactions on Robotics, vol. 33,
    no. 1, pp. 67-80, February 2017.

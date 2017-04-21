@@ -437,7 +437,7 @@ class ContactSet(object):
         -----
         The method 'bretl' is adapted from in [Bretl08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [Caron17]_. See the
+        to the double-description approach described in [Caron17z]_. See the
         Appendix from [Caron16]_ for a performance comparison.
         """
         if method == 'hull':
@@ -480,7 +480,7 @@ class ContactSet(object):
         -----
         The method 'bretl' is adapted from in [Bretl08]_ where the
         static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [Caron17]_. See the
+        to the double-description approach described in [Caron17z]_. See the
         Appendix from [Caron16]_ for a performance comparison.
         """
         z_com, z_zmp = com[2], plane[2]

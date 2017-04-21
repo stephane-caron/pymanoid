@@ -44,7 +44,7 @@ class COMStepTransit(object):
     defined within the floating-base inverted pendulum (FIP) of constant
     :math:`\\omega`. This approach is used in the `nonlinear predictive
     controller <https://github.com/stephane-caron/dynamic-walking>`_ of
-    [Caron17]_ for dynamic walking over rough terrains.
+    [Caron17w]_ for dynamic walking over rough terrains.
 
     Parameters
     ----------

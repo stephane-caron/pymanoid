@@ -1248,7 +1248,7 @@ class Humanoid(Robot):
         Notes
         -----
         See [Sardain04]_ for an excellent introduction to the concepts of ZMP
-        and center of pressure. See [Caron17]_ for the more general definition
+        and center of pressure. See [Caron17z]_ for the more general definition
         of ZMP support areas in arbitrary planes.
         """
         p_O = origin if origin is not None else zeros(3)
