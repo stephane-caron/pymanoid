@@ -247,30 +247,6 @@ class LinearPoseInterpolator(PoseInterpolator):
         return self.start_pos + s * self.delta_pos
 
 
-class LinearPosInterpolator(LinearPoseInterpolator):
-
-    """
-    Linear interpolation between two positions.
-
-    Parameters
-    ----------
-    start_pos : (3,) array
-        Initial position to interpolate from.
-    end_pos : (3,) array
-        End position to interpolate to.
-    """
-
-    def __init__(self, start_pos, end_pos, duration):
-        assert len(start_pos) == len(end_pos) == 3
-        self.delta_pos = end_pos - start_pos
-        self.duration = duration
-        self.start_pos = start_pos
-
-    def __call__(self, t):
-        s = t / self.duration
-        return self.eval_pos(s)
-
-
 class CubicPoseInterpolator(PoseInterpolator):
 
     """
@@ -306,11 +282,96 @@ class CubicPoseInterpolator(PoseInterpolator):
         return self.start_pos + s ** 2 * (3 - 2 * s) * self.delta_pos
 
 
+class QuinticPoseInterpolator(PoseInterpolator):
+
+    """
+    Interpolate a body trajectory between two poses. Intermediate positions are
+    interpolated quintically with zero-velocity and zero-acceleration boundary
+    conditions, while orientations are computed by `spherical linear
+    interpolation <https://en.wikipedia.org/wiki/Slerp>`_.
+
+    Parameters
+    ----------
+    start_pose : (7,) array
+        Initial pose to interpolate from.
+    end_pose : (7,) array
+        End pose to interpolate to.
+    """
+
+    def __init__(self, start_pose, end_pose, duration):
+        assert len(start_pose) == len(end_pose) == 7
+        super(QuinticPoseInterpolator, self).__init__(
+            start_pose, end_pose, duration)
+        self.delta_pos = end_pose[4:] - start_pose[4:]
+        self.start_pos = start_pose[4:]
+
+    def eval_pos(self, s):
+        """
+        Evaluate position at index s between 0 and 1.
+
+        Parameters
+        ----------
+        s : scalar
+            Normalized trajectory index between 0 and 1.
+        """
+        return self.start_pos + \
+            s ** 3 * (10 - 15 * s + 6 * s ** 2) * self.delta_pos
+
+
+class LinearPosInterpolator(LinearPoseInterpolator):
+
+    """
+    Linear interpolation between two positions.
+
+    Parameters
+    ----------
+    start_pos : (3,) array
+        Initial position to interpolate from.
+    end_pos : (3,) array
+        End position to interpolate to.
+    """
+
+    def __init__(self, start_pos, end_pos, duration):
+        assert len(start_pos) == len(end_pos) == 3
+        self.delta_pos = end_pos - start_pos
+        self.duration = duration
+        self.start_pos = start_pos
+
+    def __call__(self, t):
+        s = t / self.duration
+        return self.eval_pos(s)
+
+
 class CubicPosInterpolator(CubicPoseInterpolator):
 
     """
     Cubic interpolation between two positions with zero-velocity boundary
     conditions.
+
+    Parameters
+    ----------
+    start_pos : (3,) array
+        Initial position to interpolate from.
+    end_pos : (3,) array
+        End position to interpolate to.
+    """
+
+    def __init__(self, start_pos, end_pos, duration):
+        assert len(start_pos) == len(end_pos) == 3
+        self.delta_pos = end_pos - start_pos
+        self.duration = duration
+        self.start_pos = start_pos
+
+    def __call__(self, t):
+        s = t / self.duration
+        return self.eval_pos(s)
+
+
+class QuinticPosInterpolator(QuinticPoseInterpolator):
+
+    """
+    Quintic interpolation between two positions with zero-velocity and
+    zero-acceleration boundary conditions.
 
     Parameters
     ----------
