@@ -158,18 +158,41 @@ def interpolate_uab_hermite(p0, u0, p1, u1):
 
 class PoseInterpolator(object):
 
-    def __init__(self, start_pose, end_pose):
+    """
+    Interpolate a body trajectory between two poses. Orientations are
+    computed by `spherical linear interpolation
+    <https://en.wikipedia.org/wiki/Slerp>`_.
+
+    Parameters
+    ----------
+    start_pose : (7,) array
+        Initial pose to interpolate from.
+    end_pose : (7,) array
+        End pose to interpolate to.
+    """
+
+    def __init__(self, start_pose, end_pose, duration):
+        self.duration = duration
         self.end_quat = end_pose[:4]
         self.start_quat = start_pose[:4]
 
-    def eval_quat(self, x):
-        return quat_slerp(self.start_quat, self.end_quat, x)
+    def eval_quat(self, s):
+        return quat_slerp(self.start_quat, self.end_quat, s)
 
-    def eval_pos(self, x):
+    def eval_pos(self, s):
+        """
+        Evaluate position at index s between 0 and 1.
+
+        Parameters
+        ----------
+        s : scalar
+            Normalized trajectory index between 0 and 1.
+        """
         raise NotImplementedError()
 
-    def __call__(self, x):
-        return hstack([self.eval_quat(x), self.eval_pos(x)])
+    def __call__(self, t):
+        s = t / self.duration
+        return hstack([self.eval_quat(s), self.eval_pos(s)])
 
     def draw(self, color='b'):
         """
@@ -186,60 +209,133 @@ class PoseInterpolator(object):
             OpenRAVE graphical handle. Must be stored in some variable,
             otherwise the drawn object will vanish instantly.
         """
-        points = [self.eval_pos(x) for x in linspace(0, 1, 10)]
+        points = [self.eval_pos(s) for s in linspace(0, 1, 10)]
         return draw_trajectory(points, color=color)
 
 
 class LinearPoseInterpolator(PoseInterpolator):
 
-    def __init__(self, start_pose, end_pose):
+    """
+    Interpolate a body trajectory between two poses. Intermediate positions are
+    interpolated linearly, while orientations are computed by `spherical linear
+    interpolation <https://en.wikipedia.org/wiki/Slerp>`_.
+
+    Parameters
+    ----------
+    start_pose : (7,) array
+        Initial pose to interpolate from.
+    end_pose : (7,) array
+        End pose to interpolate to.
+    """
+
+    def __init__(self, start_pose, end_pose, duration):
         assert len(start_pose) == len(end_pose) == 7
-        super(LinearPoseInterpolator, self).__init__(start_pose, end_pose)
+        super(LinearPoseInterpolator, self).__init__(
+            start_pose, end_pose, duration)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
-    def eval_pos(self, x):
-        return self.start_pos + x * self.delta_pos
+    def eval_pos(self, s):
+        """
+        Evaluate position at index s between 0 and 1.
+
+        Parameters
+        ----------
+        s : scalar
+            Normalized trajectory index between 0 and 1.
+        """
+        return self.start_pos + s * self.delta_pos
 
 
 class LinearPosInterpolator(LinearPoseInterpolator):
 
-    def __init__(self, start_pos, end_pos):
+    """
+    Linear interpolation between two positions.
+
+    Parameters
+    ----------
+    start_pos : (3,) array
+        Initial position to interpolate from.
+    end_pos : (3,) array
+        End position to interpolate to.
+    """
+
+    def __init__(self, start_pos, end_pos, duration):
         assert len(start_pos) == len(end_pos) == 3
         self.delta_pos = end_pos - start_pos
+        self.duration = duration
         self.start_pos = start_pos
 
-    def __call__(self, x):
-        return self.eval_pos(x)
+    def __call__(self, t):
+        s = t / self.duration
+        return self.eval_pos(s)
 
 
-class QuadraticPoseInterpolator(PoseInterpolator):
+class CubicPoseInterpolator(PoseInterpolator):
 
-    def __init__(self, start_pose, end_pose):
+    """
+    Interpolate a body trajectory between two poses. Intermediate positions are
+    interpolated cubically with zero boundary velocities, while orientations
+    are computed by `spherical linear interpolation
+    <https://en.wikipedia.org/wiki/Slerp>`_.
+
+    Parameters
+    ----------
+    start_pose : (7,) array
+        Initial pose to interpolate from.
+    end_pose : (7,) array
+        End pose to interpolate to.
+    """
+
+    def __init__(self, start_pose, end_pose, duration):
         assert len(start_pose) == len(end_pose) == 7
-        super(QuadraticPoseInterpolator, self).__init__(start_pose, end_pose)
+        super(CubicPoseInterpolator, self).__init__(
+            start_pose, end_pose, duration)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
-    def eval_pos(self, x):
-        return self.start_pos + x ** 2 * (3 - 2 * x) * self.delta_pos
+    def eval_pos(self, s):
+        """
+        Evaluate position at index s between 0 and 1.
+
+        Parameters
+        ----------
+        s : scalar
+            Normalized trajectory index between 0 and 1.
+        """
+        return self.start_pos + s ** 2 * (3 - 2 * s) * self.delta_pos
 
 
-class QuadraticPosInterpolator(QuadraticPoseInterpolator):
+class CubicPosInterpolator(CubicPoseInterpolator):
 
-    def __init__(self, start_pos, end_pos):
+    """
+    Cubic interpolation between two positions with zero-velocity boundary
+    conditions.
+
+    Parameters
+    ----------
+    start_pos : (3,) array
+        Initial position to interpolate from.
+    end_pos : (3,) array
+        End position to interpolate to.
+    """
+
+    def __init__(self, start_pos, end_pos, duration):
         assert len(start_pos) == len(end_pos) == 3
         self.delta_pos = end_pos - start_pos
+        self.duration = duration
         self.start_pos = start_pos
 
-    def __call__(self, x):
-        return self.eval_pos(x)
+    def __call__(self, t):
+        s = t / self.duration
+        return self.eval_pos(s)
 
 
 class SwingFootInterpolator(PoseInterpolator):
 
-    def __init__(self, start_pose, end_pose):
-        super(SwingFootInterpolator, self).__init__(start_pose, end_pose)
+    def __init__(self, start_pose, end_pose, duration):
+        super(SwingFootInterpolator, self).__init__(
+            start_pose, end_pose, duration)
         p0 = start_pose[4:]
         p1 = end_pose[4:]
         R0 = rotation_matrix_from_quat(self.start_quat)
@@ -248,8 +344,16 @@ class SwingFootInterpolator(PoseInterpolator):
         u1 = dot(R1, [0.5, 0., -0.5])
         self.poly = interpolate_uab_hermite(p0, u0, p1, u1)
 
-    def eval_pos(self, x):
-        return self.poly(x)
+    def eval_pos(self, s):
+        """
+        Evaluate position at index s between 0 and 1.
+
+        Parameters
+        ----------
+        s : scalar
+            Normalized trajectory index between 0 and 1.
+        """
+        return self.poly(s)
 
     def draw(self, nb_segments=15, color='b'):
         """

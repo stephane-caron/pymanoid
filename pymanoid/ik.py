@@ -20,7 +20,6 @@
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 from time import time
-from warnings import warn
 
 from misc import norm
 from optim import solve_qp
@@ -113,7 +112,6 @@ class IKSolver(Process):
         name = self.__get_task_name(ident)
         with self.tasks_lock:
             if name not in self.tasks:
-                warn("no task with name '%s'" % name)
                 return None
             return self.tasks[name]
 
