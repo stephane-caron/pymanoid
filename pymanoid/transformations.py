@@ -44,6 +44,38 @@ from openravepy import quatFromRotationMatrix as __quatFromRotationMatrix
 from openravepy import rotationMatrixFromQuat as __rotationMatrixFromQuat
 
 
+def apply_transform(T, p):
+    """
+    Apply a transformation matrix `T` to point coordinates `p`.
+
+    Parameters
+    ----------
+    T : (4, 4) array
+        Homogeneous transformation matrix.
+    p : (3,) array
+        Point (non-homogeneous) coordinates.
+
+    Returns
+    -------
+    Tp : (3,) array
+        Result of the transformation in non-homogeneous coordinates.
+
+    Notes
+    -----
+    For a single point, it is faster to apply the matrix multiplication directly
+    rather than calling the OpenRAVE function:
+
+    .. code:: python
+
+        In [33]: %timeit dot(T, hstack([p, 1]))[:3]
+        100000 loops, best of 3: 3.82 µs per loop
+
+        In [34]: %timeit list(transformPoints(T, [p]))
+        100000 loops, best of 3: 6.4 µs per loop
+    """
+    return dot(T, hstack([p, 1]))[:3]
+
+
 def crossmat(x):
     """
     Cross-product matrix of a 3D vector.
@@ -256,6 +288,7 @@ def transformation_inverse(T):
 
 
 __all__ = [
+    'apply_transform',
     'crossmat',
     'quat_from_rotation_matrix',
     'quat_from_rpy',
