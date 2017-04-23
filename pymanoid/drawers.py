@@ -409,7 +409,6 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
     def __init__(self, stance, z=0., color=None):
         super(ZMPSupportAreaDrawer, self).__init__(stance, z, color)
         self.last_com = stance.com.p
-        self.method = 'cdd'
         self.stance = stance
 
     def on_tick(self, sim):
@@ -423,7 +422,7 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
         self.handle = None
         try:
             vertices = self.contact_set.compute_zmp_support_area(
-                self.stance.com.p, [0, 0, self.z], method=self.method)
+                self.stance.com.p, [0, 0, self.z])
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=(0.0, 0.5, 0.5, 0.5))

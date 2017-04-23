@@ -98,8 +98,8 @@ def compute_cone_face_matrix(S):
 
 def compute_polytope_hrep(vertices):
     """
-    Compute the halfspace representation of a polytope defined as
-    convex hull of a set of vertices:
+    Compute the halfspace representation (H-rep) of a polytope defined as convex
+    hull of a set of vertices:
 
     .. math::
 
@@ -261,7 +261,7 @@ def project_polytope(ineq, eq, proj, method='cdd'):
     return vertices
 
 
-def project_polytope_bretl(ineq, eq, proj, solver='glpk', max_radius=42.):
+def project_polytope_bretl(ineq, eq, proj, max_radius=42.):
     """
     Project a polytope into a 2D polygon using the incremental projection
     algorithm from [Bretl08]_. The 2D affine projection :math:`y = E x + f` is
@@ -282,8 +282,6 @@ def project_polytope_bretl(ineq, eq, proj, solver='glpk', max_radius=42.):
         Pair (`C`, `d`) describing the equality constraint.
     proj : pair of arrays
         Pair (`E`, `f`) describing the affine projection.
-    solver : string, optional
-        LP solver to use (default is GLPK).
     max_radius : scalar
         Maximum distance from origin (in [m]) used to make sure the output
         is bounded. Default is 42 [m].
@@ -326,7 +324,7 @@ def project_polytope_bretl(ineq, eq, proj, solver='glpk', max_radius=42.):
 
     lp_obj = cvxopt.matrix(zeros(A.shape[1] + 2))
     lp = lp_obj, A_ext, b_ext, C_ext, d_ext
-    res, P = bretl.ComputePolygon(lp, solver=solver)
+    res, P = bretl.ComputePolygon(lp)
     if not res:
         msg = "bretl.ComputePolygon: "
         msg += "could not optimize in direction %s" % str(P)

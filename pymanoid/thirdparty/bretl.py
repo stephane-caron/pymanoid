@@ -27,14 +27,19 @@ from scipy.linalg import norm
 from warnings import warn
 from StringIO import StringIO
 
-# STFU GLPK:
-cvxopt.solvers.options['show_progress'] = False
-cvxopt.solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}  # cvxopt 1.1.8
-cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
-cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
+cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
-# GLPK is the fastest LP solver we could find so far,
-# see <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
+try:
+    import cvxopt.glpk
+    GLPK_IF_AVAILABLE = 'glpk'
+    # GLPK is the fastest LP solver I could find so far:
+    # <https://scaron.info/blog/linear-programming-in-python-with-cvxopt.html>
+    # ... however, it's verbose by default, so tell it to STFU:
+    cvxopt.solvers.options['glpk'] = {'msg_lev': 'GLP_MSG_OFF'}  # cvxopt 1.1.8
+    cvxopt.solvers.options['msg_lev'] = 'GLP_MSG_OFF'  # cvxopt 1.1.7
+    cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
+except ImportError:
+    GLPK_IF_AVAILABLE = None
 
 
 class Vertex:
@@ -167,8 +172,28 @@ class Polygon:
             v.Print()
 
 
-def OptimizeDirection(vdir, lp, solver='glpk'):
-    """Optimize in one direction."""
+def OptimizeDirection(vdir, lp, solver=GLPK_IF_AVAILABLE):
+    """
+    Optimize in one direction.
+
+    Parameters
+    ----------
+    vdir : (3,) array
+        Direction in which the optimization is performed.
+    lp : array tuple
+        Tuple `(q, G, h, A, b)` defining the LP. See
+        :func:`pymanoid.thirdparty.cvxopt_.solve_lp` for details.
+    solver : string, optional
+        Backend LP solver to call.
+
+    Returns
+    -------
+    succ : bool
+        Success boolean.
+    z : (3,) array, or 0
+        Maximum vertex of the polygon in the direction `vdir`, or 0 in case of
+        solver failure.
+    """
     lp_q, lp_Gextended, lp_hextended, lp_A, lp_b = lp
     lp_q[-2] = -vdir[0]
     lp_q[-1] = -vdir[1]
@@ -187,7 +212,7 @@ def OptimizeDirection(vdir, lp, solver='glpk'):
         return False, 0
 
 
-def ComputePolygon(lp, solver='glpk'):
+def ComputePolygon(lp, solver=GLPK_IF_AVAILABLE):
     """
     Expand a polygon iteratively.
 
