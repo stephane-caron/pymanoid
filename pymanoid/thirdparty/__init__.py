@@ -18,5 +18,9 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import bretl
+import cvxopt_
+import quadprog_
 
-__all__ = ['bretl']
+# only necessary dependencies are imported here
+
+__all__ = ['bretl', 'cvxopt_', 'quadprog_']

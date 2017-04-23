@@ -40,7 +40,6 @@ cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
 class Vertex:
 
     def __init__(self, p):
-        """Create new vertex from iterable (e.g. list or numpy.ndarray)."""
         self.x = p[0]
         self.y = p[1]
         self.next = None
@@ -77,9 +76,6 @@ class Vertex:
 
 
 class Polygon:
-
-    def __init__(self):
-        pass
 
     def fromVertices(self, v1, v2, v3):
         v1.next = v2
@@ -157,8 +153,7 @@ class Polygon:
             vlast = export_list[-1]
             if norm([vcur.x-vlast.x, vcur.y-vlast.y]) > threshold:
                 export_list.append(vcur)
-        # always add last vertex
-        export_list.append(self.vertices[-1])
+        export_list.append(self.vertices[-1])  # always add last vertex
         return export_list
 
     def Plot(self):
@@ -193,7 +188,24 @@ def OptimizeDirection(vdir, lp, solver='glpk'):
 
 
 def ComputePolygon(lp, solver='glpk'):
-    """Expand a polygon iteratively."""
+    """
+    Expand a polygon iteratively.
+
+    Parameters
+    ----------
+    lp : array tuple
+        Tuple `(q, G, h, A, b)` defining the LP. See
+        :func:`pymanoid.thirdparty.cvxopt_.solve_lp` for details.
+    solver : string, optional
+        Name of backend LP solver.
+
+    Returns
+    -------
+    succ : bool
+        Success boolean.
+    poly : Polygon
+        Output polygon.
+    """
     theta = pi * random()
     d1 = array([cos(theta), sin(theta)])
     d2 = array([cos(theta + 2 * pi / 3), sin(theta + 2 * pi / 3)])
@@ -210,7 +222,7 @@ def ComputePolygon(lp, solver='glpk'):
     v1 = Vertex(z1)
     v2 = Vertex(z2)
     v3 = Vertex(z3)
-    P0 = Polygon()
-    P0.fromVertices(v1, v2, v3)
-    P0.iter_expand(lp, 1000)
-    return True, P0
+    poly = Polygon()
+    poly.fromVertices(v1, v2, v3)
+    poly.iter_expand(lp, 1000)
+    return True, poly

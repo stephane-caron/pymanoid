@@ -22,9 +22,9 @@ import cvxopt
 
 from numpy import array, dot, hstack, ones, vstack, zeros
 
-from algorithms import bretl
 from misc import norm
 from optim import solve_lp
+from thirdparty import bretl
 
 
 def compute_chebyshev_center(A, b):

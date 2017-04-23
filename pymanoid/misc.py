@@ -300,24 +300,3 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
         points, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
         linewidth=linewidth)
     ax.add_patch(patch)
-
-try:
-    from minieigen import MatrixXd, VectorXd
-
-    def array_to_MatrixXd(a):
-        A = MatrixXd.Zero(a.shape[0], a.shape[1])
-        for i in xrange(a.shape[0]):
-            for j in xrange(a.shape[1]):
-                A[i, j] = a[i, j]
-        return A
-
-    def array_to_VectorXd(v):
-        V = VectorXd.Zero(v.shape[0])
-        for i in xrange(v.shape[0]):
-            V[i] = v[i]
-        return V
-
-    def VectorXd_to_array(V):
-        return array([V[i] for i in xrange(V.rows())])
-except ImportError:
-    pass
