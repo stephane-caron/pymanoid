@@ -29,7 +29,7 @@ def solve_qp(P, q, G, h, A=None, b=None):
 
         \\begin{eqnarray}
         \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
-        \\mathrm{subject\\ to} & & G x \leq h \\\\
+        \\mathrm{subject\\ to} & & G x \\leq h \\\\
             & & A x = b
         \\end{eqnarray}
 

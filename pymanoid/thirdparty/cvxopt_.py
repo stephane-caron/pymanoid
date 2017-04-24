@@ -32,7 +32,7 @@ def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
 
         \\begin{eqnarray}
         \\mathrm{minimize} & & c^T x \\\\
-        \\mathrm{subject\\ to} & & G x \leq h \\\\
+        \\mathrm{subject\\ to} & & G x \\leq h \\\\
             & & A x = b
         \\end{eqnarray}
 
@@ -82,7 +82,7 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
 
         \\begin{eqnarray}
         \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
-        \\mathrm{subject\\ to} & & G x \leq h \\\\
+        \\mathrm{subject\\ to} & & G x \\leq h \\\\
             & & A x = b
         \\end{eqnarray}
 
