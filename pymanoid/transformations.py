@@ -52,13 +52,13 @@ def apply_transform(T, p):
     ----------
     T : (4, 4) array
         Homogeneous transformation matrix.
-    p : (3,) array
-        Point (non-homogeneous) coordinates.
+    p : (7,) or (3,) array
+        Pose or point coordinates.
 
     Returns
     -------
-    Tp : (3,) array
-        Result of the transformation in non-homogeneous coordinates.
+    Tp : (7,) or (3,) array
+        Result after applying the transformation.
 
     Notes
     -----
@@ -73,7 +73,11 @@ def apply_transform(T, p):
         In [34]: %timeit list(transformPoints(T, [p]))
         100000 loops, best of 3: 6.4 µs per loop
     """
-    return dot(T, hstack([p, 1]))[:3]
+    if len(p) == 3:
+        return dot(T, hstack([p, 1]))[:3]
+    R = dot(T[:3, :3], rotation_matrix_from_quat(p[:4]))
+    pos = dot(T, hstack([p[4:], 1]))[:3]
+    return hstack([quat_from_rotation_matrix(R), pos])
 
 
 def crossmat(x):
