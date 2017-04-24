@@ -79,13 +79,14 @@ class WrenchDrawer(Process):
 
     KO_COLOR = [.8, .4, .4]
 
-    def __init__(self, scale=None):
+    def __init__(self, scale=None, yaw_moment=True):
         super(WrenchDrawer, self).__init__()
         scale = DEFAULT_FORCE_SCALE if scale is None else scale
         self.handles = []
         self.last_bkgnd_switch = None
         self.nb_fails = 0
         self.scale = scale
+        self.yaw_moment = yaw_moment
 
     def clear(self):
         self.handles = []
@@ -98,7 +99,8 @@ class WrenchDrawer(Process):
         try:
             support = self.find_supporting_wrenches(sim)
             self.handles = [
-                draw_wrench(contact, w_c, scale=self.scale)
+                draw_wrench(
+                    contact, w_c, scale=self.scale, yaw_moment=self.yaw_moment)
                 for (contact, w_c) in support]
         except ValueError:
             self.handles = []
@@ -127,8 +129,8 @@ class PointMassWrenchDrawer(WrenchDrawer):
         Force-to-distance conversion ratio in [m] / [N].
     """
 
-    def __init__(self, point_mass, contact_set, scale=None):
-        super(PointMassWrenchDrawer, self).__init__(scale)
+    def __init__(self, point_mass, contact_set, scale=None, yaw_moment=True):
+        super(PointMassWrenchDrawer, self).__init__(scale, yaw_moment)
         self.contact_set = contact_set
         self.point_mass = point_mass
 
@@ -161,8 +163,8 @@ class RobotWrenchDrawer(WrenchDrawer):
         Delay constant, expressed in number of control cycles.
     """
 
-    def __init__(self, robot, scale=None, delay=1):
-        super(RobotWrenchDrawer, self).__init__(scale)
+    def __init__(self, robot, scale=None, delay=1, yaw_moment=True):
+        super(RobotWrenchDrawer, self).__init__(scale, yaw_moment)
         self.delay = delay
         self.qd_prev = robot.qd
         self.qdd_prev = zeros(robot.qd.shape)
@@ -194,8 +196,9 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
         Force-to-distance conversion ratio in [m] / [N].
     """
 
-    def __init__(self, point_mass, contact_set, scale=0.0025):
-        super(StaticWrenchDrawer, self).__init__(point_mass, contact_set, scale)
+    def __init__(self, point_mass, contact_set, scale=0.0025, yaw_moment=True):
+        super(StaticWrenchDrawer, self).__init__(
+            point_mass, contact_set, scale, yaw_moment)
         self.point_mass.pdd = zeros((3,))
 
     def find_supporting_wrenches(self, sim):

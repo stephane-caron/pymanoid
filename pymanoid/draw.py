@@ -427,14 +427,16 @@ def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
     return handles
 
 
-def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
+def draw_wrench(surface, wrench, scale=0.005, pointsize=0.02, linewidth=0.01,
+                yaw_moment=True):
     """
-    Draw a wrench acting on a given rigid body.
+    Draw a 6D wrench as a 3D force applied at the center of pressure of a given
+    surface frame.
 
     Parameters
     ----------
-    body : Body
-        Body on which the wrench is acting.
+    surface : surface
+        Surface at which the wrench is acting.
     force : ndarray
         6D wrench vector in world-frame coordinates.
     scale : scalar
@@ -443,6 +445,8 @@ def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
         Point radius in [m].
     linewidth : scalar
         Thickness of force vector.
+    yaw_moment : bool, optional
+        Depict the yaw moment by a blue line.
 
     Returns
     -------
@@ -454,13 +458,13 @@ def draw_wrench(body, wrench, scale=0.005, pointsize=0.02, linewidth=0.01):
         wrench = array(wrench)
     assert wrench.shape == (6,)
     f, tau = wrench[:3], wrench[3:]
-    cop = body.p + cross(body.n, tau) / dot(body.n, f)
-    tau_z = dot(body.n, tau)
+    cop = surface.p + cross(surface.n, tau) / dot(surface.n, f)
+    tau_z = dot(surface.n, tau)
     h1 = draw_point(cop, pointsize=pointsize)
     h2 = draw_force(cop, f, scale=scale, linewidth=linewidth)
-    if abs(tau_z) > 1e-1:
+    if yaw_moment and abs(tau_z) > 1e-1:
         h3 = draw_line(
-            cop, cop + 10 * scale * tau_z * body.n, color='b',
+            cop, cop + 10 * scale * tau_z * surface.n, color='b',
             linewidth=5.)
         return [h1, h2, h3]
     return [h1, h2]
