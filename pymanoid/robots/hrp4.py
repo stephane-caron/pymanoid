@@ -161,16 +161,16 @@ class HRP4(Humanoid):
         super(HRP4, self).__init__(path, root_body)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.left_foot = Manipulator(
-            self.rave.GetManipulator("left_foot_center"), shape=self.sole_shape,
+            self.rave.GetManipulator("LeftFootCenter"), shape=self.sole_shape,
             friction=0.8)
         self.right_foot = Manipulator(
-            self.rave.GetManipulator("right_foot_center"),
-            shape=self.sole_shape, friction=0.8)
+            self.rave.GetManipulator("RightFootCenter"), shape=self.sole_shape,
+            friction=0.8)
         self.left_hand = Manipulator(
-            self.rave.GetManipulator("left_hand_palm"), shape=self.palm_shape,
+            self.rave.GetManipulator("LeftHandCenter"), shape=self.palm_shape,
             friction=0.8)
         self.right_hand = Manipulator(
-            self.rave.GetManipulator("right_hand_palm"), shape=self.palm_shape,
+            self.rave.GetManipulator("RightHandCenter"), shape=self.palm_shape,
             friction=0.8)
 
     def suntan(self, amount=0.3):
