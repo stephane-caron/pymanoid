@@ -20,18 +20,122 @@
 import casadi
 
 from bisect import bisect_left
-from numpy import cosh, sinh, sqrt
+from numpy import array, cosh, dot, sinh, sqrt
 from time import time
 
+from body import Point
+from contact import ContactSet
 from draw import draw_line, draw_point, draw_trajectory
 from misc import norm
 from optim import NonlinearProgram
+from polyhedra import compute_polytope_hrep
 from sim import gravity
 
 
 """
 Centroidal trajectory generation for humanoid robots.
 """
+
+
+class Stance(ContactSet):
+
+    """
+    A stance is a COM supported by a contact set.
+
+    Parameters
+    ----------
+    com : array or Point
+        COM position.
+    left_foot : Contact, optional
+        Left foot contact.
+    right_foot : Contact, optional
+        Right foot contact.
+    left_hand : Contact, optional
+        Left hand contact.
+    right_hand : Contact, optional
+        Right hand contact.
+    label : string, optional
+        Label for the current contact phase.
+    duration : scalar, optional
+        Optional time duration.
+    """
+
+    def __init__(self, com, left_foot=None, right_foot=None, left_hand=None,
+                 right_hand=None, label=None, duration=None):
+        # do not call the parent (ContactSet) constructor
+        if not issubclass(type(com), Point):
+            com = Point(com, visible=False)
+        self.com = com
+        self.duration = duration
+        self.label = label
+        self.left_foot = left_foot
+        self.left_hand = left_hand
+        self.right_foot = right_foot
+        self.right_hand = right_hand
+        self.sep_hrep = None
+
+    @property
+    def bodies(self):
+        return filter(None, [
+            self.com, self.left_foot, self.left_hand, self.right_foot,
+            self.right_hand])
+
+    @property
+    def contacts(self):
+        return filter(None, [
+            self.left_foot, self.left_hand, self.right_foot, self.right_hand])
+
+    @property
+    def nb_contacts(self):
+        nb_contacts = 0
+        if self.left_foot is not None:
+            nb_contacts += 1
+        if self.left_hand is not None:
+            nb_contacts += 1
+        if self.right_foot is not None:
+            nb_contacts += 1
+        if self.right_hand is not None:
+            nb_contacts += 1
+        return nb_contacts
+
+    def hide(self):
+        for body in self.bodies:
+            body.hide()
+
+    def show(self):
+        for body in self.bodies:
+            body.show()
+
+    def compute_static_equilibrium_polygon(self):
+        """
+        Compute the contact wrench cone (CWC) and static-equilibrium polygon
+        (SEP) of the stance.
+        """
+        sep_vertices = super(Stance, self).compute_static_equilibrium_polygon()
+        self.sep_hrep = compute_polytope_hrep(sep_vertices)
+        self.sep_norm = array([norm(a) for a in self.sep_hrep[0]])
+        self.sep_vertices = sep_vertices
+        return sep_vertices
+
+    def dist_to_sep_edge(self, com):
+        """
+        Algebraic distance of a COM position to the edge of the
+        static-equilibrium polygon.
+
+        Parameters
+        ----------
+        com : array, shape=(3,)
+            COM position to evaluate the distance from.
+
+        Returns
+        -------
+        dist : scalar
+            Algebraic distance to the edge of the polygon. Inner points get a
+            positive value, outer points a negative one.
+        """
+        A, b = self.sep_hrep
+        alg_dists = (b - dot(A, com[:2])) / self.sep_norm
+        return min(alg_dists)
 
 
 class COMStepTransit(object):

@@ -133,8 +133,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             ssl_stance = Stance(
                 com_target, left_foot=left_foot, label='SS-L',
                 duration=ss_duration)
-            dsl_stance.compute_contact_polyhedra()
-            ssl_stance.compute_contact_polyhedra()
+            dsl_stance.compute_static_equilibrium_polygon()
+            ssl_stance.compute_static_equilibrium_polygon()
             stances.append(dsl_stance)
             stances.append(ssl_stance)
         com_target = right_foot.p + [0., 0., JVRC1.leg_length]
@@ -147,8 +147,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         ssr_stance = Stance(
             com_target, right_foot=right_foot, label='SS-R',
             duration=ss_duration)
-        dsr_stance.compute_contact_polyhedra()
-        ssr_stance.compute_contact_polyhedra()
+        dsr_stance.compute_static_equilibrium_polygon()
+        ssr_stance.compute_static_equilibrium_polygon()
         stances.append(dsr_stance)
         stances.append(ssr_stance)
         prev_right_foot = right_foot
@@ -159,8 +159,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
     ssl_stance = Stance(
         com_target, left_foot=first_left_foot, label='SS-L',
         duration=ss_duration)
-    dsl_stance.compute_contact_polyhedra()
-    ssl_stance.compute_contact_polyhedra()
+    dsl_stance.compute_static_equilibrium_polygon()
+    ssl_stance.compute_static_equilibrium_polygon()
     stances.append(dsl_stance)
     stances.append(ssl_stance)
     return stances
