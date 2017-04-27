@@ -28,9 +28,6 @@ from misc import norm
 from sim import Process
 
 
-DEFAULT_FORCE_SCALE = 0.0025  # [m] / [N]
-
-
 class COMAccelDrawer(Process):
 
     """
@@ -40,21 +37,17 @@ class COMAccelDrawer(Process):
     ----------
     robot : Humanoid
         Humanoid robot model.
-    scale : scalar, optional
-        Force-to-distance conversion ratio in [m] / [N].
     delay : int, optional
         Delay constant, expressed in number of control cycles.
     """
 
-    def __init__(self, robot, scale=None, delay=1):
+    def __init__(self, robot, delay=1):
         super(COMAccelDrawer, self).__init__()
-        scale = DEFAULT_FORCE_SCALE if scale is None else scale
         self.delay = delay
         self.handle = None
         self.qd_prev = robot.qd
         self.qdd_prev = zeros(robot.qd.shape)
         self.robot = robot
-        self.scale = scale
 
     def on_tick(self, sim):
         qd = self.robot.qd
@@ -63,30 +56,22 @@ class COMAccelDrawer(Process):
         qdd = qdd_disc + exp(-1. / self.delay) * (self.qdd_prev - qdd_disc)
         com = self.robot.com
         Pd = self.robot.mass * self.robot.compute_com_acceleration(qdd)
-        self.handle = draw_force(com, Pd, scale=self.scale)
+        self.handle = draw_force(com, Pd)
 
 
 class WrenchDrawer(Process):
 
     """
     Draw contact wrenches applied to the robot.
-
-    Parameters
-    ----------
-    scale : scalar, optional
-        Force-to-distance conversion ratio in [m] / [N].
     """
 
     KO_COLOR = [.8, .4, .4]
 
-    def __init__(self, scale=None, yaw_moment=True):
+    def __init__(self):
         super(WrenchDrawer, self).__init__()
-        scale = DEFAULT_FORCE_SCALE if scale is None else scale
         self.handles = []
         self.last_bkgnd_switch = None
         self.nb_fails = 0
-        self.scale = scale
-        self.yaw_moment = yaw_moment
 
     def clear(self):
         self.handles = []
@@ -99,9 +84,7 @@ class WrenchDrawer(Process):
         try:
             support = self.find_supporting_wrenches(sim)
             self.handles = [
-                draw_wrench(
-                    contact, w_c, scale=self.scale, yaw_moment=self.yaw_moment)
-                for (contact, w_c) in support]
+                draw_wrench(contact, w_c) for (contact, w_c) in support]
         except ValueError:
             self.handles = []
             self.nb_fails += 1
@@ -125,12 +108,10 @@ class PointMassWrenchDrawer(WrenchDrawer):
         Point-mass to which forces are applied.
     contact_set : ContactSet
         Set of contacts providing interaction forces.
-    scale : scalar, optional
-        Force-to-distance conversion ratio in [m] / [N].
     """
 
-    def __init__(self, point_mass, contact_set, scale=None, yaw_moment=True):
-        super(PointMassWrenchDrawer, self).__init__(scale, yaw_moment)
+    def __init__(self, point_mass, contact_set):
+        super(PointMassWrenchDrawer, self).__init__()
         self.contact_set = contact_set
         self.point_mass = point_mass
 
@@ -157,14 +138,12 @@ class RobotWrenchDrawer(WrenchDrawer):
     ----------
     robot : Humanoid
         Humanoid robot model.
-    scale : scalar, optional
-        Force-to-distance conversion ratio in [m] / [N].
     delay : int, optional
         Delay constant, expressed in number of control cycles.
     """
 
-    def __init__(self, robot, scale=None, delay=1, yaw_moment=True):
-        super(RobotWrenchDrawer, self).__init__(scale, yaw_moment)
+    def __init__(self, robot, delay=1):
+        super(RobotWrenchDrawer, self).__init__()
         self.delay = delay
         self.qd_prev = robot.qd
         self.qdd_prev = zeros(robot.qd.shape)
@@ -192,13 +171,10 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
         Point-mass to which forces are applied.
     contact_set : ContactSet
         Set of contacts providing interaction forces.
-    scale : scalar
-        Force-to-distance conversion ratio in [m] / [N].
     """
 
-    def __init__(self, point_mass, contact_set, scale=0.0025, yaw_moment=True):
-        super(StaticWrenchDrawer, self).__init__(
-            point_mass, contact_set, scale, yaw_moment)
+    def __init__(self, point_mass, contact_set):
+        super(StaticWrenchDrawer, self).__init__(point_mass, contact_set)
         self.point_mass.pdd = zeros((3,))
 
     def find_supporting_wrenches(self, sim):
@@ -443,7 +419,7 @@ class COMAccelConeDrawer(ZMPSupportAreaDrawer):
     contact_set : ContactSet
         Contact set to track.
     scale : scalar, optional
-        Force-to-distance conversion ratio, in [m] / [N].
+        Acceleration to distance conversion ratio, in [s]^2.
     color : tuple or string, optional
         Area color.
     """

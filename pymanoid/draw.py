@@ -428,7 +428,7 @@ def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
 
 
 def draw_wrench(surface, wrench, scale=0.005, pointsize=0.02, linewidth=0.01,
-                yaw_moment=True):
+                yaw_moment=False):
     """
     Draw a 6D wrench as a 3D force applied at the center of pressure of a given
     surface frame.
