@@ -17,7 +17,10 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import casadi
+try:
+    import casadi
+except ImportError:
+    casadi = None
 
 from bisect import bisect_left
 from numpy import array, cosh, dot, sinh, sqrt
@@ -195,6 +198,7 @@ class COMStepTransit(object):
         dT_init = duration / nb_steps
         dT_max = 2 * dT_init
         omega = sqrt(omega2)
+        assert casadi is not None, "CasADi is not installed"
         assert self.dT_min < dT_init
         self.dcm_target = dcm_target
         self.dT_init = dT_init

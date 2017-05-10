@@ -20,11 +20,7 @@
 from __future__ import division
 
 from numpy import array, dot, hstack
-from pyclipper import Pyclipper, PT_CLIP, PT_SUBJECT, CT_INTERSECTION
-from pyclipper import scale_to_clipper, scale_from_clipper
 from scipy.spatial import ConvexHull
-from shapely.geometry import LineString as ShapelyLineString
-from shapely.geometry import Polygon as ShapelyPolygon
 
 from misc import norm
 from polyhedra import compute_chebyshev_center
@@ -149,6 +145,9 @@ def intersect_line_polygon_shapely(line, vertices):
     coords : array, shape=(2,), or []
         Intersection between the line and the polygon.
     """
+    from shapely.geometry import LineString as ShapelyLineString
+    from shapely.geometry import Polygon as ShapelyPolygon
+
     def in_line(p):
         for q in line:
             if abs(p[0] - q[0]) < 1e-5 and abs(p[1] - q[1]) < 1e-5:
@@ -279,6 +278,8 @@ def intersect_polygons(polygon1, polygon2):
     intersection : list of arrays
         Vertices of the intersection in counterclockwise order.
     """
+    from pyclipper import Pyclipper, PT_CLIP, PT_SUBJECT, CT_INTERSECTION
+    from pyclipper import scale_to_clipper, scale_from_clipper
     # could be accelerated by removing the scale_to/from_clipper()
     subj, clip = (polygon1,), polygon2
     pc = Pyclipper()

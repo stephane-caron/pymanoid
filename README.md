@@ -53,6 +53,15 @@ git clone https://github.com/stephane-caron/pymanoid.git && cd pymanoid
 sudo python setup.py install
 ```
 
+### Optional
+
+For nonlinear optimal control, you will need to [install
+CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
+from source to install the MA27 linear solver as well.
+
+Some minor functions to manipulate polygons may also require two small
+libraries: ``sudo pip install pyclipper shapely``.
+
 ## Frequently Asked Questions
 
 **Q: Do you implement dynamics simulation in Pymanoid? If yes, could you give
