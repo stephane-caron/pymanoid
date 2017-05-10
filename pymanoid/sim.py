@@ -117,7 +117,7 @@ class Simulation(object):
         self.lock = None
         self.processes = []
         self.nb_steps = 0
-        self.slowdown = None
+        self.slowdown = 1.
         self.viewer = None
         self.watch_comp_times = False
         self.window_id = None
@@ -172,7 +172,7 @@ class Simulation(object):
             rem_time = self.dt - (time() - t0)
             if rem_time > 1e-4:
                 sleep(rem_time)
-            if self.slowdown is not None and self.slowdown > 1.:
+            if self.slowdown > 1.01:
                 sleep((self.slowdown - 1.) * self.dt)
             self.nb_steps += 1
 
