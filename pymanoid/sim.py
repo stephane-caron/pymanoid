@@ -129,9 +129,24 @@ class Simulation(object):
     def __del__(self):
         self.stop()
 
-    def schedule(self, process):
-        """Add a Process to the schedule list (insertion order matters)."""
+    def schedule(self, process, paused=False):
+        """
+        Add a process to the schedule list.
+
+        Parameters
+        ----------
+        process : pymanoid.Process
+            Process that will be called at every simulation tick.
+        paused : bool, optional
+            If True, the process will be initially paused.
+
+        Note
+        ----
+        The order in which processes are scheduled does matter.
+        """
         self.processes.append(process)
+        if paused:
+            process.pause()
 
     def schedule_extra(self, process):
         """Schedule a Process not counted in the computation time budget."""
