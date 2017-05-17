@@ -33,30 +33,30 @@ class Stance(ContactSet):
 
     Parameters
     ----------
-    com : array or Point
-        COM position.
+    com : array or Point, optional
+        Center-of-mass target.
     left_foot : Contact, optional
-        Left foot contact.
+        Left-foot contact target.
     right_foot : Contact, optional
-        Right foot contact.
+        Right-foot contact target.
     left_hand : Contact, optional
-        Left hand contact.
+        Left-hand contact target.
     right_hand : Contact, optional
-        Right hand contact.
+        Right-hand contact target.
     """
 
     def __init__(self, com=None, left_foot=None, right_foot=None,
                  left_hand=None, right_hand=None):
-        # do not call the parent (ContactSet) constructor
+        # NB: do not call the parent (ContactSet) constructor
         if not issubclass(type(com), Point):
             com = Point(com, visible=False)
-        self.__sep_hrep = None
         self.com = com
         self.dof_tasks = {}
         self.left_foot = left_foot
         self.left_hand = left_hand
         self.right_foot = right_foot
         self.right_hand = right_hand
+        self.sep_hrep = None
 
     def bind(self, robot, reg='posture'):
         robot.ik.clear_tasks()
@@ -120,8 +120,8 @@ class Stance(ContactSet):
         (SEP) of the stance.
         """
         sep_vertices = super(Stance, self).compute_static_equilibrium_polygon()
-        self.__sep_hrep = compute_polytope_hrep(sep_vertices)
-        self.sep_norm = array([norm(a) for a in self.__sep_hrep[0]])
+        self.sep_hrep = compute_polytope_hrep(sep_vertices)
+        self.sep_norm = array([norm(a) for a in self.sep_hrep[0]])
         self.sep_vertices = sep_vertices
         return sep_vertices
 
@@ -141,6 +141,6 @@ class Stance(ContactSet):
             Algebraic distance to the edge of the polygon. Inner points get a
             positive value, outer points a negative one.
         """
-        A, b = self.__sep_hrep
+        A, b = self.sep_hrep
         alg_dists = (b - dot(A, com[:2])) / self.sep_norm
         return min(alg_dists)
