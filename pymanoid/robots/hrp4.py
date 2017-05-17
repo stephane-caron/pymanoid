@@ -159,6 +159,7 @@ class HRP4(Humanoid):
         ``HRP4R.dae`` due to copyright.
         """
         super(HRP4, self).__init__(path, root_body)
+        self.ik.set_active_dofs(self.whole_body)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.left_foot = Manipulator(
             self.rave.GetManipulator("LeftFootCenter"), shape=self.sole_shape,

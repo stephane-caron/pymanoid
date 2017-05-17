@@ -20,12 +20,13 @@
 from numpy import array, dot
 
 from body import Point
+from contact import ContactSet
 from misc import norm
 from polyhedra import compute_polytope_hrep
 from tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 
 
-class Stance(object):
+class Stance(ContactSet):
 
     """
     A stance is a set of IK tasks.
@@ -62,12 +63,12 @@ class Stance(object):
         if self.left_foot is not None:
             robot.ik.add_task(
                 ContactTask(robot, robot.left_foot, self.left_foot))
-        if self.right_foot is not None:
-            robot.ik.add_task(
-                ContactTask(robot, robot.right_foot, self.right_foot))
         if self.left_hand is not None:
             robot.ik.add_task(
                 ContactTask(robot, robot.left_hand, self.left_hand))
+        if self.right_foot is not None:
+            robot.ik.add_task(
+                ContactTask(robot, robot.right_foot, self.right_foot))
         if self.right_hand is not None:
             robot.ik.add_task(
                 ContactTask(robot, robot.right_hand, self.right_hand))

@@ -1256,32 +1256,3 @@ class Humanoid(Robot):
         n = normal if normal is not None else array([0, 0, 1])
         f, tau_O = self.compute_gravito_inertial_wrench(qdd, p_O)
         return cross(n, tau_O) / dot(n, f) + p_O
-
-    """
-    Posture generation
-    ==================
-    """
-
-    def generate_posture(self, stance, max_it=1000, cost_stop=1e-10,
-                         impr_stop=1e-5, dt=5e-3):
-        """
-        Generate robot posture (joint-angles + free-flyer) for a given Stance.
-
-        Parameters
-        ----------
-        stance : Stance
-            Contacts and COM configurations to generate the posture from.
-        max_it : integer
-            Maximum number of IK iterations.
-        cost_stop : scalar
-            Stop when cost value is below this threshold.
-        conv_tol : scalar, optional
-            Stop when cost improvement (relative variation from one iteration to
-            the next) is less than this threshold.
-        dt : scalar
-            Time step for the differential IK.
-        debug : bool, optional
-            Print extra debug info, default is False.
-        """
-        stance.bind(self)
-        self.ik.solve(max_it, cost_stop, impr_stop, dt)

@@ -30,6 +30,9 @@ except ImportError:
 
 from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
+from pymanoid.drawers import COMAccelConeDrawer
+from pymanoid.drawers import SEPDrawer
+from pymanoid.drawers import StaticWrenchDrawer
 from pymanoid.drawers import ZMPSupportAreaDrawer
 
 com_height = 0.9  # [m]
@@ -53,27 +56,6 @@ if __name__ == "__main__":
         [0.08254916, -0.85420468, -0.51334199,  2.79584694],
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.25)
-
-    com_target = PointMass(
-        pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
-    com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
-
-    stance = Stance(
-        com=com_target,
-        left_foot=Contact(
-            shape=robot.sole_shape,
-            pos=[0.20, 0.15, 0.1],
-            rpy=[0.4, 0, 0],
-            friction=0.5,
-            visible=True),
-        right_foot=Contact(
-            shape=robot.sole_shape,
-            pos=[-0.2, -0.195, 0.],
-            rpy=[-0.4, 0, 0],
-            friction=0.5,
-            visible=True))
-
-    robot.init_ik(active_dofs=robot.whole_body)
     robot.set_dof_values([
         3.53863816e-02,   2.57657518e-02,   7.75586039e-02,
         6.35909636e-01,   7.38580762e-02,  -5.34226902e-01,
@@ -93,15 +75,62 @@ if __name__ == "__main__":
         -4.90099381e-02,   8.17415141e-01,  -8.71841480e-02,
         -1.36966665e-01,  -4.26226421e-02])
 
-    robot.ik.verbosity = 2
-    robot.generate_posture(stance)
-    robot.ik.verbosity = 0
+    com_target = PointMass(
+        pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
+    com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    area_drawer = ZMPSupportAreaDrawer(stance, z_polygon)
+    stance = Stance(
+        com=com_target,
+        left_foot=Contact(
+            shape=robot.sole_shape,
+            pos=[0.20, 0.15, 0.1],
+            rpy=[0.4, 0, 0],
+            friction=0.5,
+            visible=True),
+        right_foot=Contact(
+            shape=robot.sole_shape,
+            pos=[-0.2, -0.195, 0.],
+            rpy=[-0.4, 0, 0],
+            friction=0.5,
+            visible=True))
+    stance.bind(robot)
+    robot.ik.solve()
+
+    com_sync = COMSync()
+    cone_drawer = COMAccelConeDrawer(stance, scale=0.05)
+    sep_drawer = SEPDrawer(stance, z_polygon)
+    wrench_drawer = StaticWrenchDrawer(com_target, stance)
+    zmp_area_drawer = ZMPSupportAreaDrawer(stance, z_polygon)
+
     sim.schedule(robot.ik)
-    sim.schedule_extra(area_drawer)
-    sim.schedule_extra(COMSync())
+    sim.schedule_extra(com_sync)
+    sim.schedule_extra(cone_drawer)
+    sim.schedule_extra(sep_drawer)
+    sim.schedule_extra(wrench_drawer)
+    sim.schedule_extra(zmp_area_drawer)
     sim.start()
+
+    print """
+
+Contact-stability conditions
+============================
+
+Ready to go! The GUI displays three contact-stability criteria:
+
+    Blue polygon -- ZMP pendular support area
+    Green polygon -- COM static-equilibrium polygon
+    Red cone -- COM pendular acceleration cone
+
+You can move the blue box (in the plane above the robot) around to make the
+robot move its center of mass. Contact wrenches are displayed at each contact
+(green dot is COP location, arrow is resultant force).
+
+When the COM exists the static-equilibrium polygon, you should see the
+background turn red as no feasible contact wrenches can be found.
+
+Enjoy :)
+
+"""
 
     if IPython.get_ipython() is None:
         IPython.embed()

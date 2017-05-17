@@ -964,5 +964,6 @@ Here is the list of global objects. Use <TAB> to see what's inside.
 Enjoy :)
 
 """
+
     if IPython.get_ipython() is None:
         IPython.embed()

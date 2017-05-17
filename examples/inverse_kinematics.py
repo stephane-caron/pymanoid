@@ -77,7 +77,7 @@ if __name__ == '__main__':
     reg_task = PostureTask(robot, robot.q, weight=1e-6)  # regularization task
 
     # IK setup
-    robot.init_ik(active_dofs=robot.whole_body)
+    robot.ik.clear_tasks()
     robot.ik.add_task(lf_task)
     robot.ik.add_task(rf_task)
     robot.ik.add_task(com_task)

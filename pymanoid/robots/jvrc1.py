@@ -162,15 +162,15 @@ class JVRC1(Humanoid):
             rc = system('wget %s -O %s' % (JVRC1.MODEL_URL, path))
             assert rc == 0, "Download of model file failed"
         super(JVRC1, self).__init__(path, root_body)
-        rave = self.rave
+        self.ik.set_active_dofs(self.whole_body)
         self.left_foot = Manipulator(
-            rave.GetManipulator("left_foot_base"), shape=self.sole_shape,
+            self.rave.GetManipulator("left_foot_base"), shape=self.sole_shape,
             friction=0.8)
         self.left_hand = Manipulator(
-            rave.GetManipulator("left_hand_palm"), friction=0.8)
+            self.rave.GetManipulator("left_hand_palm"), friction=0.8)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
         self.right_foot = Manipulator(
-            rave.GetManipulator("right_foot_base"), shape=self.sole_shape,
+            self.rave.GetManipulator("right_foot_base"), shape=self.sole_shape,
             friction=0.8)
         self.right_hand = Manipulator(
-            rave.GetManipulator("right_hand_palm"), friction=0.8)
+            self.rave.GetManipulator("right_hand_palm"), friction=0.8)

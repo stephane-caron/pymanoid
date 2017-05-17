@@ -404,7 +404,7 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
                 self.stance.com.p, [0, 0, self.z])
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
-                normal=[0, 0, 1], color=(0.0, 0.5, 0.5, 0.5))
+                normal=[0, 0, 1], color=(0.0, 0.0, 0.5, 0.5))
         except Exception as e:
             print "ZMPSupportAreaDrawer:", e
 
