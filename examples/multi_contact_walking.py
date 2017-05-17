@@ -128,11 +128,12 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         if prev_right_foot is not None:
             com_target = left_foot.p + [0., 0., JVRC1.leg_length]
             dsl_stance = Stance(
-                com_target, left_foot=left_foot, right_foot=prev_right_foot,
-                label='DS-L', duration=ds_duration)
-            ssl_stance = Stance(
-                com_target, left_foot=left_foot, label='SS-L',
-                duration=ss_duration)
+                com_target, left_foot=left_foot, right_foot=prev_right_foot)
+            dsl_stance.label = 'DS-L'
+            dsl_stance.duration = ds_duration
+            ssl_stance = Stance(com_target, left_foot=left_foot)
+            ssl_stance.label = 'SS-L'
+            ssl_stance.duration = ss_duration
             dsl_stance.compute_static_equilibrium_polygon()
             ssl_stance.compute_static_equilibrium_polygon()
             stances.append(dsl_stance)
@@ -142,11 +143,12 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             com_target += init_com_offset
             init_com_offset = None
         dsr_stance = Stance(
-            com_target, left_foot=left_foot, right_foot=right_foot,
-            label='DS-R', duration=ds_duration)
-        ssr_stance = Stance(
-            com_target, right_foot=right_foot, label='SS-R',
-            duration=ss_duration)
+            com_target, left_foot=left_foot, right_foot=right_foot)
+        dsr_stance.label = 'DS-R'
+        dsr_stance.duration = ds_duration
+        ssr_stance = Stance(com_target, right_foot=right_foot)
+        ssr_stance.label = 'SS-R'
+        ssr_stance.duration = ss_duration
         dsr_stance.compute_static_equilibrium_polygon()
         ssr_stance.compute_static_equilibrium_polygon()
         stances.append(dsr_stance)
@@ -154,11 +156,12 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         prev_right_foot = right_foot
     com_target = first_left_foot.p + [0., 0., JVRC1.leg_length]
     dsl_stance = Stance(
-        com_target, left_foot=first_left_foot, right_foot=prev_right_foot,
-        label='DS-L', duration=ds_duration)
-    ssl_stance = Stance(
-        com_target, left_foot=first_left_foot, label='SS-L',
-        duration=ss_duration)
+        com_target, left_foot=first_left_foot, right_foot=prev_right_foot)
+    dsl_stance.label = 'DS-L'
+    dsl_stance.duration = ds_duration
+    ssl_stance = Stance(com_target, left_foot=first_left_foot)
+    ssl_stance.label = 'SS-L'
+    ssl_stance.duration = ss_duration
     dsl_stance.compute_static_equilibrium_polygon()
     ssl_stance.compute_static_equilibrium_polygon()
     stances.append(dsl_stance)
@@ -898,12 +901,13 @@ if __name__ == "__main__":
         nb_mpc_steps=20,
         tube_radius=0.01)
 
-    robot.init_ik(robot.whole_body)
-    robot.set_pos([0, 0, 2])  # start IK with the robot above contacts
-    robot.generate_posture(fsm.cur_stance, max_it=200)
-
+    robot.set_pos([0, 0, 2])  # robot initially above contacts
+    fsm.cur_stance.bind(robot)
+    robot.ik.solve(max_it=24)
     com_target.set_pos(robot.com)
     robot.ik.tasks['COM'].update_target(com_target)
+    robot.ik.solve(max_it=42)
+
     robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2))
     robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0.))
     robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0.))
