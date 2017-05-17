@@ -1,14 +1,17 @@
 # Examples
 
-## Posture generation
+## Multi-contact walking
 
-<img align="right" src="../doc/source/images/inverse_kinematics.png" width="300" />
+<img align="right" src="../doc/source/images/multi_contact_walking.png" width="300" />
 
-The examples ``posture_generation.py`` and ``inverse_kinematics.py`` (same for
-advanced users) shows how to use the robot IK to reach a given posture.
+In this example, we make the JVRC-1 model walk accross a circular staircase
+where all contacts are tilted.
 
-It loads (and downloads, if necessary) the
-[JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1) humanoid model, then generates a posture where the robot has both feet on pre-defined contact locations. Next, it tracks a reference COM motion given by the green virtual box. The box is moved around for a while, then you can manipulate it directly in the OpenRAVE GUI.
+The environment is generated so as to make the locomotion task difficult. We
+solve it using a [multi-contact linear
+MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is
+kept linear thanks to the pendular COM acceleration cone (see the other example
+below).
 
 ## Contact stability
 
@@ -24,19 +27,24 @@ are computed at each contact to support the robot in static-equilibrium. Try
 moving the blue box (in the plane above the robot) around, and see what happens
 when it exits the polygon.
 
-The definition and calculation of the generalized ZMP support area is detailed
-in [this paper](https://scaron.info/research/tro-2016.html), and that of the
-COM acceleration cone in [this
+The definition and calculation of the ZMP support area is detailed in [this
+paper](https://scaron.info/research/tro-2016.html), and that of the COM
+acceleration cone in [this
 paper](https://scaron.info/research/humanoids-2016.html). Both depend on
 contact locations and on the position of the center of mass, so when you move
 it or its projection (blue box) you will see the blue area and red cone change
 as well.
 
-## Multi-contact walking
+## Posture generation
 
-<img align="right" src="../doc/source/images/multi_contact_walking.png" width="300" />
+<img align="right" src="../doc/source/images/inverse_kinematics.png" width="300" />
 
-In this example, we make the JVRC-1 model walk accross a circular staircase where all contacts are tilted.
+The examples ``posture_generation.py`` and ``inverse_kinematics.py`` (same for
+advanced users) shows how to use the robot IK to reach a given posture.
 
-The environment is generated so as to make the locomotion task difficult. We solve it using a [multi-contact linear
-MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is kept linear thanks to the pendular COM acceleration cone (see the other example below).
+It loads (and downloads, if necessary) the
+[JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
+humanoid model, then generates a posture where the robot has both feet on
+pre-defined contact locations. Next, it tracks a reference COM motion given by
+the green virtual box. The box is moved around for a while, then you can
+manipulate it directly in the OpenRAVE GUI.
