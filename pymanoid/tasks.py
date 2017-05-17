@@ -27,6 +27,7 @@ _oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 DEFAULT_WEIGHTS = {
     'CONTACT': 1.,
     'COM': 1e-2,
+    'DOF': 1e-5,
     'EFFECTOR': 1e-3,
     'REGULARIZATION': 1e-6,
 }
@@ -236,6 +237,8 @@ class DOFTask(Task):
 
     def __init__(self, robot, index, target, weight=None, gain=0.85,
                  exclude_dofs=None):
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['DOF']
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(index) is str:
             index = robot.__getattribute__(index)

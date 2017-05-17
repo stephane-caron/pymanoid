@@ -22,13 +22,13 @@ from body import Cube
 from body import Manipulator
 from body import Point
 from body import PointMass
-from centroidal import Stance
 from contact import Contact
 from contact import ContactSet
 from robot import Humanoid
 from robot import Robot
 from sim import Process
 from sim import Simulation
+from stance import Stance
 
 import drawers
 import robots

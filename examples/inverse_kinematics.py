@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+This example goes into the details of the IK solver setup. Beginners should take
+a look at the posture-generation example first.
+"""
+
 import IPython
 import numpy
 import os

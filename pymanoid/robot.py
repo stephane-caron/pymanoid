@@ -22,6 +22,7 @@ from numpy import concatenate, maximum, minimum
 from os.path import basename, isfile, splitext
 from warnings import warn
 
+from body import PointMass
 from draw import draw_force, draw_point
 from ik import IKSolver
 from misc import middot
@@ -61,9 +62,8 @@ class Robot(object):
         nb_dofs = rave.GetDOF()
         q_min, q_max = rave.GetDOFLimits()
         rave.SetDOFVelocityLimits([1000.] * nb_dofs)
-
         self.has_free_flyer = False
-        self.ik = None  # call init_ik() to instantiate
+        self.ik = None
         self.is_visible = True
         self.mass = sum([link.GetMass() for link in rave.GetLinks()])
         self.nb_dofs = nb_dofs
@@ -75,22 +75,8 @@ class Robot(object):
         self.stance = None
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
-
-    def init_ik(self, active_dofs, doflim_gain=0.5, verbosity=0):
-        """
-        Initialize the IK solver.
-
-        Parameters
-        ----------
-        active_dofs : list
-            Specifies DOFs used by the IK.
-        doflim_gain : scalar, optional
-            Gain between 0 and 1 used for DOF limits.
-        verbosity : int, optional
-            Verbosity level.
-        """
-        self.ik = IKSolver(self, active_dofs, doflim_gain)
-        self.ik.verbosity = verbosity
+        #
+        self.ik = IKSolver(self)
 
     """
     Visualization
@@ -805,6 +791,15 @@ class Humanoid(Robot):
         self.set_quat(pose[:4])
         self.set_pos(pose[4:])
 
+    def set_x(self, x):
+        self.set_dof_values([x], [self.TRANS_X])
+
+    def set_y(self, y):
+        self.set_dof_values([y], [self.TRANS_Y])
+
+    def set_z(self, z):
+        self.set_dof_values([z], [self.TRANS_Z])
+
     @property
     def t(self):
         """Tangent vector directing the `x`-axis of the free-flyer frame."""
@@ -921,6 +916,17 @@ class Humanoid(Robot):
             H_com += m * self.rave.ComputeHessianTranslation(index, c)
         H_com /= self.mass
         return H_com
+
+    def get_com(self):
+        """
+        Get the center of mass as a PointMass.
+
+        Returns
+        -------
+        com : PointMass
+            Center of mass of the robot.
+        """
+        return PointMass(pos=self.com, mass=self.mass)
 
     def show_com(self):
         """Show a red ball at the COM location."""
@@ -1221,11 +1227,6 @@ class Humanoid(Robot):
         """
         return -self.compute_gravito_inertial_wrench(qdd, p)
 
-    """
-    Zero-tilting Moment Point
-    =========================
-    """
-
     def compute_zmp(self, qdd, origin=None, normal=None):
         """
         Compute the Zero-tilting Moment Point (ZMP).
@@ -1261,26 +1262,6 @@ class Humanoid(Robot):
     ==================
     """
 
-    def bind_stance(self, stance):
-        from tasks import COMTask, ContactTask, PostureTask
-        self.ik.clear_tasks()
-        if stance.left_foot is not None:
-            self.ik.add_task(
-                ContactTask(self, self.left_foot, stance.left_foot))
-        if stance.right_foot is not None:
-            self.ik.add_task(
-                ContactTask(self, self.right_foot, stance.right_foot))
-        if stance.left_hand is not None:
-            self.ik.add_task(
-                ContactTask(self, self.left_hand, stance.left_hand))
-        if stance.right_hand is not None:
-            self.ik.add_task(
-                ContactTask(self, self.right_hand, stance.right_hand))
-        self.ik.add_task(COMTask(self, stance.com))
-        # self.ik.add_task(MinVelTask(self))
-        self.ik.add_task(PostureTask(self, self.q_halfsit))
-        self.stance = stance
-
     def generate_posture(self, stance, max_it=1000, cost_stop=1e-10,
                          impr_stop=1e-5, dt=5e-3):
         """
@@ -1302,5 +1283,5 @@ class Humanoid(Robot):
         debug : bool, optional
             Print extra debug info, default is False.
         """
-        self.bind_stance(stance)
+        stance.bind(self)
         self.ik.solve(max_it, cost_stop, impr_stop, dt)

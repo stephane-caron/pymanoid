@@ -163,11 +163,11 @@ class HRP4(Humanoid):
         self.left_foot = Manipulator(
             self.rave.GetManipulator("LeftFootCenter"), shape=self.sole_shape,
             friction=0.8)
-        self.right_foot = Manipulator(
-            self.rave.GetManipulator("RightFootCenter"), shape=self.sole_shape,
-            friction=0.8)
         self.left_hand = Manipulator(
             self.rave.GetManipulator("LeftHandCenter"), shape=self.palm_shape,
+            friction=0.8)
+        self.right_foot = Manipulator(
+            self.rave.GetManipulator("RightFootCenter"), shape=self.sole_shape,
             friction=0.8)
         self.right_hand = Manipulator(
             self.rave.GetManipulator("RightHandCenter"), shape=self.palm_shape,

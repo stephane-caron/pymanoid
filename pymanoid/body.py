@@ -437,10 +437,13 @@ class Manipulator(Body):
         self.friction = friction
         self.shape = shape
 
-    def get_contact(self, visible=True, color='r'):
+    def get_contact(self, pos=None, visible=True, color='r'):
         from contact import Contact
+        pose = self.pose.copy()
+        if pos is not None:
+            pose[4:] = pos
         return Contact(
-            self.shape, pose=self.pose, friction=self.friction, visible=visible,
+            self.shape, pose=pose, friction=self.friction, visible=visible,
             color=color, link=self)
 
     @property

@@ -163,8 +163,14 @@ class JVRC1(Humanoid):
             assert rc == 0, "Download of model file failed"
         super(JVRC1, self).__init__(path, root_body)
         rave = self.rave
-        self.left_foot = Manipulator(rave.GetManipulator("left_foot_base"))
-        self.left_hand = Manipulator(rave.GetManipulator("left_hand_palm"))
+        self.left_foot = Manipulator(
+            rave.GetManipulator("left_foot_base"), shape=self.sole_shape,
+            friction=0.8)
+        self.left_hand = Manipulator(
+            rave.GetManipulator("left_hand_palm"), friction=0.8)
         self.mass = sum([link.GetMass() for link in self.rave.GetLinks()])
-        self.right_foot = Manipulator(rave.GetManipulator("right_foot_base"))
-        self.right_hand = Manipulator(rave.GetManipulator("right_hand_palm"))
+        self.right_foot = Manipulator(
+            rave.GetManipulator("right_foot_base"), shape=self.sole_shape,
+            friction=0.8)
+        self.right_hand = Manipulator(
+            rave.GetManipulator("right_hand_palm"), friction=0.8)

@@ -35,9 +35,9 @@ class IKSolver(Process):
     ----------
     robot : Robot
         Robot to be updated.
-    active_dofs : list of integers
+    active_dofs : list of integers, optional
         List of DOFs updated by the IK solver.
-    doflim_gain : real value between 0 and 1
+    doflim_gain : scalar, optional
         DOF-limit gain as described in [Kanoun12]_. In `this implementation
         <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
         between zero and one.
@@ -50,27 +50,33 @@ class IKSolver(Process):
     to move faster with a fully extended knee.
     """
 
-    def __init__(self, robot, active_dofs, doflim_gain):
+    def __init__(self, robot, active_dofs=None, doflim_gain=0.5):
         super(IKSolver, self).__init__()
+        if active_dofs is None:
+            active_dofs = range(robot.nb_dofs)
         assert 0. <= doflim_gain <= 1.
-        nb_active_dofs = len(active_dofs)
-        self.active_dofs = active_dofs
         self.doflim_gain = doflim_gain
-        self.nb_active_dofs = len(active_dofs)
-        self.q_max = robot.q_max[active_dofs]
-        self.q_min = robot.q_min[active_dofs]
         self.qd = zeros(robot.nb_dofs)
-        self.qd_max = +1. * ones(nb_active_dofs)
-        self.qd_min = -1. * ones(nb_active_dofs)
         self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
         self.unsafe = False
         self.verbosity = 0
+        #
+        self.set_active_dofs(active_dofs)
+
+    def set_active_dofs(self, active_dofs):
+        nb_active_dofs = len(active_dofs)
+        self.active_dofs = active_dofs
+        self.nb_active_dofs = len(active_dofs)
+        self.q_max = self.robot.q_max[active_dofs]
+        self.q_min = self.robot.q_min[active_dofs]
+        self.qd_max = +1. * ones(nb_active_dofs)
+        self.qd_min = -1. * ones(nb_active_dofs)
 
     def add_task(self, task):
         """
-        Add a new task in the IK.
+        Add a new task to the IK solver.
 
         Parameters
         ----------
@@ -87,6 +93,7 @@ class IKSolver(Process):
             self.tasks[task.name] = task
 
     def clear_tasks(self):
+        """Clear all tasks in the IK solver."""
         self.tasks = {}
 
     def __get_task_name(self, ident):
