@@ -169,9 +169,12 @@ class PoseInterpolator(object):
         Initial pose to interpolate from.
     end_pose : (7,) array
         End pose to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pose, end_pose, duration):
+    def __init__(self, start_pose, end_pose, duration, body=None):
+        self.body = body
         self.duration = duration
         self.end_quat = end_pose[:4]
         self.start_quat = start_pose[:4]
@@ -191,8 +194,12 @@ class PoseInterpolator(object):
         raise NotImplementedError()
 
     def __call__(self, t):
-        s = t / self.duration
+        s = 0. if t < 0. else 1. if t > self.duration else t / self.duration
         return hstack([self.eval_quat(s), self.eval_pos(s)])
+
+    def update(self, t):
+        pose = self.__call__(t)
+        self.body.set_pose(pose)
 
     def draw(self, color='b'):
         """
@@ -226,12 +233,14 @@ class LinearPoseInterpolator(PoseInterpolator):
         Initial pose to interpolate from.
     end_pose : (7,) array
         End pose to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pose, end_pose, duration):
+    def __init__(self, start_pose, end_pose, duration, body=None):
         assert len(start_pose) == len(end_pose) == 7
         super(LinearPoseInterpolator, self).__init__(
-            start_pose, end_pose, duration)
+            start_pose, end_pose, duration, body)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
@@ -261,12 +270,14 @@ class CubicPoseInterpolator(PoseInterpolator):
         Initial pose to interpolate from.
     end_pose : (7,) array
         End pose to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pose, end_pose, duration):
+    def __init__(self, start_pose, end_pose, duration, body=None):
         assert len(start_pose) == len(end_pose) == 7
         super(CubicPoseInterpolator, self).__init__(
-            start_pose, end_pose, duration)
+            start_pose, end_pose, duration, body)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
@@ -296,12 +307,14 @@ class QuinticPoseInterpolator(PoseInterpolator):
         Initial pose to interpolate from.
     end_pose : (7,) array
         End pose to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pose, end_pose, duration):
+    def __init__(self, start_pose, end_pose, duration, body=None):
         assert len(start_pose) == len(end_pose) == 7
         super(QuinticPoseInterpolator, self).__init__(
-            start_pose, end_pose, duration)
+            start_pose, end_pose, duration, body)
         self.delta_pos = end_pose[4:] - start_pose[4:]
         self.start_pos = start_pose[4:]
 
@@ -329,10 +342,14 @@ class LinearPosInterpolator(LinearPoseInterpolator):
         Initial position to interpolate from.
     end_pos : (3,) array
         End position to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pos, end_pos, duration):
+    def __init__(self, start_pos, end_pos, duration, body=None):
+        # parent constructor is not called
         assert len(start_pos) == len(end_pos) == 3
+        self.body = body
         self.delta_pos = end_pos - start_pos
         self.duration = duration
         self.start_pos = start_pos
@@ -354,10 +371,14 @@ class CubicPosInterpolator(CubicPoseInterpolator):
         Initial position to interpolate from.
     end_pos : (3,) array
         End position to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pos, end_pos, duration):
+    def __init__(self, start_pos, end_pos, duration, body=None):
+        # parent constructor is not called
         assert len(start_pos) == len(end_pos) == 3
+        self.body = body
         self.delta_pos = end_pos - start_pos
         self.duration = duration
         self.start_pos = start_pos
@@ -379,10 +400,14 @@ class QuinticPosInterpolator(QuinticPoseInterpolator):
         Initial position to interpolate from.
     end_pos : (3,) array
         End position to interpolate to.
+    body : Body, optional
+        Body affected by the update function.
     """
 
-    def __init__(self, start_pos, end_pos, duration):
+    def __init__(self, start_pos, end_pos, duration, body=None):
+        # parent constructor is not called
         assert len(start_pos) == len(end_pos) == 3
+        self.body = body
         self.delta_pos = end_pos - start_pos
         self.duration = duration
         self.start_pos = start_pos
@@ -394,9 +419,9 @@ class QuinticPosInterpolator(QuinticPoseInterpolator):
 
 class SwingFootInterpolator(PoseInterpolator):
 
-    def __init__(self, start_pose, end_pose, duration):
+    def __init__(self, start_pose, end_pose, duration, body=None):
         super(SwingFootInterpolator, self).__init__(
-            start_pose, end_pose, duration)
+            start_pose, end_pose, duration, body)
         p0 = start_pose[4:]
         p1 = end_pose[4:]
         R0 = rotation_matrix_from_quat(self.start_quat)
