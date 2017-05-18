@@ -51,8 +51,8 @@ class COMStepTransit(object):
 
     Parameters
     ----------
-    duration : scalar
-        Duration of the transit trajectory.
+    desired_duration : scalar
+        Desired duration of the transit trajectory.
     start_com : (3,) array
         Initial COM position.
     start_comd : (3,) array
@@ -64,7 +64,7 @@ class COMStepTransit(object):
     dcm_target : (3,) array
         Desired terminal divergent-component of COM motion.
     nb_steps : int
-        Number of (variable-duration) discretization steps.
+        Number of discretization steps.
 
     Notes
     -----
@@ -95,11 +95,13 @@ class COMStepTransit(object):
     pdd_max = [+100, +100, +100]  # [m] / [s]^2
     pdd_min = [-100, -100, -100]  # [m] / [s]^2
 
-    def __init__(self, duration, start_com, start_comd, dcm_target, foothold,
-                 next_foothold, omega2, nb_steps, nlp_options=None):
+    def __init__(self, desired_duration, start_com, start_comd, dcm_target,
+                 foothold, next_foothold, omega2, nb_steps, nlp_options=None):
         assert casadi is not None, "CasADi is not installed"
+        self.dT = None
         self.dcm_target = dcm_target
-        self.duration = duration
+        self.desired_duration = desired_duration
+        self.duration = None
         self.foothold = foothold
         self.nb_steps = nb_steps
         self.next_foothold = next_foothold
@@ -135,8 +137,8 @@ class COMStepTransit(object):
         start_com = list(self.start_com)
         start_comd = list(self.start_comd)
         T = self.nlp.new_variable(
-            'T', 1, init=[self.duration], lb=[self.dT_min * self.nb_steps],
-            ub=[2 * self.duration])
+            'T', 1, init=[self.desired_duration],
+            lb=[self.dT_min * self.nb_steps], ub=[5. * self.desired_duration])
         p_0 = self.nlp.new_constant('p_0', 3, start_com)
         pd_0 = self.nlp.new_constant('pd_0', 3, start_comd)
         dT = T / self.nb_steps
@@ -187,7 +189,7 @@ class COMStepTransit(object):
         self.add_linear_cop_constraints(p_last, cp_last, next_foothold)
 
         dcm_error = dcm_last - dcm_target
-        duration_error = T - self.duration
+        duration_error = T - self.desired_duration
         self.nlp.extend_cost(
             self.weights['match_dcm'] * casadi.dot(dcm_error, dcm_error))
         self.nlp.extend_cost(
@@ -263,17 +265,21 @@ class COMStepTransit(object):
         """
         t_solve_start = time()
         X = self.nlp.solve()
-        self.solve_time = time() - t_solve_start
+        t_solve_end = time()
         Y = X[1:-6].reshape((self.nb_steps, 3 + 3 + 3 + 3))
-        self.T = X[0]
+        duration = X[0]
+        p_last = X[-6:-3]
+        pd_last = X[-3:]
         self.P = Y[:, 0:3]
-        self.V = Y[:, 3:6]
         self.U = Y[:, 6:9]
+        self.V = Y[:, 3:6]
         self.Z = Y[:, 9:12]
-        self.p_last = X[-6:-3]
-        self.pd_last = X[-3:]
-        self.cp_last = self.p_last + self.pd_last + gravity / self.omega2
-        self.dT = self.T / self.nb_steps
+        self.cp_last = p_last + pd_last / self.omega + gravity / self.omega2
+        self.dT = duration / self.nb_steps
+        self.duration = duration
+        self.p_last = p_last
+        self.pd_last = pd_last
+        self.solve_time = t_solve_end - t_solve_start
 
     def __call__(self, t, field=None):
         """
@@ -292,6 +298,12 @@ class COMStepTransit(object):
         value : (3,) array or array tuple
             Value of the requested field at time `t`, if a request there was.
             Otherwise, tuple (`p`, `pd`, `pdd`, `z`) with all fields.
+
+        Notes
+        -----
+        This function can also be used to read past the end of the preview
+        horizon. In this case, the post-horizon strategy is applied: ZMP fixed
+        at the capture point, so that the COM will converge to the DCM target.
         """
         k = bisect_left(self.cum_dT, t)
         if k < self.nb_steps:
@@ -323,8 +335,8 @@ class COMStepTransit(object):
         dcm_last = self.p_last + self.pd_last / self.omega
         dcm_error = norm(dcm_last - self.dcm_target)
         print "\n"
-        print "%14s:  " % "Desired TTHS", "%.3f s" % self.duration
-        print "%14s:  " % "Achieved TTHS", "%.3f s" % self.T
+        print "%14s:  " % "Desired dur.", "%.3f s" % self.desired_duration
+        print "%14s:  " % "Duration", "%.3f s" % self.duration
         print "%14s:  " % "DCM error", "%.3f cm" % (100 * dcm_error)
         print "%14s:  " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time)
         print "%14s:  " % "Iter. count", self.nlp.iter_count
