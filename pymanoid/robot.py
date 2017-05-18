@@ -23,7 +23,7 @@ from os.path import basename, isfile, splitext
 from warnings import warn
 
 from body import PointMass
-from draw import draw_force, draw_point
+from draw import draw_point
 from ik import IKSolver
 from misc import middot
 from sim import get_openrave_env, gravity
@@ -591,7 +591,6 @@ class Humanoid(Robot):
         self.__com = None
         self.__com_handle = None
         self.__comd = None
-        self.__comd_handle = None
         self.__show_com = False  # mostly but not always == (com_handle is None)
         self.__show_comd = False
 
@@ -929,25 +928,15 @@ class Humanoid(Robot):
         return PointMass(pos=self.com, mass=self.mass)
 
     def show_com(self):
-        """Show a red ball at the COM location."""
+        """Show a red ball at the location of the center of mass."""
         self.__show_com = True
         self.__com_handle = draw_point(
             self.com, pointsize=0.0005 * self.mass, color='r')
 
     def hide_com(self):
-        """Hide COM ball."""
+        """Hide center of mass."""
         self.__show_com = False
         self.__com_handle = None
-
-    def show_comd(self):
-        """Show an arrow representing COM velocity."""
-        self.__show_comd = True
-        self.__comd_handle = draw_force(self.com, self.comd, scale=1.)
-
-    def hide_comd(self):
-        """Hide COM velocity display."""
-        self.__show_comd = False
-        self.__comd_handle = None
 
     """
     Angular Momentum
