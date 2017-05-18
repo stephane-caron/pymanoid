@@ -96,20 +96,15 @@ class COMStepTransit(object):
     pdd_min = [-100, -100, -100]  # [m] / [s]^2
 
     def __init__(self, duration, start_com, start_comd, dcm_target, foothold,
-                 omega2, nb_steps, nlp_options=None):
-        dT_init = duration / nb_steps
-        dT_max = 2 * dT_init
-        omega = sqrt(omega2)
+                 next_foothold, omega2, nb_steps, nlp_options=None):
         assert casadi is not None, "CasADi is not installed"
-        assert self.dT_min < dT_init
         self.dcm_target = dcm_target
-        self.dT_init = dT_init
-        self.dT_max = dT_max
         self.duration = duration
         self.foothold = foothold
         self.nb_steps = nb_steps
+        self.next_foothold = next_foothold
         self.nlp_options = nlp_options if nlp_options is not None else {}
-        self.omega = omega
+        self.omega = sqrt(omega2)
         self.omega2 = omega2
         self.start_com = start_com
         self.start_comd = start_comd
@@ -126,7 +121,7 @@ class COMStepTransit(object):
         self.cum_dT = []
         t = 0.
         for k in xrange(self.nb_steps):
-            t += self.dT[k]
+            t += self.dT
             self.cum_dT.append(t)
 
     def build(self):
@@ -134,16 +129,20 @@ class COMStepTransit(object):
         Build the internal nonlinear program (NLP).
         """
         self.nlp = NonlinearProgram(solver='ipopt', options=self.nlp_options)
-        foothold, omega2, omega = self.foothold, self.omega2, self.omega
+        foothold, next_foothold = self.foothold, self.next_foothold
+        omega2, omega = self.omega2, self.omega
         dcm_target = list(self.dcm_target)
         start_com = list(self.start_com)
         start_comd = list(self.start_comd)
+        T = self.nlp.new_variable(
+            'T', 1, init=[self.duration], lb=[self.dT_min * self.nb_steps],
+            ub=[2 * self.duration])
         p_0 = self.nlp.new_constant('p_0', 3, start_com)
         pd_0 = self.nlp.new_constant('pd_0', 3, start_comd)
+        dT = T / self.nb_steps
         p_k, pd_k = p_0, pd_0
         W_comdd = list(self.weights['minimize_comdd'])
         assert len(W_comdd) in [1, 3]
-        T_total = 0
 
         for k in xrange(self.nb_steps):
             z_min = list(foothold.p - [0.42, 0.42, 0.42])
@@ -153,28 +152,24 @@ class COMStepTransit(object):
                 ub=self.pdd_max)
             z_k = self.nlp.new_variable(
                 'z_%d' % k, 3, init=list(foothold.p), lb=z_min, ub=z_max)
-            dT_k = self.nlp.new_variable(
-                'dT_%d' % k, 1, init=[self.dT_init], lb=[self.dT_min],
-                ub=[self.dT_max])
 
             CZ_k = z_k - foothold.p
             self.nlp.add_equality_constraint(
                 pdd_k, self.omega2 * (p_k - z_k) + gravity)
             self.nlp.extend_cost(
-                self.weights['center_zmp'] * casadi.dot(CZ_k, CZ_k) * dT_k)
+                self.weights['center_zmp'] * casadi.dot(CZ_k, CZ_k) * dT)
             self.nlp.extend_cost(
-                casadi.dot(pdd_k, W_comdd * pdd_k) * dT_k)
+                casadi.dot(pdd_k, W_comdd * pdd_k) * dT)
 
             # Exact integration by solving the first-order ODE
-            p_next = p_k + pd_k / omega * casadi.sinh(omega * dT_k) \
-                + pdd_k / omega2 * (casadi.cosh(omega * dT_k) - 1.)
-            pd_next = pd_k * casadi.cosh(omega * dT_k) \
-                + pdd_k / omega * casadi.sinh(omega * dT_k)
-            T_total = T_total + dT_k
+            p_next = p_k + pd_k / omega * casadi.sinh(omega * dT) \
+                + pdd_k / omega2 * (casadi.cosh(omega * dT) - 1.)
+            pd_next = pd_k * casadi.cosh(omega * dT) \
+                + pdd_k / omega * casadi.sinh(omega * dT)
 
             self.add_com_height_constraint(p_k, ref_height=0.8, max_dev=0.2)
-            self.add_friction_constraint(p_k, z_k)
-            self.add_linear_cop_constraints(p_k, z_k)
+            self.add_friction_constraint(p_k, z_k, foothold)
+            self.add_linear_cop_constraints(p_k, z_k, foothold)
 
             p_k = self.nlp.new_variable(
                 'p_%d' % (k + 1), 3, init=start_com, lb=self.p_min,
@@ -187,8 +182,12 @@ class COMStepTransit(object):
 
         p_last, pd_last = p_k, pd_k
         dcm_last = p_last + pd_last / omega
+        cp_last = dcm_last + gravity / omega2
+        self.add_friction_constraint(p_last, cp_last, next_foothold)
+        self.add_linear_cop_constraints(p_last, cp_last, next_foothold)
+
         dcm_error = dcm_last - dcm_target
-        duration_error = T_total - self.duration
+        duration_error = T - self.duration
         self.nlp.extend_cost(
             self.weights['match_dcm'] * casadi.dot(dcm_error, dcm_error))
         self.nlp.extend_cost(
@@ -215,7 +214,7 @@ class COMStepTransit(object):
         dist = casadi.dot(p - self.foothold.p, self.foothold.n)
         self.nlp.add_constraint(dist, lb=[lb], ub=[ub])
 
-    def add_friction_constraint(self, p, z):
+    def add_friction_constraint(self, p, z, foothold):
         """
         Add a circular friction cone constraint for a COM located at `p` and a
         (floating-base) ZMP located at `z`.
@@ -227,14 +226,14 @@ class COMStepTransit(object):
         z : casadi.MX
             Symbol of ZMP position variable.
         """
-        mu = self.foothold.friction
+        mu = foothold.friction
         ZG = p - z
         ZG2 = casadi.dot(ZG, ZG)
-        ZGn2 = casadi.dot(ZG, self.foothold.n) ** 2
+        ZGn2 = casadi.dot(ZG, foothold.n) ** 2
         slackness = ZG2 - (1 + mu ** 2) * ZGn2
         self.nlp.add_constraint(slackness, lb=[-self.nlp.infty], ub=[-0.005])
 
-    def add_linear_cop_constraints(self, p, z, scaling=0.95):
+    def add_linear_cop_constraints(self, p, z, foothold, scaling=0.95):
         """
         Constraint the COP, located between the COM `p` and the (floating-base)
         ZMP `z`, to lie inside the contact area.
@@ -249,11 +248,11 @@ class COMStepTransit(object):
             Scaling factor between 0 and 1 applied to the contact area.
         """
         GZ = z - p
-        nb_vert = len(self.foothold.vertices)
-        for (i, v) in enumerate(self.foothold.vertices):
-            v_next = self.foothold.vertices[(i + 1) % nb_vert]
-            v = v + (1. - scaling) * (self.foothold.p - v)
-            v_next = v_next + (1. - scaling) * (self.foothold.p - v_next)
+        nb_vert = len(foothold.vertices)
+        for (i, v) in enumerate(foothold.vertices):
+            v_next = foothold.vertices[(i + 1) % nb_vert]
+            v = v + (1. - scaling) * (foothold.p - v)
+            v_next = v_next + (1. - scaling) * (foothold.p - v_next)
             slackness = casadi.dot(v_next - v, casadi.cross(v - p, GZ))
             self.nlp.add_constraint(
                 slackness, lb=[-self.nlp.infty], ub=[-0.0005])
@@ -265,35 +264,18 @@ class COMStepTransit(object):
         t_solve_start = time()
         X = self.nlp.solve()
         self.solve_time = time() - t_solve_start
-        Y = X[:-6].reshape((self.nb_steps, 3 + 3 + 3 + 3 + 1))
+        Y = X[1:-6].reshape((self.nb_steps, 3 + 3 + 3 + 3))
+        self.T = X[0]
         self.P = Y[:, 0:3]
         self.V = Y[:, 3:6]
         self.U = Y[:, 6:9]
         self.Z = Y[:, 9:12]
-        self.dT = Y[:, 12]
         self.p_last = X[-6:-3]
         self.pd_last = X[-3:]
-        self.cp_last = self.capture_point(self.p_last, self.pd_last)
+        self.cp_last = self.p_last + self.pd_last + gravity / self.omega2
+        self.dT = self.T / self.nb_steps
 
-    def capture_point(self, p, pd):
-        """
-        Capture point of the floating-base inverted pendulum.
-
-        Parameters
-        ----------
-        p : (3,) array
-            COM position.
-        pd : (3,) array
-            COM velocity.
-
-        Returns
-        -------
-        cp : (3,) array
-            Capture point position.
-        """
-        return p + pd / self.omega + gravity / self.omega2
-
-    def __call__(self, t, field='p'):
+    def __call__(self, t, field=None):
         """
         Evaluate the solution's state at time `t`.
 
@@ -307,8 +289,9 @@ class COMStepTransit(object):
 
         Returns
         -------
-        value : (3,) array
-            Value of the request field at time `t`.
+        value : (3,) array or array tuple
+            Value of the requested field at time `t`, if a request there was.
+            Otherwise, tuple (`p`, `pd`, `pdd`, `z`) with all fields.
         """
         k = bisect_left(self.cum_dT, t)
         if k < self.nb_steps:
@@ -324,12 +307,14 @@ class COMStepTransit(object):
         omega = self.omega
         t0 = self.cum_dT[k - 1] if k > 0 else 0.
         dt = t - t0
+        pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
         if field == 'pd':
-            pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
             return pd
         p = p0 + pd0 / omega * sinh(omega * dt) \
             + pdd / omega2 * (cosh(omega * dt) - 1.)
-        return p
+        if field == 'p':
+            return p
+        return (p, pd, pdd, z)
 
     def print_results(self):
         """
@@ -338,10 +323,8 @@ class COMStepTransit(object):
         dcm_last = self.p_last + self.pd_last / self.omega
         dcm_error = norm(dcm_last - self.dcm_target)
         print "\n"
-        print "%14s:  " % "dT's", [round(x, 3) for x in self.dT]
-        print "%14s:  " % "dT_min", "%.3f s" % self.dT_min
         print "%14s:  " % "Desired TTHS", "%.3f s" % self.duration
-        print "%14s:  " % "Achieved TTHS", "%.3f s" % sum(self.dT)
+        print "%14s:  " % "Achieved TTHS", "%.3f s" % self.T
         print "%14s:  " % "DCM error", "%.3f cm" % (100 * dcm_error)
         print "%14s:  " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time)
         print "%14s:  " % "Iter. count", self.nlp.iter_count
