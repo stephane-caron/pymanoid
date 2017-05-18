@@ -289,7 +289,7 @@ class Body(object):
 
         Parameters
         ----------
-        R : array, shape=(3, 3)
+        R : (3, 3) array
             Rotation matrix.
         """
         T = self.T.copy()
@@ -366,6 +366,17 @@ class Body(object):
         pose[0:4] = quat
         self.set_pose(pose)
 
+    def translate(self, translation):
+        """
+        Apply a translation to the body.
+
+        Parameters
+        ----------
+        translation : (3,) array
+            Offset to apply to the position (world coordinates) of the body.
+        """
+        self.set_pos(self.p + translation)
+
     def remove(self):
         """
         Remove body from OpenRAVE environment.
@@ -387,9 +398,9 @@ class Body(object):
 
         Parameters
         ----------
-        v : array, shape=(3,)
+        v : (3,) array
             Linear velocity in local frame.
-        omega : array, shape=(3,)
+        omega : (3,) array
             Angular velocity in local frame.
         dt : scalar
             Duration of twist application in [s].

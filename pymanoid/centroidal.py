@@ -72,6 +72,12 @@ class COMStepTransit(object):
     short-sighted preview [Scianca16]_, as opposed to the long-sighted approach
     to walking [Wieber06]_ where COM boundedness results from the preview of
     several future steps.
+
+    The benefit of using ZMP controls rather than COM accelerations lies in the
+    exact integration scheme. This phenomenon appears in flat-floor models as
+    well: in the CART-table model, segments with fixed COM acceleration imply
+    variable ZMPs that may exit the support area (see e.g. Figure 3.17 in
+    [ElKhoury13]_).
     """
 
     weights = {
