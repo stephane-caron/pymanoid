@@ -96,12 +96,6 @@ class IKSolver(Process):
         """Clear all tasks in the IK solver."""
         self.tasks = {}
 
-    def __get_task_name(self, ident):
-        name = ident if type(ident) is str else ident.name
-        if not name.isupper():
-            name = name.upper()
-        return name
-
     def get_task(self, ident):
         """
         Get an active task from its name.
@@ -116,7 +110,7 @@ class IKSolver(Process):
         task : Task or None
             The corresponding task if present, None otherwise.
         """
-        name = self.__get_task_name(ident)
+        name = ident if type(ident) is str else ident.name
         with self.tasks_lock:
             if name not in self.tasks:
                 return None
@@ -131,7 +125,7 @@ class IKSolver(Process):
         ident : string or object
             Name or object with a ``name`` field identifying the task.
         """
-        name = self.__get_task_name(ident)
+        name = ident if type(ident) is str else ident.name
         with self.tasks_lock:
             if name not in self.tasks:
                 return
@@ -146,7 +140,7 @@ class IKSolver(Process):
         ident : string or object
             Name or object with a ``name`` field identifying the task.
         """
-        name = self.__get_task_name(ident)
+        name = ident if type(ident) is str else ident.name
         assert task.name == name
         self.remove_task(name)
         self.add_task(task)

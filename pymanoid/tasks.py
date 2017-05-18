@@ -29,6 +29,7 @@ DEFAULT_WEIGHTS = {
     'COM': 1e-2,
     'DOF': 1e-5,
     'EFFECTOR': 1e-3,
+    'POSTURE': 1e-6,
     'REGULARIZATION': 1e-6,
 }
 
@@ -287,7 +288,7 @@ class LinkPosTask(Task):
         if type(link) is str:
             link = robot.__getattribute__(link)
         self.link = link
-        self.name = self.link.name.upper()
+        self.name = self.link.name
         self.robot = robot
         self.update_target(target)
 
@@ -336,7 +337,7 @@ class LinkPoseTask(Task):
         if type(link) is str:
             link = robot.__getattribute__(link)
         self.link = link
-        self.name = self.link.name.upper()
+        self.name = self.link.name
         self.robot = robot
         self.update_target(target)
 
