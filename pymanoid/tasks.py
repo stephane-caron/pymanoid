@@ -21,9 +21,15 @@ from numpy import array, dot, eye, zeros
 
 from misc import PointWrap, PoseWrap
 
-_oppose_quat = array([-1., -1., -1., -1., +1., +1., +1.])
 
-
+DEFAULT_GAINS = {
+    'COM': 0.85,
+    'CONTACT': 0.85,
+    'DOF': 0.85,
+    'EFFECTOR': 0.85,
+    'POSTURE': 0.85,
+    'REGULARIZATION': 0.85,
+}
 DEFAULT_WEIGHTS = {
     'CONTACT': 1.,
     'COM': 1e-2,
@@ -32,6 +38,7 @@ DEFAULT_WEIGHTS = {
     'POSTURE': 1e-6,
     'REGULARIZATION': 1e-6,
 }
+_OPPOSE_QUAT = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
 class Task(object):
@@ -54,7 +61,7 @@ class Task(object):
     introduction to the concepts used here.
     """
 
-    def __init__(self, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, weight=None, gain=None, exclude_dofs=None):
         self._exclude_dofs = [] if exclude_dofs is None else exclude_dofs
         self.gain = gain
         self.weight = weight
@@ -139,8 +146,10 @@ class COMTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, target, weight=None, gain=0.85,
+    def __init__(self, robot, target, weight=None, gain=None,
                  exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['COM']
         if weight is None:
             weight = DEFAULT_WEIGHTS['COM']
         super(COMTask, self).__init__(weight, gain, exclude_dofs)
@@ -198,7 +207,7 @@ class COMAccelTask(Task):
     See the documentation of the PendulumModeTask for a detailed derivation.
     """
 
-    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
         super(COMAccelTask, self).__init__(weight, gain, exclude_dofs)
         self._comdd = zeros(3)
         self.name = 'COM_ACCEL'
@@ -236,8 +245,10 @@ class DOFTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, index, target, weight=None, gain=0.85,
+    def __init__(self, robot, index, target, weight=None, gain=None,
                  exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['DOF']
         if weight is None:
             weight = DEFAULT_WEIGHTS['DOF']
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
@@ -282,8 +293,12 @@ class LinkPosTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, link, target, weight=None, gain=0.85,
+    def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['EFFECTOR']
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['EFFECTOR']
         super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
@@ -331,8 +346,12 @@ class LinkPoseTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, link, target, weight=None, gain=0.85,
+    def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['EFFECTOR']
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['EFFECTOR']
         super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
@@ -347,7 +366,7 @@ class LinkPoseTask(Task):
     def _residual(self, dt):
         pose_diff = self.target.pose - self.link.pose
         if dot(pose_diff[0:4], pose_diff[0:4]) > 1.:
-            pose_diff = _oppose_quat * self.target.pose - self.link.pose
+            pose_diff = _OPPOSE_QUAT * self.target.pose - self.link.pose
         return pose_diff / dt
 
     def update_target(self, target):
@@ -386,7 +405,11 @@ class MinAccelTask(Task):
     discrete approximation of :math:`\\ddot{q}`.
     """
 
-    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['REGULARIZATION']
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinAccelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'MIN_ACCEL'
@@ -416,7 +439,11 @@ class MinCAMTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['REGULARIZATION']
+        if weight is None:
+            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinCAMTask, self).__init__(weight, gain, exclude_dofs)
         self.__zero_cam = zeros((3,))
         self.name = 'MIN_CAM'
@@ -446,7 +473,9 @@ class MinVelTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['REGULARIZATION']
         if weight is None:
             weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
@@ -531,7 +560,7 @@ class PendulumModeTask(Task):
     task residual, and the second in the task Jacobian.
     """
 
-    def __init__(self, robot, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
         super(PendulumModeTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'PENDULUM'
         self.robot = robot
@@ -566,7 +595,9 @@ class PostureTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, q_ref, weight=None, gain=0.85, exclude_dofs=None):
+    def __init__(self, robot, q_ref, weight=None, gain=None, exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['REGULARIZATION']
         if weight is None:
             weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(PostureTask, self).__init__(weight, gain, exclude_dofs)
@@ -601,8 +632,10 @@ class ContactTask(LinkPoseTask):
     weight higher than (or even comparable to) that of contact tasks.
     """
 
-    def __init__(self, robot, link, target, weight=None, gain=0.85,
+    def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
+        if gain is None:
+            gain = DEFAULT_GAINS['CONTACT']
         if weight is None:
             weight = DEFAULT_WEIGHTS['CONTACT']
         super(ContactTask, self).__init__(
