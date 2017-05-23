@@ -124,7 +124,8 @@ class PointMassWrenchDrawer(WrenchDrawer):
         return support
 
     def on_tick(self, sim):
-        if self.point_mass.pdd is None:  # needs to be stored by the user
+        if not hasattr(self.point_mass, 'pdd') or self.point_mass.pdd is None:
+            # needs to be stored by the user
             return
         super(PointMassWrenchDrawer, self).on_tick(sim)
 
