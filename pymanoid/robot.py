@@ -592,7 +592,6 @@ class Humanoid(Robot):
         self.__com_handle = None
         self.__comd = None
         self.__show_com = False  # mostly but not always == (com_handle is None)
-        self.__show_comd = False
 
     """
     Kinematics
@@ -721,8 +720,6 @@ class Humanoid(Robot):
             q, dof_indices=dof_indices, clamp=clamp)
         if self.__show_com:
             self.show_com()
-        if self.__show_comd:
-            self.show_comd()
 
     def set_dof_velocities(self, qd, dof_indices=None):
         """
@@ -738,8 +735,6 @@ class Humanoid(Robot):
         self.__cam = None
         self.__comd = None
         super(Humanoid, self).set_dof_velocities(qd, dof_indices=dof_indices)
-        if self.__show_comd:
-            self.show_comd()
 
     def set_pos(self, pos):
         """
