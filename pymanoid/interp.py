@@ -419,15 +419,20 @@ class QuinticPosInterpolator(QuinticPoseInterpolator):
 
 class SwingFootInterpolator(PoseInterpolator):
 
-    def __init__(self, start_pose, end_pose, duration, body=None):
+    def __init__(self, start_pose, end_pose, duration, body=None, u0=None,
+                 u1=None):
         super(SwingFootInterpolator, self).__init__(
             start_pose, end_pose, duration, body)
+        if u0 is None:
+            u0 = [1., 0., +0.5]
+        if u1 is None:
+            u1 = [1., 0., -0.5]
         p0 = start_pose[4:]
         p1 = end_pose[4:]
         R0 = rotation_matrix_from_quat(self.start_quat)
         R1 = rotation_matrix_from_quat(self.end_quat)
-        u0 = dot(R0, [0.3, 0., 0.7])
-        u1 = dot(R1, [0.5, 0., -0.5])
+        u0 = dot(R0, u0)
+        u1 = dot(R1, u1)
         self.poly = interpolate_uab_hermite(p0, u0, p1, u1)
 
     def eval_pos(self, s):
