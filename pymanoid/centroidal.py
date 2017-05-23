@@ -313,19 +313,18 @@ class COMStepTransit(object):
         if field == 'z':
             return z
         omega2 = self.omega2
-        pdd = omega2 * (p0 - z) + gravity
-        if field == 'pdd':
-            return pdd
+        pdd0 = omega2 * (p0 - z) + gravity
         omega = self.omega
         t0 = self.cum_dT[k - 1] if k > 0 else 0.
         dt = t - t0
-        pd = pd0 * cosh(omega * dt) + pdd / omega * sinh(omega * dt)
+        pd = pd0 * cosh(omega * dt) + pdd0 / omega * sinh(omega * dt)
         if field == 'pd':
             return pd
         p = p0 + pd0 / omega * sinh(omega * dt) \
-            + pdd / omega2 * (cosh(omega * dt) - 1.)
+            + pdd0 / omega2 * (cosh(omega * dt) - 1.)
         if field == 'p':
             return p
+        pdd = omega2 * (p - z) + gravity
         return (p, pd, pdd, z)
 
     def print_results(self):
