@@ -23,7 +23,7 @@ from os.path import basename, isfile, splitext
 from warnings import warn
 
 from body import PointMass
-from draw import draw_point
+from draw import draw_line, draw_point
 from ik import IKSolver
 from misc import middot
 from sim import get_openrave_env, gravity
@@ -925,8 +925,10 @@ class Humanoid(Robot):
     def show_com(self):
         """Show a red ball at the location of the center of mass."""
         self.__show_com = True
-        self.__com_handle = draw_point(
-            self.com, pointsize=0.0005 * self.mass, color='r')
+        self.__com_handle = [
+            draw_point(self.com, pointsize=0.0005 * self.mass, color='r'),
+            draw_line(
+                self.com, self.com + [0., 0., -1.], linewidth=4., color='y')]
 
     def hide_com(self):
         """Hide center of mass."""
