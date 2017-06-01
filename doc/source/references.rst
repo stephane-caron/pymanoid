@@ -37,6 +37,10 @@ References
    H. Audren et al., IEEE-RSJ International Conference on Intelligent Robots
    and Systems, September 2014.
 
+.. [ElKhoury13] `Planning Optimal Motions for Anthropomorphic Systems
+   <http://thesesups.ups-tlse.fr/2033/1/2013TOU30065.pdf>`_, A. El Khoury, June
+   2013.
+
 .. [Kanoun12] `Real-time prioritized kinematic control under inequality
    constraints for redundant manipulators
    <http://www.roboticsproceedings.org/rss07/p21.pdf>`_, O. Kanoun, Robotics:
