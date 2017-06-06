@@ -77,15 +77,15 @@ class IKSolver(Process):
         self.qd_min = -1. * ones(nb_active_dofs)
 
     def set_default_weights(self, default_weights=None):
-        if default_weights is not None:
-            self.default_weights.update(default_weights)
-        self.default_weights.update({  # otherwise, use sane defaults
-            'CONTACT': 1.,
-            'COM': 1e-2,
-            'LINK': 1e-3,
-            'DOF': 1e-5,
-            'POSTURE': 1e-6,
-        })
+        if default_weights is None:  # sane defaults
+            default_weights = {
+                'CONTACT': 1.,
+                'COM': 1e-2,
+                'LINK': 1e-3,
+                'DOF': 1e-5,
+                'POSTURE': 1e-6,
+            }
+        self.default_weights.update(default_weights)
 
     def add_task(self, task):
         """
