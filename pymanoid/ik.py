@@ -24,6 +24,7 @@ from time import time
 from misc import norm
 from optim import solve_qp
 from sim import Process
+from tasks import ContactTask, DOFTask, LinkPoseTask
 
 
 class IKSolver(Process):
@@ -55,6 +56,7 @@ class IKSolver(Process):
         if active_dofs is None:
             active_dofs = range(robot.nb_dofs)
         assert 0. <= doflim_gain <= 1.
+        self.default_weights = {}
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
         self.robot = robot
@@ -74,6 +76,17 @@ class IKSolver(Process):
         self.qd_max = +1. * ones(nb_active_dofs)
         self.qd_min = -1. * ones(nb_active_dofs)
 
+    def set_default_weights(self, default_weights=None):
+        if default_weights is not None:
+            self.default_weights.update(default_weights)
+        self.default_weights.update({  # otherwise, use sane defaults
+            'CONTACT': 1.,
+            'COM': 1e-2,
+            'LINK': 1e-3,
+            'DOF': 1e-5,
+            'POSTURE': 1e-6,
+        })
+
     def add_task(self, task):
         """
         Add a new task to the IK solver.
@@ -89,6 +102,18 @@ class IKSolver(Process):
         """
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
+        if task.weight is None:
+            if task.name in self.default_weights:
+                task.weight = self.default_weights[task.name]
+            elif type(task) is ContactTask \
+                    and 'CONTACT' in self.default_weights:
+                task.weight = self.default_weights['CONTACT']
+            elif type(task) is DOFTask and 'DOF' in self.default_weights:
+                task.weight = self.default_weights['DOF']
+            elif type(task) is LinkPoseTask and 'LINK' in self.default_weights:
+                task.weight = self.default_weights['LINK']
+            else:  # cannot find suitable weight
+                raise Exception("no weight provided for task '%s'" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
 

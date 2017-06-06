@@ -901,6 +901,8 @@ if __name__ == "__main__":
         nb_mpc_steps=20,
         tube_radius=0.01)
 
+    robot.ik.set_default_weights()
+    robot.ik.default_weights['POSTURE'] = 1e-5
     robot.set_pos([0, 0, 2])  # robot initially above contacts
     fsm.cur_stance.bind(robot)
     robot.ik.solve(max_it=24)
@@ -908,22 +910,13 @@ if __name__ == "__main__":
     robot.ik.tasks['COM'].update_target(com_target)
     robot.ik.solve(max_it=42)
 
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0.))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0.))
-    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0.))
-    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5))
-    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5))
-    robot.ik.add_task(MinCAMTask(robot))
-
-    robot.ik.tasks['WAIST_P'].weight = 1e-3
-    robot.ik.tasks['WAIST_Y'].weight = 1e-3
-    robot.ik.tasks['WAIST_R'].weight = 1e-3
-    robot.ik.tasks['ROT_P'].weight = 1e-3
-    robot.ik.tasks['R_SHOULDER_R'].weight = 1e-3
-    robot.ik.tasks['L_SHOULDER_R'].weight = 1e-3
-    robot.ik.tasks['MIN_CAM'].weight = 1e-4
-    robot.ik.tasks['POSTURE'].weight = 1e-5
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
+    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
+    robot.ik.add_task(MinCAMTask(robot, weight=1e-4))
 
     sim.schedule(fsm)
     sim.schedule(mpc)

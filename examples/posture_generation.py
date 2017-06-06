@@ -51,6 +51,7 @@ if __name__ == '__main__':
     stance = Stance(com=com, left_foot=lf_target, right_foot=rf_target)
     stance.dof_tasks[robot.R_SHOULDER_R] = -0.5
     stance.dof_tasks[robot.L_SHOULDER_R] = +0.5
+    robot.ik.set_default_weights()
     stance.bind(robot)
 
     # First, generate the initial posture corresponding to the stance
