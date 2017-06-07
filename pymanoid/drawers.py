@@ -378,8 +378,8 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
 
     Parameters
     ----------
-    contact_set : ContactSet
-        Contact set to track.
+    stance : Stance
+        Stance to track.
     z : scalar, optional
         Altitude of drawn area in the world frame.
     color : tuple or string, optional
@@ -387,9 +387,9 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
     """
 
     def __init__(self, stance, z=0., color=None):
+        self.stance = stance  # before calling parent constructor
         super(ZMPSupportAreaDrawer, self).__init__(stance, z, color)
         self.last_com = stance.com.p
-        self.stance = stance
 
     def on_tick(self, sim):
         super(ZMPSupportAreaDrawer, self).on_tick(sim)
@@ -417,7 +417,7 @@ class COMAccelConeDrawer(ZMPSupportAreaDrawer):
 
     Parameters
     ----------
-    contact_set : ContactSet
+    stance : Stance
         Contact set to track.
     scale : scalar, optional
         Acceleration to distance conversion ratio, in [s]^2.
@@ -425,9 +425,9 @@ class COMAccelConeDrawer(ZMPSupportAreaDrawer):
         Area color.
     """
 
-    def __init__(self, contact_set, scale=0.1, color=None):
-        super(COMAccelConeDrawer, self).__init__(contact_set, color=color)
-        self.scale = scale
+    def __init__(self, stance, scale=0.1, color=None):
+        self.scale = scale  # done before calling parent constructor
+        super(COMAccelConeDrawer, self).__init__(stance, color=color)
 
     def update_polygon(self):
         self.handle = None

@@ -46,9 +46,9 @@ if __name__ == '__main__':
     robot.set_z(0.8)  # hack to start with the robot above contacts
     lf_target = robot.left_foot.get_contact(pos=[0, 0.3, 0], visible=True)
     rf_target = robot.right_foot.get_contact(pos=[0, -0.3, 0], visible=True)
-    com = robot.get_com()
+    com_target = robot.get_com_point_mass()
 
-    stance = Stance(com=com, left_foot=lf_target, right_foot=rf_target)
+    stance = Stance(com=com_target, left_foot=lf_target, right_foot=rf_target)
     stance.dof_tasks[robot.R_SHOULDER_R] = -0.5
     stance.dof_tasks[robot.L_SHOULDER_R] = +0.5
     stance.bind(robot)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     init_com = robot.com.copy()
     for t in numpy.arange(0., 10., sim.dt):
         com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
-        com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
+        com_target.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
         sim.step()
 
     # Finally, we start the simulation

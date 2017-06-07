@@ -911,9 +911,9 @@ class Humanoid(Robot):
         H_com /= self.mass
         return H_com
 
-    def get_com(self):
+    def get_com_point_mass(self):
         """
-        Get the center of mass as a PointMass.
+        Get the center of mass as a PointMass instance.
 
         Returns
         -------

@@ -48,8 +48,8 @@ class Stance(ContactSet):
     def __init__(self, com=None, left_foot=None, right_foot=None,
                  left_hand=None, right_hand=None):
         # NB: do not call the parent (ContactSet) constructor
-        if not issubclass(type(com), Point):
-            com = Point(com, visible=False)
+        assert issubclass(type(com), Point), \
+            "stance COM should be a Point object"
         self.com = com
         self.dof_tasks = {}
         self.left_foot = left_foot

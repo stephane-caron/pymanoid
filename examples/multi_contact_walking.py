@@ -57,7 +57,7 @@ except ImportError:
     import pymanoid
 
 from pymanoid import Contact, ContactSet, PointMass, Stance
-from pymanoid.body import Box
+from pymanoid.body import Box, Point
 from pymanoid.draw import draw_line, draw_point, draw_points
 from pymanoid.draw import draw_cone, draw_polyhedron
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
@@ -126,7 +126,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             friction=friction,
             visible=True)
         if prev_right_foot is not None:
-            com_target = left_foot.p + [0., 0., JVRC1.leg_length]
+            com_target_pos = left_foot.p + [0., 0., JVRC1.leg_length]
+            com_target = Point(com_target_pos, visible=False)
             dsl_stance = Stance(
                 com_target, left_foot=left_foot, right_foot=prev_right_foot)
             dsl_stance.label = 'DS-L'
@@ -138,15 +139,16 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             ssl_stance.compute_static_equilibrium_polygon()
             stances.append(dsl_stance)
             stances.append(ssl_stance)
-        com_target = right_foot.p + [0., 0., JVRC1.leg_length]
+        com_target_pos = right_foot.p + [0., 0., JVRC1.leg_length]
         if init_com_offset is not None:
-            com_target += init_com_offset
+            com_target_pos += init_com_offset
             init_com_offset = None
+        com_target = Point(com_target_pos, visible=False)
         dsr_stance = Stance(
-            com_target, left_foot=left_foot, right_foot=right_foot)
+            com=com_target, left_foot=left_foot, right_foot=right_foot)
         dsr_stance.label = 'DS-R'
         dsr_stance.duration = ds_duration
-        ssr_stance = Stance(com_target, right_foot=right_foot)
+        ssr_stance = Stance(com=com_target, right_foot=right_foot)
         ssr_stance.label = 'SS-R'
         ssr_stance.duration = ss_duration
         dsr_stance.compute_static_equilibrium_polygon()
@@ -154,7 +156,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         stances.append(dsr_stance)
         stances.append(ssr_stance)
         prev_right_foot = right_foot
-    com_target = first_left_foot.p + [0., 0., JVRC1.leg_length]
+    com_target_pos = first_left_foot.p + [0., 0., JVRC1.leg_length]
+    com_target = Point(com_target_pos, visible=False)
     dsl_stance = Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot)
     dsl_stance.label = 'DS-L'
