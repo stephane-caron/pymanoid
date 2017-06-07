@@ -928,7 +928,7 @@ class Humanoid(Robot):
         self.__com_handle = [
             draw_point(self.com, pointsize=0.0005 * self.mass, color='r'),
             draw_line(
-                self.com, self.com + [0., 0., -1.], linewidth=4., color='y')]
+                self.com, self.com + [0., 0., -1.], linewidth=2., color='y')]
 
     def hide_com(self):
         """Hide center of mass."""
