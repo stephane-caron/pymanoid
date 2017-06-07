@@ -71,10 +71,12 @@ if __name__ == '__main__':
     com = PointMass(pos=robot.com, mass=robot.mass)
 
     # IK tasks
-    lf_task = ContactTask(robot, robot.left_foot, lf_target, weight=1.)
-    rf_task = ContactTask(robot, robot.right_foot, rf_target, weight=1.)
-    com_task = COMTask(robot, com, weight=1e-2)
-    reg_task = PostureTask(robot, robot.q, weight=1e-6)  # regularization task
+    lf_task = ContactTask(
+        robot, robot.left_foot, lf_target, weight=1., gain=0.85)
+    rf_task = ContactTask(
+        robot, robot.right_foot, rf_target, weight=1., gain=0.85)
+    com_task = COMTask(robot, com, weight=1e-2, gain=0.85)
+    reg_task = PostureTask(robot, robot.q, weight=1e-6, gain=0.85)
 
     # IK setup
     robot.ik.clear_tasks()

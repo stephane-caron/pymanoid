@@ -901,7 +901,6 @@ if __name__ == "__main__":
         nb_mpc_steps=20,
         tube_radius=0.01)
 
-    robot.ik.set_default_weights()
     robot.ik.default_weights['POSTURE'] = 1e-5
     robot.set_pos([0, 0, 2])  # robot initially above contacts
     fsm.cur_stance.bind(robot)

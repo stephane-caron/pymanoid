@@ -56,6 +56,7 @@ class IKSolver(Process):
         if active_dofs is None:
             active_dofs = range(robot.nb_dofs)
         assert 0. <= doflim_gain <= 1.
+        self.default_gains = {}
         self.default_weights = {}
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
@@ -66,6 +67,8 @@ class IKSolver(Process):
         self.verbosity = 0
         #
         self.set_active_dofs(active_dofs)
+        self.set_default_gains()
+        self.set_default_weights()
 
     def set_active_dofs(self, active_dofs):
         """
@@ -100,10 +103,11 @@ class IKSolver(Process):
         """
         if default_gains is None:  # sane defaults
             default_gains = {
-                'CONTACT': 0.85,
                 'COM': 0.85,
-                'LINK': 0.85,
+                'CONTACT': 0.85,
                 'DOF': 0.85,
+                'LINK': 0.85,
+                'MIN_CAM': 0.85,
                 'POSTURE': 0.85,
             }
         self.default_gains.update(default_gains)
@@ -127,10 +131,33 @@ class IKSolver(Process):
                 'CONTACT': 1.,
                 'COM': 1e-2,
                 'LINK': 1e-3,
+                'MIN_CAM': 1e-4,
                 'DOF': 1e-5,
                 'POSTURE': 1e-6,
             }
         self.default_weights.update(default_weights)
+
+    def __fill_task_gain(self, task):
+        if task.name in self.default_gains:
+            task.gain = self.default_gains[task.name]
+        elif type(task) is ContactTask \
+                and 'CONTACT' in self.default_gains:
+            task.gain = self.default_gains['CONTACT']
+        elif type(task) is DOFTask and 'DOF' in self.default_gains:
+            task.gain = self.default_gains['DOF']
+        elif type(task) is LinkPoseTask and 'LINK' in self.default_gains:
+            task.gain = self.default_gains['LINK']
+
+    def __fill_task_weight(self, task):
+        if task.name in self.default_weights:
+            task.weight = self.default_weights[task.name]
+        elif type(task) is ContactTask \
+                and 'CONTACT' in self.default_weights:
+            task.weight = self.default_weights['CONTACT']
+        elif type(task) is DOFTask and 'DOF' in self.default_weights:
+            task.weight = self.default_weights['DOF']
+        elif type(task) is LinkPoseTask and 'LINK' in self.default_weights:
+            task.weight = self.default_weights['LINK']
 
     def add_task(self, task):
         """
@@ -148,17 +175,13 @@ class IKSolver(Process):
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
         if task.weight is None:
-            if task.name in self.default_weights:
-                task.weight = self.default_weights[task.name]
-            elif type(task) is ContactTask \
-                    and 'CONTACT' in self.default_weights:
-                task.weight = self.default_weights['CONTACT']
-            elif type(task) is DOFTask and 'DOF' in self.default_weights:
-                task.weight = self.default_weights['DOF']
-            elif type(task) is LinkPoseTask and 'LINK' in self.default_weights:
-                task.weight = self.default_weights['LINK']
-            else:  # cannot find suitable weight
+            self.__fill_task_weight(task)
+            if task.weight is None:
                 raise Exception("no weight provided for task '%s'" % task.name)
+        if task.gain is None:
+            self.__fill_task_gain(task)
+            if task.gain is None:
+                raise Exception("no gain provided for task '%s'" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
 

@@ -78,6 +78,7 @@ class Stance(ContactSet):
         robot.ik.clear_tasks()
         for task in tasks:
             robot.ik.add_task(task)
+            print "task", task.name, task.gain, task.weight
         robot.stance = self
 
     @property

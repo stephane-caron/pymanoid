@@ -93,7 +93,6 @@ if __name__ == "__main__":
             rpy=[-0.4, 0, 0],
             friction=0.5,
             visible=True))
-    robot.ik.set_default_weights()
     stance.bind(robot)
     robot.ik.solve()
 
