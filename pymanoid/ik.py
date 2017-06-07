@@ -107,7 +107,10 @@ class IKSolver(Process):
                 'CONTACT': 0.85,
                 'DOF': 0.85,
                 'LINK': 0.85,
+                'MIN_ACCEL': 0.85,
                 'MIN_CAM': 0.85,
+                'MIN_VEL': 0.85,
+                'PENDULUM': 0.85,
                 'POSTURE': 0.85,
             }
         self.default_gains.update(default_gains)
