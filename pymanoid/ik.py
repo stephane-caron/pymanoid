@@ -24,6 +24,7 @@ from time import time
 from misc import norm
 from optim import solve_qp
 from sim import Process
+from tasks import ContactTask, DOFTask, LinkPoseTask
 
 
 class IKSolver(Process):
@@ -55,6 +56,7 @@ class IKSolver(Process):
         if active_dofs is None:
             active_dofs = range(robot.nb_dofs)
         assert 0. <= doflim_gain <= 1.
+        self.default_weights = {}
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
         self.robot = robot
@@ -66,6 +68,14 @@ class IKSolver(Process):
         self.set_active_dofs(active_dofs)
 
     def set_active_dofs(self, active_dofs):
+        """
+        Set DOF indices modified by the IK.
+
+        Parameters
+        ----------
+        active_dofs : list of integers
+            List of DOF indices.
+        """
         nb_active_dofs = len(active_dofs)
         self.active_dofs = active_dofs
         self.nb_active_dofs = len(active_dofs)
@@ -73,6 +83,54 @@ class IKSolver(Process):
         self.q_min = self.robot.q_min[active_dofs]
         self.qd_max = +1. * ones(nb_active_dofs)
         self.qd_min = -1. * ones(nb_active_dofs)
+
+    def set_default_gains(self, default_gains=None):
+        """
+        Set default gains for new tasks.
+
+        Parameters
+        ----------
+        default_gains : string -> int dictionary, optional
+            Dictionary mapping task labels to default gain values.
+
+        Note
+        ----
+        When called with no argument, this function will use a set of "sane"
+        default values.
+        """
+        if default_gains is None:  # sane defaults
+            default_gains = {
+                'CONTACT': 0.85,
+                'COM': 0.85,
+                'LINK': 0.85,
+                'DOF': 0.85,
+                'POSTURE': 0.85,
+            }
+        self.default_gains.update(default_gains)
+
+    def set_default_weights(self, default_weights=None):
+        """
+        Set default cost-function weights for new tasks.
+
+        Parameters
+        ----------
+        default_weights : string -> double dictionary, optional
+            Dictionary mapping task labels to default weight values.
+
+        Note
+        ----
+        When called with no argument, this function will use a set of "sane"
+        default values.
+        """
+        if default_weights is None:  # sane defaults
+            default_weights = {
+                'CONTACT': 1.,
+                'COM': 1e-2,
+                'LINK': 1e-3,
+                'DOF': 1e-5,
+                'POSTURE': 1e-6,
+            }
+        self.default_weights.update(default_weights)
 
     def add_task(self, task):
         """
@@ -89,6 +147,18 @@ class IKSolver(Process):
         """
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
+        if task.weight is None:
+            if task.name in self.default_weights:
+                task.weight = self.default_weights[task.name]
+            elif type(task) is ContactTask \
+                    and 'CONTACT' in self.default_weights:
+                task.weight = self.default_weights['CONTACT']
+            elif type(task) is DOFTask and 'DOF' in self.default_weights:
+                task.weight = self.default_weights['DOF']
+            elif type(task) is LinkPoseTask and 'LINK' in self.default_weights:
+                task.weight = self.default_weights['LINK']
+            else:  # cannot find suitable weight
+                raise Exception("no weight provided for task '%s'" % task.name)
         with self.tasks_lock:
             self.tasks[task.name] = task
 
@@ -355,4 +425,12 @@ class IKSolver(Process):
         return itnum, cost
 
     def on_tick(self, sim):
+        """
+        Step the IK at each simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Simulation instance.
+        """
         self.step(sim.dt)

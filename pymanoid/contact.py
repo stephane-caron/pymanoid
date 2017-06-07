@@ -282,25 +282,6 @@ class ContactSet(object):
         """
         return hstack([c.grasp_matrix(p) for c in self.contacts])
 
-    def compute_wrench_face(self, p):
-        """
-        Compute the face matrix of the contact wrench cone in the world frame.
-
-        Parameters
-        ----------
-        p : array, shape=(3,)
-            Point where the resultant wrench is taken at.
-
-        Returns
-        -------
-        F : array, shape=(m, 6)
-            Friction matrix such that all valid contact wrenches satisfy
-            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
-            `p`.
-        """
-        span_matrix = self.compute_wrench_span(p)
-        return compute_cone_face_matrix(span_matrix)
-
     def compute_wrench_span(self, p):
         """
         Compute the span matrix of the contact wrench cone in world frame.
@@ -340,6 +321,25 @@ class ContactSet(object):
         S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
+
+    def compute_wrench_face(self, p):
+        """
+        Compute the face matrix of the contact wrench cone in the world frame.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
+
+        Returns
+        -------
+        F : array, shape=(m, 6)
+            Friction matrix such that all valid contact wrenches satisfy
+            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
+            `p`.
+        """
+        span_matrix = self.compute_wrench_span(p)
+        return compute_cone_face_matrix(span_matrix)
 
     def find_static_supporting_wrenches(self, com, mass):
         """

@@ -22,22 +22,6 @@ from numpy import array, dot, eye, zeros
 from misc import PointWrap, PoseWrap
 
 
-DEFAULT_GAINS = {
-    'COM': 0.85,
-    'CONTACT': 0.85,
-    'DOF': 0.85,
-    'EFFECTOR': 0.85,
-    'POSTURE': 0.85,
-    'REGULARIZATION': 0.85,
-}
-DEFAULT_WEIGHTS = {
-    'CONTACT': 1.,
-    'COM': 1e-2,
-    'DOF': 1e-5,
-    'EFFECTOR': 1e-3,
-    'POSTURE': 1e-6,
-    'REGULARIZATION': 1e-6,
-}
 _OPPOSE_QUAT = array([-1., -1., -1., -1., +1., +1., +1.])
 
 
@@ -65,6 +49,14 @@ class Task(object):
         self._exclude_dofs = [] if exclude_dofs is None else exclude_dofs
         self.gain = gain
         self.weight = weight
+
+    @property
+    def stiffness(self):
+        """
+        Compatibility field for cohabitation with `Tasks
+        <https://github.com/jrl-umi3218/Tasks>`_.
+        """
+        return self.gain
 
     def cost(self, dt):
         """
@@ -148,10 +140,6 @@ class COMTask(Task):
 
     def __init__(self, robot, target, weight=None, gain=None,
                  exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['COM']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['COM']
         super(COMTask, self).__init__(weight, gain, exclude_dofs)
         self.name = 'COM'
         self.robot = robot
@@ -247,10 +235,6 @@ class DOFTask(Task):
 
     def __init__(self, robot, index, target, weight=None, gain=None,
                  exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['DOF']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['DOF']
         super(DOFTask, self).__init__(weight, gain, exclude_dofs)
         if type(index) is str:
             index = robot.__getattribute__(index)
@@ -295,10 +279,6 @@ class LinkPosTask(Task):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['EFFECTOR']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['EFFECTOR']
         super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
@@ -348,10 +328,6 @@ class LinkPoseTask(Task):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['EFFECTOR']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['EFFECTOR']
         super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
@@ -406,10 +382,6 @@ class MinAccelTask(Task):
     """
 
     def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['REGULARIZATION']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinAccelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'MIN_ACCEL'
@@ -440,10 +412,6 @@ class MinCAMTask(Task):
     """
 
     def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['REGULARIZATION']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinCAMTask, self).__init__(weight, gain, exclude_dofs)
         self.__zero_cam = zeros((3,))
         self.name = 'MIN_CAM'
@@ -474,10 +442,6 @@ class MinVelTask(Task):
     """
 
     def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['REGULARIZATION']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(MinVelTask, self).__init__(weight, gain, exclude_dofs)
         self.__J = eye(robot.nb_dofs)
         self.name = 'MIN_VEL'
@@ -596,10 +560,6 @@ class PostureTask(Task):
     """
 
     def __init__(self, robot, q_ref, weight=None, gain=None, exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['REGULARIZATION']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['REGULARIZATION']
         super(PostureTask, self).__init__(weight, gain, exclude_dofs)
         J = eye(robot.nb_dofs)
         if exclude_dofs is None:
@@ -634,9 +594,5 @@ class ContactTask(LinkPoseTask):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        if gain is None:
-            gain = DEFAULT_GAINS['CONTACT']
-        if weight is None:
-            weight = DEFAULT_WEIGHTS['CONTACT']
         super(ContactTask, self).__init__(
             robot, link, target, weight, gain, exclude_dofs)

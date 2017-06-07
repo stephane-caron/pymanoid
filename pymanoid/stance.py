@@ -59,27 +59,25 @@ class Stance(ContactSet):
         self.sep_hrep = None
 
     def bind(self, robot, reg='posture'):
-        robot.ik.clear_tasks()
+        tasks = []
         if self.left_foot is not None:
-            robot.ik.add_task(
-                ContactTask(robot, robot.left_foot, self.left_foot))
+            tasks.append(ContactTask(robot, robot.left_foot, self.left_foot))
         if self.left_hand is not None:
-            robot.ik.add_task(
-                ContactTask(robot, robot.left_hand, self.left_hand))
+            tasks.append(ContactTask(robot, robot.left_hand, self.left_hand))
         if self.right_foot is not None:
-            robot.ik.add_task(
-                ContactTask(robot, robot.right_foot, self.right_foot))
+            tasks.append(ContactTask(robot, robot.right_foot, self.right_foot))
         if self.right_hand is not None:
-            robot.ik.add_task(
-                ContactTask(robot, robot.right_hand, self.right_hand))
+            tasks.append(ContactTask(robot, robot.right_hand, self.right_hand))
         for dof_id, dof_target in self.dof_tasks.iteritems():
-            robot.ik.add_task(
-                DOFTask(robot, dof_id, dof_target))
-        robot.ik.add_task(COMTask(robot, self.com))
+            tasks.append(DOFTask(robot, dof_id, dof_target))
+        tasks.append(COMTask(robot, self.com))
         if reg == 'posture':
-            robot.ik.add_task(PostureTask(robot, robot.q_halfsit))
+            tasks.append(PostureTask(robot, robot.q_halfsit))
         else:  # default regularization is minimum velocity
-            robot.ik.add_task(MinVelTask(robot))
+            tasks.append(MinVelTask(robot))
+        robot.ik.clear_tasks()
+        for task in tasks:
+            robot.ik.add_task(task)
         robot.stance = self
 
     @property
