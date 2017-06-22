@@ -432,9 +432,9 @@ class Manipulator(Body):
         Initial visibility.
     transparency : double, optional
         Transparency value from 0 (opaque) to 1 (invisible).
-    shape : (scalar, scalar)
+    shape : (scalar, scalar), optional
         Dimensions (half-length, half-width) of a contact patch in [m].
-    friction : scalar
+    friction : scalar, optional
         Static friction coefficient for potential contacts.
     """
 
@@ -507,9 +507,6 @@ class Box(Body):
                 box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
                 transparency=transparency, name=name)
             env.Add(box, True)
-        self.length = 2 * X
-        self.thickness = 2 * Z
-        self.width = 2 * Y
 
 
 class Cube(Box):

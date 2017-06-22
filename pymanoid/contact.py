@@ -29,9 +29,6 @@ from sim import gravity
 from transformations import crossmat
 
 
-CONTACT_THICKNESS = 0.01
-
-
 class Contact(Box):
 
     """
@@ -54,15 +51,19 @@ class Contact(Box):
         Initial visibility. Defaults to ``True``.
     name : string, optional
         Name in OpenRAVE scope.
+    slab_thickness : scalar, optional
+        Thickness of the contact slab displayed in the GUI, in [m].
     """
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
-                 visible=True, name=None, color='r', link=None):
+                 visible=True, name=None, color='r', link=None,
+                 slab_thickness=0.01):
         X, Y = shape
         super(Contact, self).__init__(
-            X, Y, Z=CONTACT_THICKNESS, pos=pos, rpy=rpy, pose=pose, color=color,
-            visible=visible, dZ=-CONTACT_THICKNESS, name=name)
-        self.friction = friction
+            X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
+            visible=visible, dZ=-slab_thickness, name=name)
+        self.friction = friction  # isotropic Coulomb friction
+        self.inner_friction = friction / sqrt(2)  # pyramidal approximation
         self.link = link
         self.shape = shape
 
@@ -137,7 +138,7 @@ class Contact(Box):
         """
         Face (H-rep) of the force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.inner_friction
         face_local = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
@@ -150,7 +151,7 @@ class Contact(Box):
         """
         Rays (V-rep) of the force friction cone in world frame.
         """
-        mu = self.friction / sqrt(2)  # inner approximation
+        mu = self.inner_friction
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
