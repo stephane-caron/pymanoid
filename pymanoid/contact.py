@@ -365,7 +365,8 @@ class ContactSet(object):
         return self.find_supporting_wrenches(wrench, com)
 
     def find_supporting_wrenches(self, wrench, point, friction_weight=1e-2,
-                                 cop_weight=1., yaw_weight=1e-4):
+                                 cop_weight=1., yaw_weight=1e-4,
+                                 solver='quadprog'):
         """
         Find supporting contact wrenches for a given net contact wrench.
 
@@ -379,6 +380,10 @@ class ContactSet(object):
             Weight on friction minimization.
         cop_weight : scalar, optional
             Weight on COP deviations from the center of the contact patch.
+        solver : string, optional
+            Name of the QP solver to use. Default is 'quadprog' (fastest). If
+            you are planning on using extremal wrenches, 'cvxopt' is slower but
+            works better on corner cases.
 
         Returns
         -------
@@ -387,10 +392,10 @@ class ContactSet(object):
             :math:`w^i_{C_i}`. All contact wrenches satisfy friction constraints
             and sum up to the net wrench: :math:`\\sum_c w^i_P = w_P``.
 
-        Note
-        ----
-        Note that wrench coordinates are returned in their respective contact
-        frames (:math:`w^i_{C_i}`), not at the point `P` where the net wrench
+        Notes
+        -----
+        Wrench coordinates are returned in their respective contact frames
+        (:math:`w^i_{C_i}`), not at the point `P` where the net wrench
         :math:`w_P` is given.
         """
         n = 6 * self.nb_contacts
@@ -407,7 +412,7 @@ class ContactSet(object):
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix(point)
         b = wrench
-        w_all = solve_qp(P, q, G, h, A, b)
+        w_all = solve_qp(P, q, G, h, A, b, solver=solver)
         if w_all is None:
             return None
         support = [
