@@ -118,10 +118,10 @@ class Contact(Box):
     @property
     def vertices(self):
         X, Y = self.shape
-        v1 = dot(self.T, array([+X, +Y, -self.thickness, 1.]))[:3]
-        v2 = dot(self.T, array([+X, -Y, -self.thickness, 1.]))[:3]
-        v3 = dot(self.T, array([-X, -Y, -self.thickness, 1.]))[:3]
-        v4 = dot(self.T, array([-X, +Y, -self.thickness, 1.]))[:3]
+        v1 = dot(self.T, array([+X, +Y, 0., 1.]))[:3]
+        v2 = dot(self.T, array([+X, -Y, 0., 1.]))[:3]
+        v3 = dot(self.T, array([-X, -Y, 0., 1.]))[:3]
+        v4 = dot(self.T, array([-X, +Y, 0., 1.]))[:3]
         return [v1, v2, v3, v4]
 
     """
