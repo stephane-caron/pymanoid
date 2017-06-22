@@ -73,7 +73,9 @@ def solve_qp(P, q, G, h, A=None, b=None, solver='quadprog'):
         return cvxopt_solve_qp(P, q, G, h, A, b)
     elif solver == 'mosek':
         return mosek_solve_qp(P, q, G, h, A, b)
-    return quadprog_solve_qp(P, q, G, h, A, b)
+    elif solver == 'quadprog':
+        return quadprog_solve_qp(P, q, G, h, A, b)
+    raise Exception("QP solver '%s' not recognized" % solver)
 
 
 def solve_safer_qp(P, q, G, h, w_reg, w_lin, solver=MOSEK_IF_AVAILABLE):
