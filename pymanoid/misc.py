@@ -145,6 +145,10 @@ class PoseWrap(object):
         self.pose = array(pose)
 
 
+def info(msg):
+    print "\033[0;32m[pymanoid] Info:\033[0;0m", msg
+
+
 def is_positive_combination(b, A):
     """
     Check if b can be written as a positive combination of lines from A.
@@ -300,3 +304,7 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
         points, alpha=alpha, color=color, linestyle=linestyle, fill=fill,
         linewidth=linewidth)
     ax.add_patch(patch)
+
+
+def warn(msg):
+    print "\033[1;33m[pymanoid] Warning:\033[0;0m", msg
