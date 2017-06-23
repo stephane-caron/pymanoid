@@ -21,10 +21,10 @@ from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 from time import time
 
-from misc import norm
+from misc import norm, warn
 from optim import solve_qp
 from sim import Process
-from tasks import ContactTask, DOFTask, LinkPoseTask
+from tasks import ContactTask, DOFTask, PoseTask
 
 
 class IKSolver(Process):
@@ -50,6 +50,28 @@ class IKSolver(Process):
     motion when approaching the knee singularity, despite the robot being able
     to move faster with a fully extended knee.
     """
+
+    __DEFAULT_GAINS = {
+        'COM': 0.85,
+        'CONTACT': 0.85,
+        'DOF': 0.85,
+        'MIN_ACCEL': 0.85,
+        'MIN_CAM': 0.85,
+        'MIN_VEL': 0.85,
+        'PENDULUM': 0.85,
+        'POSE': 0.85,
+        'POSTURE': 0.85,
+    }
+
+    __DEFAULT_WEIGHTS = {
+        'CONTACT': 1.,
+        'COM': 1e-2,
+        'POSE': 1e-3,
+        'MIN_ACCEL': 1e-4,
+        'MIN_CAM': 1e-4,
+        'DOF': 1e-5,
+        'POSTURE': 1e-6,
+    }
 
     def __init__(self, robot, active_dofs=None, doflim_gain=0.5):
         super(IKSolver, self).__init__()
@@ -102,17 +124,7 @@ class IKSolver(Process):
         default values.
         """
         if default_gains is None:  # sane defaults
-            default_gains = {
-                'COM': 0.85,
-                'CONTACT': 0.85,
-                'DOF': 0.85,
-                'LINK': 0.85,
-                'MIN_ACCEL': 0.85,
-                'MIN_CAM': 0.85,
-                'MIN_VEL': 0.85,
-                'PENDULUM': 0.85,
-                'POSTURE': 0.85,
-            }
+            default_gains = self.__DEFAULT_GAINS
         self.default_gains.update(default_gains)
 
     def set_default_weights(self, default_weights=None):
@@ -130,14 +142,11 @@ class IKSolver(Process):
         default values.
         """
         if default_weights is None:  # sane defaults
-            default_weights = {
-                'CONTACT': 1.,
-                'COM': 1e-2,
-                'LINK': 1e-3,
-                'MIN_CAM': 1e-4,
-                'DOF': 1e-5,
-                'POSTURE': 1e-6,
-            }
+            default_weights = self.__DEFAULT_WEIGHTS
+        else:  # default_weights is not None
+            for key in default_weights:
+                if key not in self.__DEFAULT_WEIGHTS:
+                    warn("unknown key '%s' for IK default weights" % key)
         self.default_weights.update(default_weights)
 
     def __fill_task_gain(self, task):
@@ -148,8 +157,8 @@ class IKSolver(Process):
             task.gain = self.default_gains['CONTACT']
         elif type(task) is DOFTask and 'DOF' in self.default_gains:
             task.gain = self.default_gains['DOF']
-        elif type(task) is LinkPoseTask and 'LINK' in self.default_gains:
-            task.gain = self.default_gains['LINK']
+        elif type(task) is PoseTask and 'POSE' in self.default_gains:
+            task.gain = self.default_gains['POSE']
 
     def __fill_task_weight(self, task):
         if task.name in self.default_weights:
@@ -159,8 +168,8 @@ class IKSolver(Process):
             task.weight = self.default_weights['CONTACT']
         elif type(task) is DOFTask and 'DOF' in self.default_weights:
             task.weight = self.default_weights['DOF']
-        elif type(task) is LinkPoseTask and 'LINK' in self.default_weights:
-            task.weight = self.default_weights['LINK']
+        elif type(task) is PoseTask and 'POSE' in self.default_weights:
+            task.weight = self.default_weights['POSE']
 
     def add_task(self, task):
         """

@@ -256,7 +256,7 @@ class DOFTask(Task):
         self.target = target
 
 
-class LinkPosTask(Task):
+class PosTask(Task):
 
     """
     Position task for a given link.
@@ -279,7 +279,7 @@ class LinkPosTask(Task):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        super(LinkPosTask, self).__init__(weight, gain, exclude_dofs)
+        super(PosTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
         self.link = link
@@ -305,7 +305,7 @@ class LinkPosTask(Task):
         self.target = target if hasattr(target, 'p') else PointWrap(target)
 
 
-class LinkPoseTask(Task):
+class PoseTask(Task):
 
     """
     Pose task for a given link.
@@ -328,7 +328,7 @@ class LinkPoseTask(Task):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        super(LinkPoseTask, self).__init__(weight, gain, exclude_dofs)
+        super(PoseTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
         self.link = link
@@ -584,10 +584,10 @@ class PostureTask(Task):
         return e / dt
 
 
-class ContactTask(LinkPoseTask):
+class ContactTask(PoseTask):
 
     """
-    In essence, a contact task is a :class:`pymanoid.tasks.LinkPoseTask` with a
+    In essence, a contact task is a :class:`pymanoid.tasks.PoseTask` with a
     much (much) larger weight. For plausible motions, no task should have a
     weight higher than (or even comparable to) that of contact tasks.
     """

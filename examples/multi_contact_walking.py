@@ -66,7 +66,7 @@ from pymanoid.polyhedra import compute_polytope_hrep
 from pymanoid.polygons import intersect_polygons
 from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.robots import JVRC1
-from pymanoid.tasks import ContactTask, DOFTask, LinkPoseTask, MinCAMTask
+from pymanoid.tasks import ContactTask, DOFTask, PoseTask, MinCAMTask
 from pymanoid.transformations import rotation_matrix_from_quat
 
 # try:
@@ -375,7 +375,7 @@ class WalkingFSM(pymanoid.Process):
                 self.robot, self.robot.left_foot, self.cur_stance.left_foot,
                 weight=contact_weight)
         else:  # left_foot is swinging
-            left_foot_task = LinkPoseTask(
+            left_foot_task = PoseTask(
                 self.robot, self.robot.left_foot, self.swing_foot,
                 weight=swing_weight)
         if self.cur_stance.right_foot is not None:
@@ -383,7 +383,7 @@ class WalkingFSM(pymanoid.Process):
                 self.robot, self.robot.right_foot, self.cur_stance.right_foot,
                 weight=contact_weight)
         else:  # right_foot is swingign
-            right_foot_task = LinkPoseTask(
+            right_foot_task = PoseTask(
                 self.robot, self.robot.right_foot, self.swing_foot,
                 weight=swing_weight)
         self.robot.ik.add_task(left_foot_task)

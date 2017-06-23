@@ -114,8 +114,8 @@ class Stance(ContactSet):
 
     def compute_static_equilibrium_polygon(self):
         """
-        Compute the contact wrench cone (CWC) and static-equilibrium polygon
-        (SEP) of the stance.
+        Compute the halfspace and vertex representations of the
+        static-equilibrium polygon (SEP) of the stance.
         """
         sep_vertices = super(Stance, self).compute_static_equilibrium_polygon()
         self.sep_hrep = compute_polytope_hrep(sep_vertices)
