@@ -23,8 +23,7 @@ from time import time
 from body import PointMass
 from draw import draw_force, draw_wrench
 from draw import draw_line, draw_polygon, draw_polyhedron
-from draw import matplotlib_to_rgb
-from misc import norm
+from misc import matplotlib_to_rgb, norm
 from sim import Process
 
 

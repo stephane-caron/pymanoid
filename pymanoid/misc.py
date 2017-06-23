@@ -205,6 +205,55 @@ def is_redundant(vectors):
     return False
 
 
+def matplotlib_to_rgb(color):
+    """
+    Convert matplotlib color string to RGB tuple.
+
+    Parameters
+    ----------
+    color : string
+        Color code in `matplotlib convention
+        <http://matplotlib.org/api/colors_api.html>`_.
+
+    Returns
+    -------
+    rgb : tuple
+        Red-green-blue tuple with values between 0 and 1.
+    """
+    acolor = [0., 0., 0.]
+    if color == 'k':
+        return acolor
+    if color == 'w':
+        return [1., 1., 1.]
+    if color in ['r', 'm', 'y', 'w']:
+        acolor[0] += 0.5
+    if color in ['g', 'y', 'c', 'w']:
+        acolor[1] += 0.5
+    if color in ['b', 'c', 'm', 'w']:
+        acolor[2] += 0.5
+    return acolor
+
+
+def matplotlib_to_rgba(color, alpha=0.5):
+    """
+    Convert matplotlib color string to RGBA tuple.
+
+    Parameters
+    ----------
+    color : string
+        Color code in `matplotlib convention
+        <http://matplotlib.org/api/colors_api.html>`_.
+    alpha : scalar, optional
+        Transparency between 0 and 1.
+
+    Returns
+    -------
+    rgba : tuple
+        Red-green-blue-alpha tuple with values between 0 and 1.
+    """
+    return matplotlib_to_rgb(color) + [alpha]
+
+
 def middot(M, T):
     """
     Dot product of a matrix with the mid-coordinate of a 3D tensor.

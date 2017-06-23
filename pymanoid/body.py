@@ -21,8 +21,7 @@ import openravepy
 
 from numpy import array, dot, ndarray, zeros
 
-from draw import matplotlib_to_rgb
-from misc import norm
+from misc import matplotlib_to_rgb, norm
 from sim import get_openrave_env
 from transformations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 
@@ -95,9 +94,9 @@ class Body(object):
         if type(color) is str:
             color = matplotlib_to_rgb(color)
         for link in self.rave.GetLinks():
-            for g in link.GetGeometries():
-                g.SetAmbientColor(color)
-                g.SetDiffuseColor(color)
+            for geom in link.GetGeometries():
+                geom.SetAmbientColor(color)
+                geom.SetDiffuseColor(color)
         self.color = color
 
     def set_transparency(self, transparency):

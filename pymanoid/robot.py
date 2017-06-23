@@ -25,7 +25,7 @@ from warnings import warn
 from body import PointMass
 from draw import draw_line, draw_point
 from ik import IKSolver
-from misc import middot
+from misc import matplotlib_to_rgb, middot
 from sim import get_openrave_env, gravity
 from transformations import crossmat, quat_from_rpy, rpy_from_quat
 from transformations import rotation_matrix_from_rpy
@@ -88,23 +88,22 @@ class Robot(object):
         self.is_visible = False
         self.rave.SetVisible(False)
 
-    def set_color(self, r, g, b):
+    def set_color(self, color):
         """
-        Update the RGB properties of each link of the robot.
+        Set the color of the robot.
 
         Parameters
         ----------
-        r : scalar
-            Red value between 0 and 1.
-        g : scalar
-            Green value between 0 and 1.
-        b : scalar
-            Blue value between 0 and 1.
+        color : tuple or string
+            RGB tuple, or color code in `matplotlib convention
+            <http://matplotlib.org/api/colors_api.html>`_.
         """
+        if type(color) is str:
+            color = matplotlib_to_rgb(color)
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
-                geom.SetAmbientColor([r, g, b])
-                geom.SetDiffuseColor([r, g, b])
+                geom.SetAmbientColor(color)
+                geom.SetDiffuseColor(color)
 
     def set_transparency(self, transparency):
         """
