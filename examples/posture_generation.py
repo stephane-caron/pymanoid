@@ -18,7 +18,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import IPython
-import numpy
 import os
 import sys
 
@@ -53,20 +52,8 @@ if __name__ == '__main__':
     stance.dof_tasks[robot.L_SHOULDER_R] = +0.5
     stance.bind(robot)
 
-    # First, generate the initial posture corresponding to the stance
     robot.ik.solve(max_it=100, impr_stop=1e-4)
-
-    # Now, we move the COM back and forth for 10 seconds
-    sim.schedule(robot.ik)
-    init_com = robot.com.copy()
-    for t in numpy.arange(0., 10., sim.dt):
-        com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
-        com_target.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
-        sim.step()
-
-    # Finally, we start the simulation
     sim.start()
 
-    # Don't forget to give the user a prompt
-    if IPython.get_ipython() is None:
+    if IPython.get_ipython() is None:  # give the user a prompt
         IPython.embed()
