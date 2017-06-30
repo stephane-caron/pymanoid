@@ -27,6 +27,10 @@ from sim import Process
 from tasks import ContactTask, DOFTask, PoseTask
 
 
+RANK_DEFICIENCY_MSG = "rank deficiency in IK problem, " \
+    "did you add a regularization task?"
+
+
 class IKSolver(Process):
 
     """
@@ -278,18 +282,6 @@ class IKSolver(Process):
         qd_min = maximum(self.qd_min, qd_min_doflim)
         return (P, v, qd_max, qd_min)
 
-    def __solve_qp(self, P, v, G, h):
-        try:
-            qd_active = solve_qp(P, v, G, h)
-            self.qd[self.active_dofs] = qd_active
-        except ValueError as e:
-            if "matrix G is not positive definite" in e:
-                raise Exception(
-                    "rank deficiency in IK problem, "
-                    "did you add a regularization task?")
-            raise
-        return self.qd
-
     def compute_velocity_fast(self, dt):
         """
         Compute a new velocity satisfying all tasks at best.
@@ -302,7 +294,7 @@ class IKSolver(Process):
         Returns
         -------
         qd : array
-            Active joint velocity vector.
+            Vector of active joint velocities.
 
         Note
         ----
@@ -334,7 +326,14 @@ class IKSolver(Process):
         P, v, qd_max, qd_min = self.__compute_qp_common(dt)
         G = vstack([+eye(n), -eye(n)])
         h = hstack([qd_max, -qd_min])
-        return self.__solve_qp(P, v, G, h)
+        try:
+            x = solve_qp(P, v, G, h)
+            self.qd[self.active_dofs] = x
+        except ValueError as e:
+            if "matrix G is not positive definite" in e:
+                raise Exception(RANK_DEFICIENCY_MSG)
+            raise
+        return self.qd
 
     def compute_velocity_safe(self, dt, margin_reg=1e-5, margin_lin=1e-3):
         """
@@ -353,7 +352,7 @@ class IKSolver(Process):
         Returns
         -------
         qd : array
-            Active joint velocity vector.
+            Vector of active joint velocities.
 
         Note
         ----
@@ -376,7 +375,14 @@ class IKSolver(Process):
         G = vstack([
             hstack([+E, +E / dt]), hstack([-E, +E / dt]), hstack([Z, -E])])
         h = hstack([qd_max, -qd_min, zeros(n)])
-        return self.__solve_qp(P, v, G, h)
+        try:
+            x = solve_qp(P, v, G, h)
+            self.qd[self.active_dofs] = x[:n]
+        except ValueError as e:
+            if "matrix G is not positive definite" in e:
+                raise Exception(RANK_DEFICIENCY_MSG)
+            raise
+        return self.qd
 
     def step(self, dt, unsafe=False):
         """
