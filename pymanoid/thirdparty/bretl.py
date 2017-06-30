@@ -22,10 +22,8 @@ import cvxopt.solvers
 
 from numpy import array, cos, cross, pi, sin
 from numpy.random import random
-from pylab import double, hold, plot
 from scipy.linalg import norm
 from warnings import warn
-from StringIO import StringIO
 
 cvxopt.solvers.options['show_progress'] = False  # disable cvxopt output
 
@@ -56,9 +54,9 @@ class Vertex:
     def expand(self, lp):
         v1 = self
         v2 = self.next
-        v = array([v2.y-v1.y, v1.x-v2.x])  # orthogonal direction to edge
+        v = array([v2.y - v1.y, v1.x - v2.x])  # orthogonal direction to edge
         v = 1 / norm(v) * v
-        res, z = OptimizeDirection(v, lp)
+        res, z = optimize_direction(v, lp)
         if not res:
             self.expanded = True
             return False, None
@@ -73,36 +71,14 @@ class Vertex:
             self.expanded = False
             return True, vnew
 
-    def Plot(self):
-        plot([self.x, self.next.x], [self.y, self.next.y])
-
-    def Print(self):
-        print self.x, self.y, "to", self.next.x, self.next.y
-
 
 class Polygon:
 
-    def fromVertices(self, v1, v2, v3):
+    def from_vertices(self, v1, v2, v3):
         v1.next = v2
         v2.next = v3
         v3.next = v1
         self.vertices = [v1, v2, v3]
-
-    def fromString(self, s):
-        buff = StringIO(s)
-        self.vertices = []
-        while(True):
-            l = buff.readline()
-            l = l.strip(" \n")
-            if len(l) < 2:
-                break
-            x, y = [double(x) for x in l.split(' ')]
-            vnew = Vertex([x, y])
-            self.vertices.append(vnew)
-
-        for i in range(len(self.vertices)-1):
-            self.vertices[i].next = self.vertices[i+1]
-        self.vertices[-1].next = self.vertices[0]
 
     def all_expanded(self):
         for v in self.vertices:
@@ -128,8 +104,8 @@ class Polygon:
 
     def sort_vertices(self):
         """
-        Export the vertices starting from the left-most and going clockwise.
-        Assumes every vertices are on the positive halfplane.
+        Export vertices starting from the left-most and going clockwise.
+        Assumes all vertices are on the positive halfplane.
         """
         minsd = 1e10
         ibottom = 0
@@ -161,18 +137,8 @@ class Polygon:
         export_list.append(self.vertices[-1])  # always add last vertex
         return export_list
 
-    def Plot(self):
-        hold("on")
-        for v in self.vertices:
-            v.Plot()
 
-    def Print(self):
-        print "Polygon contains vertices"
-        for v in self.vertices:
-            v.Print()
-
-
-def OptimizeDirection(vdir, lp, solver=GLPK_IF_AVAILABLE):
+def optimize_direction(vdir, lp, solver=GLPK_IF_AVAILABLE):
     """
     Optimize in one direction.
 
@@ -212,42 +178,63 @@ def OptimizeDirection(vdir, lp, solver=GLPK_IF_AVAILABLE):
         return False, 0
 
 
-def ComputePolygon(lp, solver=GLPK_IF_AVAILABLE):
+def optimize_angle(theta, lp, solver=GLPK_IF_AVAILABLE):
+    """
+    Optimize in one direction.
+
+    Parameters
+    ----------
+    theta : scalar
+        Angle of the direction in which the optimization is performed.
+    lp : array tuple
+        Tuple `(q, G, h, A, b)` defining the LP. See
+        :func:`pymanoid.thirdparty.cvxopt_.solve_lp` for details.
+    solver : string, optional
+        Backend LP solver to call.
+
+    Returns
+    -------
+    succ : bool
+        Success boolean.
+    z : (3,) array, or 0
+        Maximum vertex of the polygon in the direction `vdir`, or 0 in case of
+        solver failure.
+    """
+    d = array([cos(theta), sin(theta)])
+    res, z = optimize_direction(d, lp, solver=solver)
+    if not res:
+        msg = "thirdparty.bretl: "
+        msg += "could not optimize in direction %s (theta=%f)" % (str(d), theta)
+        raise Exception(msg)
+    return z
+
+
+def compute_polygon(lp, solver=GLPK_IF_AVAILABLE):
     """
     Expand a polygon iteratively.
 
     Parameters
     ----------
     lp : array tuple
-        Tuple `(q, G, h, A, b)` defining the LP. See
+        Tuple `(q, G, h, A, b)` defining the linear program. See
         :func:`pymanoid.thirdparty.cvxopt_.solve_lp` for details.
     solver : string, optional
         Name of backend LP solver.
 
     Returns
     -------
-    succ : bool
-        Success boolean.
     poly : Polygon
         Output polygon.
     """
     theta = pi * random()
-    d1 = array([cos(theta), sin(theta)])
-    d2 = array([cos(theta + 2 * pi / 3), sin(theta + 2 * pi / 3)])
-    d3 = array([cos(theta + 4 * pi / 3), sin(theta + 4 * pi / 3)])
-    res, z1 = OptimizeDirection(d1, lp, solver=solver)
-    if not res:
-        return False, d1
-    res, z2 = OptimizeDirection(d2, lp, solver=solver)
-    if not res:
-        return False, d2
-    res, z3 = OptimizeDirection(d3, lp, solver=solver)
-    if not res:
-        return False, d3
+    z1 = optimize_angle(theta, lp, solver)
+    z2 = optimize_angle(theta + 2 * pi / 3, lp, solver)
+    z3 = optimize_angle(theta + 4 * pi / 3, lp, solver)
+    print "z1 =", z1, "z2 =", z2, "z3 =", z3
     v1 = Vertex(z1)
     v2 = Vertex(z2)
     v3 = Vertex(z3)
-    poly = Polygon()
-    poly.fromVertices(v1, v2, v3)
-    poly.iter_expand(lp, 1000)
-    return True, poly
+    polygon = Polygon()
+    polygon.from_vertices(v1, v2, v3)
+    polygon.iter_expand(lp, 1000)
+    return polygon

@@ -324,13 +324,8 @@ def project_polytope_bretl(ineq, eq, proj, max_radius=42.):
 
     lp_obj = cvxopt.matrix(zeros(A.shape[1] + 2))
     lp = lp_obj, A_ext, b_ext, C_ext, d_ext
-    res, P = bretl.ComputePolygon(lp)
-    if not res:
-        msg = "bretl.ComputePolygon: "
-        msg += "could not optimize in direction %s" % str(P)
-        raise Exception(msg)
-
-    P.sort_vertices()
-    vertices_list = P.export_vertices()
+    polygon = bretl.compute_polygon(lp)
+    polygon.sort_vertices()
+    vertices_list = polygon.export_vertices()
     vertices = [array([v.x, v.y]) for v in vertices_list]
     return vertices
