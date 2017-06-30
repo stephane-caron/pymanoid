@@ -40,6 +40,10 @@ except ImportError:
     GLPK_IF_AVAILABLE = None
 
 
+def norm1(v):
+    return abs(v[0]) + abs(v[1])
+
+
 class Vertex:
 
     def __init__(self, p):
@@ -86,21 +90,22 @@ class Polygon:
                 return False
         return True
 
-    def iter_expand(self, qpconstraints, maxiter=10):
+    def iter_expand(self, qpconstraints, max_iter):
         """
         Returns true if there's a edge that can be expanded, and expands that
         edge, otherwise returns False.
         """
-        niter = 0
+        nb_iter = 0
         v = self.vertices[0]
-        while not self.all_expanded() and niter < maxiter:
-            if not v.expanded:
-                res, vnew = v.expand(qpconstraints)
-                if res:
-                    self.vertices.append(vnew)
-                    niter += 1
-            else:
+        while not self.all_expanded() and nb_iter < max_iter:
+            if v.expanded:
                 v = v.next
+                continue
+            res, vnew = v.expand(qpconstraints)
+            if not res:
+                continue
+            self.vertices.append(vnew)
+            nb_iter += 1
 
     def sort_vertices(self):
         """
@@ -209,7 +214,7 @@ def optimize_angle(theta, lp, solver=GLPK_IF_AVAILABLE):
     return z
 
 
-def compute_polygon(lp, solver=GLPK_IF_AVAILABLE):
+def compute_polygon(lp, max_iter=1000, solver=GLPK_IF_AVAILABLE):
     """
     Expand a polygon iteratively.
 
@@ -218,6 +223,8 @@ def compute_polygon(lp, solver=GLPK_IF_AVAILABLE):
     lp : array tuple
         Tuple `(q, G, h, A, b)` defining the linear program. See
         :func:`pymanoid.thirdparty.cvxopt_.solve_lp` for details.
+    max_iter : integer, optional
+        Maximum number of calls to the LP solver.
     solver : string, optional
         Name of backend LP solver.
 
@@ -226,15 +233,23 @@ def compute_polygon(lp, solver=GLPK_IF_AVAILABLE):
     poly : Polygon
         Output polygon.
     """
+    two_pi = 2 * pi
     theta = pi * random()
-    z1 = optimize_angle(theta, lp, solver)
-    z2 = optimize_angle(theta + 2 * pi / 3, lp, solver)
-    z3 = optimize_angle(theta + 4 * pi / 3, lp, solver)
-    print "z1 =", z1, "z2 =", z2, "z3 =", z3
-    v1 = Vertex(z1)
-    v2 = Vertex(z2)
-    v3 = Vertex(z3)
+    init_vertices = [optimize_angle(theta, lp, solver)]
+    step = two_pi / 3
+    while len(init_vertices) < 3 and max_iter >= 0:
+        theta += step
+        if theta >= two_pi:
+            step *= 0.25 + 0.5 * random()
+            theta += step - two_pi
+        z = optimize_angle(theta, lp, solver)
+        if all([norm(z - z0) > 1e-5 for z0 in init_vertices]):
+            init_vertices.append(z)
+        max_iter -= 1
+    v0 = Vertex(init_vertices[0])
+    v1 = Vertex(init_vertices[1])
+    v2 = Vertex(init_vertices[2])
     polygon = Polygon()
-    polygon.from_vertices(v1, v2, v3)
-    polygon.iter_expand(lp, 1000)
+    polygon.from_vertices(v0, v1, v2)
+    polygon.iter_expand(lp, max_iter)
     return polygon
