@@ -17,11 +17,10 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+import numpy
 import unittest
 import os
 import sys
-
-from numpy import dot, zeros
 
 try:
     import pymanoid
@@ -30,12 +29,16 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
+from pymanoid.polyhedra import project_polytope
+
+
 TINY = 1e-7
 
 
-class TestContactSet(unittest.TestCase):
+class TestContact(unittest.TestCase):
+
     """
-    Test CWC computations.
+    Test functions in the `contact` submodule.
     """
 
     def setUp(self):
@@ -57,17 +60,17 @@ class TestContactSet(unittest.TestCase):
         """
         Check that wrench rays are included in the H-representation.
         """
-        p = zeros(3)
+        p = numpy.zeros(3)
         F = self.contact_set.compute_wrench_face(p)
         S = self.contact_set.compute_wrench_span(p)
         for i in range(S.shape[1]):
-            assert all(dot(F, S[:, i]) <= TINY)
+            assert all(numpy.dot(F, S[:, i]) <= TINY)
 
     def test_supporting_wrench_from_span(self):
         """
         Compute supporting wrenches for wrench rays.
         """
-        p = zeros(3)
+        p = numpy.zeros(3)
         S = self.contact_set.compute_wrench_span(p)
         for i in range(S.shape[1]):
             s_i = S[:, i]
@@ -76,6 +79,31 @@ class TestContactSet(unittest.TestCase):
             # see https://github.com/stephane-caron/pymanoid/issues/5
             # regarding the use of CVXOPT rather than quadprog here
             assert res is not None
+
+
+class TestPolyhedra(unittest.TestCase):
+
+    """
+    Test functions in the `polyhedra` submodule.
+    """
+
+    def setUp(self):
+        self.data = numpy.load('polytope_proj.npz')
+
+    def test_projection_bretl(self, nb_runs=100):
+        eq = (self.data['eq_mat'], self.data['eq_vec'])
+        ineq = (self.data['ineq_mat'], self.data['ineq_vec'])
+        proj = (self.data['proj_mat'], self.data['proj_vec'])
+        for _ in range(nb_runs):  # the error appears randomly
+            polytope = project_polytope(eq, ineq, proj, method='bretl')
+        assert polytope is not None
+
+    def test_projection_cdd(self):
+        eq = (self.data['eq_mat'], self.data['eq_vec'])
+        ineq = (self.data['ineq_mat'], self.data['ineq_vec'])
+        proj = (self.data['proj_mat'], self.data['proj_vec'])
+        polytope = project_polytope(eq, ineq, proj, method='cdd')
+        assert polytope is not None
 
 
 if __name__ == "__main__":
