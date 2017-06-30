@@ -62,8 +62,9 @@ class Contact(Box):
         super(Contact, self).__init__(
             X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
             visible=visible, dZ=-slab_thickness, name=name)
+        inner_friction = None if friction is None else friction / sqrt(2)
         self.friction = friction  # isotropic Coulomb friction
-        self.inner_friction = friction / sqrt(2)  # pyramidal approximation
+        self.inner_friction = inner_friction  # pyramidal approximation
         self.link = link
         self.shape = shape
 
