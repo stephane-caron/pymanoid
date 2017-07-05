@@ -39,6 +39,6 @@ setup(
         'Topic :: Scientific/Engineering :: Mathematics'],
     packages=[
         'pymanoid',
-        'pymanoid.polyhedra',
-        'pymanoid.robots']
+        'pymanoid.robots',
+        'pymanoid.thirdparty']
 )
