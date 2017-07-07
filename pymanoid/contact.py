@@ -567,3 +567,49 @@ class ContactSet(object):
             array([a * (g + zdd), b * (g + zdd), zdd])
             for (a, b) in reduced_hull]
         return [gravity] + vertices_at_zdd
+
+
+class ContactFeed(object):
+
+    def __init__(self, path=None, cyclic=False, visible=True):
+        self.contacts = []
+        self.cyclic = cyclic
+        self.next_contact = 0
+        self.visible = visible
+        #
+        if path is not None:
+            self.load(path)
+
+    def load(self, path):
+        import simplejson
+        assert path.endswith('.json')
+        with open(path, 'r') as fp:
+            contact_defs = simplejson.load(fp)
+        for d in contact_defs:
+            self.contacts.append(Contact(
+                shape=d['shape'],
+                pos=d['pos'],
+                rpy=d['rpy'],
+                friction=d['friction'],
+                visible=self.visible))
+
+    def pop(self):
+        i = self.next_contact
+        self.next_contact += 1
+        if self.next_contact >= len(self.contacts):
+            if not self.cyclic:
+                return None
+            self.next_contact = 0
+        return self.contacts[i]
+
+    def save(self, path):
+        import simplejson
+        assert path.endswith('.json')
+        contact_defs = [{
+            'shape': contact.shape,
+            'pos': list(contact.p),
+            'rpy': list(contact.rpy),
+            'friction': contact.friction}
+            for contact in self.contacts]
+        with open(path, 'w') as fp:
+            simplejson.dump(contact_defs, fp, indent=4, sort_keys=True)
