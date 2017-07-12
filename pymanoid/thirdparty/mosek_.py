@@ -40,17 +40,17 @@ def solve_qp(P, q, G, h, A=None, b=None, initvals=None):
     Parameters
     ----------
     P : array, shape=(n, n)
-        Primal quadratic cost matrix.
+        Symmetric quadratic-cost matrix.
     q : array, shape=(n,)
-        Primal quadratic cost vector.
+        Quadratic cost vector.
     G : array, shape=(m, n)
-        Linear inequality constraint matrix.
+        Linear inequality matrix.
     h : array, shape=(m,)
-        Linear inequality constraint vector.
+        Linear inequality vector.
     A : array, shape=(meq, n), optional
-        Linear equality constraint matrix.
+        Linear equality matrix.
     b : array, shape=(meq,), optional
-        Linear equality constraint vector.
+        Linear equality vector.
     solver : string, optional
         Name of the QP solver to use (default is quadprog).
 

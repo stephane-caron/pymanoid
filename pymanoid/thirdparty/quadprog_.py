@@ -21,7 +21,7 @@ from numpy import hstack, vstack
 from quadprog import solve_qp as _solve_qp
 
 
-def solve_qp(P, q, G, h, A=None, b=None):
+def solve_qp(P, q, G, h, A=None, b=None, sym_proj=False):
     """
     Solve a Quadratic Program defined as:
 
@@ -40,17 +40,19 @@ def solve_qp(P, q, G, h, A=None, b=None):
     Parameters
     ----------
     P : array, shape=(n, n)
-        Primal quadratic cost matrix.
+        Symmetric quadratic-cost matrix.
     q : array, shape=(n,)
-        Primal quadratic cost vector.
+        Quadratic-cost vector.
     G : array, shape=(m, n)
-        Linear inequality constraint matrix.
+        Linear inequality matrix.
     h : array, shape=(m,)
-        Linear inequality constraint vector.
+        Linear inequality vector.
     A : array, shape=(meq, n), optional
-        Linear equality constraint matrix.
+        Linear equality matrix.
     b : array, shape=(meq,), optional
-        Linear equality constraint vector.
+        Linear equality vector.
+    sym_proj : bool, optional
+        Set to `True` when the `P` matrix provided is not symmetric.
 
     Returns
     -------
@@ -61,8 +63,13 @@ def solve_qp(P, q, G, h, A=None, b=None):
     ------
     ValueError
         If the QP is not feasible.
+
+    Note
+    ----
+    The quadprog solver assumes `P` is symmetric. If that is not the case, set
+    `sym_proj=True` to project it on its symmetric part beforehand.
     """
-    qp_G = .5 * (P + P.T)   # quadprog assumes that P is symmetric
+    qp_G = .5 * (P + P.T) if sym_proj else P
     qp_a = -q
     if A is not None:
         qp_C = -vstack([A, G]).T

@@ -43,7 +43,7 @@ def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
     Parameters
     ----------
     c : array, shape=(n,)
-        Cost vector.
+        Linear-cost vector.
     G : array, shape=(m, n)
         Linear inequality constraint matrix.
     h : array, shape=(m,)
@@ -74,7 +74,8 @@ def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
     return array(sol['x']).reshape((c.shape[0],))
 
 
-def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
+def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None,
+             sym_proj=False):
     """
     Solve a quadratic program defined as:
 
@@ -92,30 +93,37 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None):
     Parameters
     ----------
     P : array, shape=(n, n)
-        Primal quadratic cost matrix.
+        Symmetric quadratic-cost matrix.
     q : array, shape=(n,)
-        Primal quadratic cost vector.
+        Quadratic-cost vector.
     G : array, shape=(m, n)
-        Linear inequality constraint matrix.
+        Linear inequality matrix.
     h : array, shape=(m,)
-        Linear inequality constraint vector.
+        Linear inequality vector.
     A : array, shape=(meq, n), optional
-        Linear equality constraint matrix.
+        Linear equality matrix.
     b : array, shape=(meq,), optional
-        Linear equality constraint vector.
+        Linear equality vector.
     solver : string, optional
         Set to 'mosek' to run MOSEK rather than CVXOPT.
     initvals : array, shape=(n,), optional
         Warm-start guess vector.
+    sym_proj : bool, optional
+        Set to `True` when the `P` matrix provided is not symmetric.
 
     Returns
     -------
     x : array, shape=(n,)
         Solution to the QP, if found, otherwise ``None``.
+
+    Note
+    ----
+    CVXOPT only considers the lower entries of `P`, assuming it is symmetric. If
+    that is not the case, set `sym_proj=True` to project it on its symmetric
+    part beforehand.
     """
-    # CVXOPT only considers the lower entries of P so we project on its
-    # symmetric part beforehand
-    P = .5 * (P + P.T)
+    if sym_proj:
+        P = .5 * (P + P.T)
     args = [cvxmat(P), cvxmat(q), cvxmat(G), cvxmat(h)]
     if A is not None:
         args.extend([cvxmat(A), cvxmat(b)])
