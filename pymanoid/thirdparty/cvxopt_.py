@@ -74,8 +74,7 @@ def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
     return array(sol['x']).reshape((c.shape[0],))
 
 
-def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None,
-             sym_proj=False):
+def solve_qp(P, q, G, h, A=None, b=None, solver=None, sym_proj=False):
     """
     Solve a quadratic program defined as:
 
@@ -106,8 +105,6 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None,
         Linear equality vector.
     solver : string, optional
         Set to 'mosek' to run MOSEK rather than CVXOPT.
-    initvals : array, shape=(n,), optional
-        Warm-start guess vector.
     sym_proj : bool, optional
         Set to `True` when the `P` matrix provided is not symmetric.
 
@@ -127,7 +124,7 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None, initvals=None,
     args = [cvxmat(P), cvxmat(q), cvxmat(G), cvxmat(h)]
     if A is not None:
         args.extend([cvxmat(A), cvxmat(b)])
-    sol = qp(*args, solver=solver, initvals=initvals)
+    sol = qp(*args, solver=solver)
     if not ('optimal' in sol['status']):
         raise ValueError("QP optimum not found: %s" % sol['status'])
     return array(sol['x']).reshape((P.shape[1],))
