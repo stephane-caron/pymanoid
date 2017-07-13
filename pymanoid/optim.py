@@ -20,7 +20,9 @@
 from thirdparty.cvxopt_ import solve_lp
 
 try:
-    from qpsolvers import solve_qp  # if available, provides more QP solvers
+    # if available, provides more QP solvers
+    # https://github.com/stephane-caron/qpsolvers
+    from qpsolvers import solve_qp
 except ImportError:
     from thirdparty.cvxopt_ import solve_qp as cvxopt_solve_qp
     from thirdparty.quadprog_ import solve_qp as quadprog_solve_qp
@@ -52,7 +54,7 @@ except ImportError:
         b : array, shape=(meq,), optional
             Linear equality constraint vector.
         solver : string, optional
-            Name of the QP solver to use (default is quadprog).
+            Name of the QP solver to use (default is 'quadprog').
         sym_proj : bool, optional
             Set to `True` when the `P` matrix provided is not symmetric.
 
@@ -67,9 +69,9 @@ except ImportError:
             If the QP is not feasible.
         """
         if solver == 'cvxopt':
-            return cvxopt_solve_qp(P, q, G, h, A, b)
+            return cvxopt_solve_qp(P, q, G, h, A, b, sym_proj=sym_proj)
         elif solver == 'quadprog':
-            return quadprog_solve_qp(P, q, G, h, A, b)
+            return quadprog_solve_qp(P, q, G, h, A, b, sym_proj=sym_proj)
         raise Exception("QP solver '%s' not recognized" % solver)
 
 
