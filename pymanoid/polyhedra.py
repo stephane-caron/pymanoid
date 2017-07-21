@@ -165,7 +165,7 @@ def compute_polytope_vertices(A, b):
     return vertices
 
 
-def project_polyhedron(ineq, eq, proj):
+def project_polyhedron(proj, ineq, eq=None):
     """
     Apply the affine projection :math:`y = E x + f` to the polyhedron defined
     by:
@@ -179,12 +179,12 @@ def project_polyhedron(ineq, eq, proj):
 
     Parameters
     ----------
-    ineq : pair of arrays
-        Pair (`A`, `b`) describing the inequality constraint.
-    eq : pair of arrays
-        Pair (`C`, `d`) describing the equality constraint.
     proj : pair of arrays
         Pair (`E`, `f`) describing the affine projection.
+    ineq : pair of arrays
+        Pair (`A`, `b`) describing the inequality constraint.
+    eq : pair of arrays, optional
+        Pair (`C`, `d`) describing the equality constraint.
 
     Returns
     -------
@@ -193,18 +193,19 @@ def project_polyhedron(ineq, eq, proj):
     rays : list of arrays
         List of rays of the projection.
     """
-    (A, b), (C, d), (E, f) = ineq, eq, proj
-    b = b.reshape((b.shape[0], 1))
-    d = d.reshape((d.shape[0], 1))
-
     # the input [b, -A] to cdd.Matrix represents (b - A * x >= 0)
     # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
+    (A, b) = ineq
+    b = b.reshape((b.shape[0], 1))
     linsys = cdd.Matrix(hstack([b, -A]), number_type='float')
     linsys.rep_type = cdd.RepType.INEQUALITY
 
     # the input [d, -C] to cdd.Matrix.extend represents (d - C * x == 0)
     # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
-    linsys.extend(hstack([d, -C]), linear=True)
+    if eq is not None:
+        (C, d) = eq
+        d = d.reshape((d.shape[0], 1))
+        linsys.extend(hstack([d, -C]), linear=True)
 
     # Convert from H- to V-representation
     linsys.canonicalize()
@@ -215,6 +216,7 @@ def project_polyhedron(ineq, eq, proj):
     V = array(generators)
 
     # Project output wrenches to 2D set
+    (E, f) = proj
     vertices, rays = [], []
     free_coordinates = []
     for i in xrange(V.shape[0]):
@@ -227,7 +229,7 @@ def project_polyhedron(ineq, eq, proj):
     return vertices, rays
 
 
-def project_polytope(ineq, eq, proj, method='cdd'):
+def project_polytope(proj, ineq, eq=None, method='cdd'):
     """
     Apply the affine projection :math:`y = E x + f` to the polytope defined by:
 
@@ -240,12 +242,12 @@ def project_polytope(ineq, eq, proj, method='cdd'):
 
     Parameters
     ----------
-    ineq : pair of arrays
-        Pair (`A`, `b`) describing the inequality constraint.
-    eq : pair of arrays
-        Pair (`C`, `d`) describing the equality constraint.
     proj : pair of arrays
         Pair (`E`, `f`) describing the affine projection.
+    ineq : pair of arrays
+        Pair (`A`, `b`) describing the inequality constraint.
+    eq : pair of arrays, optional
+        Pair (`C`, `d`) describing the equality constraint.
     method : string, optional
         Choice between 'bretl' and 'cdd'.
 
@@ -253,15 +255,22 @@ def project_polytope(ineq, eq, proj, method='cdd'):
     -------
     vertices : list of arrays
         List of vertices of the projection.
+
+    Notes
+    -----
+    The number of columns of all matrices `A`, `C` and `E` corresponds to the
+    dimension of the input space, while the number of lines of `E` corresponds
+    to the dimension of the output space.
     """
     if method == 'bretl':
+        assert eq is not None, "Bretl method requires = constraints for now"
         return project_polytope_bretl(ineq, eq, proj)
     vertices, rays = project_polyhedron(ineq, eq, proj)
     assert not rays, "Projection is not a polytope"
     return vertices
 
 
-def project_polytope_bretl(ineq, eq, proj, max_radius=42.):
+def project_polytope_bretl(proj, ineq, eq, max_radius=42.):
     """
     Project a polytope into a 2D polygon using the incremental projection
     algorithm from [Bretl08]_. The 2D affine projection :math:`y = E x + f` is
@@ -276,13 +285,13 @@ def project_polytope_bretl(ineq, eq, proj, max_radius=42.):
 
     Parameters
     ----------
+    proj : pair of arrays
+        Pair (`E`, `f`) describing the affine projection.
     ineq : pair of arrays
         Pair (`A`, `b`) describing the inequality constraint.
     eq : pair of arrays
         Pair (`C`, `d`) describing the equality constraint.
-    proj : pair of arrays
-        Pair (`E`, `f`) describing the affine projection.
-    max_radius : scalar
+    max_radius : scalar, optional
         Maximum distance from origin (in [m]) used to make sure the output
         is bounded. Default is 42 [m].
 

@@ -460,9 +460,10 @@ class ContactSet(object):
         E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
         f = array([p[0], p[1]])
         return project_polytope(
+            proj=(E, f),
             ineq=(F, zeros(F.shape[0])),
             eq=(G[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
-            proj=(E, f), method=method)
+            method=method)
 
     def compute_zmp_support_area(self, com, plane, method='bretl'):
         """
@@ -505,7 +506,10 @@ class ContactSet(object):
         E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
         f = array([com[0], com[1]])
         return project_polytope(
-            ineq=(F, zeros(F.shape[0])), eq=(C, d), proj=(E, f), method=method)
+            proj=(E, f),
+            ineq=(F, zeros(F.shape[0])),
+            eq=(C, d),
+            method=method)
 
     def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
         """
