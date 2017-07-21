@@ -12,8 +12,6 @@ Quadratic Programming
 
 .. autofunction:: pymanoid.optim.solve_qp
 
-.. autofunction:: pymanoid.optim.solve_safer_qp
-
 Nonlinear Programming
 =====================
 
