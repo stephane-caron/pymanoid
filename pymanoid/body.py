@@ -549,6 +549,8 @@ class Point(Cube):
     ----------
     pos : array, shape=(3,)
         Initial position in the world frame.
+    vel : array, shape=(3,), optional
+        Initial velocity in the world frame.
     size : scalar, optional
         Half-length of a side of the cube in [m].
     color : char
@@ -561,12 +563,12 @@ class Point(Cube):
         Name of the object in the OpenRAVE GUI.
     """
 
-    def __init__(self, pos, size=0.01, color='r', visible=True,
+    def __init__(self, pos, vel=None, size=0.01, color='r', visible=True,
                  transparency=None, name=None):
         super(Point, self).__init__(
             size, pos=pos, color=color, visible=visible,
             transparency=transparency, name=name)
-        self.__pd = zeros(3)
+        self.__pd = zeros(3) if vel is None else array(vel)
 
     @property
     def pd(self):
@@ -625,6 +627,8 @@ class PointMass(Point):
         Initial position in the world frame.
     mass : scalar
         Total mass in [kg].
+    vel : array, shape=(3,), optional
+        Initial velocity in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
     visible : bool
@@ -634,10 +638,10 @@ class PointMass(Point):
     name : string, optional
         Name of the object in the OpenRAVE GUI.
     """
-    def __init__(self, pos, mass, color='r', visible=True, transparency=None,
-                 name=None):
+    def __init__(self, pos, mass, vel=None, color='r', visible=True,
+                 transparency=None, name=None):
         size = max(5e-3, 6e-4 * mass)
         super(PointMass, self).__init__(
-            pos, size, color=color, visible=visible, transparency=transparency,
-            name=name)
+            pos, vel=vel, size=size, color=color, visible=visible,
+            transparency=transparency, name=name)
         self.mass = mass
