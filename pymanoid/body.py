@@ -91,7 +91,7 @@ class Body(object):
             RGB tuple, or color code in `matplotlib convention
             <http://matplotlib.org/api/colors_api.html>`_.
         """
-        if type(color) is str:
+        if isinstance(color, str):
             color = matplotlib_to_rgb(color)
         for link in self.rave.GetLinks():
             for geom in link.GetGeometries():
@@ -584,9 +584,9 @@ class Point(Cube):
         other_point : array or Point
             Point to compute the distance to.
         """
-        if type(other_point) is list:
+        if isinstance(other_point, list):
             other_point = array(other_point)
-        if type(other_point) is ndarray:
+        if isinstance(other_point, ndarray):
             return norm(other_point - self.p)
         return norm(other_point.p - self.p)
 
