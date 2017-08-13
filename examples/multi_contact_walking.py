@@ -896,7 +896,7 @@ if __name__ == "__main__":
     com_target = PointMass([0, 0, 0], 20.)
     preview_buffer = PreviewBuffer(
         u_dim=3,
-        callback=lambda u, dT: com_target.integrate_acceleration(u, dT))
+        callback=lambda u, dT: com_target.integrate(u, dT))
     fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
 
     mpc = COMTubePredictiveControl(
