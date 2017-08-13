@@ -46,11 +46,11 @@ sudo apt-get install cython libglpk-dev python python-dev python-pip python-scip
 sudo pip install quadprog pycddlib
 sudo CVXOPT_BUILD_GLPK=1 pip install cvxopt
 ```
-Finally, clone the repository, and run the setup script if you wish to install
-the library system-wide:
+Finally, clone the repository, and run the setup script:
 ```
 git clone https://github.com/stephane-caron/pymanoid.git && cd pymanoid
-sudo python setup.py install
+python setup.py build
+python setup.py install --user
 ```
 
 ### Optional
@@ -81,6 +81,5 @@ Pymanoid does not provide forward dynamics. The stability that is checked in
 simulations is a feasibility criterion called [contact
 stability](https://scaron.info/teaching/contact-stability.html), namely, that
 at each timestep there exists feasible contact forces that support the robot
-motion. To perform this check, you can instantiate a [wrench
-drawer](/pymanoid/drawers.py) or call the ``find_supporting_wrenches()``
-function from a [ContactSet](/pymanoid/contact.py).
+motion. This check is performed by the ``find_supporting_wrenches()``
+function of a [ContactSet](/pymanoid/contact.py).
