@@ -49,26 +49,23 @@ class Contact(Box):
         Static friction coefficient.
     visible : bool, optional
         Initial visibility. Defaults to ``True``.
-    name : string, optional
-        Name in OpenRAVE scope.
     slab_thickness : scalar, optional
         Thickness of the contact slab displayed in the GUI, in [m].
     """
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
-                 visible=True, name=None, color='r', link=None,
-                 slab_thickness=0.01):
+                 visible=True, color='r', link=None, slab_thickness=0.01):
         X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
-            visible=visible, dZ=-slab_thickness, name=name)
+            visible=visible, dZ=-slab_thickness)
         inner_friction = None if friction is None else friction / sqrt(2)
         self.friction = friction  # isotropic Coulomb friction
         self.inner_friction = inner_friction  # pyramidal approximation
         self.link = link
         self.shape = shape
 
-    def copy(self, visible=None, name=None, color=None, link=None):
+    def copy(self, visible=None, color=None, link=None):
         if visible is None:
             visible = self.is_visible
         if color is None:
@@ -77,7 +74,7 @@ class Contact(Box):
             link = self.link
         return Contact(
             self.shape, pose=self.pose, friction=self.friction, visible=visible,
-            name=name, color=color, link=link)
+            color=color, link=link)
 
     """
     Geometry

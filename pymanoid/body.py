@@ -33,7 +33,7 @@ class Body(object):
 
     Parameters
     ----------
-    kinbody : openravepy.KinBody
+    rave_body : openravepy.KinBody
         OpenRAVE body to wrap.
     pos : array, shape=(3,), optional
         Initial position in inertial frame.
@@ -49,22 +49,18 @@ class Body(object):
         Initial visibility.
     transparency : double, optional
         Transparency value from 0 (opaque) to 1 (invisible).
-    name : string, optional
-        Body name in OpenRAVE scope.
     """
 
     count = 0
 
-    def __init__(self, kinbody, pos=None, rpy=None, pose=None, color=None,
-                 visible=True, transparency=None, name=None):
-        if not kinbody.GetName():
-            if name is None:
-                name = "%s%s" % (type(self).__name__, Body.count)
-                Body.count += 1
-            kinbody.SetName(name)
+    def __init__(self, rave_body, pos=None, rpy=None, pose=None, color=None,
+                 visible=True, transparency=None):
         self.color = color
-        self.rave = kinbody
         self.is_visible = visible
+        self.rave = rave_body
+        if not rave_body.GetName():
+            self.set_name("%s%s" % (type(self).__name__, Body.count))
+            Body.count += 1
         if pos is not None:
             self.set_pos(pos)
         if rpy is not None:
@@ -98,6 +94,15 @@ class Body(object):
                 geom.SetAmbientColor(color)
                 geom.SetDiffuseColor(color)
         self.color = color
+
+    def set_name(self, name):
+        """
+        Set body name in OpenRAVE scope.
+
+        name : string
+            Body name.
+        """
+        self.rave.SetName(name)
 
     def set_transparency(self, transparency):
         """
@@ -489,14 +494,12 @@ class Box(Body):
         Initial visibility.
     transparency : scalar, optional
         Transparency value from 0 for opaque to 1 for invisible.
-    name : string, optional
-        Name of the object in the OpenRAVE GUI.
     dZ : scalar, optional
         Shift in box normal coordinates used to make Contact slabs.
     """
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, transparency=None, name=None, dZ=0.):
+                 visible=True, transparency=None, dZ=0.):
         aabb = [0., 0., dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
@@ -504,7 +507,7 @@ class Box(Body):
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
                 box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
-                transparency=transparency, name=name)
+                transparency=transparency)
             env.Add(box, True)
 
 
@@ -529,15 +532,13 @@ class Cube(Box):
         Initial visibility.
     transparency : scalar, optional
         Transparency value from 0 for opaque to 1 for invisible.
-    name : string, optional
-        Name of the object in the OpenRAVE GUI.
     """
 
     def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, transparency=None, name=None):
+                 visible=True, transparency=None):
         super(Cube, self).__init__(
-            size, size, size, pos=pos, rpy=rpy, color=color, name=name,
-            pose=pose, visible=visible, transparency=transparency)
+            size, size, size, pos=pos, rpy=rpy, color=color, pose=pose,
+            visible=visible, transparency=transparency)
 
 
 class Point(Cube):
@@ -559,15 +560,13 @@ class Point(Cube):
         Initial visibility.
     transparency : scalar, optional
         Transparency value from 0 for opaque to 1 for invisible.
-    name : string, optional
-        Name of the object in the OpenRAVE GUI.
     """
 
     def __init__(self, pos, vel=None, size=0.01, color='r', visible=True,
-                 transparency=None, name=None):
+                 transparency=None):
         super(Point, self).__init__(
             size, pos=pos, color=color, visible=visible,
-            transparency=transparency, name=name)
+            transparency=transparency)
         self.__pd = zeros(3) if vel is None else array(vel)
 
     @property
@@ -635,13 +634,11 @@ class PointMass(Point):
         Initial visibility.
     transparency : scalar, optional
         Transparency value from 0 for opaque to 1 for invisible.
-    name : string, optional
-        Name of the object in the OpenRAVE GUI.
     """
     def __init__(self, pos, mass, vel=None, color='r', visible=True,
-                 transparency=None, name=None):
+                 transparency=None):
         size = max(5e-3, 6e-4 * mass)
         super(PointMass, self).__init__(
             pos, vel=vel, size=size, color=color, visible=visible,
-            transparency=transparency, name=name)
+            transparency=transparency)
         self.mass = mass
