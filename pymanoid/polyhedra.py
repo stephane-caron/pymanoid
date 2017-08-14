@@ -264,7 +264,7 @@ def project_polytope(proj, ineq, eq=None, method='cdd'):
     """
     if method == 'bretl':
         assert eq is not None, "Bretl method requires = constraints for now"
-        return project_polytope_bretl(ineq, eq, proj)
+        return project_polytope_bretl(proj, ineq, eq)
     vertices, rays = project_polyhedron(ineq, eq, proj)
     assert not rays, "Projection is not a polytope"
     return vertices
