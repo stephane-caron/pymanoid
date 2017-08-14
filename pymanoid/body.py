@@ -353,19 +353,59 @@ class Body(object):
         self.set_transform(T)
 
     def set_roll(self, roll):
+        """
+        Set the roll angle of the body orientation.
+
+        Parameters
+        ----------
+        roll : scalar
+            Roll angle in [rad].
+        """
         return self.set_rpy([roll, self.pitch, self.yaw])
 
     def set_pitch(self, pitch):
+        """
+        Set the pitch angle of the body orientation.
+
+        Parameters
+        ----------
+        pitch : scalar
+            Pitch angle in [rad].
+        """
         return self.set_rpy([self.roll, pitch, self.yaw])
 
     def set_yaw(self, yaw):
+        """
+        Set the yaw angle of the body orientation.
+
+        Parameters
+        ----------
+        yaw : scalar
+            Yaw angle in [rad].
+        """
         return self.set_rpy([self.roll, self.pitch, yaw])
 
     def set_pose(self, pose):
+        """
+        Set the 7D pose of the body orientation.
+
+        Parameters
+        ----------
+        pose : (7,) array
+            Pose of the body, i.e. quaternion + position in world frame.
+        """
         T = openravepy.matrixFromPose(pose)
         self.set_transform(T)
 
     def set_quat(self, quat):
+        """
+        Set the quaternion of the body orientation.
+
+        Parameters
+        ----------
+        quat : (4,) array
+            Quaternion in (w, x, y, z) format.
+        """
         pose = self.pose.copy()
         pose[0:4] = quat
         self.set_pose(pose)
