@@ -17,16 +17,14 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import IPython
-import os
-import sys
+"""
+This example generates a robot posture from a set of tasks: foothold locations,
+center-of-mass position, and a set of reference joint angles for regularization.
+"""
 
-try:
-    import pymanoid
-except ImportError:
-    script_path = os.path.realpath(__file__)
-    sys.path.append(os.path.dirname(script_path) + '/../')
-    import pymanoid
+import IPython
+
+import pymanoid
 
 from pymanoid import Stance
 from pymanoid.robots import JVRC1

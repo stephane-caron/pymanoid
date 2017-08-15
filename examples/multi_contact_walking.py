@@ -18,9 +18,6 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-Multi-contact Walking Pattern Generation
-========================================
-
 This example implements the walking pattern generator reported in:
 
     "Multi-contact Walking Pattern Generation based on Model Preview Control of
@@ -28,20 +25,9 @@ This example implements the walking pattern generator reported in:
     <https://scaron.info/research/humanoids-2016.html>
 
 It is based on predictive control of the 3D acceleration of the center of mass.
-
-A key point is the contact condition: the 3D volume of feasible COM
-accelerations is a always an upward-pointing cone, computed by reduction to a
-convex hull of dual 2D points (see
-:func:`pymanoid.contact.ContactSet.compute_pendular_accel_cone()`). This can be
-done fast enough for the control loop. We then extend the construction to a
-(conservative) trajectory-wide contact-stability criterion (``COMTube`` class)
-which is finally used in the model-predictive controller
-(``COMTubePredictiveControl`` class).
 """
 
 import IPython
-import os
-import sys
 import time
 
 from numpy import arange, array, bmat, cross, dot, eye, hstack, zeros
@@ -49,12 +35,7 @@ from numpy import cos, pi, sin
 from numpy.random import random, seed
 from threading import Lock
 
-try:
-    import pymanoid
-except ImportError:
-    script_path = os.path.realpath(__file__)
-    sys.path.append(os.path.dirname(script_path) + '/../')
-    import pymanoid
+import pymanoid
 
 from pymanoid import Contact, ContactSet, PointMass, Stance
 from pymanoid.body import Box, Point

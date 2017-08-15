@@ -17,16 +17,14 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+This example shows three contact-stability conditions: the static-equilibrium
+COM polygon, the dynamic ZMP support area, and the 3D COM acceleration cone.
+"""
+
 import IPython
 
-try:
-    import pymanoid
-except ImportError:
-    import os
-    import sys
-    script_path = os.path.realpath(__file__)
-    sys.path.append(os.path.dirname(script_path) + '/../')
-    import pymanoid
+import pymanoid
 
 from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
