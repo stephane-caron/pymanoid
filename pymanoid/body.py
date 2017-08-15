@@ -614,6 +614,21 @@ class Point(Cube):
         """Point velocity."""
         return self.__pd.copy()
 
+    @property
+    def xd(self):
+        """Point velocity along x-axis."""
+        return self.__pd[0]
+
+    @property
+    def yd(self):
+        """Point velocity along y-axis."""
+        return self.__pd[1]
+
+    @property
+    def zd(self):
+        """Point velocity along z-axis."""
+        return self.__pd[2]
+
     def dist(self, other_point):
         """
         Distance to another point.
