@@ -47,34 +47,30 @@ class Contact(Box):
         same time.
     friction : scalar
         Static friction coefficient.
-    visible : bool, optional
-        Initial visibility. Defaults to ``True``.
     slab_thickness : scalar, optional
         Thickness of the contact slab displayed in the GUI, in [m].
     """
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
-                 visible=True, color='r', link=None, slab_thickness=0.01):
+                 color='r', link=None, slab_thickness=0.01):
         X, Y = shape
         super(Contact, self).__init__(
             X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
-            visible=visible, dZ=-slab_thickness)
+            dZ=-slab_thickness)
         inner_friction = None if friction is None else friction / sqrt(2)
         self.friction = friction  # isotropic Coulomb friction
         self.inner_friction = inner_friction  # pyramidal approximation
         self.link = link
         self.shape = shape
 
-    def copy(self, visible=None, color=None, link=None):
-        if visible is None:
-            visible = self.is_visible
+    def copy(self, color=None, link=None):
         if color is None:
             color = self.color
         if link is None:
             link = self.link
         return Contact(
-            self.shape, pose=self.pose, friction=self.friction, visible=visible,
-            color=color, link=link)
+            self.shape, pose=self.pose, friction=self.friction, color=color,
+            link=link)
 
     """
     Geometry
@@ -572,11 +568,10 @@ class ContactSet(object):
 
 class ContactFeed(object):
 
-    def __init__(self, path=None, cyclic=False, visible=True):
+    def __init__(self, path=None, cyclic=False):
         self.contacts = []
         self.cyclic = cyclic
         self.next_contact = 0
-        self.visible = visible
         #
         if path is not None:
             self.load(path)
@@ -591,8 +586,7 @@ class ContactFeed(object):
                 shape=d['shape'],
                 pos=d['pos'],
                 rpy=d['rpy'],
-                friction=d['friction'],
-                visible=self.visible))
+                friction=d['friction']))
 
     def pop(self):
         i = self.next_contact

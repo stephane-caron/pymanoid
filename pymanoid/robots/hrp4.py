@@ -156,7 +156,8 @@ class HRP4(Humanoid):
         Note
         ----
         Unfortunately it is unclear whether we can release the COLLADA file
-        ``HRP4R.dae`` due to copyright.
+        ``HRP4R.dae`` (md5sum: 38c30928b7ae62daa0fc67ed0488b0a1) due to
+        copyright.
         """
         super(HRP4, self).__init__(path, root_body)
         self.ik.set_active_dofs(self.whole_body)

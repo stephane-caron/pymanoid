@@ -45,18 +45,12 @@ class Body(object):
     color : char, optional
         Color code in `Matplotlib convention
         <http://matplotlib.org/api/colors_api.html>`_.
-    visible : bool, optional
-        Initial visibility.
-    transparency : double, optional
-        Transparency value from 0 (opaque) to 1 (invisible).
     """
 
     count = 0
 
-    def __init__(self, rave_body, pos=None, rpy=None, pose=None, color=None,
-                 visible=True, transparency=None):
+    def __init__(self, rave_body, pos=None, rpy=None, pose=None, color=None):
         self.color = color
-        self.is_visible = visible
         self.rave = rave_body
         if not rave_body.GetName():
             self.set_name("%s%s" % (type(self).__name__, Body.count))
@@ -69,10 +63,6 @@ class Body(object):
             self.set_pose(pose)
         if color is not None:
             self.set_color(color)
-        if not visible:
-            self.hide()
-        if transparency is not None:
-            self.set_transparency(transparency)
 
     def __str__(self):
         return "pymanoid.Body('%s')" % self.name
@@ -119,12 +109,10 @@ class Body(object):
 
     def show(self):
         """Make the body visible."""
-        self.is_visible = True
         self.rave.SetVisible(True)
 
     def hide(self):
         """Make the body invisible."""
-        self.is_visible = False
         self.rave.SetVisible(False)
 
     @property
@@ -472,34 +460,28 @@ class Manipulator(Body):
     color : char, optional
         Color code in `Matplotlib convention
         <http://matplotlib.org/api/colors_api.html>`_.
-    visible : bool, optional
-        Initial visibility.
-    transparency : double, optional
-        Transparency value from 0 (opaque) to 1 (invisible).
     shape : (scalar, scalar), optional
         Dimensions (half-length, half-width) of a contact patch in [m].
     friction : scalar, optional
         Static friction coefficient for potential contacts.
     """
 
-    def __init__(self, rave_manipulator, pos=None, rpy=None, pose=None,
-                 color=None, visible=True, transparency=None, shape=None,
-                 friction=None):
+    def __init__(self, manipulator, pos=None, rpy=None, pose=None,
+                 color=None, shape=None, friction=None):
         super(Manipulator, self).__init__(
-            rave_manipulator, color=color, pos=pos, rpy=rpy, pose=pose,
-            visible=visible)
-        self.end_effector = rave_manipulator.GetEndEffector()
+            manipulator, color=color, pos=pos, rpy=rpy, pose=pose)
+        self.end_effector = manipulator.GetEndEffector()
         self.friction = friction
         self.shape = shape
 
-    def get_contact(self, pos=None, visible=True, color='r'):
+    def get_contact(self, pos=None, color='r'):
         from contact import Contact
         pose = self.pose.copy()
         if pos is not None:
             pose[4:] = pos
         return Contact(
-            self.shape, pose=pose, friction=self.friction, visible=visible,
-            color=color, link=self)
+            self.shape, pose=pose, friction=self.friction, color=color,
+            link=self)
 
     @property
     def index(self):
@@ -530,24 +512,19 @@ class Box(Body):
         Initial pose in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
-    visible : bool
-        Initial visibility.
-    transparency : scalar, optional
-        Transparency value from 0 for opaque to 1 for invisible.
     dZ : scalar, optional
         Shift in box normal coordinates used to make Contact slabs.
     """
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, transparency=None, dZ=0.):
+                 dZ=0.):
         aabb = [0., 0., dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
             box = openravepy.RaveCreateKinBody(env, '')
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
-                box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible,
-                transparency=transparency)
+                box, pos=pos, rpy=rpy, pose=pose, color=color)
             env.Add(box, True)
 
 
@@ -568,17 +545,11 @@ class Cube(Box):
         Initial pose in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
-    visible : bool
-        Initial visibility.
-    transparency : scalar, optional
-        Transparency value from 0 for opaque to 1 for invisible.
     """
 
-    def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
-                 visible=True, transparency=None):
+    def __init__(self, size, pos=None, rpy=None, pose=None, color='r'):
         super(Cube, self).__init__(
-            size, size, size, pos=pos, rpy=rpy, color=color, pose=pose,
-            visible=visible, transparency=transparency)
+            size, size, size, pos=pos, rpy=rpy, color=color, pose=pose)
 
 
 class Point(Cube):
@@ -596,17 +567,10 @@ class Point(Cube):
         Half-length of a side of the cube in [m].
     color : char
         Color letter in ['r', 'g', 'b'].
-    visible : bool
-        Initial visibility.
-    transparency : scalar, optional
-        Transparency value from 0 for opaque to 1 for invisible.
     """
 
-    def __init__(self, pos, vel=None, size=0.01, color='r', visible=True,
-                 transparency=None):
-        super(Point, self).__init__(
-            size, pos=pos, color=color, visible=visible,
-            transparency=transparency)
+    def __init__(self, pos, vel=None, size=0.01, color='r'):
+        super(Point, self).__init__(size, pos=pos, color=color)
         self.__pd = zeros(3) if vel is None else array(vel)
 
     @property
@@ -685,15 +649,8 @@ class PointMass(Point):
         Initial velocity in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
-    visible : bool
-        Initial visibility.
-    transparency : scalar, optional
-        Transparency value from 0 for opaque to 1 for invisible.
     """
-    def __init__(self, pos, mass, vel=None, color='r', visible=True,
-                 transparency=None):
+    def __init__(self, pos, mass, vel=None, color='r'):
         size = max(5e-3, 6e-4 * mass)
-        super(PointMass, self).__init__(
-            pos, vel=vel, size=size, color=color, visible=visible,
-            transparency=transparency)
+        super(PointMass, self).__init__(pos, vel=vel, size=size, color=color)
         self.mass = mass
