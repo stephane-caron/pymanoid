@@ -571,7 +571,7 @@ class ContactFeed(object):
     def __init__(self, path=None, cyclic=False):
         self.contacts = []
         self.cyclic = cyclic
-        self.next_contact = 0
+        self.next_contact_id = 0
         #
         if path is not None:
             self.load(path)
@@ -589,12 +589,12 @@ class ContactFeed(object):
                 friction=d['friction']))
 
     def pop(self):
-        i = self.next_contact
-        self.next_contact += 1
-        if self.next_contact >= len(self.contacts):
+        i = self.next_contact_id
+        self.next_contact_id += 1
+        if self.next_contact_id >= len(self.contacts):
             if not self.cyclic:
                 return None
-            self.next_contact = 0
+            self.next_contact_id = 0
         return self.contacts[i]
 
     def save(self, path):
