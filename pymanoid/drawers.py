@@ -79,7 +79,14 @@ class WrenchDrawer(Process):
         raise NotImplementedError("should be implemented by child classes")
 
     def on_tick(self, sim):
-        """Find supporting contact forces at each COM acceleration update."""
+        """
+        Find supporting contact forces at each COM acceleration update.
+
+        Parameters
+        ----------
+        sim : pymanoid.Simulation
+            Simulation instance.
+        """
         try:
             support = self.find_supporting_wrenches(sim)
             self.handles = [
