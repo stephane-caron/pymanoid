@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from numpy import array, dot, eye, sqrt, tensordot, zeros
 
 from optim import solve_qp
@@ -146,7 +147,8 @@ class PoseWrap(object):
 
 
 def info(msg):
-    print "\033[0;32m[pymanoid] Info:\033[0;0m", msg
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print "\033[1m\033[0;32m%s pymanoid [INFO] %s\033[0;0m" % (date, msg)
 
 
 def is_positive_combination(b, A):
@@ -356,4 +358,5 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
 
 
 def warn(msg):
-    print "\033[1;33m[pymanoid] Warning:\033[0;0m", msg
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print "\033[1m\033[1;33m%s pymanoid [WARN] %s\033[0;0m" % (date, msg)
