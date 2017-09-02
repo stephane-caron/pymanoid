@@ -388,7 +388,8 @@ def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
     handles = []
     prev = points[0]
     for (i, point) in enumerate(points):
-        handles.append(draw_point(point, color=color, pointsize=pointsize))
+        if pointsize > 5e-4:
+            handles.append(draw_point(point, color=color, pointsize=pointsize))
         handles.append(draw_line(prev, point, color=color, linewidth=linewidth))
         prev = point
     return handles
