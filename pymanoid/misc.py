@@ -146,6 +146,11 @@ class PoseWrap(object):
         self.pose = array(pose)
 
 
+def error(msg):
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print "\033[1m\033[0;31m%s pymanoid [ERROR] %s\033[0;0m" % (date, msg)
+
+
 def info(msg):
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
     print "\033[1m\033[0;32m%s pymanoid [INFO] %s\033[0;0m" % (date, msg)
