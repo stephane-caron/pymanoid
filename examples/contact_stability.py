@@ -73,8 +73,8 @@ if __name__ == "__main__":
         -4.90099381e-02,   8.17415141e-01,  -8.71841480e-02,
         -1.36966665e-01,  -4.26226421e-02])
 
-    com_target = PointMass(
-        pos=[0., 0., com_height], mass=robot.mass, color='b', visible=False)
+    com_target = PointMass(pos=[0., 0., com_height], mass=robot.mass, color='b')
+    com_target.hide()
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
     stance = Stance(
@@ -83,14 +83,12 @@ if __name__ == "__main__":
             shape=robot.sole_shape,
             pos=[0.20, 0.15, 0.1],
             rpy=[0.4, 0, 0],
-            friction=0.5,
-            visible=True),
+            friction=0.5),
         right_foot=Contact(
             shape=robot.sole_shape,
             pos=[-0.2, -0.195, 0.],
             rpy=[-0.4, 0, 0],
-            friction=0.5,
-            visible=True))
+            friction=0.5))
     stance.bind(robot)
     robot.ik.solve()
 

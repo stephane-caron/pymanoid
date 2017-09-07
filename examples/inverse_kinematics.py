@@ -56,8 +56,8 @@ if __name__ == '__main__':
         [0.,  0.,  0.,  1.]])
 
     # IK targets
-    lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0], visible=True)
-    rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0], visible=True)
+    lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0])
+    rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0])
 
     # Initial robot pose
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
