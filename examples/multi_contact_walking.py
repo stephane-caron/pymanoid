@@ -94,8 +94,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
                  radius * sin(theta),
                  radius + .5 * height * sin(theta)],
             rpy=(roughness * (random(3) - 0.5) + [0, 0, theta + .5 * pi]),
-            friction=friction,
-            visible=True)
+            friction=friction)
         if first_left_foot is None:
             first_left_foot = left_foot
         right_foot = Contact(
@@ -104,11 +103,11 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
                  1.2 * radius * sin(theta + .5 * angular_step),
                  radius + .5 * height * sin(theta + .5 * angular_step)],
             rpy=(roughness * (random(3) - 0.5) + [0, 0, theta + .5 * pi]),
-            friction=friction,
-            visible=True)
+            friction=friction)
         if prev_right_foot is not None:
             com_target_pos = left_foot.p + [0., 0., JVRC1.leg_length]
-            com_target = Point(com_target_pos, visible=False)
+            com_target = Point(com_target_pos)
+            com_target.hide()
             dsl_stance = Stance(
                 com_target, left_foot=left_foot, right_foot=prev_right_foot)
             dsl_stance.label = 'DS-L'
@@ -124,7 +123,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         if init_com_offset is not None:
             com_target_pos += init_com_offset
             init_com_offset = None
-        com_target = Point(com_target_pos, visible=False)
+        com_target = Point(com_target_pos)
+        com_target.hide()
         dsr_stance = Stance(
             com=com_target, left_foot=left_foot, right_foot=right_foot)
         dsr_stance.label = 'DS-R'
@@ -138,7 +138,8 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         stances.append(ssr_stance)
         prev_right_foot = right_foot
     com_target_pos = first_left_foot.p + [0., 0., JVRC1.leg_length]
-    com_target = Point(com_target_pos, visible=False)
+    com_target = Point(com_target_pos)
+    com_target.hide()
     dsl_stance = Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot)
     dsl_stance.label = 'DS-L'
@@ -164,23 +165,19 @@ class SwingFoot(Box):
         Height in [m] for the apex of the foot trajectory.
     color : char, optional
         Color applied to all links of the KinBody.
-    visible : bool, optional
-        Initial visibility.
-    transparency : double, optional
-        Transparency value from 0 (opaque) to 1 (invisible).
     """
 
     THICKNESS = 0.01
 
-    def __init__(self, swing_height, color='c', visible=False,
-                 transparency=0.5):
+    def __init__(self, swing_height, color='c'):
         super(SwingFoot, self).__init__(
-            X=0.12, Y=0.06, Z=self.THICKNESS, color=color, visible=visible,
-            transparency=transparency, dZ=-self.THICKNESS)
+            X=0.12, Y=0.06, Z=self.THICKNESS, color=color, dZ=-self.THICKNESS)
         self.end_pose = None
         self.mid_pose = None
         self.start_pose = None
         self.swing_height = swing_height
+        #
+        self.hide()
 
     def reset(self, start_pose, end_pose):
         """
@@ -877,7 +874,7 @@ if __name__ == "__main__":
     com_target = PointMass([0, 0, 0], 20.)
     preview_buffer = PreviewBuffer(
         u_dim=3,
-        callback=lambda u, dT: com_target.integrate(u, dT))
+        callback=lambda u, dT: com_target.integrate_euler(u, dT))
     fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
 
     mpc = COMTubePredictiveControl(

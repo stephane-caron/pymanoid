@@ -619,9 +619,10 @@ class Point(Cube):
         """
         self.__pd = array(pd)
 
-    def integrate(self, pdd, dt):
+    def integrate_euler(self, pdd, dt):
         """
-        Integrate a constant acceleration ``pdd`` over duration ``dt``.
+        Apply Euler integration for a constant acceleration ``pdd`` over
+        duration ``dt``.
 
         Parameters
         ----------
