@@ -41,8 +41,8 @@ if __name__ == '__main__':
         [0.,  0.,  0.,  1.]])
 
     robot.set_z(0.8)  # hack to start with the robot above contacts
-    lf_target = robot.left_foot.get_contact(pos=[0, 0.3, 0], visible=True)
-    rf_target = robot.right_foot.get_contact(pos=[0, -0.3, 0], visible=True)
+    lf_target = robot.left_foot.get_contact(pos=[0, 0.3, 0])
+    rf_target = robot.right_foot.get_contact(pos=[0, -0.3, 0])
     com_target = robot.get_com_point_mass()
 
     stance = Stance(com=com_target, left_foot=lf_target, right_foot=rf_target)
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     stance.bind(robot)
 
     robot.ik.solve(max_it=100, impr_stop=1e-4)
+    sim.schedule(robot.ik)
     sim.start()
 
     if IPython.get_ipython() is None:  # give the user a prompt
