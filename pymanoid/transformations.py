@@ -39,7 +39,7 @@ them are adapted from the comprehensive guide [Diebel06]_.
 """
 
 from math import asin, atan2, cos, sin
-from numpy import array, dot, hstack, zeros
+from numpy import array, dot, eye, hstack, zeros
 from openravepy import quatFromRotationMatrix as __quatFromRotationMatrix
 from openravepy import rotationMatrixFromQuat as __rotationMatrixFromQuat
 
@@ -100,33 +100,21 @@ def crossmat(x):
         [-x[1], x[0], 0.]])
 
 
-def rpy_from_quat(quat):
+def quat_from_rotation_matrix(R):
     """
-    Roll-pitch-yaw angles of a quaternion.
+    Quaternion from rotation matrix.
 
     Parameters
     ----------
-    quat : (4,) array
-        Quaternion in `[w x y z]` format.
+    R : (3, 3) array
+        Rotation matrix.
 
     Returns
     -------
-    rpy : (3,) array
-        Array of roll-pitch-yaw angles, in [rad].
-
-    Notes
-    -----
-    Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
+    quat : (4,) array
+        Quaternion in `[w x y z]` format.
     """
-    roll = atan2(
-        2 * quat[2] * quat[3] + 2 * quat[0] * quat[1],
-        quat[3] ** 2 - quat[2] ** 2 - quat[1] ** 2 + quat[0] ** 2)
-    pitch = -asin(
-        2 * quat[1] * quat[3] - 2 * quat[0] * quat[2])
-    yaw = atan2(
-        2 * quat[1] * quat[2] + 2 * quat[0] * quat[3],
-        quat[1] ** 2 + quat[0] ** 2 - quat[3] ** 2 - quat[2] ** 2)
-    return array([roll, pitch, yaw])
+    return __quatFromRotationMatrix(R)
 
 
 def quat_from_rpy(rpy):
@@ -157,21 +145,22 @@ def quat_from_rpy(rpy):
         cr * cp * sy - sr * cy * sp])
 
 
-def quat_from_rotation_matrix(R):
+def pose_from_transform(T):
     """
-    Quaternion from rotation matrix.
+    Pose vector from a homogeneous transformation matrix.
 
     Parameters
     ----------
-    R : (3, 3) array
-        Rotation matrix.
+    T : (4, 4) array
+        Homogeneous transformation matrix.
 
     Returns
     -------
-    quat : (4,) array
-        Quaternion in `[w x y z]` format.
+    pose : (7,) array
+        Pose vector `[qw qx qy qz x y z]` of the transformation matrix.
     """
-    return __quatFromRotationMatrix(R)
+    quat = quat_from_rotation_matrix(T[:3, :3])
+    return hstack([quat, T[:3, 3]])
 
 
 def rotation_matrix_from_quat(quat):
@@ -206,6 +195,35 @@ def rotation_matrix_from_rpy(rpy):
         Rotation matrix.
     """
     return rotation_matrix_from_quat(quat_from_rpy(rpy))
+
+
+def rpy_from_quat(quat):
+    """
+    Roll-pitch-yaw angles of a quaternion.
+
+    Parameters
+    ----------
+    quat : (4,) array
+        Quaternion in `[w x y z]` format.
+
+    Returns
+    -------
+    rpy : (3,) array
+        Array of roll-pitch-yaw angles, in [rad].
+
+    Notes
+    -----
+    Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
+    """
+    roll = atan2(
+        2 * quat[2] * quat[3] + 2 * quat[0] * quat[1],
+        quat[3] ** 2 - quat[2] ** 2 - quat[1] ** 2 + quat[0] ** 2)
+    pitch = -asin(
+        2 * quat[1] * quat[3] - 2 * quat[0] * quat[2])
+    yaw = atan2(
+        2 * quat[1] * quat[2] + 2 * quat[0] * quat[3],
+        quat[1] ** 2 + quat[0] ** 2 - quat[3] ** 2 - quat[2] ** 2)
+    return array([roll, pitch, yaw])
 
 
 def rpy_from_rotation_matrix(R):
@@ -250,22 +268,26 @@ def transform_from_pose(pose):
     return T
 
 
-def pose_from_transform(T):
+def transform_from_R_p(R, p):
     """
-    Pose vector from a homogeneous transformation matrix.
+    Transformation matrix from a translation and rotation matrix.
 
     Parameters
     ----------
-    T : (4, 4) array
-        Homogeneous transformation matrix.
+    R : (3, 3) array
+        Rotation matrix.
+    p : (3,) array
+        Point coordinates.
 
     Returns
     -------
-    pose : (7,) array
-        Pose vector `[qw qx qy qz x y z]` of the transformation matrix.
+    T : (4, 4) array
+        Homogeneous transformation matrix.
     """
-    quat = quat_from_rotation_matrix(T[:3, :3])
-    return hstack([quat, T[:3, 3]])
+    T = eye(4)
+    T[:3, :3] = R
+    T[:3, 3] = p
+    return T
 
 
 def transform_inverse(T):
