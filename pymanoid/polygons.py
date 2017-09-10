@@ -26,6 +26,9 @@ from misc import norm
 from polyhedra import compute_chebyshev_center
 
 
+PREC_TOL = 1e-10  # tolerance to numerical imprecisions
+
+
 def __compute_polygon_hull(B, c):
     """
     Compute the vertex representation of a polygon defined by:
@@ -131,8 +134,7 @@ def compute_polygon_hull(B, c):
 
 def intersect_line_polygon(line, vertices, apply_hull):
     """
-    Intersect the line segment [p1, p2] with a polygon. If the intersection has
-    two points, returns the one closest to p1.
+    Intersect a line segment with a polygon.
 
     Parameters
     ----------
@@ -147,9 +149,8 @@ def intersect_line_polygon(line, vertices, apply_hull):
 
     Returns
     -------
-    closest_point : array, or None
-        Point closest to `line[0]` if the intersection is not empty, `None`
-        otherwise.
+    inter_points : list of array
+        List of intersection points between the line segment and the polygon.
 
     Notes
     -----
@@ -162,7 +163,7 @@ def intersect_line_polygon(line, vertices, apply_hull):
     def line_coordinates(p1, p2):
         A = (p1[1] - p2[1])
         B = (p2[0] - p1[0])
-        C = (p1[0]*p2[1] - p2[0]*p1[1])
+        C = (p1[0] * p2[1] - p2[0] * p1[1])
         return A, B, -C
 
     def intersection(L1, L2):
@@ -175,9 +176,6 @@ def intersect_line_polygon(line, vertices, apply_hull):
         y = Dy / D
         return x, y
 
-    def l1_norm(p, q):
-        return abs(p[0] - q[0]) + abs(p[1] - q[1])
-
     if apply_hull:
         points = vertices
         hull = ConvexHull(points)
@@ -188,7 +186,7 @@ def intersect_line_polygon(line, vertices, apply_hull):
     L1 = line_coordinates(p1, p2)
     x_min, x_max = min(p1[0], p2[0]), max(p1[0], p2[0])
     y_min, y_max = min(p1[1], p2[1]), max(p1[1], p2[1])
-    closest_point = None
+    inter_points = []
     for i, v1 in enumerate(vertices):
         v2 = vertices[(i + 1) % n]
         L2 = line_coordinates(v1, v2)
@@ -198,12 +196,11 @@ def intersect_line_polygon(line, vertices, apply_hull):
                 continue
             vx_min, vx_max = min(v1[0], v2[0]), max(v1[0], v2[0])
             vy_min, vy_max = min(v1[1], v2[1]), max(v1[1], v2[1])
-            if not (vx_min <= p[0] <= vx_max and vy_min <= p[1] <= vy_max):
+            if not (vx_min - PREC_TOL <= p[0] <= vx_max + PREC_TOL and
+                    vy_min - PREC_TOL <= p[1] <= vy_max + PREC_TOL):
                 continue
-            if closest_point is None \
-                    or l1_norm(p, p1) < l1_norm(closest_point, p1):
-                closest_point = p
-    return array(closest_point) if closest_point else None
+            inter_points.append(array(p))
+    return inter_points
 
 
 def intersect_line_cylinder(line, vertices):
@@ -221,17 +218,17 @@ def intersect_line_cylinder(line, vertices):
 
     Returns
     -------
-    closest_point : (3,) array or None
-        Point closest to `line[0]` if the intersection is not empty, `None`
-        otherwise.
+    inter_points : list of (3,) arrays
+        List of intersection points between the line segment and the cylinder.
     """
-    p = intersect_line_polygon(line, vertices, apply_hull=True)
-    if p is None:
-        return None
-    p1, p2 = array(line[0]), array(line[1])
-    alpha = norm(p - p1[:2]) / norm(p2[:2] - p1[:2])
-    z = p1[2] + alpha * (p2[2] - p1[2])
-    return array([p[0], p[1], z])
+    inter_points = []
+    inter_2d = intersect_line_polygon(line, vertices, apply_hull=True)
+    for p in inter_2d:
+        p1, p2 = array(line[0]), array(line[1])
+        alpha = norm(p - p1[:2]) / norm(p2[:2] - p1[:2])
+        z = p1[2] + alpha * (p2[2] - p1[2])
+        inter_points.append(array([p[0], p[1], z]))
+    return inter_points
 
 
 def intersect_polygons(polygon1, polygon2):
