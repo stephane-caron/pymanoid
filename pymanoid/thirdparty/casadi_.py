@@ -346,16 +346,28 @@ class NonlinearProgram(object):
 
     @property
     def iter_count(self):
+        """
+        Number of LP solver iterations applied by the NLP solver.
+        """
         return self.solver.stats()['iter_count']
 
     @property
     def optimal_found(self):
+        """
+        `True` if and only if the solution is a local optimum.
+        """
         return self.return_status == "Solve_Succeeded"
 
     @property
     def return_status(self):
+        """
+        String containing a status message from the NLP solver.
+        """
         return self.solver.stats()['return_status']
 
     @property
     def solve_time(self):
+        """
+        Time (in seconds) taken to solve the problem.
+        """
         return self.solver.stats()['t_wall_mainloop']

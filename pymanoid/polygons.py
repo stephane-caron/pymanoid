@@ -153,7 +153,7 @@ def intersect_line_polygon(p1, p2, points):
     This code is adapted from <http://stackoverflow.com/a/20679579>. This
     variant %timeits around 90 us on my machine, vs. 170 us when using the
     Shapely library <http://toblerity.org/shapely/>. The latter variant was
-    removed by commit XXX.
+    removed by commit a8a267b.
     """
     def line(p1, p2):
         A = (p1[1] - p2[1])
