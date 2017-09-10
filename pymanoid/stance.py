@@ -21,8 +21,8 @@ from numpy import array, dot
 
 from body import Point
 from contact import ContactSet
+from geometry import compute_polytope_hrep
 from misc import norm
-from polyhedra import compute_polytope_hrep
 from tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 
 

@@ -22,9 +22,10 @@ from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
 from body import Box
+from geometry import compute_cone_face_matrix
+from geometry import compute_polygon_hull
+from geometry import project_polytope
 from optim import solve_qp
-from polygons import compute_polygon_hull
-from polyhedra import compute_cone_face_matrix, project_polytope
 from sim import gravity
 from transformations import crossmat
 
