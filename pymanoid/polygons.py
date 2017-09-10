@@ -129,33 +129,37 @@ def compute_polygon_hull(B, c):
     return vertices
 
 
-def intersect_line_polygon(p1, p2, points):
+def intersect_line_polygon(line, vertices, apply_hull):
     """
     Intersect the line segment [p1, p2] with a polygon. If the intersection has
     two points, returns the one closest to p1.
 
     Parameters
     ----------
-    p1 : array, shape=(2,) or (3,)
-        End point of line segment (2D or 3D).
-    p2 : array, shape=(2,) or (3,)
-        End point of line segment (2D or 3D).
-    points : list of arrays
-        Points contained in the polygon (not necessarily a convex hull).
+    line : couple of arrays
+        End points of the line segment (2D or 3D).
+    vertices : list of arrays
+        Vertices of the polygon.
+    apply_hull : bool
+        Set to `True` to apply a convex hull algorithm to `vertices`. Otherwise,
+        the function assumes that vertices are already sorted in clockwise or
+        counterclockwise order.
 
     Returns
     -------
     closest_point : array, or None
-        None if the intersection is empty, otherwise its point closest to p1.
+        Point closest to `line[0]` if the intersection is not empty, `None`
+        otherwise.
 
-    Note
-    ----
-    This code is adapted from <http://stackoverflow.com/a/20679579>. This
-    variant %timeits around 90 us on my machine, vs. 170 us when using the
-    Shapely library <http://toblerity.org/shapely/>. The latter variant was
-    removed by commit a8a267b.
+    Notes
+    -----
+    This code is adapted from <http://stackoverflow.com/a/20679579>. With
+    `apply_hull=True`, this variant %timeits around 90 us on my machine, vs. 170
+    us when using the Shapely library <http://toblerity.org/shapely/> (the
+    latter variant was removed by commit a8a267b). On the same setting with
+    `apply_hull=False`, it %timeits to 6 us.
     """
-    def line(p1, p2):
+    def line_coordinates(p1, p2):
         A = (p1[1] - p2[1])
         B = (p2[0] - p1[0])
         C = (p1[0]*p2[1] - p2[0]*p1[1])
@@ -174,16 +178,20 @@ def intersect_line_polygon(p1, p2, points):
     def l1_norm(p, q):
         return abs(p[0] - q[0]) + abs(p[1] - q[1])
 
-    hull = ConvexHull(points)
-    vertices = [points[i] for i in hull.vertices]
+    if apply_hull:
+        points = vertices
+        hull = ConvexHull(points)
+        vertices = [points[i] for i in hull.vertices]
+
     n = len(vertices)
-    L1 = line(p1, p2)
+    p1, p2 = line
+    L1 = line_coordinates(p1, p2)
     x_min, x_max = min(p1[0], p2[0]), max(p1[0], p2[0])
     y_min, y_max = min(p1[1], p2[1]), max(p1[1], p2[1])
     closest_point = None
     for i, v1 in enumerate(vertices):
         v2 = vertices[(i + 1) % n]
-        L2 = line(v1, v2)
+        L2 = line_coordinates(v1, v2)
         p = intersection(L1, L2)
         if p is not None:
             if not (x_min <= p[0] <= x_max and y_min <= p[1] <= y_max):
@@ -198,7 +206,7 @@ def intersect_line_polygon(p1, p2, points):
     return array(closest_point) if closest_point else None
 
 
-def intersect_line_cylinder(p1, p2, points):
+def intersect_line_cylinder(line, vertices):
     """
     Intersect the line segment [p1, p2] with a vertical cylinder of polygonal
     cross-section. If the intersection has two points, returns the one closest
@@ -206,23 +214,21 @@ def intersect_line_cylinder(p1, p2, points):
 
     Parameters
     ----------
-    p1 : array, shape=(3,)
-        End point of the line segment.
-    p2 : array, shape=(3,)
-        Other end point of the line segment.
-    points : list of arrays
-        2D vertices of the polygon.
+    line : couple of (3,) arrays
+        End points of the 3D line segment.
+    vertices : list of (3,) arrays
+        Vertices of the polygon.
 
     Returns
     -------
-    pi : array, shape=(3,), or None
-        Point closest to p1 if the intersection is not empty, None otherwise.
+    closest_point : (3,) array or None
+        Point closest to `line[0]` if the intersection is not empty, `None`
+        otherwise.
     """
-    p = intersect_line_polygon(p1, p2, points)
+    p = intersect_line_polygon(line, vertices, apply_hull=True)
     if p is None:
         return None
-    p1 = array(p1)
-    p2 = array(p2)
+    p1, p2 = array(line[0]), array(line[1])
     alpha = norm(p - p1[:2]) / norm(p2[:2] - p1[:2])
     z = p1[2] + alpha * (p2[2] - p1[2])
     return array([p[0], p[1], z])
