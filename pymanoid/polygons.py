@@ -129,41 +129,6 @@ def compute_polygon_hull(B, c):
     return vertices
 
 
-def intersect_line_polygon_shapely(line, vertices):
-    """
-    Intersect a line segment with a polygon.
-
-    Parameters
-    ----------
-    line : couple of arrays
-        Both end points of the line.
-    vertices : list of arrays
-        Vertices of the polygon.
-
-    Returns
-    -------
-    coords : array, shape=(2,), or []
-        Intersection between the line and the polygon.
-    """
-    from shapely.geometry import LineString as ShapelyLineString
-    from shapely.geometry import Polygon as ShapelyPolygon
-
-    def in_line(p):
-        for q in line:
-            if abs(p[0] - q[0]) < 1e-5 and abs(p[1] - q[1]) < 1e-5:
-                return True
-        return False
-
-    s_polygon = ShapelyPolygon(vertices)
-    s_line = ShapelyLineString(line)
-    try:
-        coords = (array(p) for p in s_polygon.intersection(s_line).coords)
-        coords = [p for p in coords if not in_line(p)]
-    except NotImplementedError:
-        coords = []
-    return coords
-
-
 def intersect_line_polygon(p1, p2, points):
     """
     Intersect the line segment [p1, p2] with a polygon. If the intersection has
@@ -187,7 +152,8 @@ def intersect_line_polygon(p1, p2, points):
     ----
     This code is adapted from <http://stackoverflow.com/a/20679579>. This
     variant %timeits around 90 us on my machine, vs. 170 us when using the
-    Shapely library <http://toblerity.org/shapely/>.
+    Shapely library <http://toblerity.org/shapely/>. The latter variant was
+    removed by commit XXX.
     """
     def line(p1, p2):
         A = (p1[1] - p2[1])
