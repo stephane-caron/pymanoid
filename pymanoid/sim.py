@@ -144,6 +144,8 @@ class Simulation(object):
         ----
         The order in which processes are scheduled does matter.
         """
+        assert issubclass(type(process), Process), \
+            "Cannot schedule process of type %s" % type(process).__name__
         self.processes.append(process)
         if paused:
             process.pause()
