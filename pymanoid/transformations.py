@@ -136,8 +136,8 @@ def quat_from_rpy(rpy):
     Roll-pitch-yaw are Euler angles corresponding to the sequence (1, 2, 3).
     """
     roll, pitch, yaw = rpy
-    cr, cp, cy = cos(roll / 2), cos(pitch / 2), cos(yaw / 2)
-    sr, sp, sy = sin(roll / 2), sin(pitch / 2), sin(yaw / 2)
+    cr, cp, cy = cos(roll / 2.), cos(pitch / 2.), cos(yaw / 2.)
+    sr, sp, sy = sin(roll / 2.), sin(pitch / 2.), sin(yaw / 2.)
     return array([
         cr * cp * cy + sr * sp * sy,
         -cr * sp * sy + cp * cy * sr,
