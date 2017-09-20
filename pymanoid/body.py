@@ -655,3 +655,8 @@ class PointMass(Point):
         size = max(5e-3, 6e-4 * mass)
         super(PointMass, self).__init__(pos, vel=vel, size=size, color=color)
         self.mass = mass
+
+    @property
+    def momentum(self):
+        """Linear momentum in the world frame."""
+        return self.mass * self.pd

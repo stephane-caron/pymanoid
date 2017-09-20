@@ -37,7 +37,7 @@ from threading import Lock
 
 import pymanoid
 
-from pymanoid import Contact, ContactSet, PointMass, Stance
+from pymanoid import Contact, PointMass, Stance
 from pymanoid.body import Box, Point
 from pymanoid.draw import draw_cone, draw_polyhedron
 from pymanoid.draw import draw_line, draw_point, draw_points
@@ -46,6 +46,7 @@ from pymanoid.geometry import compute_polytope_hrep, intersect_polygons
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
 from pymanoid.misc import normalize
 from pymanoid.robots import JVRC1
+from pymanoid.sim import gravity
 from pymanoid.tasks import ContactTask, DOFTask, PoseTask, MinCAMTask
 from pymanoid.transformations import rotation_matrix_from_quat
 
@@ -448,6 +449,14 @@ class COMTube(object):
 
     def compute_dual_vrep(self):
         """Compute vertices of the dual cones."""
+        def expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
+            g = -gravity[2]  # gravity constant (positive)
+            zdd = +g if zdd_max is None else zdd_max
+            vertices_at_zdd = [
+                array([a * (g + zdd), b * (g + zdd), zdd])
+                for (a, b) in reduced_hull]
+            return [gravity] + vertices_at_zdd
+
         if len(self.primal_vrep) == 1:
             dual_vertices = self.start_stance.compute_pendular_accel_cone(
                 com=self.primal_vrep[0])
@@ -466,8 +475,8 @@ class COMTube(object):
             ds_vertices_2d = self.next_stance.compute_pendular_accel_cone(
                 com=self.full_vrep, reduced=True)
         ss_vertices_2d = intersect_polygons(ds_vertices_2d, ss_vertices_2d)
-        ds_cone = ContactSet._expand_reduced_pendular_cone(ds_vertices_2d)
-        ss_cone = ContactSet._expand_reduced_pendular_cone(ss_vertices_2d)
+        ds_cone = expand_reduced_pendular_cone(ds_vertices_2d)
+        ss_cone = expand_reduced_pendular_cone(ss_vertices_2d)
         if ds_then_ss:
             self.dual_vrep = [ds_cone, ss_cone]
         else:  # SS, then DS

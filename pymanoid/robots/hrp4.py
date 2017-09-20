@@ -21,6 +21,7 @@ from numpy import array, pi
 
 from pymanoid.body import Manipulator
 from pymanoid.robot import Humanoid
+from pymanoid.tasks import DOFTask
 
 
 class HRP4(Humanoid):

@@ -73,12 +73,60 @@ class Contact(Box):
             self.shape, pose=self.pose, friction=self.friction, color=color,
             link=link)
 
-    """
-    Geometry
-    ========
-    """
+    @property
+    def force_inequalities(self):
+        """
+        Matrix of force friction cone inequalities in the world frame.
 
-    def grasp_matrix(self, p):
+        Notes
+        -----
+        All linearized friction cones in pymanoid use the inner (conservative)
+        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        """
+        mu = self.inner_friction
+        hrep_local = array([
+            [-1, 0, -mu],
+            [+1, 0, -mu],
+            [0, -1, -mu],
+            [0, +1, -mu]])
+        return dot(hrep_local, self.R.T)
+
+    @property
+    def force_rays(self):
+        """
+        Rays of the force friction cone in the world frame.
+
+        Notes
+        -----
+        All linearized friction cones in pymanoid use the inner (conservative)
+        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        """
+        mu = self.inner_friction
+        f1 = dot(self.R, [+mu, +mu, +1])
+        f2 = dot(self.R, [+mu, -mu, +1])
+        f3 = dot(self.R, [-mu, +mu, +1])
+        f4 = dot(self.R, [-mu, -mu, +1])
+        return [f1, f2, f3, f4]
+
+    @property
+    def force_span(self):
+        """
+        Span matrix of the force friction cone in world frame.
+
+        This matrix `S` is such that all valid contact forces can be written:
+
+        .. math::
+
+            f = S \\lambda, \\quad \\lambda \\geq 0
+
+        Notes
+        -----
+        All linearized friction cones in pymanoid use the inner (conservative)
+        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        """
+        return array(self.force_rays).T
+
+    def compute_grasp_matrix(self, p):
         """
         Compute the grasp matrix for a given destination point.
 
@@ -120,53 +168,8 @@ class Contact(Box):
         v4 = dot(self.T, array([-X, +Y, 0., 1.]))[:3]
         return [v1, v2, v3, v4]
 
-    """
-    Force Friction Cone
-    ===================
-
-    All linearized friction cones in pymanoid use the inner (conservative)
-    approximation. See <https://scaron.info/teaching/friction-model.html>.
-    """
-
     @property
-    def force_face(self):
-        """
-        Face (H-rep) of the force friction cone in world frame.
-        """
-        mu = self.inner_friction
-        face_local = array([
-            [-1, 0, -mu],
-            [+1, 0, -mu],
-            [0, -1, -mu],
-            [0, +1, -mu]])
-        return dot(face_local, self.R.T)
-
-    @property
-    def force_rays(self):
-        """
-        Rays (V-rep) of the force friction cone in world frame.
-        """
-        mu = self.inner_friction
-        f1 = dot(self.R, [+mu, +mu, +1])
-        f2 = dot(self.R, [+mu, -mu, +1])
-        f3 = dot(self.R, [-mu, +mu, +1])
-        f4 = dot(self.R, [-mu, -mu, +1])
-        return [f1, f2, f3, f4]
-
-    @property
-    def force_span(self):
-        """
-        Span matrix of the force friction cone in world frame.
-        """
-        return array(self.force_rays).T
-
-    """
-    Wrench Friction Cone
-    ====================
-    """
-
-    @property
-    def wrench_face(self):
+    def wrench_inequalities(self):
         """
         Matrix `F` of friction inequalities in world frame.
 
@@ -276,7 +279,125 @@ class ContactSet(object):
             the stacked vector of contact wrenches (each wrench being taken at
             its respective contact point and in the world frame).
         """
-        return hstack([c.grasp_matrix(p) for c in self.contacts])
+        return hstack([ct.compute_grasp_matrix(p) for ct in self.contacts])
+
+    def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
+        """
+        Compute the pendular COM acceleration cone for a given COM position.
+
+        The pendular cone is the reduction of the Contact Wrench Cone when the
+        angular momentum at the COM is zero.
+
+        Parameters
+        ----------
+        com : array, shape=(3,), or list of such arrays
+            COM position, or list of COM vertices.
+        zdd_max : scalar, optional
+            Maximum vertical acceleration in the output cone.
+        reduced : bool, optional
+            If ``True``, returns the reduced 2D form rather than a 3D cone.
+
+        Returns
+        -------
+        vertices : list of (3,) arrays
+            List of 3D vertices of the (truncated) COM acceleration cone, or of
+            the 2D vertices of the reduced form if ``reduced`` is ``True``.
+
+        Notes
+        -----
+        The method is based on a rewriting of the CWC formula, followed by a 2D
+        convex hull on dual vertices. The algorithm is described in [Caron16]_.
+
+        When ``com`` is a list of vertices, the returned cone corresponds to COM
+        accelerations that are feasible from *all* COM located inside the
+        polytope. See [Caron16]_ for details on this conservative criterion.
+        """
+        def expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
+            g = -gravity[2]  # gravity constant (positive)
+            zdd = +g if zdd_max is None else zdd_max
+            vertices_at_zdd = [
+                array([a * (g + zdd), b * (g + zdd), zdd])
+                for (a, b) in reduced_hull]
+            return [gravity] + vertices_at_zdd
+
+        com_vertices = [com] if type(com) is not list else com
+        CWC_O = self.compute_wrench_inequalities([0., 0., 0.])
+        B_list, c_list = [], []
+        for (i, v) in enumerate(com_vertices):
+            B = CWC_O[:, :3] + cross(CWC_O[:, 3:], v)
+            c = dot(B, gravity)
+            B_list.append(B)
+            c_list.append(c)
+        B = vstack(B_list)
+        c = hstack(c_list)
+        try:
+            g = -gravity[2]  # gravity constant (positive)
+            B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
+            sigma = c / g  # see Equation (30) in [CK16]
+            reduced_hull = compute_polygon_hull(B_2d, sigma)
+            if reduced:
+                return reduced_hull
+            return expand_reduced_pendular_cone(reduced_hull, zdd_max)
+        except QhullError:
+            raise Exception("Cannot compute 2D polar for acceleration cone")
+
+    def compute_static_equilibrium_polygon(self, method='hull'):
+        """
+        Compute the static-equilibrium polygon of the center of mass.
+
+        Parameters
+        ----------
+        method : string, optional
+            Choice between 'bretl', 'cdd' or 'hull'.
+
+        Returns
+        -------
+        vertices : list of arrays
+            2D vertices of the static-equilibrium polygon.
+
+        Notes
+        -----
+        The method 'bretl' is adapted from in [Bretl08]_ where the
+        static-equilibrium polygon was introduced. The method 'cdd' corresponds
+        to the double-description approach described in [Caron17z]_. See the
+        Appendix from [Caron16]_ for a performance comparison.
+        """
+        if method == 'hull':
+            A_O = self.compute_wrench_inequalities([0, 0, 0])
+            k, a_Oz, a_x, a_y = A_O.shape[0], A_O[:, 2], A_O[:, 3], A_O[:, 4]
+            B, c = hstack([-a_y.reshape((k, 1)), +a_x.reshape((k, 1))]), -a_Oz
+            return compute_polygon_hull(B, c)
+        p = [0, 0, 0]  # point where contact wrench is taken at
+        G = self.compute_grasp_matrix(p)
+        F = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
+        mass = 42.  # [kg]
+        # mass has no effect on the output polygon, see IV.B in [Caron16]_
+        E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
+        f = array([p[0], p[1]])
+        return project_polytope(
+            proj=(E, f),
+            ineq=(F, zeros(F.shape[0])),
+            eq=(G[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
+            method=method)
+
+    def compute_wrench_inequalities(self, p):
+        """
+        Compute the matrix of wrench cone inequalities in the world frame.
+
+        Parameters
+        ----------
+        p : array, shape=(3,)
+            Point where the resultant wrench is taken at.
+
+        Returns
+        -------
+        F : array, shape=(m, 6)
+            Friction matrix such that all valid contact wrenches satisfy
+            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
+            `p`.
+        """
+        span_matrix = self.compute_wrench_span(p)
+        return compute_cone_face_matrix(span_matrix)
 
     def compute_wrench_span(self, p):
         """
@@ -318,24 +439,51 @@ class ContactSet(object):
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
 
-    def compute_wrench_face(self, p):
+    def compute_zmp_support_area(self, com, plane, method='bretl'):
         """
-        Compute the face matrix of the contact wrench cone in the world frame.
+        Compute the (pendular) ZMP support area for a given COM position.
+
 
         Parameters
         ----------
-        p : array, shape=(3,)
-            Point where the resultant wrench is taken at.
+        com : array, shape=(3,)
+            COM position.
+        plane : array, shape=(3,)
+            Origin of the virtual plane.
+        method : string, default='bretl'
+            Choice between ``"bretl"`` or ``"cdd"``.
 
         Returns
         -------
-        F : array, shape=(m, 6)
-            Friction matrix such that all valid contact wrenches satisfy
-            :math:`F w \\leq 0`, where `w` is the resultant contact wrench at
-            `p`.
+        vertices : list of arrays
+            List of vertices of the ZMP support area.
+
+        Notes
+        -----
+        The method 'bretl' is adapted from in [Bretl08]_ where the
+        static-equilibrium polygon was introduced. The method 'cdd' corresponds
+        to the double-description approach described in [Caron17z]_. See the
+        Appendix from [Caron16]_ for a performance comparison.
         """
-        span_matrix = self.compute_wrench_span(p)
-        return compute_cone_face_matrix(span_matrix)
+        z_com, z_zmp = com[2], plane[2]
+        crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
+        G = self.compute_grasp_matrix([0, 0, 0])
+        F = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
+        mass = 42.  # [kg]
+        # mass has no effect on the output polygon, c.f. Section IV.C in
+        # <https://hal.archives-ouvertes.fr/hal-01349880>
+        B = vstack([
+            hstack([z_com * eye(3), crossmat_n]),
+            hstack([zeros(3), com])])  # \sim hstack([-(cross(n, p_in)), n])])
+        C = 1. / (mass * 9.81) * dot(B, G)
+        d = hstack([com, [0]])
+        E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
+        f = array([com[0], com[1]])
+        return project_polytope(
+            proj=(E, f),
+            ineq=(F, zeros(F.shape[0])),
+            eq=(C, d),
+            method=method)
 
     def find_static_supporting_wrenches(self, com, mass):
         """
@@ -399,11 +547,11 @@ class ContactSet(object):
         W_tau = diag([cop_weight, cop_weight, yaw_weight])
         P = block_diag(*[
             block_diag(
-                dot(c.R, dot(W_f, c.R.T)),
-                dot(c.R, dot(W_tau, c.R.T)))
-            for c in self.contacts])
+                dot(ct.R, dot(W_f, ct.R.T)),
+                dot(ct.R, dot(W_tau, ct.R.T)))
+            for ct in self.contacts])
         q = zeros((n,))
-        G = block_diag(*[c.wrench_face for c in self.contacts])
+        G = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
         h = zeros((G.shape[0],))  # G * x <= h
         A = self.compute_grasp_matrix(point)
         b = wrench
@@ -414,157 +562,6 @@ class ContactSet(object):
             (contact, w_all[6 * i:6 * (i + 1)])
             for i, contact in enumerate(self.contacts)]
         return support
-
-    """
-    Support areas and volumes
-    =========================
-    """
-
-    def compute_static_equilibrium_polygon(self, method='hull'):
-        """
-        Compute the static-equilibrium polygon of the center of mass.
-
-        Parameters
-        ----------
-        method : string, optional
-            Choice between 'bretl', 'cdd' or 'hull'.
-
-        Returns
-        -------
-        vertices : list of arrays
-            2D vertices of the static-equilibrium polygon.
-
-        Notes
-        -----
-        The method 'bretl' is adapted from in [Bretl08]_ where the
-        static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [Caron17z]_. See the
-        Appendix from [Caron16]_ for a performance comparison.
-        """
-        if method == 'hull':
-            A_O = self.compute_wrench_face([0, 0, 0])
-            k, a_Oz, a_x, a_y = A_O.shape[0], A_O[:, 2], A_O[:, 3], A_O[:, 4]
-            B, c = hstack([-a_y.reshape((k, 1)), +a_x.reshape((k, 1))]), -a_Oz
-            return compute_polygon_hull(B, c)
-        p = [0, 0, 0]  # point where contact wrench is taken at
-        G = self.compute_grasp_matrix(p)
-        F = block_diag(*[contact.wrench_face for contact in self.contacts])
-        mass = 42.  # [kg]
-        # mass has no effect on the output polygon, see IV.B in [Caron16]_
-        E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
-        f = array([p[0], p[1]])
-        return project_polytope(
-            proj=(E, f),
-            ineq=(F, zeros(F.shape[0])),
-            eq=(G[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
-            method=method)
-
-    def compute_zmp_support_area(self, com, plane, method='bretl'):
-        """
-        Compute the (pendular) ZMP support area for a given COM position.
-
-
-        Parameters
-        ----------
-        com : array, shape=(3,)
-            COM position.
-        plane : array, shape=(3,)
-            Origin of the virtual plane.
-        method : string, default='bretl'
-            Choice between ``"bretl"`` or ``"cdd"``.
-
-        Returns
-        -------
-        vertices : list of arrays
-            List of vertices of the ZMP support area.
-
-        Notes
-        -----
-        The method 'bretl' is adapted from in [Bretl08]_ where the
-        static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [Caron17z]_. See the
-        Appendix from [Caron16]_ for a performance comparison.
-        """
-        z_com, z_zmp = com[2], plane[2]
-        crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
-        G = self.compute_grasp_matrix([0, 0, 0])
-        F = block_diag(*[contact.wrench_face for contact in self.contacts])
-        mass = 42.  # [kg]
-        # mass has no effect on the output polygon, c.f. Section IV.C in
-        # <https://hal.archives-ouvertes.fr/hal-01349880>
-        B = vstack([
-            hstack([z_com * eye(3), crossmat_n]),
-            hstack([zeros(3), com])])  # \sim hstack([-(cross(n, p_in)), n])])
-        C = 1. / (mass * 9.81) * dot(B, G)
-        d = hstack([com, [0]])
-        E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
-        f = array([com[0], com[1]])
-        return project_polytope(
-            proj=(E, f),
-            ineq=(F, zeros(F.shape[0])),
-            eq=(C, d),
-            method=method)
-
-    def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
-        """
-        Compute the pendular COM acceleration cone for a given COM position.
-
-        The pendular cone is the reduction of the Contact Wrench Cone when the
-        angular momentum at the COM is zero.
-
-        Parameters
-        ----------
-        com : array, shape=(3,), or list of such arrays
-            COM position, or list of COM vertices.
-        zdd_max : scalar, optional
-            Maximum vertical acceleration in the output cone.
-        reduced : bool, optional
-            If ``True``, returns the reduced 2D form rather than a 3D cone.
-
-        Returns
-        -------
-        vertices : list of (3,) arrays
-            List of 3D vertices of the (truncated) COM acceleration cone, or of
-            the 2D vertices of the reduced form if ``reduced`` is ``True``.
-
-        Notes
-        -----
-        The method is based on a rewriting of the CWC formula, followed by a 2D
-        convex hull on dual vertices. The algorithm is described in [Caron16]_.
-
-        When ``com`` is a list of vertices, the returned cone corresponds to COM
-        accelerations that are feasible from *all* COM located inside the
-        polytope. See [Caron16]_ for details on this conservative criterion.
-        """
-        com_vertices = [com] if type(com) is not list else com
-        CWC_O = self.compute_wrench_face([0., 0., 0.])
-        B_list, c_list = [], []
-        for (i, v) in enumerate(com_vertices):
-            B = CWC_O[:, :3] + cross(CWC_O[:, 3:], v)
-            c = dot(B, gravity)
-            B_list.append(B)
-            c_list.append(c)
-        B = vstack(B_list)
-        c = hstack(c_list)
-        try:
-            g = -gravity[2]  # gravity constant (positive)
-            B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
-            sigma = c / g  # see Equation (30) in [CK16]
-            reduced_hull = compute_polygon_hull(B_2d, sigma)
-            if reduced:
-                return reduced_hull
-            return self._expand_reduced_pendular_cone(reduced_hull, zdd_max)
-        except QhullError:
-            raise Exception("Cannot compute 2D polar for acceleration cone")
-
-    @staticmethod
-    def _expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
-        g = -gravity[2]  # gravity constant (positive)
-        zdd = +g if zdd_max is None else zdd_max
-        vertices_at_zdd = [
-            array([a * (g + zdd), b * (g + zdd), zdd])
-            for (a, b) in reduced_hull]
-        return [gravity] + vertices_at_zdd
 
 
 class ContactFeed(object):
