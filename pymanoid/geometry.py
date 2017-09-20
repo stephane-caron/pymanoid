@@ -502,7 +502,7 @@ def project_polytope(proj, ineq, eq=None, method='cdd'):
     if method == 'bretl':
         assert eq is not None, "Bretl method requires = constraints for now"
         return project_polytope_bretl(proj, ineq, eq)
-    vertices, rays = project_polyhedron(ineq, eq, proj)
+    vertices, rays = project_polyhedron(proj, ineq, eq)
     assert not rays, "Projection is not a polytope"
     return vertices
 
@@ -537,7 +537,7 @@ def project_polytope_bretl(proj, ineq, eq, max_radius=42.):
     vertices : list of arrays
         List of vertices of the projected polygon.
     """
-    (A, b), (C, d), (E, f) = ineq, eq, proj
+    (E, f), (A, b), (C, d) = proj, ineq, eq
     assert E.shape[0] == f.shape[0] == 2
 
     # Inequality constraints: A_ext * [ x  u  v ] <= b_ext iff

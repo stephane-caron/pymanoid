@@ -29,7 +29,7 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
-from pymanoid.polyhedra import project_polytope
+from pymanoid.geometry import project_polytope
 
 
 TINY = 1e-7
@@ -56,12 +56,12 @@ class TestContact(unittest.TestCase):
                 rpy=[-0.4, 0, 0],
                 friction=friction)])
 
-    def test_wrench_face_wrench_span(self):
+    def test_wrench_inequalities_wrench_span(self):
         """
         Check that wrench rays are included in the H-representation.
         """
         p = numpy.zeros(3)
-        F = self.contact_set.compute_wrench_face(p)
+        F = self.contact_set.compute_wrench_inequalities(p)
         S = self.contact_set.compute_wrench_span(p)
         for i in range(S.shape[1]):
             assert all(numpy.dot(F, S[:, i]) <= TINY)
@@ -95,14 +95,14 @@ class TestPolyhedra(unittest.TestCase):
         ineq = (self.data['ineq_mat'], self.data['ineq_vec'])
         proj = (self.data['proj_mat'], self.data['proj_vec'])
         for _ in range(nb_runs):  # the error appears randomly
-            polytope = project_polytope(eq, ineq, proj, method='bretl')
+            polytope = project_polytope(proj, ineq, eq, method='bretl')
         assert polytope is not None
 
     def test_projection_cdd(self):
         eq = (self.data['eq_mat'], self.data['eq_vec'])
         ineq = (self.data['ineq_mat'], self.data['ineq_vec'])
         proj = (self.data['proj_mat'], self.data['proj_vec'])
-        polytope = project_polytope(eq, ineq, proj, method='cdd')
+        polytope = project_polytope(proj, ineq, eq, method='cdd')
         assert polytope is not None
 
 
