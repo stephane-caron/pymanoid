@@ -19,7 +19,7 @@
 
 import openravepy
 
-from numpy import array
+from numpy import arange, array
 from os import chmod, popen, system
 from os import stat as fstat
 from re import search
@@ -306,6 +306,12 @@ class Simulation(object):
             [-1, 0,  0, y],
             [0,  0, -1, z],
             [0,  0,  0, 1.]])
+
+    def move_camera_to(self, T, duration=1., dt=3e-2):
+        T_i = self.viewer.GetCameraTransform()
+        for t in arange(0., duration + dt, dt):
+            self.viewer.SetCamera((1. - t) * T_i + t * T)
+            sleep(dt)
 
     """
     Screnshots
