@@ -118,6 +118,9 @@ class Task(object):
         """
         return self.gain * self._residual(dt)
 
+    def __repr__(self):
+        return "<%s with weight %.0e>" % (type(self).__name__, self.weight)
+
 
 class COMTask(Task):
 

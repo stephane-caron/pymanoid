@@ -176,6 +176,27 @@ class HRP4(Humanoid):
             self.rave.GetManipulator("RightHandCenter"), shape=self.palm_shape,
             friction=0.8)
 
+    def add_upright_chest_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.ROT_P, 0., weight))
+        self.ik.add_task(DOFTask(self, self.CHEST_P, 0.2, weight))
+        self.ik.add_task(DOFTask(self, self.CHEST_Y, 0., weight))
+
+    def add_shoulder_abduction_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.R_SHOULDER_R, -0.4, weight))
+        self.ik.add_task(DOFTask(self, self.L_SHOULDER_R, +0.4, weight))
+
+    def add_shoulder_extension_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, +0.5, weight))
+        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, +0.5, weight))
+
+    def add_shoulder_flexion_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, -0.5, weight))
+        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, -0.5, weight))
+
+    def add_shoulder_neutral_pitch_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, 0., weight))
+        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, 0., weight))
+
     def suntan(self, amount=0.3):
         """
         Prepare model for screenshots on white background ;)
