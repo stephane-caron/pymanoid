@@ -18,8 +18,9 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example goes into the details of the IK solver setup. Beginners should take
-a look at the posture-generation example first.
+This example goes into the details of solving inverse kinematics for a humanoid
+robot. Beginners should take a look at the posture-generation example first.
+See <https://scaron.info/teaching/inverse-kinematics.html> for details.
 """
 
 import IPython

@@ -19,7 +19,8 @@
 
 """
 This example shows how to compute the Contact Wrench Cone, a generalized
-multi-contact friction cone.
+multi-contact friction cone. See <https://scaron.info/research/rss-2015.html>
+for details.
 """
 
 import IPython

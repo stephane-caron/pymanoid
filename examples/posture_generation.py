@@ -20,6 +20,7 @@
 """
 This example generates a robot posture from a set of tasks: foothold locations,
 center-of-mass position, and a set of reference joint angles for regularization.
+See <https://scaron.info/teaching/inverse-kinematics.html> for details.
 """
 
 import IPython
