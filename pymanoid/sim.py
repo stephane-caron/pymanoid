@@ -307,11 +307,12 @@ class Simulation(object):
             [0,  0, -1, z],
             [0,  0,  0, 1.]])
 
-    def move_camera_to(self, T, duration=1., dt=3e-2):
+    def move_camera_to(self, T, duration=0., dt=3e-2):
         T_i = self.viewer.GetCameraTransform()
-        for t in arange(0., duration + dt, dt):
+        for t in arange(0., duration, dt):
             self.viewer.SetCamera((1. - t) * T_i + t * T)
             sleep(dt)
+        self.viewer.SetCamera(T)
 
     """
     Screnshots
