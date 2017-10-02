@@ -25,6 +25,8 @@ for details.
 
 import IPython
 
+from numpy import array
+
 import pymanoid
 
 from pymanoid import PointMass, Stance
@@ -39,14 +41,6 @@ def print_contact(name, contact):
     print "- half-width =", contact.shape[1]
     print "- friction =", contact.friction
     print ""
-
-
-def print_contact_wrench_cone(p=[0., 0., 0.], prec=2):
-    print_contact("Left foot", stance.left_foot)
-    print_contact("Right foot", stance.right_foot)
-    CWC_O = stance.compute_wrench_inequalities(p)
-    print "Contact Wrench Cone at %s:\n" % str(p)
-    print CWC_O.round(prec)
 
 
 if __name__ == "__main__":
@@ -76,7 +70,39 @@ if __name__ == "__main__":
     sim.schedule(robot.ik)
     sim.start()
 
-    print_contact_wrench_cone()
+    p = array([0., 0., 0.])
+    CWC_O = stance.compute_wrench_inequalities(p)
+    print_contact("Left foot", stance.left_foot)
+    print_contact("Right foot", stance.right_foot)
+    print "Contact Wrench Cone at %s:" % str(p)
+    print "- has %d lines" % CWC_O.shape[0]
 
+    try:
+        import WrenchConeLib as wcl
+        lf_surf = wcl.rectangularSurface(
+            robot.sole_shape[0], robot.sole_shape[1], stance.left_foot.p,
+            stance.left_foot.R.T, stance.left_foot.friction)
+        rf_surf = wcl.rectangularSurface(
+            robot.sole_shape[0], robot.sole_shape[1], stance.right_foot.p,
+            stance.right_foot.R.T, stance.right_foot.friction)
+        CWC = wcl.CWC(p, [lf_surf, rf_surf])
+        CWC_wcl = CWC.getHalfSpaces()
+        S = CWC.getRays()
+    except ImportError:
+        print """
+=============================================================================
+
+Check out WrenchConeLib <https://github.com/vsamy/WrenchConeLib> for faster
+computations:
+
+    In [1]: %timeit wcl.CWC(p, [lf_surf, rf_surf]).getHalfSpaces()
+    100 loops, best of 3: 2.06 ms per loop
+
+    In [2]: %timeit stance.compute_wrench_inequalities([0, 0, 0])
+    100 loops, best of 3: 4.05 ms per loop
+
+============================================================================="""
+
+    print ""
     if IPython.get_ipython() is None:
         IPython.embed()
