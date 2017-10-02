@@ -296,11 +296,8 @@ def intersect_line_polygon(line, vertices, apply_hull):
 
     Notes
     -----
-    This code is adapted from <http://stackoverflow.com/a/20679579>. With
-    `apply_hull=True`, this variant %timeits around 90 us on my machine, vs. 170
-    us when using the Shapely library <http://toblerity.org/shapely/> (the
-    latter variant was removed by commit a8a267b). On the same setting with
-    `apply_hull=False`, it %timeits to 6 us.
+    This code is adapted from <http://stackoverflow.com/a/20679579>. On the same
+    setting with `apply_hull=False`, it %timeits to 6 us.
     """
     def line_coordinates(p1, p2):
         A = (p1[1] - p2[1])

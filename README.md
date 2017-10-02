@@ -60,7 +60,7 @@ CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
 from source to install the MA27 linear solver as well.
 
 Some minor functions to manipulate polygons may also require two small
-libraries: ``sudo pip install pyclipper shapely``.
+libraries: ``sudo pip install pyclipper``.
 
 ## Frequently Asked Questions
 
