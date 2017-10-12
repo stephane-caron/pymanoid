@@ -399,7 +399,7 @@ def intersect_polygons(polygon1, polygon2):
     return scale_from_clipper(solution)[0]
 
 
-def project_polyhedron(proj, ineq, eq=None):
+def project_polyhedron(proj, ineq, eq=None, canonicalize=True):
     """
     Apply the affine projection :math:`y = E x + f` to the polyhedron defined
     by:
@@ -419,6 +419,9 @@ def project_polyhedron(proj, ineq, eq=None):
         Pair (`A`, `b`) describing the inequality constraint.
     eq : pair of arrays, optional
         Pair (`C`, `d`) describing the equality constraint.
+    canonicalize : bool, optional
+        Apply equality constraints from `eq` to reduce the dimension of the
+        input polyhedron. May be a blessing or a curse, see notes below.
 
     Returns
     -------
@@ -426,6 +429,19 @@ def project_polyhedron(proj, ineq, eq=None):
         List of vertices of the projection.
     rays : list of arrays
         List of rays of the projection.
+
+    Notes
+    -----
+    When the equality set `eq` of the input polytope is not empty, it is usually
+    faster to use these equality constraints to reduce the dimension of the
+    input polytope (cdd function: `canonicalize()`) before enumerating vertices
+    (cdd function: `get_generators()`). Yet, on some descriptions this operation
+    may be problematic: if it fails, or if you get empty outputs when the output
+    is supposed to be non-empty, you can try setting `canonicalize=False`.
+
+    See also
+    --------
+    This webpage: https://scaron.info/teaching/projecting-polytopes.html
     """
     # the input [b, -A] to cdd.Matrix represents (b - A * x >= 0)
     # see ftp://ftp.ifor.math.ethz.ch/pub/fukuda/cdd/cddlibman/node3.html
@@ -440,9 +456,10 @@ def project_polyhedron(proj, ineq, eq=None):
         (C, d) = eq
         d = d.reshape((d.shape[0], 1))
         linsys.extend(hstack([d, -C]), linear=True)
+        if canonicalize:
+            linsys.canonicalize()
 
     # Convert from H- to V-representation
-    linsys.canonicalize()
     P = cdd.Polyhedron(linsys)
     generators = P.get_generators()
     if generators.lin_set:
