@@ -26,7 +26,8 @@ for details.
 import IPython
 
 from numpy import array
-
+import sys
+sys.path.append('..')
 import pymanoid
 
 from pymanoid import PointMass, Stance
@@ -79,15 +80,16 @@ if __name__ == "__main__":
 
     try:
         import WrenchConeLib as wcl
-        lf_surf = wcl.rectangularSurface(
+        lf_surf = wcl.rectangular_surface(
             robot.sole_shape[0], robot.sole_shape[1], stance.left_foot.p,
             stance.left_foot.R.T, stance.left_foot.friction)
-        rf_surf = wcl.rectangularSurface(
+        rf_surf = wcl.rectangular_surface(
             robot.sole_shape[0], robot.sole_shape[1], stance.right_foot.p,
             stance.right_foot.R.T, stance.right_foot.friction)
-        CWC = wcl.CWC(p, [lf_surf, rf_surf])
-        CWC_wcl = CWC.getHalfSpaces()
-        S = CWC.getRays()
+        CWC = wcl.WrenchCone(p, [lf_surf, rf_surf])
+        S = CWC.get_rays()
+        CWC_wcl = CWC.get_halfspaces()
+        print "- has %d lines" % CWC_wcl.shape[0]
     except ImportError:
         print """
 =============================================================================
