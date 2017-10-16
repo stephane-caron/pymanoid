@@ -16,18 +16,6 @@ Rigid bodies
     :members:
     :undoc-members:
 
-Drawer processes
-================
-
-.. automodule:: pymanoid.drawers
-    :members:
-
-Drawing primitives
-==================
-
-.. automodule:: pymanoid.draw
-    :members:
-
 Interpolation
 =============
 
@@ -39,3 +27,10 @@ Rotations and homogeneous coordinates
 
 .. automodule:: pymanoid.transformations
     :members:
+
+Graphical user interface
+========================
+
+.. automodule:: pymanoid.gui
+    :members:
+

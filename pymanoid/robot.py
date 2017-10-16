@@ -23,7 +23,7 @@ from os.path import basename, isfile, splitext
 from warnings import warn
 
 from body import PointMass
-from draw import draw_line, draw_point
+from gui import draw_line, draw_point
 from ik import IKSolver
 from misc import matplotlib_to_rgb, middot
 from sim import get_openrave_env, gravity

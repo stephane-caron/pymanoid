@@ -19,13 +19,14 @@
 
 import itertools
 
-from numpy import array, cross, dot, int64, sqrt, vstack
+from numpy import array, cross, dot, exp, hstack, int64, sqrt, vstack, zeros
 from scipy.spatial import ConvexHull
 from scipy.spatial.qhull import QhullError
+from time import time
 from warnings import warn
 
 from misc import matplotlib_to_rgb, matplotlib_to_rgba, norm
-from sim import get_openrave_env
+from sim import Process, get_openrave_env
 
 
 BIG_DIST = 1000.  # [m]
@@ -127,7 +128,6 @@ def draw_cone(apex, axis, section, combined='r-#', color=None, linewidth=2.,
     if len(section) < 1:
         warn("Trying to draw an empty cone")
         return []
-    from pymanoid.draw import matplotlib_to_rgba
     color = color if color is not None else matplotlib_to_rgba(combined[0])
     handles = draw_polygon(
         points=section, normal=axis, combined=combined, color=color)
@@ -483,3 +483,166 @@ def _pick_2d_extreme_rays(rays):
         elif c1 < 0 and c2 > 0:
             raise UnboundedPolyhedron
     return u_low, u_high
+
+
+class WrenchDrawer(Process):
+
+    """
+    Draw contact wrenches applied to the robot.
+    """
+
+    KO_COLOR = [.8, .4, .4]
+
+    def __init__(self):
+        super(WrenchDrawer, self).__init__()
+        self.handles = []
+        self.last_bkgnd_switch = None
+        self.nb_fails = 0
+
+    def clear(self):
+        self.handles = []
+
+    def find_supporting_wrenches(self, sim):
+        raise NotImplementedError("should be implemented by child classes")
+
+    def on_tick(self, sim):
+        """
+        Find supporting contact forces at each COM acceleration update.
+
+        Parameters
+        ----------
+        sim : pymanoid.Simulation
+            Simulation instance.
+        """
+        try:
+            support = self.find_supporting_wrenches(sim)
+            self.handles = [
+                draw_wrench(contact, w_c) for (contact, w_c) in support]
+        except ValueError:
+            self.handles = []
+            self.nb_fails += 1
+            sim.viewer.SetBkgndColor(self.KO_COLOR)
+            self.last_bkgnd_switch = time()
+        if self.last_bkgnd_switch is not None \
+                and time() - self.last_bkgnd_switch > 0.2:
+            # let's keep epilepsy at bay
+            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
+            self.last_bkgnd_switch = None
+
+
+class PointMassWrenchDrawer(WrenchDrawer):
+
+    """
+    Draw contact wrenches applied to a point-mass system in multi-contact.
+
+    Parameters
+    ----------
+    point_mass : PointMass
+        Point-mass to which forces are applied.
+    contact_set : ContactSet
+        Set of contacts providing interaction forces.
+    """
+
+    def __init__(self, point_mass, contact_set):
+        super(PointMassWrenchDrawer, self).__init__()
+        self.contact_set = contact_set
+        self.point_mass = point_mass
+
+    def find_supporting_wrenches(self, sim):
+        mass = self.point_mass.mass
+        p = self.point_mass.p
+        pdd = self.point_mass.pdd
+        wrench = hstack([mass * (pdd - sim.gravity), zeros(3)])
+        support = self.contact_set.find_supporting_wrenches(wrench, p)
+        return support
+
+    def on_tick(self, sim):
+        if not hasattr(self.point_mass, 'pdd') or self.point_mass.pdd is None:
+            # needs to be stored by the user
+            return
+        super(PointMassWrenchDrawer, self).on_tick(sim)
+
+
+class RobotWrenchDrawer(WrenchDrawer):
+
+    """
+    Draw contact wrenches applied to a humanoid in multi-contact.
+
+    Parameters
+    ----------
+    robot : Humanoid
+        Humanoid robot model.
+    delay : int, optional
+        Delay constant, expressed in number of control cycles.
+    """
+
+    def __init__(self, robot, delay=1):
+        super(RobotWrenchDrawer, self).__init__()
+        self.delay = delay
+        self.qd_prev = robot.qd
+        self.qdd_prev = zeros(robot.qd.shape)
+        self.robot = robot
+
+    def find_supporting_wrenches(self, sim):
+        o = zeros(3)
+        qd = self.robot.qd
+        qdd_disc = (qd - self.qd_prev) / sim.dt
+        self.qd_prev = qd
+        qdd = qdd_disc + exp(-1. / self.delay) * (self.qdd_prev - qdd_disc)
+        contact_wrench = self.robot.compute_net_contact_wrench(qdd, o)
+        support = self.robot.stance.find_supporting_wrenches(contact_wrench, o)
+        return support
+
+
+class TrajectoryDrawer(Process):
+
+    """
+    Draw the trajectory of a rigid body.
+
+    Parameters
+    ----------
+    body : Body
+        Rigid body whose trajectory to draw.
+    combined : string, optional
+        Drawing spec of the trajectory in matplotlib fashion.
+    color : char or RGBA tuple, optional
+        Drawing color.
+    linewidth : scalar, optional
+        Thickness of drawn lines.
+    linestyle : char, optional
+        Choix between '-' for continuous and '.' for dotted.
+    buffer_size : int, optional
+        Number of trajectory segments to display. Old segments will be replaced
+        by new ones.
+    """
+
+    def __init__(self, body, combined='b-', color=None, linewidth=3,
+                 linestyle=None, buffer_size=1000):
+        super(TrajectoryDrawer, self).__init__()
+        color = color if color is not None else combined[0]
+        linestyle = linestyle if linestyle is not None else combined[1]
+        assert linestyle in ['-', '.']
+        self.body = body
+        self.buffer_size = buffer_size
+        self.color = color
+        self.handles = [None] * buffer_size
+        self.next_index = 0
+        self.last_pos = body.p
+        self.linestyle = linestyle
+        self.linewidth = linewidth
+
+    def on_tick(self, sim):
+        if self.linestyle == '-':
+            h = self.handles[self.next_index]
+            if h is not None:
+                h.Close()
+            self.handles[self.next_index] = draw_line(
+                self.last_pos, self.body.p, color=self.color,
+                linewidth=self.linewidth)
+            self.next_index = (self.next_index + 1) % self.buffer_size
+        self.last_pos = self.body.p
+
+    def dash_graph_handles(self):
+        for i in xrange(len(self.handles)):
+            if i % 2 == 0:
+                self.handles[i] = None

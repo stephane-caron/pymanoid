@@ -26,7 +26,7 @@ from bisect import bisect_left
 from numpy import cosh, sinh, sqrt
 from time import time
 
-from draw import draw_line, draw_point, draw_trajectory
+from gui import draw_line, draw_point, draw_trajectory
 from misc import norm
 from optim import NonlinearProgram
 from sim import gravity

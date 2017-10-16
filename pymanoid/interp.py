@@ -20,7 +20,7 @@
 from numpy import arange, dot, hstack, linspace
 from openravepy import InterpolateQuatSlerp as quat_slerp
 
-from draw import draw_trajectory
+from gui import draw_trajectory
 from misc import NDPolynomial
 from transformations import rotation_matrix_from_quat
 

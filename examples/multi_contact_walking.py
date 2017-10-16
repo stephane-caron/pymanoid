@@ -35,10 +35,10 @@ import pymanoid
 
 from pymanoid import Contact, PointMass, Stance
 from pymanoid.body import Box, Point
-from pymanoid.draw import draw_cone, draw_polyhedron
-from pymanoid.draw import draw_line, draw_point, draw_points
-from pymanoid.drawers import TrajectoryDrawer
 from pymanoid.geometry import compute_polytope_hrep, intersect_polygons
+from pymanoid.gui import PointMassWrenchDrawer, TrajectoryDrawer
+from pymanoid.gui import draw_cone, draw_polyhedron
+from pymanoid.gui import draw_line, draw_point, draw_points
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
 from pymanoid.misc import normalize
 from pymanoid.robots import JVRC1
@@ -851,7 +851,7 @@ class UpdateCOMTargetAccel(pymanoid.Process):
         self.com_target.pdd = self.preview_buffer.cur_control
 
 
-class PointMassWrenchDrawer(pymanoid.drawers.PointMassWrenchDrawer):
+class PointMassWrenchDrawer(PointMassWrenchDrawer):
 
     def on_tick(self, sim):
         self.contact_set = fsm.cur_stance

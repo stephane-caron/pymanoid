@@ -25,17 +25,196 @@ See <https://scaron.info/research/tro-2016.html> for details.
 
 import IPython
 
+from numpy import zeros
+
 import pymanoid
 
 from pymanoid import PointMass, Stance
 from pymanoid.contact import Contact
-from pymanoid.drawers import COMAccelConeDrawer
-from pymanoid.drawers import SEPDrawer
-from pymanoid.drawers import StaticWrenchDrawer
-from pymanoid.drawers import ZMPSupportAreaDrawer
+from pymanoid.gui import PointMassWrenchDrawer
+from pymanoid.gui import draw_polygon, draw_polyhedron
+from pymanoid.misc import matplotlib_to_rgb, norm
 
 com_height = 0.9  # [m]
 z_polygon = 2.
+
+
+class SupportAreaDrawer(pymanoid.Process):
+
+    """
+    Draw a given support area of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet, optional
+        Contact set to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
+    """
+
+    def __init__(self, contact_set=None, z=0., color=None):
+        if color is None:
+            color = (0., 0.5, 0., 0.5)
+        if type(color) is str:
+            color = matplotlib_to_rgb(color) + [0.5]
+        super(SupportAreaDrawer, self).__init__()
+        self.color = color
+        self.contact_poses = {}
+        self.contact_set = contact_set
+        self.handle = None
+        self.z = z
+        if contact_set is not None:
+            self.update_contact_poses()
+            self.update_polygon()
+
+    def clear(self):
+        self.handle = None
+
+    def on_tick(self, sim):
+        if self.handle is None:
+            self.update_polygon()
+        for contact in self.contact_set.contacts:
+            if norm(contact.pose - self.contact_poses[contact.name]) > 1e-10:
+                self.update_contact_poses()
+                self.update_polygon()
+                break
+
+    def update_contact_poses(self):
+        for contact in self.contact_set.contacts:
+            self.contact_poses[contact.name] = contact.pose
+
+    def update_contact_set(self, contact_set):
+        self.contact_set = contact_set
+        self.update_contact_poses()
+        self.update_polygon()
+
+    def update_polygon(self):
+        raise NotImplementedError
+
+    def update_z(self, z):
+        self.z = z
+        self.update_polygon()
+
+
+class SEPDrawer(SupportAreaDrawer):
+
+    """
+    Draw the static-equilibrium polygon of a contact set.
+
+    Parameters
+    ----------
+    contact_set : ContactSet, optional
+        Contact set to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
+    """
+
+    def update_polygon(self):
+        self.handle = None
+        try:
+            vertices = self.contact_set.compute_static_equilibrium_polygon()
+            self.handle = draw_polygon(
+                [(x[0], x[1], self.z) for x in vertices],
+                normal=[0, 0, 1], color=self.color)
+        except Exception as e:
+            print "SEPDrawer:", e
+
+
+class ZMPSupportAreaDrawer(SupportAreaDrawer):
+
+    """
+    Draw the pendular ZMP area of a contact set.
+
+    Parameters
+    ----------
+    stance : Stance
+        Stance to track.
+    z : scalar, optional
+        Altitude of drawn area in the world frame.
+    color : tuple or string, optional
+        Area color.
+    """
+
+    def __init__(self, stance, z=0., color=None):
+        self.stance = stance  # before calling parent constructor
+        super(ZMPSupportAreaDrawer, self).__init__(stance, z, color)
+        self.last_com = stance.com.p
+
+    def on_tick(self, sim):
+        super(ZMPSupportAreaDrawer, self).on_tick(sim)
+        if norm(self.stance.com.p - self.last_com) > 1e-10:
+            self.update_contact_poses()
+            self.update_polygon()
+            self.last_com = self.stance.com.p
+
+    def update_polygon(self):
+        self.handle = None
+        try:
+            vertices = self.contact_set.compute_zmp_support_area(
+                self.stance.com.p, [0, 0, self.z])
+            self.handle = draw_polygon(
+                [(x[0], x[1], self.z) for x in vertices],
+                normal=[0, 0, 1], color=(0.0, 0.0, 0.5, 0.5))
+        except Exception as e:
+            print "ZMPSupportAreaDrawer:", e
+
+
+class COMAccelConeDrawer(ZMPSupportAreaDrawer):
+
+    """
+    Draw the COM acceleration cone of a contact set.
+
+    Parameters
+    ----------
+    stance : Stance
+        Contact set to track.
+    scale : scalar, optional
+        Acceleration to distance conversion ratio, in [s]^2.
+    color : tuple or string, optional
+        Area color.
+    """
+
+    def __init__(self, stance, scale=0.1, color=None):
+        self.scale = scale  # done before calling parent constructor
+        super(COMAccelConeDrawer, self).__init__(stance, color=color)
+
+    def update_polygon(self):
+        self.handle = None
+        try:
+            vertices = self.contact_set.compute_pendular_accel_cone(
+                self.stance.com.p)
+            vscale = [self.stance.com.p + self.scale * acc for acc in vertices]
+            self.handle = draw_polyhedron(vscale, 'r.-#')
+        except Exception as e:
+            print "COMAccelConeDrawer:", e
+
+
+class StaticWrenchDrawer(PointMassWrenchDrawer):
+
+    """
+    Draw contact wrenches applied to a robot in static-equilibrium.
+
+    Parameters
+    ----------
+    point_mass : PointMass
+        Point-mass to which forces are applied.
+    contact_set : ContactSet
+        Set of contacts providing interaction forces.
+    """
+
+    def __init__(self, point_mass, contact_set):
+        super(StaticWrenchDrawer, self).__init__(point_mass, contact_set)
+        self.point_mass.pdd = zeros((3,))
+
+    def find_supporting_wrenches(self, sim):
+        mass = self.point_mass.mass
+        p = self.point_mass.p
+        support = self.contact_set.find_static_supporting_wrenches(p, mass)
+        return support
 
 
 class COMSync(pymanoid.Process):
@@ -108,7 +287,6 @@ if __name__ == "__main__":
     sim.start()
 
     print """
-
 Contact-stability conditions
 ============================
 
