@@ -74,6 +74,15 @@ class Contact(Box):
             link=link)
 
     @property
+    def dict_repr(self):
+        return {
+            'friction': self.friction,
+            'pos': list(self.p),
+            'rpy': list(self.rpy),
+            'shape': list(self.shape),
+        }
+
+    @property
     def force_inequalities(self):
         """
         Matrix of force friction cone inequalities in the world frame.

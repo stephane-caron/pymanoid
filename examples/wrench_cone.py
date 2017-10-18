@@ -29,8 +29,7 @@ from numpy import array
 
 import pymanoid
 
-from pymanoid import PointMass, Stance
-from pymanoid.contact import Contact
+from pymanoid import Stance
 
 
 def print_contact(name, contact):
@@ -53,18 +52,7 @@ if __name__ == "__main__":
         [0.08254916, -0.85420468, -0.51334199,  2.79584694],
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.25)
-    stance = Stance(
-        com=PointMass(pos=[0., 0., 0.9], mass=robot.mass),
-        left_foot=Contact(
-            shape=robot.sole_shape,
-            pos=[0.20, 0.15, 0.1],
-            rpy=[0.4, 0, 0],
-            friction=0.5),
-        right_foot=Contact(
-            shape=robot.sole_shape,
-            pos=[-0.2, -0.195, 0.],
-            rpy=[-0.4, 0, 0],
-            friction=0.5))
+    stance = Stance.from_json('stances/triple.json')
     stance.bind(robot)
     robot.ik.solve()
     sim.schedule(robot.ik)

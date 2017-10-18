@@ -17,10 +17,12 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+import simplejson
+
 from numpy import array, dot
 
 from body import Point
-from contact import ContactSet
+from contact import Contact, ContactSet
 from geometry import compute_polytope_hrep
 from misc import norm
 from tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
@@ -45,7 +47,7 @@ class Stance(ContactSet):
         Right-hand contact target.
     """
 
-    def __init__(self, com=None, left_foot=None, right_foot=None,
+    def __init__(self, com, left_foot=None, right_foot=None,
                  left_hand=None, right_hand=None):
         # NB: do not call the parent (ContactSet) constructor
         assert issubclass(type(com), Point), \
@@ -57,6 +59,65 @@ class Stance(ContactSet):
         self.right_foot = right_foot
         self.right_hand = right_hand
         self.sep_hrep = None
+
+    def load(self, path):
+        """
+        Load stance from JSON file.
+
+        Parameters
+        ----------
+        path : string
+            Path to the JSON file.
+        """
+        def cfd(contact_dict):
+            keys = ['shape', 'friction', 'pos', 'rpy']
+            return Contact(**{k: contact_dict[k] for k in keys})
+        with open(path, 'r') as fp:
+            d = simplejson.load(fp)
+        if 'com' in d:
+            self.com = Point(**d['com'])
+        self.left_foot = cfd(d['left_foot']) if 'left_foot' in d else None
+        self.right_foot = cfd(d['right_foot']) if 'right_foot' in d else None
+        self.left_hand = cfd(d['left_hand']) if 'left_hand' in d else None
+        self.right_hand = cfd(d['right_hand']) if 'right_hand' in d else None
+
+    def save(self, path):
+        """
+        Save stance into JSON file.
+
+        Parameters
+        ----------
+        path : string
+            Path to JSON file.
+        """
+        d = {}
+        if self.com is not None:
+            d['com'] = {"pos": list(self.com.p)}
+        if self.left_foot is not None:
+            d['left_foot'] = self.left_foot.dict_repr
+        if self.right_foot is not None:
+            d['right_foot'] = self.right_foot.dict_repr
+        if self.left_hand is not None:
+            d['left_hand'] = self.left_hand.dict_repr
+        if self.right_hand is not None:
+            d['right_hand'] = self.right_hand.dict_repr
+        with open(path, 'w') as fp:
+            simplejson.dump(d, fp, indent=4, sort_keys=True)
+
+    @staticmethod
+    def from_json(path):
+        """
+        Create a new stance from a JSON file.
+
+        Parameters
+        ----------
+        path : string
+            Path to the JSON file.
+        """
+        com = Point(pos=[0., 0., 0.])
+        stance = Stance(com)
+        stance.load(path)
+        return stance
 
     def bind(self, robot, reg='posture'):
         tasks = []
