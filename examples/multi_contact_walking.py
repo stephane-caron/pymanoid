@@ -34,7 +34,7 @@ from threading import Lock
 import pymanoid
 
 from pymanoid import Contact, PointMass, Stance
-from pymanoid.body import Box, Point
+from pymanoid.body import Box
 from pymanoid.geometry import compute_polytope_hrep, intersect_polygons
 from pymanoid.gui import PointMassWrenchDrawer, TrajectoryDrawer
 from pymanoid.gui import draw_cone, draw_polyhedron
@@ -102,7 +102,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             friction=friction)
         if prev_right_foot is not None:
             com_target_pos = left_foot.p + [0., 0., JVRC1.leg_length]
-            com_target = Point(com_target_pos)
+            com_target = PointMass(com_target_pos, robot.mass)
             com_target.hide()
             dsl_stance = Stance(
                 com_target, left_foot=left_foot, right_foot=prev_right_foot)
@@ -119,13 +119,13 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         if init_com_offset is not None:
             com_target_pos += init_com_offset
             init_com_offset = None
-        com_target = Point(com_target_pos)
+        com_target = PointMass(com_target_pos, robot.mass)
         com_target.hide()
         dsr_stance = Stance(
-            com=com_target, left_foot=left_foot, right_foot=right_foot)
+            com_target, left_foot=left_foot, right_foot=right_foot)
         dsr_stance.label = 'DS-R'
         dsr_stance.duration = ds_duration
-        ssr_stance = Stance(com=com_target, right_foot=right_foot)
+        ssr_stance = Stance(com_target, right_foot=right_foot)
         ssr_stance.label = 'SS-R'
         ssr_stance.duration = ss_duration
         dsr_stance.compute_static_equilibrium_polygon()
@@ -134,7 +134,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         stances.append(ssr_stance)
         prev_right_foot = right_foot
     com_target_pos = first_left_foot.p + [0., 0., JVRC1.leg_length]
-    com_target = Point(com_target_pos)
+    com_target = PointMass(com_target_pos, robot.mass)
     com_target.hide()
     dsl_stance = Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot)
@@ -455,21 +455,21 @@ class COMTube(object):
 
         if len(self.primal_vrep) == 1:
             dual_vertices = self.start_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[0])
+                com_vertices=self.primal_vrep[0])
             self.dual_vrep = [dual_vertices]
             return
         # now, len(self.primal_vrep) == 2
         ds_then_ss = len(self.primal_vrep[0]) > 1
         if ds_then_ss:
             ds_vertices_2d = self.start_stance.compute_pendular_accel_cone(
-                com=self.full_vrep, reduced=True)
+                com_vertices=self.full_vrep, reduced=True)
             ss_vertices_2d = self.next_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[1], reduced=True)
+                com_vertices=self.primal_vrep[1], reduced=True)
         else:  # SS, then DS
             ss_vertices_2d = self.start_stance.compute_pendular_accel_cone(
-                com=self.primal_vrep[0], reduced=True)
+                com_vertices=self.primal_vrep[0], reduced=True)
             ds_vertices_2d = self.next_stance.compute_pendular_accel_cone(
-                com=self.full_vrep, reduced=True)
+                com_vertices=self.full_vrep, reduced=True)
         ss_vertices_2d = intersect_polygons(ds_vertices_2d, ss_vertices_2d)
         ds_cone = expand_reduced_pendular_cone(ds_vertices_2d)
         ss_cone = expand_reduced_pendular_cone(ss_vertices_2d)

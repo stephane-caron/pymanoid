@@ -19,14 +19,11 @@
 
 from numpy import array, cross, diag, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
-from scipy.spatial.qhull import QhullError
 
 from body import Box
-from geometry import compute_cone_face_matrix
-from geometry import compute_polygon_hull
+from geometry import compute_cone_face_matrix, compute_polygon_hull
 from geometry import project_polytope
 from optim import solve_qp
-from sim import gravity
 from transformations import crossmat
 
 
@@ -290,66 +287,6 @@ class ContactSet(object):
         """
         return hstack([ct.compute_grasp_matrix(p) for ct in self.contacts])
 
-    def compute_pendular_accel_cone(self, com, zdd_max=None, reduced=False):
-        """
-        Compute the pendular COM acceleration cone for a given COM position.
-
-        The pendular cone is the reduction of the Contact Wrench Cone when the
-        angular momentum at the COM is zero.
-
-        Parameters
-        ----------
-        com : array, shape=(3,), or list of such arrays
-            COM position, or list of COM vertices.
-        zdd_max : scalar, optional
-            Maximum vertical acceleration in the output cone.
-        reduced : bool, optional
-            If ``True``, returns the reduced 2D form rather than a 3D cone.
-
-        Returns
-        -------
-        vertices : list of (3,) arrays
-            List of 3D vertices of the (truncated) COM acceleration cone, or of
-            the 2D vertices of the reduced form if ``reduced`` is ``True``.
-
-        Notes
-        -----
-        The method is based on a rewriting of the CWC formula, followed by a 2D
-        convex hull on dual vertices. The algorithm is described in [Caron16]_.
-
-        When ``com`` is a list of vertices, the returned cone corresponds to COM
-        accelerations that are feasible from *all* COM located inside the
-        polytope. See [Caron16]_ for details on this conservative criterion.
-        """
-        def expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
-            g = -gravity[2]  # gravity constant (positive)
-            zdd = +g if zdd_max is None else zdd_max
-            vertices_at_zdd = [
-                array([a * (g + zdd), b * (g + zdd), zdd])
-                for (a, b) in reduced_hull]
-            return [gravity] + vertices_at_zdd
-
-        com_vertices = [com] if type(com) is not list else com
-        CWC_O = self.compute_wrench_inequalities([0., 0., 0.])
-        B_list, c_list = [], []
-        for (i, v) in enumerate(com_vertices):
-            B = CWC_O[:, :3] + cross(CWC_O[:, 3:], v)
-            c = dot(B, gravity)
-            B_list.append(B)
-            c_list.append(c)
-        B = vstack(B_list)
-        c = hstack(c_list)
-        try:
-            g = -gravity[2]  # gravity constant (positive)
-            B_2d = hstack([B[:, j].reshape((B.shape[0], 1)) for j in [0, 1]])
-            sigma = c / g  # see Equation (30) in [CK16]
-            reduced_hull = compute_polygon_hull(B_2d, sigma)
-            if reduced:
-                return reduced_hull
-            return expand_reduced_pendular_cone(reduced_hull, zdd_max)
-        except QhullError:
-            raise Exception("Cannot compute 2D polar for acceleration cone")
-
     def compute_static_equilibrium_polygon(self, method='hull'):
         """
         Compute the static-equilibrium polygon of the center of mass.
@@ -447,74 +384,6 @@ class ContactSet(object):
         S = hstack(span_blocks)
         assert S.shape == (6, 16 * self.nb_contacts)
         return S
-
-    def compute_zmp_support_area(self, com, plane, method='bretl'):
-        """
-        Compute the (pendular) ZMP support area for a given COM position.
-
-
-        Parameters
-        ----------
-        com : array, shape=(3,)
-            COM position.
-        plane : array, shape=(3,)
-            Origin of the virtual plane.
-        method : string, default='bretl'
-            Choice between ``"bretl"`` or ``"cdd"``.
-
-        Returns
-        -------
-        vertices : list of arrays
-            List of vertices of the ZMP support area.
-
-        Notes
-        -----
-        The method 'bretl' is adapted from in [Bretl08]_ where the
-        static-equilibrium polygon was introduced. The method 'cdd' corresponds
-        to the double-description approach described in [Caron17z]_. See the
-        Appendix from [Caron16]_ for a performance comparison.
-        """
-        z_com, z_zmp = com[2], plane[2]
-        crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
-        G = self.compute_grasp_matrix([0, 0, 0])
-        F = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
-        mass = 42.  # [kg]
-        # mass has no effect on the output polygon, c.f. Section IV.C in
-        # <https://hal.archives-ouvertes.fr/hal-01349880>
-        B = vstack([
-            hstack([z_com * eye(3), crossmat_n]),
-            hstack([zeros(3), com])])  # \sim hstack([-(cross(n, p_in)), n])])
-        C = 1. / (mass * 9.81) * dot(B, G)
-        d = hstack([com, [0]])
-        E = (z_zmp - z_com) / (mass * 9.81) * G[:2, :]
-        f = array([com[0], com[1]])
-        return project_polytope(
-            proj=(E, f),
-            ineq=(F, zeros(F.shape[0])),
-            eq=(C, d),
-            method=method)
-
-    def find_static_supporting_wrenches(self, com, mass):
-        """
-        Find supporting contact wrenches in static-equilibrium.
-
-        Parameters
-        ----------
-        com : array, shape=(3,)
-            Position of the center of mass.
-        mass : scalar
-            Total mass of the robot in [kg].
-
-        Returns
-        -------
-        support : list of (Contact, array) couples
-            Mapping between each contact `i` in the contact set and a supporting
-            contact wrench :math:`w^i_{C_i}`.
-        """
-        f = array([0., 0., mass * 9.81])
-        tau_G = zeros(3)
-        wrench = hstack([f, tau_G])
-        return self.find_supporting_wrenches(wrench, com)
 
     def find_supporting_wrenches(self, wrench, point, friction_weight=1e-2,
                                  cop_weight=1., yaw_weight=1e-4,
