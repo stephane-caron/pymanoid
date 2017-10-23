@@ -84,7 +84,7 @@ if __name__ == "__main__":
 Check out WrenchConeLib <https://github.com/vsamy/WrenchConeLib> for faster
 computations:
 
-    In [1]: %timeit wcl.CWC(p, [lf_surf, rf_surf]).getHalfSpaces()
+    In [1]: %timeit wcl.WrenchCone(p, [lf_surf, rf_surf]).get_halfspaces()
     100 loops, best of 3: 2.06 ms per loop
 
     In [2]: %timeit stance.compute_wrench_inequalities([0, 0, 0])
