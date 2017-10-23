@@ -70,16 +70,13 @@ if __name__ == "__main__":
         lf_surf = wcl.rectangular_surface(
             robot.sole_shape[0], robot.sole_shape[1], stance.left_foot.p,
             stance.left_foot.R.T, stance.left_foot.friction)
-        print lf_surf.points
         rf_surf = wcl.rectangular_surface(
             robot.sole_shape[0], robot.sole_shape[1], stance.right_foot.p,
             stance.right_foot.R.T, stance.right_foot.friction)
-        print rf_surf.points
         CWC = wcl.WrenchCone(p, [lf_surf, rf_surf])
         S = CWC.get_rays()
         CWC_wcl = CWC.get_halfspaces()
         print "- has %d lines" % CWC_wcl.shape[0]
-
     except ImportError:
         print """
 =============================================================================
