@@ -45,11 +45,14 @@ class Body(object):
     color : char, optional
         Color code in `Matplotlib convention
         <http://matplotlib.org/api/colors_api.html>`_.
+    visible : bool, optional
+        Visibility in the GUI.
     """
 
     count = 0
 
-    def __init__(self, rave_body, pos=None, rpy=None, pose=None, color=None):
+    def __init__(self, rave_body, pos=None, rpy=None, pose=None, color=None,
+                 visible=True):
         self.color = color
         self.rave = rave_body
         if not rave_body.GetName():
@@ -63,6 +66,8 @@ class Body(object):
             self.set_pose(pose)
         if color is not None:
             self.set_color(color)
+        if not visible:
+            self.hide()
 
     def __str__(self):
         return "pymanoid.Body('%s')" % self.name
@@ -460,6 +465,8 @@ class Manipulator(Body):
     color : char, optional
         Color code in `Matplotlib convention
         <http://matplotlib.org/api/colors_api.html>`_.
+    visible : bool, optional
+        Visibility in the GUI.
     shape : (scalar, scalar), optional
         Dimensions (half-length, half-width) of a contact patch in [m].
     friction : scalar, optional
@@ -467,9 +474,10 @@ class Manipulator(Body):
     """
 
     def __init__(self, manipulator, pos=None, rpy=None, pose=None,
-                 color=None, shape=None, friction=None):
+                 color=None, visible=True, shape=None, friction=None):
         super(Manipulator, self).__init__(
-            manipulator, color=color, pos=pos, rpy=rpy, pose=pose)
+            manipulator, pos=pos, rpy=rpy, pose=pose, color=color,
+            visible=visible)
         self.end_effector = manipulator.GetEndEffector()
         self.friction = friction
         self.shape = shape
@@ -512,19 +520,21 @@ class Box(Body):
         Initial pose in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
+    visible : bool, optional
+        Visibility in the GUI.
     dZ : scalar, optional
         Shift in box normal coordinates used to make Contact slabs.
     """
 
     def __init__(self, X, Y, Z, pos=None, rpy=None, pose=None, color='r',
-                 dZ=0.):
+                 visible=True, dZ=0.):
         aabb = [0., 0., dZ, X, Y, Z]
         env = get_openrave_env()
         with env:
             box = openravepy.RaveCreateKinBody(env, '')
             box.InitFromBoxes(array([array(aabb)]), True)
             super(Box, self).__init__(
-                box, pos=pos, rpy=rpy, pose=pose, color=color)
+                box, pos=pos, rpy=rpy, pose=pose, color=color, visible=visible)
             env.Add(box, True)
 
 
@@ -545,11 +555,15 @@ class Cube(Box):
         Initial pose in the world frame.
     color : char
         Color letter in ['r', 'g', 'b'].
+    visible : bool, optional
+        Visibility in the GUI.
     """
 
-    def __init__(self, size, pos=None, rpy=None, pose=None, color='r'):
+    def __init__(self, size, pos=None, rpy=None, pose=None, color='r',
+                 visible=True):
         super(Cube, self).__init__(
-            size, size, size, pos=pos, rpy=rpy, color=color, pose=pose)
+            size, size, size, pos=pos, rpy=rpy, pose=pose, color=color,
+            visible=visible)
 
 
 class Point(Cube):
@@ -567,10 +581,12 @@ class Point(Cube):
         Half-length of a side of the cube in [m].
     color : char
         Color letter in ['r', 'g', 'b'].
+    visible : bool, optional
+        Visibility in the GUI.
     """
 
-    def __init__(self, pos, vel=None, size=0.01, color='r'):
-        super(Point, self).__init__(size, pos=pos, color=color)
+    def __init__(self, pos, vel=None, size=0.01, color='r', visible=True):
+        super(Point, self).__init__(size, pos=pos, color=color, visible=visible)
         self.__pd = zeros(3) if vel is None else array(vel)
 
     @property
@@ -642,18 +658,22 @@ class PointMass(Point):
 
     Parameters
     ----------
-    pos : array, shape=(3,)
+    pos : (3,) array
         Initial position in the world frame.
     mass : scalar
         Total mass in [kg].
-    vel : array, shape=(3,), optional
+    vel : (3,) array, optional
         Initial velocity in the world frame.
-    color : char
+    color : char, optional
         Color letter in ['r', 'g', 'b'].
+    visible : bool, optional
+        Visibility in the GUI.
     """
-    def __init__(self, pos, mass, vel=None, color='r'):
+
+    def __init__(self, pos, mass, vel=None, color='r', visible=True):
         size = max(5e-3, 6e-4 * mass)
-        super(PointMass, self).__init__(pos, vel=vel, size=size, color=color)
+        super(PointMass, self).__init__(
+            pos, vel=vel, size=size, color=color, visible=visible)
         self.mass = mass
 
     @property

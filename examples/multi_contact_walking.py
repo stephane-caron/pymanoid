@@ -102,8 +102,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
             friction=friction)
         if prev_right_foot is not None:
             com_target_pos = left_foot.p + [0., 0., JVRC1.leg_length]
-            com_target = PointMass(com_target_pos, robot.mass)
-            com_target.hide()
+            com_target = PointMass(com_target_pos, robot.mass, visible=False)
             dsl_stance = Stance(
                 com_target, left_foot=left_foot, right_foot=prev_right_foot)
             dsl_stance.label = 'DS-L'
@@ -119,8 +118,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         if init_com_offset is not None:
             com_target_pos += init_com_offset
             init_com_offset = None
-        com_target = PointMass(com_target_pos, robot.mass)
-        com_target.hide()
+        com_target = PointMass(com_target_pos, robot.mass, visible=False)
         dsr_stance = Stance(
             com_target, left_foot=left_foot, right_foot=right_foot)
         dsr_stance.label = 'DS-R'
@@ -134,8 +132,7 @@ def generate_staircase(radius, angular_step, height, roughness, friction,
         stances.append(ssr_stance)
         prev_right_foot = right_foot
     com_target_pos = first_left_foot.p + [0., 0., JVRC1.leg_length]
-    com_target = PointMass(com_target_pos, robot.mass)
-    com_target.hide()
+    com_target = PointMass(com_target_pos, robot.mass, visible=False)
     dsl_stance = Stance(
         com_target, left_foot=first_left_foot, right_foot=prev_right_foot)
     dsl_stance.label = 'DS-L'
