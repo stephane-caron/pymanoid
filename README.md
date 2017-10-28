@@ -6,19 +6,22 @@ Python library for humanoid robotics based on
 - Whole-body inverse kinematics (IK) based on the [weight-prioritized
   multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
 - Contact-stability areas and volumes: [multi-contact ZMP
-  support areas](https://scaron.info/research/tro-2016.html), [COM acceleration
+  support areas](https://scaron.info/research/tro-2016.html), [CoM acceleration
   cones](https://scaron.info/research/humanoids-2016.html), etc.
 - Linear Model Predictive Control (MPC) and state machines for locomotion
-- Jacobians and Hessians for center of mass (COM) and angular momentum
+- Jacobians and Hessians for center of mass (CoM) and angular momentum
 - Types and algorithms to manipulate polytopes and polyhedral cones
 - Interface to linear programming (LP) and quadratic programming (QP) solvers
 
-<img src="doc/source/images/logo.png" width="350" align="right" />
-
 ## Use cases
 
+<img src="doc/source/images/logo.png" width="350" align="right" />
+
+- [Dynamic walking over rough terrains](https://scaron.info/research/iros-2017.html)
+  based on nonlinear model predictive control of the floating-base inverted
+  pendulum model
 - [Multi-contact Walking Pattern Generation](https://scaron.info/research/humanoids-2016.html)
-  based on Model-Preview Control of the 3D acceleration of the center of mass
+  based on linear model predictive control of 3D CoM accelerations
 - [Generalized ZMP support areas](https://scaron.info/research/tro-2016.html)
   for locomotion in multi-contact scenarios, including e.g. hand contacts
 - [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
