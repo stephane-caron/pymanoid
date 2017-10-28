@@ -20,12 +20,12 @@ Python library for humanoid robotics based on
 - [Dynamic walking over rough terrains](https://scaron.info/research/iros-2017.html)
   based on nonlinear model predictive control of the floating-base inverted
   pendulum model
-- [Multi-contact Walking Pattern Generation](https://scaron.info/research/humanoids-2016.html)
+- [Multi-contact walking pattern generation](https://scaron.info/research/humanoids-2016.html)
   based on linear model predictive control of 3D CoM accelerations
 - [Generalized ZMP support areas](https://scaron.info/research/tro-2016.html)
-  for locomotion in multi-contact scenarios, including e.g. hand contacts
-- [Humanoid Stair Climbing](https://scaron.info/research/ijhr-2016.html)
-  demonstrated on the real HRP-4 robot
+  for locomotion in multi-contact scenarios (including hand contacts)
+- [Humanoid stair climbing](https://scaron.info/research/ijhr-2016.html)
+  demonstrated on a Kawada HRP-4 robot
 
 ## Getting started
 
