@@ -1,18 +1,18 @@
 **********************
-Numerical Optimization
+Numerical optimization
 **********************
 
-Linear Programming
+Linear programming
 ==================
 
 .. autofunction:: pymanoid.optim.solve_lp
 
-Quadratic Programming
+Quadratic programming
 =====================
 
 .. autofunction:: pymanoid.optim.solve_qp
 
-Nonlinear Programming
+Nonlinear programming
 =====================
 
 .. autoclass:: pymanoid.optim.NonlinearProgram

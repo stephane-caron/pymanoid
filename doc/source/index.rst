@@ -14,7 +14,7 @@ pymanoid documentation
 .. toctree::
 
     inverse-kinematics.rst
-    contact-physics.rst
+    contact.rst
     model-predictive-control.rst
     numerical-optimization.rst
     polyhedral-computations.rst

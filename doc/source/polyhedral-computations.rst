@@ -1,5 +1,5 @@
 *******************
-Polyhedral Geometry
+Polyhedral geometry
 *******************
 
 .. automodule:: pymanoid.geometry

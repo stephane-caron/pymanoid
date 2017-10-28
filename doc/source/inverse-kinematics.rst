@@ -1,5 +1,5 @@
 ******************
-Inverse Kinematics
+Inverse kinematics
 ******************
 
 IK Solver

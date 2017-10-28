@@ -1,8 +1,8 @@
-***************
-Contact physics
-***************
+*******
+Contact
+*******
 
-Single contact
+Single-contact
 ==============
 
 .. autoclass:: pymanoid.contact.Contact
