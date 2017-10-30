@@ -103,6 +103,11 @@ class NonlinearProgram(object):
     Output verbosity level between 0 and 12.
     """
 
+    ipopt_print_time = False  # default: True
+    """
+    Print detailed solver computation times.
+    """
+
     ipopt_warm_start_init_point = 'yes'  # default: 'no'
     """
     Indicates whether the optimization should use warm start initialization,
@@ -326,7 +331,9 @@ class NonlinearProgram(object):
                 'ipopt.nlp_upper_bound_inf': self.ipopt_nlp_upper_bound_inf,
                 'ipopt.print_level': self.ipopt_print_level,
                 'ipopt.warm_start_init_point': self.ipopt_warm_start_init_point,
-                'verbose': False
+                'print_time': self.ipopt_print_time,
+                'verbose': False,
+                'verbose_init': False,
             })
         self.solver = nlpsol('solver', self.solver_name, problem, options)
 
