@@ -446,7 +446,7 @@ class IKSolver(Process):
         To speed up convergence, this function will relax DOF velocity limits at
         first, then progressively restore them. This behavior is set by the two
         parameters `self.qd_relax_fact` (relaxation factor) and
-        `self.qd_relax_steps` (number of relaxation paliers). You can disable it
+        `self.qd_relax_steps` (number of relaxation steps). You can disable it
         by setting `self.qd_relax_fact = 1.`.
         """
         t0 = time()
