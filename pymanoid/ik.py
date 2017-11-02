@@ -86,6 +86,8 @@ class IKSolver(Process):
         self.default_weights = {}
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
+        self.qd_relax_fact = 10
+        self.qd_relax_steps = 2
         self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
@@ -430,25 +432,36 @@ class IKSolver(Process):
 
         Returns
         -------
-        itnum : int
+        nb_it : int
             Number of solver iterations.
         cost : scalar
             Final value of the cost function.
 
-        Note
-        ----
+        Notes
+        -----
         Good values of `dt` depend on the weights of the IK tasks. Small values
         make convergence slower, while big values make the optimization unstable
         (in which case there may be no convergence at all).
+
+        To speed up convergence, this function will relax DOF velocity limits at
+        first, then progressively restore them. This behavior is set by the two
+        parameters `self.qd_relax_fact` (relaxation factor) and
+        `self.qd_relax_steps` (number of relaxation paliers). You can disable it
+        by setting `self.qd_relax_fact = 1.`.
         """
         t0 = time()
         if self.verbosity >= 2:
             print "Solving IK with max_it=%d, conv_stop=%e, impr_stop=%e" % (
                 max_it, cost_stop, impr_stop)
         cost = 100000.
-        self.qd_max *= 1000
-        self.qd_min *= 1000
+        self.qd_max *= self.qd_relax_fact ** self.qd_relax_steps
+        self.qd_min *= self.qd_relax_fact ** self.qd_relax_steps
+        N = self.qd_relax_steps + 1
+        qd_stepdowns = [max_it * i / N for i in xrange(1, N)]
         for itnum in xrange(max_it):
+            if itnum in qd_stepdowns:
+                self.qd_max /= self.qd_relax_fact
+                self.qd_min /= self.qd_relax_fact
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
@@ -456,14 +469,12 @@ class IKSolver(Process):
                 print "%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr)
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
-            self.step(dt, unsafe=True)
+            self.step(dt, unsafe=(itnum < max_it / 2))
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
-        self.qd_max /= 1000
-        self.qd_min /= 1000
         if self.verbosity >= 1:
             print "IK solved in %d iterations (%.1f ms) with cost %e" % (
                 itnum, 1000 * (time() - t0), cost)
-        return itnum, cost
+        return 1 + itnum, cost
 
     def on_tick(self, sim):
         """
