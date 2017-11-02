@@ -40,25 +40,35 @@ class InvertedPendulum(Process):
         Initial velocity in the world frame.
     contact : pymanoid.Contact
         Contact surface specification.
+    visible : bool, optional
+        Draw the pendulum model in GUI?
     """
 
-    def __init__(self, mass, pos, vel, contact):
+    def __init__(self, mass, pos, vel, contact, visible=True):
         super(InvertedPendulum, self).__init__()
         com = PointMass(pos, mass, vel)
+        if not visible:
+            com.hide()
         self.com = com
         self.contact = contact
         self.cop = array([0., 0., 0.])
         self.draw_parabola = False
         self.handle = None
-        self.hidden = False
+        self.is_visible = visible
         self.lambda_ = 9.81 * (com.z - contact.z)
 
-    def copy(self):
+    def copy(self, visible=True):
         """
         Copy constructor.
+
+        Parameters
+        ----------
+        visible : bool, optional
+            Should the copy be visible?
         """
         return InvertedPendulum(
-            self.com.mass, self.com.p, self.com.pd, self.contact)
+            self.com.mass, self.com.p, self.com.pd, self.contact,
+            visible=visible)
 
     def hide(self):
         """
@@ -67,7 +77,7 @@ class InvertedPendulum(Process):
         self.com.hide()
         if self.handle is not None:
             self.handle.Close()
-        self.hidden = True
+        self.is_visible = False
 
     def set_cop(self, cop):
         """
@@ -129,6 +139,6 @@ class InvertedPendulum(Process):
             Simulation instance.
         """
         self.integrate(sim.dt)
-        if not self.hidden:
+        if self.is_visible:
             self.handle = draw_line(
                 self.com.p, self.contact.p + self.cop, linewidth=4, color='g')
