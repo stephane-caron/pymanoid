@@ -123,6 +123,11 @@ class Simulation(object):
         self.window_id = None
 
     @property
+    def camera_transform(self):
+        """Camera transform in the world frame."""
+        return self.viewer.GetCameraTransform()
+
+    @property
     def time(self):
         return self.nb_steps * self.dt
 
@@ -248,9 +253,9 @@ class Simulation(object):
         self.set_camera_back(x=-3, y=0, z=0.7)
 
     def set_camera_back(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0,  0, 1, x],
             [-1, 0, 0, y],
@@ -258,9 +263,9 @@ class Simulation(object):
             [0,  0, 0, 1.]])
 
     def set_camera_bottom(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0, -1, 0, x],
             [1,  0, 0, y],
@@ -268,9 +273,9 @@ class Simulation(object):
             [0,  0, 0, 1]])
 
     def set_camera_front(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0,  0, -1, x],
             [1,  0,  0, y],
@@ -278,9 +283,9 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def set_camera_left(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [-1, 0,  0, x],
             [0,  0, -1, y],
@@ -288,9 +293,9 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def set_camera_right(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [1,  0,  0, x],
             [0,  0, 1, y],
@@ -298,9 +303,9 @@ class Simulation(object):
             [0,  0, 0, 1.]])
 
     def set_camera_top(self, x=None, y=None, z=None):
-        x = self.viewer.GetCameraTransform()[0, 3] if x is None else x
-        y = self.viewer.GetCameraTransform()[1, 3] if y is None else y
-        z = self.viewer.GetCameraTransform()[2, 3] if z is None else z
+        x = self.camera_transform[0, 3] if x is None else x
+        y = self.camera_transform[1, 3] if y is None else y
+        z = self.camera_transform[2, 3] if z is None else z
         self.viewer.SetCamera([
             [0, -1,  0, x],
             [-1, 0,  0, y],
@@ -308,7 +313,7 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def move_camera_to(self, T, duration=0., dt=3e-2):
-        T_i = self.viewer.GetCameraTransform()
+        T_i = self.camera_transform
         for t in arange(0., duration, dt):
             self.viewer.SetCamera((1. - t) * T_i + t * T)
             sleep(dt)
