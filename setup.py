@@ -26,7 +26,7 @@ setup(
     description="Python library for humanoid robotics using OpenRAVE",
     url="https://github.com/stephane-caron/pymanoid",
     author="Stéphane Caron",
-    author_email="stephane.caron@normalesup.org",
+    author_email="stephane.caron@lirmm.fr",
     license="GPL",
     classifiers=[
         'Development Status :: 4 - Beta',
