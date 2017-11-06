@@ -40,11 +40,16 @@ class InvertedPendulum(Process):
         Initial velocity in the world frame.
     contact : pymanoid.Contact
         Contact surface specification.
+    lambda_min : scalar
+        Minimum virtual leg stiffness.
+    lambda_max : scalar
+        Maximum virtual leg stiffness.
     visible : bool, optional
         Draw the pendulum model in GUI?
     """
 
-    def __init__(self, mass, pos, vel, contact, visible=True):
+    def __init__(self, mass, pos, vel, contact, lambda_min=None,
+                 lambda_max=None, visible=True):
         super(InvertedPendulum, self).__init__()
         com = PointMass(pos, mass, vel)
         if not visible:
@@ -56,6 +61,8 @@ class InvertedPendulum(Process):
         self.handle = None
         self.is_visible = visible
         self.lambda_ = 9.81 * (com.z - contact.z)
+        self.lambda_max = lambda_max
+        self.lambda_min = lambda_min
 
     def copy(self, visible=True):
         """
@@ -86,8 +93,8 @@ class InvertedPendulum(Process):
         Parameters
         ----------
         cop : (3,) array
-            CoP location in the *local* inertial frame, with origin at the
-            contact point and axes parallel to the world frame.
+            CoP location in an inertial frame with origin at the contact point
+            and axes parallel to those of the world frame.
         """
         if __debug__:
             cop_check = dot(self.contact.R.T, cop)
