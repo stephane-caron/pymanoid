@@ -676,6 +676,20 @@ class PointMass(Point):
             pos, vel=vel, size=size, color=color, visible=visible)
         self.mass = mass
 
+    def copy(self, color='r', visible=True):
+        """
+        Copy constructor.
+
+        Parameters
+        ----------
+        color : char, optional
+            Color of the copy, in ['r', 'g', 'b'].
+        visible : bool, optional
+            Should the copy be visible?
+        """
+        return PointMass(
+            self.p, self.mass, self.pd, color=color, visible=visible)
+
     @property
     def momentum(self):
         """Linear momentum in the world frame."""
