@@ -31,7 +31,8 @@ from misc import Statistics
 
 
 env = None  # global OpenRAVE environment
-gravity = array([0, 0, -9.80665])  # gravity in world frame (ISO 80000-3)
+gravity_const = 9.80665  # ISO 80000-3
+gravity = array([0, 0, -gravity_const])  # gravity vector in the world frame
 
 
 def get_openrave_env():
