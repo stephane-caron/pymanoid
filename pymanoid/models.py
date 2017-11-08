@@ -84,6 +84,17 @@ class InvertedPendulum(Process):
             self.handle.Close()
         self.is_visible = False
 
+    def set_contact(self, contact):
+        """
+        Update the contact the pendulum rests upon.
+
+        Parameters
+        ----------
+        contact : pymanoid.Contact
+            New contact where CoPs can be realized.
+        """
+        self.contact = contact
+
     def set_cop(self, cop):
         """
         Update the CoP location on the contact surface.
