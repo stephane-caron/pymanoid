@@ -21,7 +21,7 @@ from numpy import array, pi
 
 from pymanoid.body import Manipulator
 from pymanoid.robot import Humanoid
-from pymanoid.tasks import DOFTask
+from pymanoid.tasks import DOFTask, MinCAMTask
 
 
 class HRP4(Humanoid):
@@ -176,11 +176,6 @@ class HRP4(Humanoid):
             self.rave.GetManipulator("RightHandCenter"), shape=self.palm_shape,
             friction=0.8)
 
-    def add_upright_chest_task(self, weight):
-        self.ik.add_task(DOFTask(self, self.ROT_P, 0., weight))
-        self.ik.add_task(DOFTask(self, self.CHEST_P, 0.2, weight))
-        self.ik.add_task(DOFTask(self, self.CHEST_Y, 0., weight))
-
     def add_shoulder_abduction_task(self, weight):
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_R, -0.4, weight))
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_R, +0.4, weight))
@@ -196,6 +191,36 @@ class HRP4(Humanoid):
     def add_shoulder_neutral_pitch_task(self, weight):
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, 0., weight))
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, 0., weight))
+
+    def add_upright_chest_task(self, weight):
+        self.ik.add_task(DOFTask(self, self.ROT_P, 0., weight))
+        self.ik.add_task(DOFTask(self, self.CHEST_P, 0.2, weight))
+        self.ik.add_task(DOFTask(self, self.CHEST_Y, 0., weight))
+
+    def setup_ik_for_walking(self, com_target):
+        """
+        Prepare inverse-kinematic tracking for locomotion.
+
+        Parameters
+        ----------
+        com_target : pymanoid.PointMass
+            Target for the IK task on the center of mass.
+        """
+        self.ik.tasks['COM'].update_target(com_target)
+        self.ik.add_task(MinCAMTask(self))
+        self.add_upright_chest_task(weight=1e-4)
+        self.add_shoulder_neutral_pitch_task(weight=1e-4)
+        self.ik.set_task_weights({
+            self.left_foot.name:  1.,
+            self.right_foot.name: 1.,
+            'COM': 1e-2,
+            'MIN_CAM': 1e-4,
+            'ROT_P': 1e-4,
+            'CHEST_P': 1e-4,
+            'CHEST_Y': 1e-4,
+            'L_SHOULDER_P': 1e-5,
+            'R_SHOULDER_P': 1e-5,
+        })
 
     def suntan(self, amount=0.3):
         """

@@ -155,6 +155,18 @@ class IKSolver(Process):
                     warn("unknown key '%s' for IK default weights" % key)
         self.default_weights.update(default_weights)
 
+    def set_task_weights(self, weights):
+        """
+        Set cost-function weights for existing tasks.
+
+        Parameters
+        ----------
+        weights : string -> double dictionary
+            Dictionary mapping task labels to default weight values.
+        """
+        for (name, weight) in weights.iteritems():
+            self.tasks[name].weight = weight
+
     def __fill_task_gain(self, task):
         if task.name in self.default_gains:
             task.gain = self.default_gains[task.name]
