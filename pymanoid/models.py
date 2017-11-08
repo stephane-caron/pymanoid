@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cosh, dot, sinh, sqrt
+from numpy import cosh, dot, sinh, sqrt
 
 from body import PointMass
 from gui import draw_line
@@ -56,7 +56,7 @@ class InvertedPendulum(Process):
             com.hide()
         self.com = com
         self.contact = contact
-        self.cop = array([0., 0., 0.])
+        self.cop = contact.p
         self.draw_parabola = False
         self.handle = None
         self.is_visible = visible
@@ -78,9 +78,7 @@ class InvertedPendulum(Process):
             visible=visible)
 
     def hide(self):
-        """
-        Hide the pendulum in the GUI.
-        """
+        """Hide the pendulum in the GUI."""
         self.com.hide()
         if self.handle is not None:
             self.handle.Close()
@@ -93,14 +91,16 @@ class InvertedPendulum(Process):
         Parameters
         ----------
         cop : (3,) array
-            CoP location in an inertial frame with origin at the contact point
-            and axes parallel to those of the world frame.
+            New CoP location in the world frame.
         """
         if __debug__:
-            cop_check = dot(self.contact.R.T, cop)
-            if abs(cop_check[0]) > 1.05 * self.contact.shape[0] \
-                    or abs(cop_check[1]) > 1.05 * self.contact.shape[1]:
-                warn("CoP outside of contact area")
+            cop_check = dot(self.contact.R.T, cop - self.contact.p)
+            if abs(cop_check[0]) > 1.05 * self.contact.shape[0]:
+                warn("CoP crosses contact area along sagittal axis")
+            if abs(cop_check[1]) > 1.05 * self.contact.shape[1]:
+                warn("CoP crosses contact area along lateral axis")
+            if abs(cop_check[2]) > 0.05:
+                warn("CoP does not lie on contact area")
         self.cop = cop
 
     def set_lambda(self, lambda_):
@@ -123,14 +123,11 @@ class InvertedPendulum(Process):
         duration : scalar
             Duration of forward integration.
         """
-        if __debug__ and abs(dot(self.contact.n, self.cop)) > 1e-10:
-            self.cop = self.cop - dot(self.cop, self.contact.n) * self.contact.n
-            warn("CoP was offset from contact surface")
         omega = sqrt(self.lambda_)
         p0 = self.com.p
         pd0 = self.com.pd
         ch, sh = cosh(omega * duration), sinh(omega * duration)
-        vrp = self.contact.p + self.cop - gravity / self.lambda_
+        vrp = self.cop - gravity / self.lambda_
         p = p0 * ch + pd0 * sh / omega - vrp * (ch - 1.)
         pd = pd0 * ch + omega * (p0 - vrp) * sh
         self.com.set_pos(p)
@@ -148,4 +145,4 @@ class InvertedPendulum(Process):
         self.integrate(sim.dt)
         if self.is_visible:
             self.handle = draw_line(
-                self.com.p, self.contact.p + self.cop, linewidth=4, color='g')
+                self.com.p, self.cop, linewidth=4, color='g')
