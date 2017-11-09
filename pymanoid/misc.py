@@ -148,12 +148,12 @@ class PoseWrap(object):
 
 def error(msg):
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "\033[1m\033[0;31m%s pymanoid [ERROR] %s\033[0;0m" % (date, msg)
+    print "%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, date, msg, 0x1B)
 
 
 def info(msg):
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "\033[1m\033[0;32m%s pymanoid [INFO] %s\033[0;0m" % (date, msg)
+    print "%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, date, msg, 0x1B)
 
 
 def is_positive_combination(b, A):
@@ -364,4 +364,4 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
 
 def warn(msg):
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "\033[1m\033[1;33m%s pymanoid [WARN] %s\033[0;0m" % (date, msg)
+    print "%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, date, msg, 0x1B)
