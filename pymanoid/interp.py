@@ -25,6 +25,33 @@ from misc import NDPolynomial
 from transformations import rotation_matrix_from_quat
 
 
+def interpolate_cubic_bezier(p0, p1, p2, p3):
+    """
+    Compute the cubic Bezier curve corresponding to four control points.
+
+    Parameters
+    ----------
+    p0 : (3,) array
+        First control point.
+    p1 : (3,) array
+        Second control point.
+    p2 : (3,) array
+        Third control point.
+    p3 : (3,) array
+        Fourth control point.
+
+    Returns
+    -------
+    P : NDPolynomial
+        Polynomial function of the Bezier curve.
+    """
+    c3 = p3 - 3 * (p2 - p1) - p0
+    c2 = 3 * (p2 - 2 * p1 + p0)
+    c1 = 3 * (p1 - p0)
+    c0 = p0
+    return NDPolynomial([c0, c1, c2, c3])
+
+
 def interpolate_cubic_hermite(p0, v0, p1, v1):
     """
     Compute the third-order polynomial of the Hermite curve connecting
@@ -45,12 +72,13 @@ def interpolate_cubic_hermite(p0, v0, p1, v1):
     -------
     P : NDPolynomial
         Polynomial function of the Hermite curve.
+
     """
-    C3 = 2 * p0 - 2 * p1 + v0 + v1
-    C2 = -3 * p0 + 3 * p1 - 2 * v0 - v1
-    C1 = v0
-    C0 = p0
-    return NDPolynomial([C0, C1, C2, C3])
+    c3 = 2 * p0 - 2 * p1 + v0 + v1
+    c2 = -3 * p0 + 3 * p1 - 2 * v0 - v1
+    c1 = v0
+    c0 = p0
+    return NDPolynomial([c0, c1, c2, c3])
 
 
 def interpolate_pose_linear(pose0, pose1, x):

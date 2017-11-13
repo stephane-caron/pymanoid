@@ -31,7 +31,8 @@ class NDPolynomial(object):
     Parameters
     ----------
     coeffs : list of arrays
-        Coefficients of the polynomial.
+        Coefficients of the polynomial from weakest to strongest.
+
     """
 
     def __init__(self, coeffs):
@@ -40,9 +41,24 @@ class NDPolynomial(object):
 
     @property
     def degree(self):
+        """Degree of the polynomial."""
         return len(self.coeffs) - 1
 
     def __call__(self, x):
+        """
+        Evaluate the polynomial at `x`.
+
+        Parameters
+        ----------
+        x : scalar
+            Value to evaluate the polynomial at.
+
+        Returns
+        -------
+        P(x) : array
+            Value of the polynomial at this point.
+
+        """
         value = zeros(self.shape)
         for coeff in reversed(self.coeffs):
             value *= x
