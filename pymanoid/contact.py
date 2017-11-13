@@ -452,6 +452,27 @@ class ContactFeed(object):
         if path is not None:
             self.load(path)
 
+    @property
+    def first(self):
+        return self.contacts[0]
+
+    @property
+    def next(self):
+        return self.contacts[self.next_contact_id]
+
+    @property
+    def last(self):
+        return self.contacts[-1]
+
+    def pop(self):
+        i = self.next_contact_id
+        self.next_contact_id += 1
+        if self.next_contact_id >= len(self.contacts):
+            if not self.cyclic:
+                return None
+            self.next_contact_id = 0
+        return self.contacts[i]
+
     def load(self, path):
         import simplejson
         assert path.endswith('.json')
@@ -463,15 +484,6 @@ class ContactFeed(object):
                 pos=d['pos'],
                 rpy=d['rpy'],
                 friction=d['friction']))
-
-    def pop(self):
-        i = self.next_contact_id
-        self.next_contact_id += 1
-        if self.next_contact_id >= len(self.contacts):
-            if not self.cyclic:
-                return None
-            self.next_contact_id = 0
-        return self.contacts[i]
 
     def save(self, path):
         import simplejson
