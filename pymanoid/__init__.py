@@ -25,6 +25,9 @@ from body import PointMass
 from contact import Contact
 from contact import ContactFeed
 from contact import ContactSet
+from misc import error
+from misc import info
+from misc import warn
 from robot import Humanoid
 from robot import Robot
 from sim import Process
@@ -48,5 +51,8 @@ __all__ = [
     'Robot',
     'Simulation',
     'Stance',
+    'error',
+    'info',
     'robots',
+    'warn',
 ]
