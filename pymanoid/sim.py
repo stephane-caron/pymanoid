@@ -378,23 +378,19 @@ class Simulation(object):
         self.comp_times[label].add(ctime)
 
     def print_comp_times(self, unit='ms'):
-        total_avg, total_std = 0., 0.
         scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
         for key in sorted(self.comp_times):
             times = self.comp_times[key]
             if times.n < 1:
                 print "%20s: ? %s" % (key, unit)
+                continue
             elif times.n == 1:
                 print "%20s: %.2f %s" % (key, scale * times.avg, unit)
-            else:
-                print "%20s: %.2f +/- %.2f %s " \
-                    "(max: %.2f %s, min: %.2f %s, %d items)" % (
-                        key, scale * times.avg, scale * times.std, unit, scale *
-                        times.x_max, unit, scale * times.x_min, unit, times.n)
-            total_avg += scale * times.avg  # legit
-            total_std += scale * times.std  # worst-case assumption
-        print "%20s  ----------------------------------" % ''
-        print "%20s: %.2f ms +/- %.2f ms" % ("total", total_avg, total_std)
+                continue
+            print "%20s: %.2f +/- %.2f %s " \
+                "(max: %.2f %s, min: %.2f %s, %d items)" % (
+                    key, scale * times.avg, scale * times.std, unit, scale *
+                    times.x_max, unit, scale * times.x_min, unit, times.n)
 
 
 class CameraRecorder(Process):
