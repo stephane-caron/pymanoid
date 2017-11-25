@@ -17,12 +17,11 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import arange, dot, hstack, linspace
+from numpy import hstack, linspace
 from openravepy import InterpolateQuatSlerp as quat_slerp
 
 from gui import draw_trajectory
 from misc import NDPolynomial
-from transformations import rotation_matrix_from_quat
 
 
 def interpolate_cubic_bezier(p0, p1, p2, p3):
@@ -130,58 +129,6 @@ def interpolate_pose_quadratic(pose0, pose1, x):
     pos = x ** 2 * (3 - 2 * x) * (pose1[4:] - pose0[4:]) + pose0[4:]
     quat = quat_slerp(pose0[:4], pose1[:4], x)
     return hstack([quat, pos])
-
-
-def interpolate_uab_hermite(p0, u0, p1, u1):
-    """
-    Interpolate a Hermite path between :math:`p_0` and :math:`p_1` with tangents
-    parallel to :math:`u_0` and :math:`u_1`, respectively. The output path
-    `B(s)` minimizes a relaxation of the uniform acceleration bound:
-
-    .. math::
-
-        \\begin{eqnarray}
-        \\mathrm{minimize} & & M \\\\
-        \\mathrm{subject\\ to} & & \\forall s \\in [0, 1],\\
-            \\|\\ddot{B}(s)\\|^2 \\leq M
-        \\end{eqnarray}
-
-    Parameters
-    ----------
-    p0 : (3,) array
-        Start point.
-    u0 : (3,) array
-        Start tangent.
-    p1 : (3,) array
-        End point.
-    u1 : (3,) array
-        End tangent.
-
-    Returns
-    -------
-    P : numpy.polynomial.Polynomial
-        Polynomial function of the Hermite curve.
-
-    Note
-    ----
-    We also impose that the output tangents share the sign of :math:`t_0` and
-    :math:`t_1`, respectively.
-    """
-    Delta = p1 - p0
-    _Delta_u0 = dot(Delta, u0)
-    _Delta_u1 = dot(Delta, u1)
-    _u0_u0 = dot(u0, u0)
-    _u0_u1 = dot(u0, u1)
-    _u1_u1 = dot(u1, u1)
-    b0 = 6 * (3 * _Delta_u0 * _u1_u1 - 2 * _Delta_u1 * _u0_u1) / (
-        9 * _u0_u0 * _u1_u1 - 4 * _u0_u1 * _u0_u1)
-    if b0 < 0:
-        b0 *= -1
-    b1 = 6 * (-2 * _Delta_u0 * _u0_u1 + 3 * _Delta_u1 * _u0_u0) / (
-        9 * _u0_u0 * _u1_u1 - 4 * _u0_u1 * _u0_u1)
-    if b1 < 0:
-        b1 *= -1
-    return interpolate_cubic_hermite(p0, b0 * u0, p1, b1 * u1)
 
 
 class PoseInterpolator(object):
@@ -443,54 +390,3 @@ class QuinticPosInterpolator(QuinticPoseInterpolator):
     def __call__(self, t):
         s = t / self.duration
         return self.eval_pos(s)
-
-
-class SwingFootInterpolator(PoseInterpolator):
-
-    def __init__(self, start_pose, end_pose, duration, body=None, u0=None,
-                 u1=None):
-        super(SwingFootInterpolator, self).__init__(
-            start_pose, end_pose, duration, body)
-        if u0 is None:
-            u0 = [1., 0., +0.5]
-        if u1 is None:
-            u1 = [1., 0., -0.5]
-        p0 = start_pose[4:]
-        p1 = end_pose[4:]
-        R0 = rotation_matrix_from_quat(self.start_quat)
-        R1 = rotation_matrix_from_quat(self.end_quat)
-        u0 = dot(R0, u0)
-        u1 = dot(R1, u1)
-        self.poly = interpolate_uab_hermite(p0, u0, p1, u1)
-
-    def eval_pos(self, s):
-        """
-        Evaluate position at index s between 0 and 1.
-
-        Parameters
-        ----------
-        s : scalar
-            Normalized trajectory index between 0 and 1.
-        """
-        return self.poly(s)
-
-    def draw(self, nb_segments=15, color='b'):
-        """
-        Draw the interpolated foot path.
-
-        Parameters
-        ----------
-        nb_segments : scalar
-            Number of segments approximating the polynomial curve.
-        color : char or triplet, optional
-            Color letter or RGB values, default is 'b' for green.
-
-        Returns
-        -------
-        handle : openravepy.GraphHandle
-            OpenRAVE graphical handle. Must be stored in some variable,
-            otherwise the drawn object will vanish instantly.
-        """
-        dx = 1. / nb_segments
-        points = [self.poly(x) for x in arange(0., 1. + dx, dx)]
-        return draw_trajectory(points, color=color)
