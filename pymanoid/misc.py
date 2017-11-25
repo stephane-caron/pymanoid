@@ -23,53 +23,11 @@ from numpy import array, dot, eye, sqrt, tensordot, zeros
 from optim import solve_qp
 
 
-class NDPolynomial(object):
+class AvgStdEstimator(object):
 
     """
-    Polynomial class with vector-valued coefficients.
-
-    Parameters
-    ----------
-    coeffs : list of arrays
-        Coefficients of the polynomial from weakest to strongest.
-
-    """
-
-    def __init__(self, coeffs):
-        self.coeffs = coeffs
-        self.shape = coeffs[0].shape
-
-    @property
-    def degree(self):
-        """Degree of the polynomial."""
-        return len(self.coeffs) - 1
-
-    def __call__(self, x):
-        """
-        Evaluate the polynomial at `x`.
-
-        Parameters
-        ----------
-        x : scalar
-            Value to evaluate the polynomial at.
-
-        Returns
-        -------
-        P(x) : array
-            Value of the polynomial at this point.
-
-        """
-        value = zeros(self.shape)
-        for coeff in reversed(self.coeffs):
-            value *= x
-            value += coeff
-        return value
-
-
-class Statistics(object):
-
-    """
-    Online estimator for statistics of a time series of scalar values.
+    Online estimator for the average and standard deviation of a time series of
+    scalar values.
     """
 
     def __init__(self):
@@ -100,14 +58,18 @@ class Statistics(object):
 
     @property
     def avg(self):
-        """Average of the time series."""
+        """
+        Average of the time series.
+        """
         if self.n < 1:
             return None
         return self.x / self.n
 
     @property
     def std(self):
-        """Standard deviation of the time series."""
+        """
+        Standard deviation of the time series.
+        """
         if self.n < 1:
             return None
         elif self.n == 1:
@@ -119,15 +81,48 @@ class Statistics(object):
         return "%f +/- %f (max: %f, min: %f) over %d items" % (
             self.avg, self.std, self.x_max, self.x_min, self.n)
 
-    def as_comp_times(self, unit):
-        scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
-        if self.n < 1:
-            return "? %s" % unit
-        elif self.n == 1:
-            return "%.2f %s" % (scale * self.avg, unit)
-        return "%.2f +/- %.2f %s (max: %.2f %s, min: %.2f %s) over %d items" % (
-            scale * self.avg, scale * self.std, unit, scale * self.x_max, unit,
-            scale * self.x_min, unit, self.n)
+
+class NDPolynomial(object):
+
+    """
+    Polynomial class with vector-valued coefficients.
+
+    Parameters
+    ----------
+    coeffs : list of arrays
+        Coefficients of the polynomial from weakest to strongest.
+    """
+
+    def __init__(self, coeffs):
+        self.coeffs = coeffs
+        self.shape = coeffs[0].shape
+
+    @property
+    def degree(self):
+        """
+        Degree of the polynomial.
+        """
+        return len(self.coeffs) - 1
+
+    def __call__(self, x):
+        """
+        Evaluate the polynomial at `x`.
+
+        Parameters
+        ----------
+        x : scalar
+            Value to evaluate the polynomial at.
+
+        Returns
+        -------
+        P(x) : array
+            Value of the polynomial at this point.
+        """
+        value = zeros(self.shape)
+        for coeff in reversed(self.coeffs):
+            value *= x
+            value += coeff
+        return value
 
 
 class PointWrap(object):
@@ -163,11 +158,27 @@ class PoseWrap(object):
 
 
 def error(msg):
+    """
+    Log an error message (in red) to stdout.
+
+    Parameters
+    ----------
+    msg : str
+        Error message.
+    """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
     print "%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, date, msg, 0x1B)
 
 
 def info(msg):
+    """
+    Log an information message (in green) to stdout.
+
+    Parameters
+    ----------
+    msg : str
+        Information message.
+    """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
     print "%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, date, msg, 0x1B)
 
@@ -215,8 +226,8 @@ def is_redundant(vectors):
     vectors : list of arrays
         List of vectors to check.
 
-    Note
-    ----
+    Notes
+    -----
     When using CVXOPT as QP solver, this function may print out a significant
     number of messages "Terminated (singular KKT matrix)." in the terminal.
     """
@@ -310,8 +321,8 @@ def norm(v):
     n : scalar
         Euclidean norm of `v`.
 
-    Note
-    ----
+    Notes
+    -----
     This straightforward function is 2x faster than :func:`numpy.linalg.norm` on
     my machine.
     """
@@ -332,8 +343,8 @@ def normalize(v):
     nv : array
         Unit vector directing `v`.
 
-    Note
-    ----
+    Notes
+    -----
     This method doesn't catch ``ZeroDivisionError`` exceptions on purpose.
     """
     return v / norm(v)
@@ -379,5 +390,13 @@ def plot_polygon(points, alpha=.4, color='g', linestyle='solid', fill=True,
 
 
 def warn(msg):
+    """
+    Log a warning message (in yellow) to stdout.
+
+    Parameters
+    ----------
+    msg : str
+        Warning message.
+    """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
     print "%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, date, msg, 0x1B)
