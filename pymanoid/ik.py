@@ -466,8 +466,10 @@ class IKSolver(Process):
             print "Solving IK with max_it=%d, conv_stop=%e, impr_stop=%e" % (
                 max_it, cost_stop, impr_stop)
         cost = 100000.
-        self.qd_max *= self.qd_relax_fact ** self.qd_relax_steps
-        self.qd_min *= self.qd_relax_fact ** self.qd_relax_steps
+        qd_max_init = self.qd_max
+        qd_min_init = self.qd_min
+        self.qd_max = qd_max_init * (self.qd_relax_fact ** self.qd_relax_steps)
+        self.qd_min = qd_min_init * (self.qd_relax_fact ** self.qd_relax_steps)
         N = self.qd_relax_steps + 1
         qd_stepdowns = [max_it * i / N for i in xrange(1, N)]
         for itnum in xrange(max_it):
@@ -482,6 +484,8 @@ class IKSolver(Process):
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
             self.step(dt, unsafe=(itnum < max_it / 2))
+        self.qd_max = qd_max_init
+        self.qd_min = qd_min_init
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
         if self.verbosity >= 1:
             print "IK solved in %d iterations (%.1f ms) with cost %e" % (
