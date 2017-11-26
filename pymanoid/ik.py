@@ -19,7 +19,6 @@
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
-from time import time
 
 from misc import norm, warn
 from optim import solve_qp
@@ -92,7 +91,6 @@ class IKSolver(Process):
         self.tasks = {}
         self.tasks_lock = Lock()
         self.unsafe = False
-        self.verbosity = 0
         #
         self.set_active_dofs(active_dofs)
         self.set_default_gains()
@@ -239,6 +237,25 @@ class IKSolver(Process):
                 return None
             return self.tasks[name]
 
+    def print_task_costs(self, qd, dt):
+        """
+        Print task costs for the current IK step.
+
+        Parameters
+        ----------
+        qd : array
+            Robot DOF velocities.
+        dt : scalar
+            Timestep for the IK.
+        """
+        print "\n                TASK      COST",
+        print "\n------------------------------"
+        for task in self.tasks.itervalues():
+            J = task.jacobian()
+            r = task.residual(dt)
+            print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
+        print ""
+
     def remove_task(self, ident):
         """
         Remove a task.
@@ -279,7 +296,7 @@ class IKSolver(Process):
         """
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
-    def __compute_qp_common(self, dt):
+    def build_qp_matrices(self, dt):
         n = self.nb_active_dofs
         q = self.robot.q[self.active_dofs]
         P = zeros((n, n))
@@ -337,7 +354,7 @@ class IKSolver(Process):
         Gauss-Newton update rule.
         """
         n = self.nb_active_dofs
-        P, v, qd_max, qd_min = self.__compute_qp_common(dt)
+        P, v, qd_max, qd_min = self.build_qp_matrices(dt)
         G = vstack([+eye(n), -eye(n)])
         h = hstack([qd_max, -qd_min])
         try:
@@ -383,7 +400,7 @@ class IKSolver(Process):
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
-        P0, v0, qd_max, qd_min = self.__compute_qp_common(dt)
+        P0, v0, qd_max, qd_min = self.build_qp_matrices(dt)
         P = vstack([hstack([P0, Z]), hstack([Z, margin_reg * E])])
         v = hstack([v0, -margin_lin * ones(n)])
         G = vstack([
@@ -415,14 +432,6 @@ class IKSolver(Process):
             qd = self.compute_velocity_fast(dt)
         else:  # safe formulation is the default
             qd = self.compute_velocity_safe(dt)
-        if self.verbosity >= 3:
-            print "\n                TASK      COST",
-            print "\n------------------------------"
-            for task in self.tasks.itervalues():
-                J = task.jacobian()
-                r = task.residual(dt)
-                print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
-            print ""
         self.robot.set_dof_values(q + qd * dt, clamp=True)
         self.robot.set_dof_velocities(qd)
 
@@ -461,10 +470,6 @@ class IKSolver(Process):
         `self.qd_relax_steps` (number of relaxation steps). You can disable it
         by setting `self.qd_relax_fact = 1.`.
         """
-        t0 = time()
-        if self.verbosity >= 2:
-            print "Solving IK with max_it=%d, conv_stop=%e, impr_stop=%e" % (
-                max_it, cost_stop, impr_stop)
         cost = 100000.
         qd_max_init = self.qd_max
         qd_min_init = self.qd_min
@@ -479,7 +484,7 @@ class IKSolver(Process):
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
-            if self.verbosity >= 2:
+            if debug:
                 print "%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr)
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
@@ -487,9 +492,6 @@ class IKSolver(Process):
         self.qd_max = qd_max_init
         self.qd_min = qd_min_init
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
-        if self.verbosity >= 1:
-            print "IK solved in %d iterations (%.1f ms) with cost %e" % (
-                itnum, 1000 * (time() - t0), cost)
         return 1 + itnum, cost
 
     def on_tick(self, sim):

@@ -392,6 +392,9 @@ class Simulation(object):
                     key, scale * times.avg, scale * times.std, unit, scale *
                     times.x_max, unit, scale * times.x_min, unit, times.n)
 
+    def record(self, output_folder, fname='video.mp4'):
+        self.schedule_extra(CameraRecorder(self, output_folder, fname))
+
 
 class CameraRecorder(Process):
 
