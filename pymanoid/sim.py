@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import openravepy
 import os
 
@@ -329,14 +330,14 @@ class Simulation(object):
     ==========
     """
 
-    def read_window_id(self):
+    def get_viewer_window_id(self):
         print "Please click on the OpenRAVE window."
         line = popen('/usr/bin/xwininfo | grep "Window id:"').readlines()[0]
         self.window_id = "0x%s" % search('0x([0-9a-f]+)', line).group(1)
 
     def take_screenshot(self, fname):
         if self.window_id is None:
-            self.read_window_id()
+            self.get_viewer_window_id()
         system('import -window %s %s' % (self.window_id, fname))
 
     """
@@ -393,8 +394,17 @@ class Simulation(object):
                     key, scale * times.avg, scale * times.std, unit, scale *
                     times.x_max, unit, scale * times.x_min, unit, times.n)
 
-    def record(self, output_folder, fname='video.mp4'):
-        self.schedule_extra(CameraRecorder(self, output_folder, fname))
+    def record(self, fname=None):
+        """
+        Record simulation video.
+
+        Parameters
+        ----------
+        fname : string, optional
+            Video file name.
+        """
+        self.recorder = CameraRecorder(self, fname=fname)
+        self.schedule_extra(self.recorder)
 
 
 class CameraRecorder(Process):
@@ -405,11 +415,11 @@ class CameraRecorder(Process):
     Parameters
     ----------
     sim : Simulation
-        Global simulation.
-    output_folder : string
-        Path where screenshots will be recorded.
-    fname : string
+        Simulation instance.
+    fname : string, optional
         Video file name.
+    tmp_folder : string, optional
+        Temporary folder where screenshots will be recorded.
 
     Note
     ----
@@ -424,25 +434,32 @@ class CameraRecorder(Process):
     simulation is over, go to the camera folder and run the script called
     ``make_video.sh``.
     """
-    def __init__(self, sim, output_folder, fname='video.mp4'):
+    def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):
         super(CameraRecorder, self).__init__()
-        while output_folder.endswith('/'):
-            output_folder = output_folder[:-1]
-        sim.read_window_id()
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-        script_path = '%s/make_video.sh' % output_folder
-        with open(script_path, 'w') as script:
+        if fname is None:
+            now = datetime.datetime.now()
+            fname = now.strftime('pymanoid-%Y-%m-%d-%H%M.mp4')
+        while tmp_folder.endswith('/'):
+            tmp_folder = tmp_folder[:-1]
+        sim.get_viewer_window_id()
+        if not os.path.exists(tmp_folder):
+            os.makedirs(tmp_folder)
+        script_name = 'make_pymanoid_video.sh'
+        with open(script_name, 'w') as script:
             frate = int(1. / sim.dt)
-            avconv = "avconv -r %d -qscale 1 -i %%05d.png %s" % (frate, fname)
-            script.write("#!/bin/sh\n%s" % avconv)
-        st = fstat(script_path)
-        chmod(script_path, st.st_mode | S_IEXEC)
+            script.write(
+                ("#!/bin/sh\n") +
+                (("avconv -r %d -qscale 1" % frate) +
+                 (" -i %s/%%05d.png %s" % (tmp_folder, fname))) +
+                (" && rm -rf %s" % tmp_folder) +
+                (" && rm %s" % script_name))
+        st = fstat(script_name)
+        chmod(script_name, st.st_mode | S_IEXEC)
         self.frame_index = 0
-        self.output_folder = output_folder
+        self.tmp_folder = tmp_folder
 
     def on_tick(self, sim):
-        fname = '%s/%05d.png' % (self.output_folder, self.frame_index)
+        fname = '%s/%05d.png' % (self.tmp_folder, self.frame_index)
         sim.take_screenshot(fname)
         self.frame_index += 1
 

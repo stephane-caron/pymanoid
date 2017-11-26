@@ -86,3 +86,17 @@ stability](https://scaron.info/teaching/contact-stability.html), namely, that
 at each timestep there exists feasible contact forces that support the robot
 motion. This check is performed by the ``find_supporting_wrenches()``
 function of a [ContactSet](/pymanoid/contact.py).
+
+**Q: How can I record a video of my simulation?**
+
+For a quick and dirty solution, you can record your whole desktop using e.g.
+[kazam](https://github.com/sconts/kazam). However, with this approach the video
+time will be your system time, potentially slowed down by all other processes
+running on your machine (including `kazam` itself).
+
+To record a video synchronized with your simulation time, call
+`sim.record("filename.mp4")`. This will schedule an extra `CameraRecorder`
+process that takes a screenshot after each simulation step. You can then run
+your simulation as usual. Once your simulation is over, call the
+`make_pymanoid_video.sh` script created in the current folder. It will
+reassemble screenshots into a properly timed video `filename.mp4`.
