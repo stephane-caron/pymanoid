@@ -85,8 +85,6 @@ class IKSolver(Process):
         self.default_weights = {}
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
-        self.qd_relax_fact = 10
-        self.qd_relax_steps = 2
         self.robot = robot
         self.tasks = {}
         self.tasks_lock = Lock()
@@ -105,13 +103,12 @@ class IKSolver(Process):
         active_dofs : list of integers
             List of DOF indices.
         """
-        nb_active_dofs = len(active_dofs)
         self.active_dofs = active_dofs
         self.nb_active_dofs = len(active_dofs)
         self.q_max = self.robot.q_max[active_dofs]
         self.q_min = self.robot.q_min[active_dofs]
-        self.qd_max = +1. * ones(nb_active_dofs)
-        self.qd_min = -1. * ones(nb_active_dofs)
+        self.qd_max = +1. * self.robot.qd_lim[active_dofs]
+        self.qd_min = -1. * self.robot.qd_lim[active_dofs]
 
     def set_default_gains(self, default_gains=None):
         """
@@ -435,7 +432,8 @@ class IKSolver(Process):
         self.robot.set_dof_values(q + qd * dt, clamp=True)
         self.robot.set_dof_velocities(qd)
 
-    def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3):
+    def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3,
+              qd_relax_fact=10., qd_relax_steps=2, debug=False):
         """
         Compute joint-angles that satisfy all kinematic constraints at best.
 
@@ -450,6 +448,12 @@ class IKSolver(Process):
             the next) is less than this threshold.
         dt : scalar, optional
             Time step in [s].
+        qd_relax_fact : scalar, optional
+            Relaxation factor on DOF velocity limits.
+        qd_relax_steps : int, optional
+            Number of DOF-velocity relaxation stages.
+        debug : bool, optional
+            Set to True for additional debug messages.
 
         Returns
         -------
@@ -466,21 +470,18 @@ class IKSolver(Process):
 
         To speed up convergence, this function will relax DOF velocity limits at
         first, then progressively restore them. This behavior is set by the two
-        parameters `self.qd_relax_fact` (relaxation factor) and
-        `self.qd_relax_steps` (number of relaxation steps). You can disable it
-        by setting `self.qd_relax_fact = 1.`.
+        parameters `qd_relax_fact` (relaxation factor) and `qd_relax_steps`
+        (number of relaxation stages).
         """
         cost = 100000.
-        qd_max_init = self.qd_max
-        qd_min_init = self.qd_min
-        self.qd_max = qd_max_init * (self.qd_relax_fact ** self.qd_relax_steps)
-        self.qd_min = qd_min_init * (self.qd_relax_fact ** self.qd_relax_steps)
-        N = self.qd_relax_steps + 1
+        self.qd_max *= qd_relax_fact ** qd_relax_steps
+        self.qd_min *= qd_relax_fact ** qd_relax_steps
+        N = qd_relax_steps + 1
         qd_stepdowns = [max_it * i / N for i in xrange(1, N)]
         for itnum in xrange(max_it):
             if itnum in qd_stepdowns:
-                self.qd_max /= self.qd_relax_fact
-                self.qd_min /= self.qd_relax_fact
+                self.qd_max /= qd_relax_fact
+                self.qd_min /= qd_relax_fact
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
@@ -489,8 +490,8 @@ class IKSolver(Process):
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
             self.step(dt, unsafe=(itnum < max_it / 2))
-        self.qd_max = qd_max_init
-        self.qd_min = qd_min_init
+        self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
+        self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
         return 1 + itnum, cost
 

@@ -71,6 +71,7 @@ class Robot(object):
         self.q_max.flags.writeable = False
         self.q_min = q_min
         self.q_min.flags.writeable = False
+        self.qd_lim = rave.GetDOFVelocityLimits()
         self.rave = rave
         self.stance = None
         self.tau_max = None  # set by hand in child robot class
