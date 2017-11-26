@@ -96,7 +96,14 @@ running on your machine (including `kazam` itself).
 
 To record a video synchronized with your simulation time, call
 `sim.record("filename.mp4")`. This will schedule an extra `CameraRecorder`
-process that takes a screenshot after each simulation step. You can then run
-your simulation as usual. Once your simulation is over, call the
+process that takes a capture of your simulation window after each step. You can
+then run your simulation as usual. Once your simulation is over, call the
 `make_pymanoid_video.sh` script created in the current folder. It will
 reassemble screenshots into a properly timed video `filename.mp4`.
+
+**Q: the video script returns an error "width/height not divisible by 2".**
+
+Bad choice of window size ;) You will need to crop the PNG files in the
+`pymanoid_rec/` temporary folder. For instance, if the resolution of these
+files is 1918x1059, `cd` to that folder and run `mogrify -crop 1918x1058+0+0
+*.png`.
