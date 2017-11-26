@@ -18,6 +18,7 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import openravepy
+import os
 
 from numpy import arange, array
 from os import chmod, popen, system
@@ -428,6 +429,8 @@ class CameraRecorder(Process):
         while output_folder.endswith('/'):
             output_folder = output_folder[:-1]
         sim.read_window_id()
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
         script_path = '%s/make_video.sh' % output_folder
         with open(script_path, 'w') as script:
             frate = int(1. / sim.dt)
