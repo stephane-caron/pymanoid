@@ -446,6 +446,7 @@ class ContactSet(object):
 class ContactFeed(object):
 
     def __init__(self, path=None, cyclic=False):
+        self.__path = None
         self.contacts = []
         self.cyclic = cyclic
         self.next_contact_id = 0
@@ -485,9 +486,12 @@ class ContactFeed(object):
                 pos=d['pos'],
                 rpy=d['rpy'],
                 friction=d['friction']))
+        self.__path = path
 
-    def save(self, path):
+    def save(self, path=None):
         import simplejson
+        if path is None:
+            path = self.__path
         assert path.endswith('.json')
         contact_defs = [{
             'shape': contact.shape,
