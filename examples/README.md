@@ -15,7 +15,7 @@ pre-defined contact locations. Next, it tracks a reference COM motion given by
 the green virtual box. The box is moved around for a while, then you can
 manipulate it directly in the OpenRAVE GUI.
 
-## Contact stability
+## Contact stability conditions
 
 <img align="right" src="../doc/source/images/static_equilibrium_polygon.png" width="300" />
 
