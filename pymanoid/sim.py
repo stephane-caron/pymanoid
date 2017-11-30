@@ -356,7 +356,7 @@ class Simulation(object):
             Path to DAE or VRML model.
         """
         from body import Body
-        assert path.endswith('.dae') \
+        assert path.endswith('.dae') or path.endswith('.stl') \
             or path.endswith('.wrl') or path.endswith('.xml')
         if not self.env.Load(path):
             raise Exception("failed to load %s" % path)
