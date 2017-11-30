@@ -439,7 +439,7 @@ class CameraRecorder(Process):
         super(CameraRecorder, self).__init__()
         if fname is None:
             now = datetime.datetime.now()
-            fname = now.strftime('pymanoid-%Y-%m-%d-%H%M.mp4')
+            fname = now.strftime('pymanoid-%Y-%m-%d-%H%M%S.mp4')
         while tmp_folder.endswith('/'):
             tmp_folder = tmp_folder[:-1]
         sim.get_viewer_window_id()
