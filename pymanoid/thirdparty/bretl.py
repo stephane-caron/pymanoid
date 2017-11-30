@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 Quang-Cuong Pham <cuong.pham@normalesup.org>
-# Copyright (C) 2017 Stephane Caron <stephane.caron@normalesup.org>
+# Copyright (C) 2017 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
