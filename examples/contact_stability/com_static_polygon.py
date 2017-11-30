@@ -160,24 +160,17 @@ if __name__ == "__main__":
     sim.start()
 
     print """
-Contact-stability conditions
-============================
+COM static-equilibrium polygon
+==============================
 
-Ready to go! The GUI displays three contact-stability criteria:
-
-    Blue polygon -- ZMP pendular support area
-    Green polygon -- COM static-equilibrium polygon
-    Red cone -- COM pendular acceleration cone
-
-You can move the blue box (in the plane above the robot) around to make the
-robot move its center of mass. Contact wrenches are displayed at each contact
-(green dot is COP location, arrow is resultant force).
-
-When the COM exists the static-equilibrium polygon, you should see the
-background turn red as no feasible contact wrenches can be found.
+Ready to go! The GUI displays the COM static-equilibrium polygon in green. You
+can move the blue box (in the plane above the robot) around to make the robot
+move its center of mass. Contact wrenches are displayed at each contact (green
+dot is COP location, arrow is resultant force). When the COM exists the
+static-equilibrium polygon, you should see the background turn red as no
+feasible contact wrenches can be found.
 
 Enjoy :)
-
 """
 
     if IPython.get_ipython() is None:

@@ -24,6 +24,11 @@ from slipping or detaching during motion. The examples in the
 [contact\_stability](contact_stability/) folder illustrate these conditions:
 static-equilibrium COM polygon, multi-contact ZMP support areas, etc.
 
+In these examples, you can move contacts by selecting them in the OpenRAVE GUI.
+Contact wrenches are computed at each contact to support the robot in
+static-equilibrium. Try moving the blue box (in the plane above the robot)
+around, and see what happens when it exits the polygon.
+
 ## Multi-contact walking
 
 <img align="right" src="../doc/source/images/multi_contact_walking.png" width="300" />
