@@ -466,6 +466,15 @@ class ContactFeed(object):
     def last(self):
         return self.contacts[-1]
 
+    def extend(self):
+        """
+        Duplicate last contact.
+        """
+        contact = self.last.copy()
+        contact.set_pos(contact.p + [0.05, 0.05, 0.05])
+        contact.show()
+        self.contacts.append(contact)
+
     def pop(self):
         i = self.next_contact_id
         self.next_contact_id += 1
