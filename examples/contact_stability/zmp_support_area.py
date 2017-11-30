@@ -32,7 +32,7 @@ import pymanoid
 
 from pymanoid import Stance
 from pymanoid.gui import PointMassWrenchDrawer
-from pymanoid.gui import draw_polygon, draw_polyhedron
+from pymanoid.gui import draw_polygon
 from pymanoid.misc import matplotlib_to_rgb, norm
 
 com_height = 0.9  # [m]
@@ -40,86 +40,6 @@ z_polygon = 2.
 
 
 class SupportAreaDrawer(pymanoid.Process):
-
-    """
-    Draw a given support area of a contact set.
-
-    Parameters
-    ----------
-    stance : Stance
-        Contacts and COM position of the robot.
-    z : scalar, optional
-        Altitude of drawn area in the world frame.
-    color : tuple or string, optional
-        Area color.
-    """
-
-    def __init__(self, stance, z=0., color=None):
-        if color is None:
-            color = (0., 0.5, 0., 0.5)
-        if type(color) is str:
-            color = matplotlib_to_rgb(color) + [0.5]
-        super(SupportAreaDrawer, self).__init__()
-        self.color = color
-        self.contact_poses = {}
-        self.handle = None
-        self.stance = stance
-        self.z = z
-        #
-        self.update_contact_poses()
-        self.update_polygon()
-
-    def clear(self):
-        self.handle = None
-
-    def on_tick(self, sim):
-        if self.handle is None:
-            self.update_polygon()
-        for contact in self.stance.contacts:
-            if norm(contact.pose - self.contact_poses[contact.name]) > 1e-10:
-                self.update_contact_poses()
-                self.update_polygon()
-                break
-
-    def update_contact_poses(self):
-        for contact in self.stance.contacts:
-            self.contact_poses[contact.name] = contact.pose
-
-    def update_polygon(self):
-        raise NotImplementedError
-
-    def update_z(self, z):
-        self.z = z
-        self.update_polygon()
-
-
-class SEPDrawer(SupportAreaDrawer):
-
-    """
-    Draw the static-equilibrium polygon of a contact set.
-
-    Parameters
-    ----------
-    stance : Stance
-        Contacts and COM position of the robot.
-    z : scalar, optional
-        Altitude of drawn area in the world frame.
-    color : tuple or string, optional
-        Area color.
-    """
-
-    def update_polygon(self):
-        self.handle = None
-        try:
-            vertices = self.stance.compute_static_equilibrium_polygon()
-            self.handle = draw_polygon(
-                [(x[0], x[1], self.z) for x in vertices],
-                normal=[0, 0, 1], color=self.color)
-        except Exception as e:
-            print "SEPDrawer:", e
-
-
-class ZMPSupportAreaDrawer(SupportAreaDrawer):
 
     """
     Draw the pendular ZMP area of a contact set.
@@ -136,15 +56,31 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
 
     def __init__(self, stance, z=0., color=None):
         self.stance = stance  # before calling parent constructor
-        super(ZMPSupportAreaDrawer, self).__init__(stance, z, color)
+        if color is None:
+            color = (0., 0.5, 0., 0.5)
+        if type(color) is str:
+            color = matplotlib_to_rgb(color) + [0.5]
+        super(SupportAreaDrawer, self).__init__()
+        self.color = color
+        self.contact_poses = {}
+        self.handle = None
         self.last_com = stance.com.p
+        self.stance = stance
+        self.z = z
+        #
+        self.update_contact_poses()
+        self.update_polygon()
 
-    def on_tick(self, sim):
-        super(ZMPSupportAreaDrawer, self).on_tick(sim)
-        if norm(self.stance.com.p - self.last_com) > 1e-10:
-            self.update_contact_poses()
-            self.update_polygon()
-            self.last_com = self.stance.com.p
+    def clear(self):
+        self.handle = None
+
+    def update_contact_poses(self):
+        for contact in self.stance.contacts:
+            self.contact_poses[contact.name] = contact.pose
+
+    def update_z(self, z):
+        self.z = z
+        self.update_polygon()
 
     def update_polygon(self):
         self.handle = None
@@ -154,36 +90,20 @@ class ZMPSupportAreaDrawer(SupportAreaDrawer):
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=(0.0, 0.0, 0.5, 0.5))
         except Exception as e:
-            print "ZMPSupportAreaDrawer:", e
+            print "SupportAreaDrawer:", e
 
-
-class COMAccelConeDrawer(ZMPSupportAreaDrawer):
-
-    """
-    Draw the COM acceleration cone of a contact set.
-
-    Parameters
-    ----------
-    stance : Stance
-        Contacts and COM position of the robot.
-    scale : scalar, optional
-        Acceleration to distance conversion ratio, in [s]^2.
-    color : tuple or string, optional
-        Area color.
-    """
-
-    def __init__(self, stance, scale=0.1, color=None):
-        self.scale = scale  # done before calling parent constructor
-        super(COMAccelConeDrawer, self).__init__(stance, color=color)
-
-    def update_polygon(self):
-        self.handle = None
-        try:
-            vertices = self.stance.compute_pendular_accel_cone()
-            vscale = [self.stance.com.p + self.scale * acc for acc in vertices]
-            self.handle = draw_polyhedron(vscale, 'r.-#')
-        except Exception as e:
-            print "COMAccelConeDrawer:", e
+    def on_tick(self, sim):
+        if self.handle is None:
+            self.update_polygon()
+        for contact in self.stance.contacts:
+            if norm(contact.pose - self.contact_poses[contact.name]) > 1e-10:
+                self.update_contact_poses()
+                self.update_polygon()
+                break
+        if norm(self.stance.com.p - self.last_com) > 1e-10:
+            self.update_contact_poses()
+            self.update_polygon()
+            self.last_com = self.stance.com.p
 
 
 class StaticWrenchDrawer(PointMassWrenchDrawer):
@@ -231,22 +151,18 @@ if __name__ == "__main__":
 
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    stance = Stance.from_json('stances/double.json')
+    stance = Stance.from_json('../stances/double.json')
     stance.bind(robot)
     robot.ik.solve()
 
     com_sync = COMSync(stance, com_above)
-    cone_drawer = COMAccelConeDrawer(stance, scale=0.05)
-    sep_drawer = SEPDrawer(stance, z_polygon)
+    support_area_drawer = SupportAreaDrawer(stance, z_polygon)
     wrench_drawer = StaticWrenchDrawer(stance)
-    zmp_area_drawer = ZMPSupportAreaDrawer(stance, z_polygon)
 
     sim.schedule(robot.ik)
     sim.schedule_extra(com_sync)
-    sim.schedule_extra(cone_drawer)
-    sim.schedule_extra(sep_drawer)
+    sim.schedule_extra(support_area_drawer)
     sim.schedule_extra(wrench_drawer)
-    sim.schedule_extra(zmp_area_drawer)
     sim.start()
 
     print """

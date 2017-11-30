@@ -20,22 +20,9 @@ manipulate it directly in the OpenRAVE GUI.
 <img align="right" src="../doc/source/images/static_equilibrium_polygon.png" width="300" />
 
 Contact-stability areas and volumes are conditions used to prevent contacts
-from slipping or detaching during motion. In this example, three criteria are
-displayed: the static-equilibrium COM polygon (in green), the multi-contact ZMP
-support area (in blue) and the 3D cone of COM accelerations (in red).
-    
-You can move contacts by selecting them in the OpenRAVE GUI. Contact wrenches
-are computed at each contact to support the robot in static-equilibrium. Try
-moving the blue box (in the plane above the robot) around, and see what happens
-when it exits the polygon.
-
-The definition and calculation of the ZMP support area is detailed in [this
-paper](https://scaron.info/research/tro-2016.html), and that of the COM
-acceleration cone in [this
-paper](https://scaron.info/research/humanoids-2016.html). Both depend on
-contact locations and on the position of the center of mass, so when you move
-it or its projection (blue box) you will see the blue area and red cone change
-as well.
+from slipping or detaching during motion. The examples in the
+[contact\_stability](contact_stability/) folder illustrate these conditions:
+static-equilibrium COM polygon, multi-contact ZMP support areas, etc.
 
 ## Multi-contact walking
 
