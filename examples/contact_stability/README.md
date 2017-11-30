@@ -1,6 +1,6 @@
 # Contact-stability conditions
 
-<img align="right" src="../../doc/source/images/static_equilibrium_polygon.png" width="300" />
+<img align="right" src="../../doc/source/images/static_equilibrium_polygon.png" width="350" />
     
 Contact-stability areas and volumes are conditions used to prevent contacts
 from slipping or detaching during motion. These examples illustrate the
