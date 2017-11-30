@@ -1,5 +1,7 @@
 # Contact-stability conditions
 
+<img align="right" src="../../doc/source/images/static_equilibrium_polygon.png" width="300" />
+    
 Contact-stability areas and volumes are conditions used to prevent contacts
 from slipping or detaching during motion. These examples illustrate the
 static-equilibrium COM polygon, multi-contact ZMP support areas and the 3D cone
@@ -7,8 +9,6 @@ of COM accelerations.
 
 ## COM static-equilibrium polygon
 
-<img align="right" src="../../doc/source/images/static_equilibrium_polygon.png" width="300" />
-    
 You can move contacts by selecting them in the OpenRAVE GUI. Contact wrenches
 are computed at each contact to support the robot in static-equilibrium. Try
 moving the blue box (in the plane above the robot) around, and see what happens
