@@ -92,7 +92,8 @@ class SupportPolygonDrawer(pymanoid.Process):
     def update_polygon(self):
         self.handle = None
         try:
-            vertices = self.stance.compute_static_equilibrium_polygon(method=self.method)
+            vertices = self.stance.compute_static_equilibrium_polygon(
+                method=self.method)
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=self.color)
