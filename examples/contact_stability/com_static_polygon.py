@@ -66,9 +66,9 @@ class SupportPolygonDrawer(pymanoid.Process):
         self.color = color
         self.contact_poses = {}
         self.handle = None
+        self.method = method
         self.stance = stance
         self.z = z
-        self.method = method
         #
         self.update_contact_poses()
         self.update_polygon()
