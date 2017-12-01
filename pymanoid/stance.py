@@ -178,12 +178,19 @@ class Stance(ContactSet):
         for body in self.bodies:
             body.show()
 
-    def compute_static_equilibrium_polygon(self):
+    def compute_static_equilibrium_polygon(self, method='hull'):
         """
         Compute the halfspace and vertex representations of the
         static-equilibrium polygon (SEP) of the stance.
+
+        Parameters
+        ----------
+        method : string, optional
+            Which method to use to perform the projection. Choices are 'bretl',
+            'cdd' and 'hull' (default).
         """
-        sep_vertices = super(Stance, self).compute_static_equilibrium_polygon()
+        sep_vertices = super(Stance, self).compute_static_equilibrium_polygon(
+            method=method)
         self.sep_hrep = compute_polytope_hrep(sep_vertices)
         self.sep_norm = array([norm(a) for a in self.sep_hrep[0]])
         self.sep_vertices = sep_vertices
