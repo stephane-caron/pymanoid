@@ -52,9 +52,12 @@ class SupportPolygonDrawer(pymanoid.Process):
         Altitude of drawn area in the world frame.
     color : tuple or string, optional
         Area color.
+    method: string, optional
+        Method to compute the static equilibrium polygon.
+        Choices are bretl, cdd and hull (default)
     """
 
-    def __init__(self, stance, z=0., color=None):
+    def __init__(self, stance, z=0., color=None, method='hull'):
         if color is None:
             color = (0., 0.5, 0., 0.5)
         if type(color) is str:
@@ -65,6 +68,7 @@ class SupportPolygonDrawer(pymanoid.Process):
         self.handle = None
         self.stance = stance
         self.z = z
+        self.method = method
         #
         self.update_contact_poses()
         self.update_polygon()
@@ -88,7 +92,7 @@ class SupportPolygonDrawer(pymanoid.Process):
     def update_polygon(self):
         self.handle = None
         try:
-            vertices = self.stance.compute_static_equilibrium_polygon()
+            vertices = self.stance.compute_static_equilibrium_polygon(method=self.method)
             self.handle = draw_polygon(
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=self.color)
@@ -166,7 +170,7 @@ COM static-equilibrium polygon
 Ready to go! The GUI displays the COM static-equilibrium polygon in green. You
 can move the blue box (in the plane above the robot) around to make the robot
 move its center of mass. Contact wrenches are displayed at each contact (green
-dot is COP location, arrow is resultant force). When the COM exists the
+dot is COP location, arrow is resultant force). When the COM exits the
 static-equilibrium polygon, you should see the background turn red as no
 feasible contact wrenches can be found.
 
