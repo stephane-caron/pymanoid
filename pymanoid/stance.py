@@ -182,6 +182,13 @@ class Stance(ContactSet):
         """
         Compute the halfspace and vertex representations of the
         static-equilibrium polygon (SEP) of the stance.
+
+        Parameters
+        ----------
+
+        method : string, optional
+            Which method to use to perform the projection.
+            Choices are bretl, cdd, hull (default)
         """
         sep_vertices = super(Stance, self).compute_static_equilibrium_polygon(method=method)
         self.sep_hrep = compute_polytope_hrep(sep_vertices)
