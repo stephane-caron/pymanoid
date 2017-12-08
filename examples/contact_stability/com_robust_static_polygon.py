@@ -43,13 +43,7 @@ from pymanoid import Stance
 from pymanoid.gui import PointMassWrenchDrawer
 from pymanoid.gui import draw_polyhedron
 from pymanoid.misc import matplotlib_to_rgb, norm
-
 from openravepy import matrixFromPose
-import numpy as np
-
-import stabilipy as stab
-
-mass = 50.
 
 
 class SupportPolyhedronDrawer(pymanoid.Process):
@@ -112,7 +106,8 @@ class SupportPolyhedronDrawer(pymanoid.Process):
         self.handle = None
         self.nr_iter = 0
         try:
-            self.polyhedron = stab.StabilityPolygon(mass, dimension=3, radius=1.5)
+            self.polyhedron = stab.StabilityPolygon(
+                robot.mass, dimension=3, radius=1.5)
             stab_contacts = []
             for contact in contacts:
                 hmatrix = matrixFromPose(contact.pose)
