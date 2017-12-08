@@ -70,17 +70,16 @@ class SupportPolyhedronDrawer(pymanoid.Process):
         super(SupportPolyhedronDrawer, self).__init__()
         self.color = color
         self.contact_poses = {}
-        self.polyhedron = None
         self.handle = None
+        self.max_iter = 50
+        self.method = method
+        self.nr_iter = 0
+        self.polyhedron = None
         self.stance = stance
         self.z = z
-        self.method = method
         #
         self.update_contacts()
         self.create_polyhedron(self.stance.contacts)
-
-        self.nr_iter = 0
-        self.max_iter = 50
 
     def clear(self):
         self.handle = None
@@ -123,17 +122,15 @@ class SupportPolyhedronDrawer(pymanoid.Process):
                             hmatrix[:3, 3:] + hmatrix[:3, :3].dot(displacement),
                             hmatrix[:3, 2:3]))
             self.polyhedron.contacts = stab_contacts
-
             self.polyhedron.select_solver(self.method)
             self.polyhedron.make_problem()
             self.polyhedron.init_algo()
             self.polyhedron.build_polys()
-
             vertices = self.polyhedron.polyhedron()
             self.handle = draw_polyhedron(
                 [(x[0], x[1], x[2]) for x in vertices])
         except Exception as e:
-            print "SupportPolyhedronDrawer:", e
+            print("SupportPolyhedronDrawer: {}".format(e))
 
     def refine_polyhedron(self):
         try:
@@ -142,7 +139,7 @@ class SupportPolyhedronDrawer(pymanoid.Process):
             self.handle = draw_polyhedron(
                 [(x[0], x[1], x[2]) for x in vertices])
         except Exception as e:
-            print "SupportPolyhedronDrawer:", e
+            print("SupportPolyhedronDrawer: {}".format(e))
 
     def update_z(self, z):
         self.z = z
@@ -196,12 +193,10 @@ if __name__ == "__main__":
 COM robust static-equilibrium polygon
 =====================================
 
-Ready to go! The GUI displays the COM static-equilibrium polygon in green. You
-can move the blue box (in the plane above the robot) around to make the robot
-move its center of mass. Contact wrenches are displayed at each contact (green
-dot is COP location, arrow is resultant force). When the COM exits the
-static-equilibrium polygon, you should see the background turn red as no
-feasible contact wrenches can be found.
+Ready to go! The GUI displays the COM static-equilibrium polytope in green. You
+can move contacts around to see how they affect the shape of the polytope.
+Sample contact wrenches are displayed at each contact (green dot is COP
+location, arrow is resultant force).
 
 Enjoy :)
 """
