@@ -26,9 +26,9 @@ import cvxopt
 from numpy import array, dot, hstack, ones, vstack, zeros
 from scipy.spatial import ConvexHull
 
-from misc import norm
-from optim import solve_lp
-from thirdparty import bretl
+from .misc import norm
+from .optim import solve_lp
+from .thirdparty import bretl
 
 
 PREC_TOL = 1e-10  # tolerance to numerical imprecisions

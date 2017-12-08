@@ -25,8 +25,8 @@ try:
     # https://github.com/stephane-caron/qpsolvers
     from qpsolvers import solve_qp
 except ImportError:
-    from thirdparty.cvxopt_ import solve_qp as cvxopt_solve_qp
-    from thirdparty.quadprog_ import solve_qp as quadprog_solve_qp
+    from .thirdparty.cvxopt_ import solve_qp as cvxopt_solve_qp
+    from .thirdparty.quadprog_ import solve_qp as quadprog_solve_qp
 
     def solve_qp(P, q, G, h, A=None, b=None, solver='quadprog', sym_proj=False):
         """

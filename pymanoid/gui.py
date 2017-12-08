@@ -26,8 +26,8 @@ from scipy.spatial.qhull import QhullError
 from time import time
 from warnings import warn
 
-from misc import matplotlib_to_rgb, matplotlib_to_rgba, norm
-from sim import Process, get_openrave_env
+from .misc import matplotlib_to_rgb, matplotlib_to_rgba, norm
+from .sim import Process, get_openrave_env
 
 
 BIG_DIST = 1000.  # [m]

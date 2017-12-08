@@ -21,8 +21,8 @@
 from numpy import hstack, linspace
 from openravepy import InterpolateQuatSlerp as quat_slerp
 
-from gui import draw_trajectory
-from misc import NDPolynomial
+from .gui import draw_trajectory
+from .misc import NDPolynomial
 
 
 def interpolate_cubic_bezier(p0, p1, p2, p3):

@@ -20,7 +20,7 @@
 
 from numpy import array, dot, eye, zeros
 
-from misc import PointWrap, PoseWrap
+from .misc import PointWrap, PoseWrap
 
 
 _OPPOSE_QUAT = array([-1., -1., -1., -1., +1., +1., +1.])

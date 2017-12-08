@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from hrp4 import HRP4
-from jvrc1 import JVRC1
+from .hrp4 import HRP4
+from .jvrc1 import JVRC1
 
 __all__ = ['HRP4', 'JVRC1']

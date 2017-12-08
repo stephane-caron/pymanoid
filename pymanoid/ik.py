@@ -21,10 +21,10 @@
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 
-from misc import norm, warn
-from optim import solve_qp
-from sim import Process
-from tasks import ContactTask, DOFTask, PoseTask
+from .misc import norm, warn
+from .optim import solve_qp
+from .sim import Process
+from .tasks import ContactTask, DOFTask, PoseTask
 
 
 RANK_DEFICIENCY_MSG = "rank deficiency in IK problem, " \

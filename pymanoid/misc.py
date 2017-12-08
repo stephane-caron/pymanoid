@@ -21,7 +21,7 @@
 from datetime import datetime
 from numpy import array, dot, eye, sqrt, tensordot, zeros
 
-from optim import solve_qp
+from .optim import solve_qp
 
 
 class AvgStdEstimator(object):

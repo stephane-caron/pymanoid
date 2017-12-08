@@ -22,8 +22,8 @@ from numpy import array
 from os import system
 from os.path import isfile
 
-from pymanoid.body import Manipulator
-from pymanoid.robot import Humanoid
+from ..body import Manipulator
+from ..robot import Humanoid
 
 
 class JVRC1(Humanoid):

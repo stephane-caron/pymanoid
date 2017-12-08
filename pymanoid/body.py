@@ -22,9 +22,9 @@ import openravepy
 
 from numpy import array, dot, ndarray, zeros
 
-from misc import matplotlib_to_rgb, norm
-from sim import get_openrave_env
-from transformations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
+from .misc import matplotlib_to_rgb, norm
+from .sim import get_openrave_env
+from .transformations import crossmat, rotation_matrix_from_rpy, rpy_from_quat
 
 
 class Body(object):

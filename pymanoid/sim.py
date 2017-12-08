@@ -30,7 +30,7 @@ from stat import S_IEXEC
 from threading import Lock, Thread
 from time import sleep, time
 
-from misc import AvgStdEstimator
+from .misc import AvgStdEstimator
 
 
 env = None  # global OpenRAVE environment

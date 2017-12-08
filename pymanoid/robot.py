@@ -23,13 +23,13 @@ from numpy import concatenate, maximum, minimum
 from os.path import basename, isfile, splitext
 from warnings import warn
 
-from body import PointMass
-from gui import draw_line, draw_point
-from ik import IKSolver
-from misc import matplotlib_to_rgb, middot
-from sim import get_openrave_env, gravity
-from transformations import crossmat, quat_from_rpy, rpy_from_quat
-from transformations import rotation_matrix_from_rpy
+from .body import PointMass
+from .gui import draw_line, draw_point
+from .ik import IKSolver
+from .misc import matplotlib_to_rgb, middot
+from .sim import get_openrave_env, gravity
+from .transformations import crossmat, quat_from_rpy, rpy_from_quat
+from .transformations import rotation_matrix_from_rpy
 
 
 class Robot(object):

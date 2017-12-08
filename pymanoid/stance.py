@@ -24,13 +24,13 @@ from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
 
-from body import PointMass
-from contact import Contact, ContactSet
-from geometry import compute_polygon_hull, compute_polytope_hrep
-from geometry import project_polytope
-from misc import norm
-from sim import gravity
-from tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
+from .body import PointMass
+from .contact import Contact, ContactSet
+from .geometry import compute_polygon_hull, compute_polytope_hrep
+from .geometry import project_polytope
+from .misc import norm
+from .sim import gravity
+from .tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 
 
 class Stance(ContactSet):

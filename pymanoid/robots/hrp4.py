@@ -20,9 +20,9 @@
 
 from numpy import array, pi
 
-from pymanoid.body import Manipulator
-from pymanoid.robot import Humanoid
-from pymanoid.tasks import DOFTask, MinCAMTask
+from ..body import Manipulator
+from ..robot import Humanoid
+from ..tasks import DOFTask, MinCAMTask
 
 
 class HRP4(Humanoid):

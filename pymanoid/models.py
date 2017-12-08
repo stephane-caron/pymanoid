@@ -20,10 +20,10 @@
 
 from numpy import cosh, dot, sinh, sqrt
 
-from body import PointMass
-from gui import draw_line
-from misc import warn
-from sim import Process, gravity
+from .body import PointMass
+from .gui import draw_line
+from .misc import warn
+from .sim import Process, gravity
 
 
 class InvertedPendulum(Process):
