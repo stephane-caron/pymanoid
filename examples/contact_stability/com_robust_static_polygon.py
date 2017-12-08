@@ -112,15 +112,16 @@ class SupportPolyhedronDrawer(pymanoid.Process):
             for contact in contacts:
                 hmatrix = matrixFromPose(contact.pose)
                 X, Y = contact.shape
-                displacements = [ np.array([[X, Y, 0]]).T,
-                                  np.array([[-X, Y, 0]]).T,
-                                  np.array([[-X, -Y, 0]]).T,
-                                  np.array([[X, -Y, 0]]).T
-                                  ]
+                displacements = [array([[X, Y, 0]]).T,
+                                 array([[-X, Y, 0]]).T,
+                                 array([[-X, -Y, 0]]).T,
+                                 array([[X, -Y, 0]]).T]
                 for displacement in displacements:
-                    stab_contacts.append(stab.Contact(contact.friction,
-                                                      hmatrix[:3, 3:]+hmatrix[:3, :3].dot(displacement),
-                                                 hmatrix[:3, 2:3]))
+                    stab_contacts.append(
+                        stab.Contact(
+                            contact.friction,
+                            hmatrix[:3, 3:] + hmatrix[:3, :3].dot(displacement),
+                            hmatrix[:3, 2:3]))
             self.polyhedron.contacts = stab_contacts
 
             self.polyhedron.select_solver(self.method)
@@ -193,7 +194,7 @@ if __name__ == "__main__":
 
     print """
 COM robust static-equilibrium polygon
-==============================
+=====================================
 
 Ready to go! The GUI displays the COM static-equilibrium polygon in green. You
 can move the blue box (in the plane above the robot) around to make the robot
