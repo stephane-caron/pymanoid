@@ -168,7 +168,7 @@ def error(msg):
         Error message.
     """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, date, msg, 0x1B)
+    print("%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, date, msg, 0x1B))
 
 
 def info(msg):
@@ -181,7 +181,7 @@ def info(msg):
         Information message.
     """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, date, msg, 0x1B)
+    print("%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, date, msg, 0x1B))
 
 
 def is_positive_combination(b, A):
@@ -400,4 +400,4 @@ def warn(msg):
         Warning message.
     """
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print "%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, date, msg, 0x1B)
+    print("%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, date, msg, 0x1B))

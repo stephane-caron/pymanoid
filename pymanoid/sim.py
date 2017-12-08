@@ -180,8 +180,8 @@ class Simulation(object):
             self._tick_processes()
             rem_time = self.dt - (time() - t0)
             if __debug__ and self.watch_comp_times and rem_time < 0.:
-                print "Simulation warning: cycle time budget",
-                print "(%.1f ms) depleted" % (self.dt * 1000.)
+                print("Simulation warning: cycle time budget "
+                      "(%.1f ms) depleted" % (self.dt * 1000.))
             self._tick_extras()
             rem_time = self.dt - (time() - t0)
             if rem_time > 1e-4:
@@ -332,7 +332,7 @@ class Simulation(object):
     """
 
     def get_viewer_window_id(self):
-        print "Please click on the OpenRAVE window."
+        print("Please click on the OpenRAVE window.")
         line = popen('/usr/bin/xwininfo | grep "Window id:"').readlines()[0]
         self.window_id = "0x%s" % search('0x([0-9a-f]+)', line).group(1)
 
@@ -385,15 +385,15 @@ class Simulation(object):
         for key in sorted(self.comp_times):
             times = self.comp_times[key]
             if times.n < 1:
-                print "%20s: ? %s" % (key, unit)
+                print("%20s: ? %s" % (key, unit))
                 continue
             elif times.n == 1:
-                print "%20s: %.2f %s" % (key, scale * times.avg, unit)
+                print("%20s: %.2f %s" % (key, scale * times.avg, unit))
                 continue
-            print "%20s: %.2f +/- %.2f %s " \
-                "(max: %.2f %s, min: %.2f %s, %d items)" % (
-                    key, scale * times.avg, scale * times.std, unit, scale *
-                    times.x_max, unit, scale * times.x_min, unit, times.n)
+            print("%20s: %.2f +/- %.2f %s "
+                  "(max: %.2f %s, min: %.2f %s, %d items)" % (
+                      key, scale * times.avg, scale * times.std, unit, scale *
+                      times.x_max, unit, scale * times.x_min, unit, times.n))
 
     def record(self, fname=None):
         """

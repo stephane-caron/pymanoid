@@ -98,7 +98,7 @@ class SupportPolygonDrawer(pymanoid.Process):
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=self.color)
         except Exception as e:
-            print "SupportPolygonDrawer:", e
+            print("SupportPolygonDrawer: {}".format(e))
 
     def update_z(self, z):
         self.z = z
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     sim.schedule_extra(wrench_drawer)
     sim.start()
 
-    print """
+    print("""
 COM static-equilibrium polygon
 ==============================
 
@@ -176,7 +176,7 @@ static-equilibrium polygon, you should see the background turn red as no
 feasible contact wrenches can be found.
 
 Enjoy :)
-"""
+""")
 
     if IPython.get_ipython() is None:
         IPython.embed()

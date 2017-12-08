@@ -97,7 +97,7 @@ class AccelConeDrawer(pymanoid.Process):
             vscale = [self.stance.com.p + self.scale * acc for acc in vertices]
             self.handle = draw_polyhedron(vscale, 'r.-#')
         except Exception as e:
-            print "AccelConeDrawer:", e
+            print("AccelConeDrawer: {}".format(e))
 
 
 class StaticWrenchDrawer(PointMassWrenchDrawer):
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     sim.schedule_extra(wrench_drawer)
     sim.start()
 
-    print """
+    print("""
 COM acceleration cone
 =====================
 
@@ -171,7 +171,7 @@ static-equilibrium polygon, you should see the background turn red as no
 feasible contact wrenches can be found.
 
 Enjoy :)
-"""
+""")
 
     if IPython.get_ipython() is None:
         IPython.embed()

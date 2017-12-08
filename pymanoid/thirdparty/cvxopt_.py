@@ -39,7 +39,7 @@ try:
     cvxopt.solvers.options['LPX_K_MSGLEV'] = 0  # previous versions
 except ImportError:
     # issue a warning as GLPK is the best LP solver in practice
-    print "\033[1;33m[pymanoid] Warning: GLPK solver not found\033[0;0m"
+    print("\033[1;33m[pymanoid] Warning: GLPK solver not found\033[0;0m")
     GLPK_IF_AVAILABLE = None
 
 

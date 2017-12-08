@@ -334,14 +334,14 @@ class COMStepTransit(object):
         """
         dcm_last = self.p_last + self.pd_last / self.omega
         dcm_error = norm(dcm_last - self.dcm_target)
-        print "\n"
-        print "%14s:  " % "Desired dur.", "%.3f s" % self.desired_duration
-        print "%14s:  " % "Duration", "%.3f s" % self.duration
-        print "%14s:  " % "DCM error", "%.3f cm" % (100 * dcm_error)
-        print "%14s:  " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time)
-        print "%14s:  " % "Iter. count", self.nlp.iter_count
-        print "%14s:  " % "Status", self.nlp.return_status
-        print "\n"
+        print("\n")
+        print("%14s: " % "Desired dur.", "%.3f s" % self.desired_duration)
+        print("%14s: " % "Duration", "%.3f s" % self.duration)
+        print("%14s: " % "DCM error", "%.3f cm" % (100 * dcm_error))
+        print("%14s: " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time))
+        print("%14s: " % "Iter. count", self.nlp.iter_count)
+        print("%14s: " % "Status", self.nlp.return_status)
+        print("\n")
 
     def draw(self, color='b'):
         """

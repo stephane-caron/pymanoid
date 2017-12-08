@@ -90,7 +90,7 @@ class SupportAreaDrawer(pymanoid.Process):
                 [(x[0], x[1], self.z) for x in vertices],
                 normal=[0, 0, 1], color=(0.0, 0.0, 0.5, 0.5))
         except Exception as e:
-            print "SupportAreaDrawer:", e
+            print("SupportAreaDrawer: {}".format(e))
 
     def on_tick(self, sim):
         if self.handle is None:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     sim.schedule_extra(wrench_drawer)
     sim.start()
 
-    print """
+    print("""
 ZMP support area
 ================
 
@@ -177,7 +177,7 @@ COM exists the static-equilibrium polygon, you should see the background turn
 red as no feasible contact wrenches can be found.
 
 Enjoy :)
-"""
+""")
 
     if IPython.get_ipython() is None:
         IPython.embed()

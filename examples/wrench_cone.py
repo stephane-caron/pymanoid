@@ -34,13 +34,13 @@ from pymanoid import Stance
 
 
 def print_contact(name, contact):
-    print "%s:" % name
-    print "- pos = %s" % repr(contact.p)
-    print "- rpy = %s" % repr(contact.rpy)
-    print "- half-length =", contact.shape[0]
-    print "- half-width =", contact.shape[1]
-    print "- friction =", contact.friction
-    print ""
+    print("%s:" % name)
+    print("- pos = %s" % repr(contact.p))
+    print("- rpy = %s" % repr(contact.rpy))
+    print("- half-length =", contact.shape[0])
+    print("- half-width =", contact.shape[1])
+    print("- friction =", contact.friction)
+    print("")
 
 
 if __name__ == "__main__":
@@ -63,8 +63,8 @@ if __name__ == "__main__":
     CWC_O = stance.compute_wrench_inequalities(p)
     print_contact("Left foot", stance.left_foot)
     print_contact("Right foot", stance.right_foot)
-    print "Contact Wrench Cone at %s:" % str(p)
-    print "- has %d lines" % CWC_O.shape[0]
+    print("Contact Wrench Cone at %s:" % str(p))
+    print("- has %d lines" % CWC_O.shape[0])
 
     try:
         import WrenchConeLib as wcl
@@ -77,10 +77,10 @@ if __name__ == "__main__":
         CWC = wcl.WrenchCone(p, [lf_surf, rf_surf])
         S = CWC.get_rays()
         CWC_wcl = CWC.get_halfspaces()
-        print "- has %d lines" % CWC_wcl.shape[0]
+        print("- has %d lines" % CWC_wcl.shape[0])
     except ImportError:
-        print """
-=============================================================================
+        print("""
+============================================================================
 
 Check out WrenchConeLib <https://github.com/vsamy/WrenchConeLib> for faster
 computations:
@@ -91,8 +91,8 @@ computations:
     In [2]: %timeit stance.compute_wrench_inequalities([0, 0, 0])
     100 loops, best of 3: 4.05 ms per loop
 
-============================================================================="""
+============================================================================""")
 
-    print ""
+    print("")
     if IPython.get_ipython() is None:
         IPython.embed()

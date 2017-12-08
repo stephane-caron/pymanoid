@@ -246,13 +246,13 @@ class IKSolver(Process):
         dt : scalar
             Timestep for the IK.
         """
-        print "\n                TASK      COST",
-        print "\n------------------------------"
+        print("\n                TASK      COST")
+        print("------------------------------")
         for task in self.tasks.itervalues():
             J = task.jacobian()
             r = task.residual(dt)
-            print "%20s  %.2e" % (task.name, norm(dot(J, qd) - r))
-        print ""
+            print("%20s  %.2e" % (task.name, norm(dot(J, qd) - r)))
+        print("")
 
     def remove_task(self, ident):
         """
@@ -487,7 +487,7 @@ class IKSolver(Process):
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
             if debug:
-                print "%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr)
+                print("%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr))
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
             self.step(dt, unsafe=(itnum < max_it / 2))

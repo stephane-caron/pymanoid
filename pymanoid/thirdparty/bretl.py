@@ -181,7 +181,7 @@ def optimize_direction(vdir, lp, solver=GLPK_IF_AVAILABLE):
             warn("Failed with status %s\n" % sol['status'])
             return False, 0
     except Exception as inst:
-        print inst
+        warn("Catched exception: {}".format(inst))
         return False, 0
 
 

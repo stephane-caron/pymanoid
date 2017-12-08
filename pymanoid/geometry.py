@@ -464,7 +464,7 @@ def project_polyhedron(proj, ineq, eq=None, canonicalize=True):
     P = cdd.Polyhedron(linsys)
     generators = P.get_generators()
     if generators.lin_set:
-        print "Generators have linear set:", generators.lin_set
+        print("Generators have linear set: {}".format(generators.lin_set))
     V = array(generators)
 
     # Project output wrenches to 2D set

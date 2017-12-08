@@ -42,18 +42,11 @@ from pymanoid.gui import draw_cone, draw_polyhedron
 from pymanoid.gui import draw_line, draw_point, draw_points
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
 from pymanoid.misc import normalize
+from pymanoid.mpc import LinearPredictiveControl
 from pymanoid.robots import JVRC1
 from pymanoid.sim import gravity
 from pymanoid.tasks import ContactTask, DOFTask, PoseTask, MinCAMTask
 from pymanoid.transformations import rotation_matrix_from_quat
-
-# try:
-#     from pymanoid.mpc import VSLMPC as LinearPredictiveControl
-#     print "using VSLMPC (C++)"
-# except ImportError:
-#     from pymanoid.mpc import LinearPredictiveControl
-#     print "using vanilla LinearPredictiveControl (Python)"
-from pymanoid.mpc import LinearPredictiveControl
 
 
 def generate_staircase(radius, angular_step, height, roughness, friction,
@@ -312,7 +305,7 @@ class WalkingFSM(pymanoid.Process):
             self.rem_time -= sim.dt
         elif (self.cur_stance.label.startswith('DS') and not
               can_switch_to_ss()):
-            print "FSM: not ready for single-support yet..."
+            print("FSM: not ready for single-support yet...")
         elif self.cur_stance_id == self.nb_stances - 1 and not self.cycle:
             self.is_over = True
         else:
@@ -333,7 +326,7 @@ class WalkingFSM(pymanoid.Process):
             self.rem_time = self.cur_stance.duration
             self.update_robot_ik()
             if self.verbose:
-                print "FSM switched to '%s' stance" % self.cur_stance.label
+                print("FSM switched to '%s' stance" % self.cur_stance.label)
 
     def update_robot_ik(self):
         prev_lf_task = self.robot.ik.get_task(self.robot.left_foot.name)
@@ -531,12 +524,12 @@ class COMTubePredictiveControl(pymanoid.Process):
         try:
             self.compute_preview_tube()
         except Exception as e:
-            print "Tube error: %s" % str(e)
+            print("Tube error: %s" % str(e))
             return
         try:
             self.compute_preview_control(switch_time, horizon)
         except Exception as e:
-            print "COMTubePredictiveControl error: %s" % str(e)
+            print("COMTubePredictiveControl error: %s" % str(e))
             return
         sim.log_comp_time(
             'qp_build', self.preview_control.build_time)
@@ -607,7 +600,7 @@ class COMTubePredictiveControl(pymanoid.Process):
             self.preview_buffer.switch_step = self.preview_control.switch_step
             # </dirty>
         except ValueError:
-            print "MPC couldn't solve QP, constraints may be inconsistent"
+            print("MPC couldn't solve QP, constraints may be inconsistent")
 
 
 class PreviewBuffer(pymanoid.Process):
@@ -786,11 +779,11 @@ class TubeDrawer(pymanoid.Process):
         try:
             self.draw_primal(mpc.tube)
         except Exception as e:
-            print "Drawing of polytopes failed: %s" % str(e)
+            print("Drawing of polytopes failed: %s" % str(e))
         try:
             self.draw_dual(mpc.tube)
         except Exception as e:
-            print "Drawing of dual cones failed: %s" % str(e)
+            print("Drawing of dual cones failed: %s" % str(e))
         if True:
             self.draw_comdd()
 
@@ -922,7 +915,7 @@ if __name__ == "__main__":
     sim.schedule_extra(update_com_target)
     sim.schedule_extra(wrench_drawer)
 
-    print """
+    print("""
 
 Multi-contact Walking Pattern Generation
 ========================================
@@ -943,7 +936,7 @@ Here is the list of global objects. Use <TAB> to see what's inside.
 
 Enjoy :)
 
-"""
+""")
 
     if IPython.get_ipython() is None:
         IPython.embed()
