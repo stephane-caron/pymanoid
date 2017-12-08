@@ -26,11 +26,19 @@ Running this example requires the StabiliPy
 """
 
 import IPython
-
-from numpy import zeros
-
 import pymanoid
+import sys
 
+try:
+    import stabilipy as stab
+except:
+    pymanoid.error("Running this example requires the StabiliPy library")
+    print(
+        "You can get the StabiliPy library from: "
+        "https://github.com/haudren/stabilipy\n")
+    sys.exit(-1)
+
+from numpy import array, zeros
 from pymanoid import Stance
 from pymanoid.gui import PointMassWrenchDrawer
 from pymanoid.gui import draw_polyhedron
