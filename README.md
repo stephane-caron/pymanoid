@@ -31,7 +31,7 @@ Python library for humanoid robotics based on
 
 - [Installation instructions](#installation)
 - [Documentation](https://scaron.info/doc/pymanoid/)
-- [FAQ](#frequently-asked-questions)
+- [FAQ](https://github.com/stephane-caron/pymanoid/wiki/Frequently-Asked-Questions)
 - [Examples](/examples)
 
 ## Installation
@@ -64,46 +64,3 @@ from source to install the MA27 linear solver as well.
 
 Some minor functions to manipulate polygons may also require two small
 libraries: ``sudo pip install pyclipper``.
-
-## Frequently Asked Questions
-
-**Q: Do you implement dynamics simulation in Pymanoid? If yes, could you give
-me some pointers? If no, how do you verify the stability of the robot?**
-
-Forward dynamics need a reaction-force model, which is a tricky thing to do in
-rigid body dynamics. This stems from an essential "contradiction" of the model:
-physically, reaction forces depend on local deformations between bodies in
-contact, while the main assumption of rigid body dynamics is that bodies are
-not deformable. To overcome this, two main approaches have been explored:
-regularized reaction-force models (a.k.a. "jedi" physics) and non-smooth
-approaches. Both have pros and cons in terms of realism and numerical
-integration. For more details, check out the Wikipedia page on [contact
-dynamics](https://en.wikipedia.org/wiki/Contact_dynamics).
-
-Pymanoid does not provide forward dynamics. The stability that is checked in
-simulations is a feasibility criterion called [contact
-stability](https://scaron.info/teaching/contact-stability.html), namely, that
-at each timestep there exists feasible contact forces that support the robot
-motion. This check is performed by the ``find_supporting_wrenches()``
-function of a [ContactSet](/pymanoid/contact.py).
-
-**Q: How can I record a video of my simulation?**
-
-For a quick and dirty solution, you can record your whole desktop using e.g.
-[kazam](https://github.com/sconts/kazam). However, with this approach the video
-time will be your system time, potentially slowed down by all other processes
-running on your machine (including `kazam` itself).
-
-To record a video synchronized with your simulation time, call
-`sim.record("filename.mp4")`. This will schedule an extra `CameraRecorder`
-process that takes a capture of your simulation window after each step. You can
-then run your simulation as usual. Once your simulation is over, call the
-`make_pymanoid_video.sh` script created in the current folder. It will
-reassemble screenshots into a properly timed video `filename.mp4`.
-
-**Q: the video script returns an error "width/height not divisible by 2".**
-
-Bad choice of window size ;) You will need to crop the PNG files in the
-`pymanoid_rec/` temporary folder. For instance, if the resolution of these
-files is 1918x1059, `cd` to that folder and run `mogrify -crop 1918x1058+0+0
-*.png`.
