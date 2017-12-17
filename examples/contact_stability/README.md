@@ -17,6 +17,18 @@ contact to support the robot in static-equilibrium. Try moving the blue box (in
 the plane above the robot) around, and see what happens when it exits the
 polygon.
 
+## COM robust static-equilibrium polytope
+
+This example generalizes the previous one when there are additional constraints
+on the robot, such as external forces or noise on contact forces as described
+in [this paper](https://hal.archives-ouvertes.fr/hal-01201060/document) and
+[this paper](https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362/document). In this
+case, the upright prism of the static-equilibrium polygon generalizes into a
+*polytope* of sustainable COM positions (an intersection of slanted
+static-equilibrium prisms). This example illustrates how to compute this
+polytope using the [StabiliPy](https://github.com/haudren/stabilipy) library.
+Try moving contacts around to see what happens.
+
 ## Multi-contact ZMP support areas
 
 This example displays the ZMP support area under a given set of contacts. The
