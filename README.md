@@ -46,7 +46,7 @@ and [Ubuntu
 Next, install all Python dependencies with:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
-sudo pip install quadprog pycddlib
+sudo pip install quadprog pycddlib pyclipper
 sudo CVXOPT_BUILD_GLPK=1 pip install cvxopt
 ```
 Finally, clone the repository, and run the setup script:
@@ -58,9 +58,6 @@ python setup.py install --user
 
 ### Optional
 
-For nonlinear optimal control, you will need to [install
+For nonlinear numeric optimization, you will need to [install
 CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
 from source to install the MA27 linear solver as well.
-
-Some minor functions to manipulate polygons may also require two small
-libraries: ``sudo pip install pyclipper``.
