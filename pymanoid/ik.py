@@ -75,6 +75,7 @@ class IKSolver(Process):
         'MIN_CAM': 1e-4,
         'DOF': 1e-5,
         'POSTURE': 1e-6,
+        'MIN_VEL': 1e-6,
     }
 
     def __init__(self, robot, active_dofs=None, doflim_gain=0.5):
