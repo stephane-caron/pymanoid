@@ -30,7 +30,7 @@ from stat import S_IEXEC
 from threading import Lock, Thread
 from time import sleep, time
 
-from .misc import AvgStdEstimator
+from .misc import AvgStdEstimator, matplotlib_to_rgb
 
 
 env = None  # global OpenRAVE environment
@@ -256,10 +256,38 @@ class Simulation(object):
         if self.viewer is None:  # seldom happens that GetViewer() is not
             sleep(0.01)  # immediately available after SetViewer()
             self.viewer = self.env.GetViewer()
-        self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
+        self.set_background()
         self.set_camera_back(x=-3, y=0, z=0.7)
 
+    def set_background(self, color=None):
+        """
+        Set viewer background color.
+
+        Parameters
+        ----------
+        color : string, RGB tuple or None
+            Background color.
+        """
+        if color is None:
+            self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
+        elif type(color) is str:
+            self.viewer.SetBkgndColor(matplotlib_to_rgb(color))
+        else:  # all other types simply forwarded
+            self.viewer.SetBkgndColor(color)
+
     def set_camera_back(self, x=None, y=None, z=None):
+        """
+        Align camera axis with the x-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -270,6 +298,18 @@ class Simulation(object):
             [0,  0, 0, 1.]])
 
     def set_camera_bottom(self, x=None, y=None, z=None):
+        """
+        Align camera axis with the z-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -280,6 +320,18 @@ class Simulation(object):
             [0,  0, 0, 1]])
 
     def set_camera_front(self, x=None, y=None, z=None):
+        """
+        Align camera axis opposite to the x-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -290,6 +342,18 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def set_camera_left(self, x=None, y=None, z=None):
+        """
+        Align camera axis opposite to the y-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -300,6 +364,18 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def set_camera_right(self, x=None, y=None, z=None):
+        """
+        Align camera axis with the y-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -310,6 +386,18 @@ class Simulation(object):
             [0,  0, 0, 1.]])
 
     def set_camera_top(self, x=None, y=None, z=None):
+        """
+        Align camera axis opposite to the z-axis of the world frame.
+
+        Parameters
+        ----------
+        x : scalar or None
+            Camera translation along x-axis of the world frame.
+        y : scalar or None
+            Camera translation along y-axis of the world frame.
+        z : scalar or None
+            Camera translation along z-axis of the world frame.
+        """
         x = self.camera_transform[0, 3] if x is None else x
         y = self.camera_transform[1, 3] if y is None else y
         z = self.camera_transform[2, 3] if z is None else z
@@ -320,6 +408,18 @@ class Simulation(object):
             [0,  0,  0, 1.]])
 
     def move_camera_to(self, T, duration=0., dt=3e-2):
+        """
+        Continuously move the camera frame to a target transform.
+
+        Parameters
+        ----------
+        T : (4, 4) array
+            Target transform.
+        duration : scalar, optional
+            Motion duration.
+        dt : scalar, optional
+            Time step between intermeditate camera transforms.
+        """
         T_i = self.camera_transform
         for t in arange(0., duration, dt):
             self.viewer.SetCamera((1. - t) * T_i + t * T)
