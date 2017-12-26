@@ -99,11 +99,6 @@ class Simulation(object):
         Load environment from XML string.
     """
 
-    BACKGROUND_COLOR = [0.7, 0.8, 0.9]
-
-    # BACKGROUND_COLOR = [0.7, 0.80, 0.9]  # color for 0.6.* series
-    # BACKGROUND_COLOR = [1.0, 0.98, 0.9]  # color for 0.7.* series
-
     def __init__(self, dt, env_path=None, env_xml=None):
         global env, gravity
         if env is not None:
@@ -269,7 +264,7 @@ class Simulation(object):
             Background color.
         """
         if color is None:
-            self.viewer.SetBkgndColor(self.BACKGROUND_COLOR)
+            self.viewer.SetBkgndColor([1., 1., 1.])
         elif type(color) is str:
             self.viewer.SetBkgndColor(matplotlib_to_rgb(color))
         else:  # all other types simply forwarded
