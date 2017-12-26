@@ -55,6 +55,7 @@ class InvertedPendulum(Process):
         com = PointMass(pos, mass, vel)
         if not visible:
             com.hide()
+        self.check_cop = __debug__
         self.com = com
         self.contact = contact
         self.cop = contact.p
@@ -105,7 +106,7 @@ class InvertedPendulum(Process):
         cop : (3,) array
             New CoP location in the world frame.
         """
-        if __debug__:
+        if self.check_cop:
             cop_check = dot(self.contact.R.T, cop - self.contact.p)
             if abs(cop_check[0]) > 1.05 * self.contact.shape[0]:
                 warn("CoP crosses contact area along sagittal axis")
