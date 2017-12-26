@@ -131,9 +131,9 @@ class COMTask(Task):
     Parameters
     ----------
     robot : Humanoid
-        Targetted robot.
+        Target robot.
     target : list or array or Point
-        Coordinates or the targetted COM position.
+        Coordinates or the target COM position.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -175,9 +175,9 @@ class COMAccelTask(Task):
     Parameters
     ----------
     robot : Humanoid
-        Targetted robot.
+        Target robot.
     target : list or array or Point
-        Coordinates or the targetted COM position.
+        Coordinates or the target COM position.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -224,7 +224,7 @@ class DOFTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     index : string or integer
         DOF index or string of DOF identifier.
     target : scalar
@@ -268,7 +268,7 @@ class PosTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     link : Link
         One of the Link objects in the kinematic chain of the robot.
     target : list or array (shape=(3,)) or pymanoid.Body
@@ -317,7 +317,7 @@ class PoseTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     link : Link or string
         Robot Link, or name of the link field in the ``robot`` argument.
     target : list or array (shape=(7,)) or pymanoid.Body
@@ -369,7 +369,7 @@ class MinAccelTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -406,7 +406,7 @@ class MinCAMTask(Task):
     Parameters
     ----------
     robot : Humanoid
-        Targetted robot.
+        Target robot.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -436,7 +436,7 @@ class MinVelTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -467,7 +467,7 @@ class PendulumModeTask(Task):
     Parameters
     ----------
     robot : Humanoid
-        Targetted robot.
+        Target robot.
     weight : scalar, optional
         Task weight used in IK cost function. If None, needs to be set later.
     gain : scalar, optional
@@ -552,7 +552,7 @@ class PostureTask(Task):
     Parameters
     ----------
     robot : Robot
-        Targetted robot.
+        Target robot.
     q_ref : array
         Vector of reference joint angles.
     weight : scalar, optional
