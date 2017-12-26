@@ -446,6 +446,21 @@ class Body(object):
         self.set_pos(self.p + v * dt)
         self.set_rotation_matrix(self.R + dot(crossmat(omega), self.R) * dt)
 
+    def dist(self, point):
+        """
+        Distance from the body frame origin to another point.
+
+        Parameters
+        ----------
+        point : array or Point
+            Point to compute the distance to.
+        """
+        if isinstance(point, list):
+            point = array(point)
+        if isinstance(point, ndarray):
+            return norm(point - self.p)
+        return norm(point.p - self.p)
+
 
 class Manipulator(Body):
 
@@ -609,21 +624,6 @@ class Point(Cube):
     def zd(self):
         """Point velocity along z-axis."""
         return self.__pd[2]
-
-    def dist(self, other_point):
-        """
-        Distance to another point.
-
-        Parameters
-        ----------
-        other_point : array or Point
-            Point to compute the distance to.
-        """
-        if isinstance(other_point, list):
-            other_point = array(other_point)
-        if isinstance(other_point, ndarray):
-            return norm(other_point - self.p)
-        return norm(other_point.p - self.p)
 
     def set_vel(self, pd):
         """
