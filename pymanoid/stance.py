@@ -125,6 +125,16 @@ class Stance(ContactSet):
         return stance
 
     def bind(self, robot, reg='posture'):
+        """
+        Bind stance as robot IK targets.
+
+        Parameters
+        ----------
+        robot : pymanoid.Robot
+            Target robot.
+        reg : string, optional
+            Regularization task, either "posture" or "min_vel".
+        """
         tasks = []
         if self.left_foot is not None:
             tasks.append(ContactTask(robot, robot.left_foot, self.left_foot))
@@ -139,7 +149,7 @@ class Stance(ContactSet):
         tasks.append(COMTask(robot, self.com))
         if reg == 'posture':
             tasks.append(PostureTask(robot, robot.q_halfsit))
-        else:  # default regularization is minimum velocity
+        else:  # reg == 'min_vel'
             tasks.append(MinVelTask(robot))
         robot.ik.clear_tasks()
         for task in tasks:

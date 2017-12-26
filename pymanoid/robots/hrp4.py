@@ -130,6 +130,7 @@ class HRP4(Humanoid):
     arms = left_arm + right_arm
     free = free_pos + free_rpy
     legs = left_leg + right_leg
+    upper_body = arms + chest
     whole_body = arms + legs + chest + free
 
     # Half-sitting posture
