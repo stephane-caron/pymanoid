@@ -466,6 +466,14 @@ class ContactFeed(object):
     def last(self):
         return self.contacts[-1]
 
+    def hide(self):
+        for contact in self.contacts:
+            contact.hide()
+
+    def show(self):
+        for contact in self.contacts:
+            contact.show()
+
     def duplicate_last_contact(self, dx=0.05, dy=0.05, dz=0.0):
         contact = self.last.copy()
         contact.set_pos(contact.p + [dx, dy, dz])
