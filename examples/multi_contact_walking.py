@@ -877,7 +877,6 @@ if __name__ == "__main__":
         nb_mpc_steps=20,
         tube_radius=0.01)
 
-    robot.ik.log_comp_times()
     robot.ik.default_weights['POSTURE'] = 1e-5
     robot.set_pos([0, 0, 2])  # robot initially above contacts
     fsm.cur_stance.bind(robot)
@@ -897,7 +896,7 @@ if __name__ == "__main__":
     sim.schedule(fsm)
     sim.schedule(mpc)
     sim.schedule(preview_buffer)
-    sim.schedule(robot.ik)
+    sim.schedule(robot.ik, log_comp_times=True)
 
     com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')

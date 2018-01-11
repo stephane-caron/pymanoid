@@ -49,19 +49,8 @@ class Process(object):
     """
 
     def __init__(self):
-        self._log_comp_times = False
+        self.log_comp_times = False
         self.is_paused = False
-
-    def log_comp_times(self, active=True):
-        """
-        Log average computation times for each tick.
-
-        Parameters
-        ----------
-        active : bool, default=True
-            Enable or disable logging.
-        """
-        self._log_comp_times = active
 
     def on_tick(self, sim):
         """
@@ -136,7 +125,7 @@ class Simulation(object):
     def __del__(self):
         self.stop()
 
-    def schedule(self, process, paused=False):
+    def schedule(self, process, paused=False, log_comp_times=False):
         """
         Add a process to the schedule list.
 
@@ -154,6 +143,7 @@ class Simulation(object):
         assert issubclass(type(process), Process), \
             "Cannot schedule process of type %s" % type(process).__name__
         self.processes.append(process)
+        process.log_comp_times = log_comp_times
         if paused:
             process.pause()
 
@@ -193,7 +183,7 @@ class Simulation(object):
                     "forget to call its parent constructor?"
                 raise AttributeError(most_likely_explanation)
             if not process.is_paused:
-                if process._log_comp_times:
+                if process.log_comp_times:
                     t0i = time()
                     process.on_tick(self)
                     pname = type(process).__name__

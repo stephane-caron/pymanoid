@@ -178,23 +178,23 @@ class HRP4(Humanoid):
             self.rave.GetManipulator("RightHandCenter"), shape=self.palm_shape,
             friction=0.8)
 
-    def add_shoulder_abduction_task(self, weight):
+    def add_shoulder_abduction_task(self, weight=None):
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_R, -0.4, weight))
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_R, +0.4, weight))
 
-    def add_shoulder_extension_task(self, weight):
+    def add_shoulder_extension_task(self, weight=None):
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, +0.5, weight))
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, +0.5, weight))
 
-    def add_shoulder_flexion_task(self, weight):
+    def add_shoulder_flexion_task(self, weight=None):
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, -0.5, weight))
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, -0.5, weight))
 
-    def add_shoulder_neutral_pitch_task(self, weight):
+    def add_shoulder_neutral_pitch_task(self, weight=None):
         self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, 0., weight))
         self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, 0., weight))
 
-    def add_upright_chest_task(self, weight):
+    def add_upright_chest_task(self, weight=None):
         self.ik.add_task(DOFTask(self, self.ROT_P, 0., weight))
         self.ik.add_task(DOFTask(self, self.CHEST_P, 0.2, weight))
         self.ik.add_task(DOFTask(self, self.CHEST_Y, 0., weight))
@@ -210,8 +210,8 @@ class HRP4(Humanoid):
         """
         self.ik.tasks['COM'].update_target(com_target)
         self.ik.add_task(MinCAMTask(self))
-        self.add_upright_chest_task(weight=1e-4)
-        self.add_shoulder_neutral_pitch_task(weight=1e-4)
+        self.add_upright_chest_task()
+        self.add_shoulder_neutral_pitch_task()
         self.ik.set_task_weights({
             self.left_foot.name:  1.,
             self.right_foot.name: 1.,
