@@ -20,7 +20,7 @@
 
 from numpy import cosh, dot, sinh, sqrt
 
-from .body import PointMass
+from .body import Point
 from .gui import draw_line
 from .misc import warn
 from .sim import Process, gravity
@@ -33,8 +33,6 @@ class InvertedPendulum(Process):
 
     Parameters
     ----------
-    mass : scalar
-        Total robot mass.
     pos : (3,) array
         Initial position in the world frame.
     vel : (3,) array
@@ -49,10 +47,10 @@ class InvertedPendulum(Process):
         Draw the pendulum model in GUI?
     """
 
-    def __init__(self, mass, pos, vel, contact, lambda_min=None,
-                 lambda_max=None, visible=True):
+    def __init__(self, pos, vel, contact, lambda_min=None, lambda_max=None,
+                 visible=True):
         super(InvertedPendulum, self).__init__()
-        com = PointMass(pos, mass, vel)
+        com = Point(pos, vel)
         if not visible:
             com.hide()
         self.check_cop = __debug__
@@ -76,8 +74,7 @@ class InvertedPendulum(Process):
             Should the copy be visible?
         """
         return InvertedPendulum(
-            self.com.mass, self.com.p, self.com.pd, self.contact,
-            visible=visible)
+            self.com.p, self.com.pd, self.contact, visible=visible)
 
     def hide(self):
         """Hide the pendulum in the GUI."""

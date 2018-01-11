@@ -605,6 +605,19 @@ class Point(Cube):
         super(Point, self).__init__(size, pos=pos, color=color, visible=visible)
         self.__pd = zeros(3) if vel is None else array(vel)
 
+    def copy(self, color='r', visible=True):
+        """
+        Copy constructor.
+
+        Parameters
+        ----------
+        color : char, optional
+            Color of the copy, in ['r', 'g', 'b'].
+        visible : bool, optional
+            Should the copy be visible?
+        """
+        return Point(self.p, self.pd, color=color, visible=visible)
+
     @property
     def pd(self):
         """Point velocity."""
