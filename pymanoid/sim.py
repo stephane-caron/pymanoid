@@ -30,7 +30,7 @@ from stat import S_IEXEC
 from threading import Lock, Thread
 from time import sleep, time
 
-from .misc import AvgStdEstimator, matplotlib_to_rgb
+from .misc import AvgStdEstimator, matplotlib_to_rgb, warn
 
 
 env = None  # global OpenRAVE environment
@@ -405,6 +405,9 @@ class Simulation(object):
         dt : scalar, optional
             Time step between intermeditate camera transforms.
         """
+        if self.viewer is None:
+            warn("no camera to move as viewer is not set")
+            return
         T_i = self.camera_transform
         for t in arange(0., duration, dt):
             self.viewer.SetCamera((1. - t) * T_i + t * T)
