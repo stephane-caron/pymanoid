@@ -470,6 +470,9 @@ class Simulation(object):
 
     def print_comp_times(self, unit='ms'):
         scale = {'s': 1, 'ms': 1000, 'us': 1e6}[unit]
+        maxlen = max(len(key) for key in self.comp_times)
+        fmt = "%%%ds: %%.2f +/- %%.2f %%s " % maxlen
+        fmt += "(max: %%.2f %%s, min: %%.2f %%s, %%d items)" % ()
         for key in sorted(self.comp_times):
             times = self.comp_times[key]
             if times.n < 1:
@@ -478,10 +481,10 @@ class Simulation(object):
             elif times.n == 1:
                 print("%20s: %.2f %s" % (key, scale * times.avg, unit))
                 continue
-            print("%20s: %.2f +/- %.2f %s "
-                  "(max: %.2f %s, min: %.2f %s, %d items)" % (
-                      key, scale * times.avg, scale * times.std, unit, scale *
-                      times.x_max, unit, scale * times.x_min, unit, times.n))
+            data = (
+                key, scale * times.avg, scale * times.std, unit,
+                scale * times.x_max, unit, scale * times.x_min, unit, times.n)
+            print(fmt % data)
 
     def record(self, fname=None):
         """
