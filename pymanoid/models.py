@@ -54,6 +54,7 @@ class InvertedPendulum(Process):
         if not visible:
             com.hide()
         self.check_cop = __debug__
+        self.check_lambda = __debug__
         self.com = com
         self.contact = contact
         self.cop = contact.p
@@ -109,7 +110,7 @@ class InvertedPendulum(Process):
                 warn("CoP crosses contact area along sagittal axis")
             if abs(cop_check[1]) > 1.05 * self.contact.shape[1]:
                 warn("CoP crosses contact area along lateral axis")
-            if abs(cop_check[2]) > 0.05:
+            if abs(cop_check[2]) > 0.01:
                 warn("CoP does not lie on contact area")
         self.cop = cop
 
@@ -122,6 +123,11 @@ class InvertedPendulum(Process):
         lambda_ : scalar
             Leg stiffness coefficient (positive).
         """
+        if self.check_lambda:
+            if self.lambda_min is not None and lambda_ < self.lambda_min:
+                warn("Stiffness %f below %f" % (lambda_, self.lambda_min))
+            if self.lambda_max is not None and lambda_ > self.lambda_max:
+                warn("Stiffness %f above %f" % (lambda_, self.lambda_max))
         self.lambda_ = lambda_
 
     def integrate(self, duration):
