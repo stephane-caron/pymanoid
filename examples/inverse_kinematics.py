@@ -39,8 +39,8 @@ def move_com_back_and_forth(duration, dt=1e-2):
     init_com = robot.com.copy()
     for t in numpy.arange(0, duration, dt):
         loop_start = time.time()
-        com_var = numpy.sin(t) * numpy.array([.2, 0, 0])
-        com.set_pos(init_com + numpy.array([-0.2, 0., 0.]) + com_var)
+        com_var = numpy.sin(t) * numpy.array([.15, 0, 0])
+        com.set_pos(init_com + numpy.array([-0.15, 0., 0.]) + com_var)
         robot.ik.step(dt)
         rem_time = dt - (time.time() - loop_start)
         if rem_time > 0:
@@ -74,16 +74,15 @@ if __name__ == '__main__':
     reg_task = PostureTask(robot, robot.q, weight=1e-6, gain=0.85)
 
     # IK setup
-    robot.ik.clear_tasks()
-    robot.ik.add_task(lf_task)
-    robot.ik.add_task(rf_task)
-    robot.ik.add_task(com_task)
-    robot.ik.add_task(reg_task)
+    robot.ik.add(lf_task)
+    robot.ik.add(rf_task)
+    robot.ik.add(com_task)
+    robot.ik.add(reg_task)
 
     # Add some DOFTasks for a nicer posture
-    robot.ik.add_task(DOFTask(
+    robot.ik.add(DOFTask(
         robot, robot.R_SHOULDER_R, -0.5, gain=0.5, weight=1e-5))
-    robot.ik.add_task(DOFTask(
+    robot.ik.add(DOFTask(
         robot, robot.L_SHOULDER_R, +0.5, gain=0.5, weight=1e-5))
 
     # First, generate an initial posture

@@ -21,7 +21,7 @@
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 
-from .misc import norm, warn
+from .misc import norm
 from .optim import solve_qp
 from .sim import Process
 from .tasks import ContactTask, DOFTask, PoseTask
@@ -47,6 +47,22 @@ class IKSolver(Process):
         <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
         between zero and one.
 
+    Attributes
+    ----------
+    doflim_gain : scalar, optional
+        DOF-limit gain as described in [Kanoun12]_. In `this implementation
+        <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
+        between zero and one.
+    qd : array
+        Velocity returned by last solver call.
+    robot : pymanoid.Robot
+        Robot model.
+    tasks : dict
+        Dictionary of active IK tasks, indexed by task name.
+    unsafe : bool
+        Use unsafe formulation? (Faster computations but potentially jerkier
+        outputs.) Defaults to False.
+
     Notes
     -----
     One unsatisfactory aspect of the DOF-limit gain is that it slows down the
@@ -55,7 +71,7 @@ class IKSolver(Process):
     to move faster with a fully extended knee.
     """
 
-    __DEFAULT_GAINS = {
+    DEFAULT_GAINS = {
         'COM': 0.85,
         'CONTACT': 0.85,
         'DOF': 0.85,
@@ -67,7 +83,7 @@ class IKSolver(Process):
         'POSTURE': 0.85,
     }
 
-    __DEFAULT_WEIGHTS = {
+    DEFAULT_WEIGHTS = {
         'CONTACT': 1.,
         'COM': 1e-2,
         'POSE': 1e-3,
@@ -83,18 +99,20 @@ class IKSolver(Process):
         if active_dofs is None:
             active_dofs = range(robot.nb_dofs)
         assert 0. <= doflim_gain <= 1.
-        self.default_gains = {}
-        self.default_weights = {}
+        self.__lock = Lock()
         self.doflim_gain = doflim_gain
         self.qd = zeros(robot.nb_dofs)
         self.robot = robot
         self.tasks = {}
-        self.tasks_lock = Lock()
         self.unsafe = False
         #
         self.set_active_dofs(active_dofs)
-        self.set_default_gains()
-        self.set_default_weights()
+
+    def clear(self):
+        """
+        Clear all tasks in the IK solver.
+        """
+        self.tasks = {}
 
     def set_active_dofs(self, active_dofs):
         """
@@ -112,47 +130,7 @@ class IKSolver(Process):
         self.qd_max = +1. * self.robot.qd_lim[active_dofs]
         self.qd_min = -1. * self.robot.qd_lim[active_dofs]
 
-    def set_default_gains(self, default_gains=None):
-        """
-        Set default gains for new tasks.
-
-        Parameters
-        ----------
-        default_gains : string -> int dictionary, optional
-            Dictionary mapping task labels to default gain values.
-
-        Note
-        ----
-        When called with no argument, this function will use a set of "sane"
-        default values.
-        """
-        if default_gains is None:  # sane defaults
-            default_gains = self.__DEFAULT_GAINS
-        self.default_gains.update(default_gains)
-
-    def set_default_weights(self, default_weights=None):
-        """
-        Set default cost-function weights for new tasks.
-
-        Parameters
-        ----------
-        default_weights : string -> double dictionary, optional
-            Dictionary mapping task labels to default weight values.
-
-        Note
-        ----
-        When called with no argument, this function will use a set of "sane"
-        default values.
-        """
-        if default_weights is None:  # sane defaults
-            default_weights = self.__DEFAULT_WEIGHTS
-        else:  # default_weights is not None
-            for key in default_weights:
-                if key not in self.__DEFAULT_WEIGHTS:
-                    warn("unknown key '%s' for IK default weights" % key)
-        self.default_weights.update(default_weights)
-
-    def set_task_weights(self, weights):
+    def set_weights(self, weights):
         """
         Set cost-function weights for existing tasks.
 
@@ -164,29 +142,31 @@ class IKSolver(Process):
         for (name, weight) in weights.iteritems():
             self.tasks[name].weight = weight
 
-    def __fill_task_gain(self, task):
-        if task.name in self.default_gains:
-            task.gain = self.default_gains[task.name]
-        elif type(task) is ContactTask \
-                and 'CONTACT' in self.default_gains:
-            task.gain = self.default_gains['CONTACT']
-        elif type(task) is DOFTask and 'DOF' in self.default_gains:
-            task.gain = self.default_gains['DOF']
-        elif type(task) is PoseTask and 'POSE' in self.default_gains:
-            task.gain = self.default_gains['POSE']
+    def __fill_gain(self, task):
+        if task.name in self.DEFAULT_GAINS:
+            task.gain = self.DEFAULT_GAINS[task.name]
+        elif type(task) is ContactTask:
+            task.gain = self.DEFAULT_GAINS['CONTACT']
+        elif type(task) is DOFTask:
+            task.gain = self.DEFAULT_GAINS['DOF']
+        elif type(task) is PoseTask:
+            task.gain = self.DEFAULT_GAINS['POSE']
+        else:  # task type is not accounted for
+            raise Exception("no gain provided for task '%s'" % task.name)
 
-    def __fill_task_weight(self, task):
-        if task.name in self.default_weights:
-            task.weight = self.default_weights[task.name]
-        elif type(task) is ContactTask \
-                and 'CONTACT' in self.default_weights:
-            task.weight = self.default_weights['CONTACT']
-        elif type(task) is DOFTask and 'DOF' in self.default_weights:
-            task.weight = self.default_weights['DOF']
-        elif type(task) is PoseTask and 'POSE' in self.default_weights:
-            task.weight = self.default_weights['POSE']
+    def __fill_weight(self, task):
+        if task.name in self.DEFAULT_WEIGHTS:
+            task.weight = self.DEFAULT_WEIGHTS[task.name]
+        elif type(task) is ContactTask:
+            task.weight = self.DEFAULT_WEIGHTS['CONTACT']
+        elif type(task) is DOFTask:
+            task.weight = self.DEFAULT_WEIGHTS['DOF']
+        elif type(task) is PoseTask:
+            task.weight = self.DEFAULT_WEIGHTS['POSE']
+        else:  # task type is not accounted for
+            raise Exception("no weight provided for task '%s'" % task.name)
 
-    def add_task(self, task):
+    def add(self, task):
         """
         Add a new task to the IK solver.
 
@@ -194,49 +174,17 @@ class IKSolver(Process):
         ----------
         task : Task
             New task to add to the list.
-
-        Note
-        ----
-        This function is not made to be called frequently.
         """
         if task.name in self.tasks:
             raise Exception("Task '%s' already present in IK" % task.name)
-        if task.weight is None:
-            self.__fill_task_weight(task)
-            if task.weight is None:
-                raise Exception("no weight provided for task '%s'" % task.name)
         if task.gain is None:
-            self.__fill_task_gain(task)
-            if task.gain is None:
-                raise Exception("no gain provided for task '%s'" % task.name)
-        with self.tasks_lock:
+            self.__fill_gain(task)
+        if task.weight is None:
+            self.__fill_weight(task)
+        with self.__lock:
             self.tasks[task.name] = task
 
-    def clear_tasks(self):
-        """Clear all tasks in the IK solver."""
-        self.tasks = {}
-
-    def get_task(self, ident):
-        """
-        Get an active task from its name.
-
-        Parameters
-        ----------
-        ident : string or object
-            Name or object with a ``name`` field identifying the task.
-
-        Returns
-        -------
-        task : Task or None
-            The corresponding task if present, None otherwise.
-        """
-        name = ident if type(ident) is str else ident.name
-        with self.tasks_lock:
-            if name not in self.tasks:
-                return None
-            return self.tasks[name]
-
-    def print_task_costs(self, qd, dt):
+    def print_costs(self, qd, dt):
         """
         Print task costs for the current IK step.
 
@@ -255,7 +203,7 @@ class IKSolver(Process):
             print("%20s  %.2e" % (task.name, norm(dot(J, qd) - r)))
         print("")
 
-    def remove_task(self, ident):
+    def remove(self, ident):
         """
         Remove a task.
 
@@ -265,24 +213,10 @@ class IKSolver(Process):
             Name or object with a ``name`` field identifying the task.
         """
         name = ident if type(ident) is str else ident.name
-        with self.tasks_lock:
+        with self.__lock:
             if name not in self.tasks:
                 return
             del self.tasks[name]
-
-    def update_task(self, ident, task):
-        """
-        Update a task.
-
-        Parameters
-        ----------
-        ident : string or object
-            Name or object with a ``name`` field identifying the task.
-        """
-        name = ident if type(ident) is str else ident.name
-        assert task.name == name
-        self.remove_task(name)
-        self.add_task(task)
 
     def compute_cost(self, dt):
         """
@@ -295,12 +229,12 @@ class IKSolver(Process):
         """
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
-    def build_qp_matrices(self, dt):
+    def __build_qp_matrices(self, dt):
         n = self.nb_active_dofs
         q = self.robot.q[self.active_dofs]
         P = zeros((n, n))
         v = zeros(n)
-        with self.tasks_lock:
+        with self.__lock:
             for task in self.tasks.itervalues():
                 J = task.jacobian()[:, self.active_dofs]
                 r = task.residual(dt)
@@ -353,7 +287,7 @@ class IKSolver(Process):
         Gauss-Newton update rule.
         """
         n = self.nb_active_dofs
-        P, v, qd_max, qd_min = self.build_qp_matrices(dt)
+        P, v, qd_max, qd_min = self.__build_qp_matrices(dt)
         G = vstack([+eye(n), -eye(n)])
         h = hstack([qd_max, -qd_min])
         try:
@@ -399,7 +333,7 @@ class IKSolver(Process):
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
-        P0, v0, qd_max, qd_min = self.build_qp_matrices(dt)
+        P0, v0, qd_max, qd_min = self.__build_qp_matrices(dt)
         P = vstack([hstack([P0, Z]), hstack([Z, margin_reg * E])])
         v = hstack([v0, -margin_lin * ones(n)])
         G = vstack([

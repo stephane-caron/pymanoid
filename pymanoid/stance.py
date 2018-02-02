@@ -151,9 +151,9 @@ class Stance(ContactSet):
             tasks.append(PostureTask(robot, robot.q_halfsit))
         else:  # reg == 'min_vel'
             tasks.append(MinVelTask(robot))
-        robot.ik.clear_tasks()
+        robot.ik.clear()
         for task in tasks:
-            robot.ik.add_task(task)
+            robot.ik.add(task)
         robot.stance = self
 
     @property

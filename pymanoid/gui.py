@@ -492,8 +492,6 @@ class WrenchDrawer(Process):
     Draw contact wrenches applied to the robot.
     """
 
-    KO_COLOR = [.8, .4, .4]
-
     def __init__(self):
         super(WrenchDrawer, self).__init__()
         self.handles = []
@@ -522,12 +520,12 @@ class WrenchDrawer(Process):
         except ValueError:
             self.handles = []
             self.nb_fails += 1
-            sim.viewer.SetBkgndColor(self.KO_COLOR)
+            sim.viewer.SetBkgndColor([.8, .4, .4])
             self.last_bkgnd_switch = time()
         if self.last_bkgnd_switch is not None \
                 and time() - self.last_bkgnd_switch > 0.2:
             # let's keep epilepsy at bay
-            sim.viewer.SetBkgndColor(sim.BACKGROUND_COLOR)
+            sim.viewer.SetBkgndColor([1., 1., 1.])
             self.last_bkgnd_switch = None
 
 

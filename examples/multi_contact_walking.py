@@ -329,12 +329,12 @@ class WalkingFSM(pymanoid.Process):
                 print("FSM switched to '%s' stance" % self.cur_stance.label)
 
     def update_robot_ik(self):
-        prev_lf_task = self.robot.ik.get_task(self.robot.left_foot.name)
-        prev_rf_task = self.robot.ik.get_task(self.robot.right_foot.name)
+        prev_lf_task = self.robot.ik.tasks[self.robot.left_foot.name]
+        prev_rf_task = self.robot.ik.tasks[self.robot.right_foot.name]
         contact_weight = max(prev_lf_task.weight, prev_rf_task.weight)
         swing_weight = 1e-1
-        self.robot.ik.remove_task(self.robot.left_foot.name)
-        self.robot.ik.remove_task(self.robot.right_foot.name)
+        self.robot.ik.remove(self.robot.left_foot.name)
+        self.robot.ik.remove(self.robot.right_foot.name)
         if self.cur_stance.left_foot is not None:
             left_foot_task = ContactTask(
                 self.robot, self.robot.left_foot, self.cur_stance.left_foot,
@@ -351,8 +351,8 @@ class WalkingFSM(pymanoid.Process):
             right_foot_task = PoseTask(
                 self.robot, self.robot.right_foot, self.swing_foot,
                 weight=swing_weight)
-        self.robot.ik.add_task(left_foot_task)
-        self.robot.ik.add_task(right_foot_task)
+        self.robot.ik.add(left_foot_task)
+        self.robot.ik.add(right_foot_task)
 
 
 class COMTube(object):
@@ -877,7 +877,7 @@ if __name__ == "__main__":
         nb_mpc_steps=20,
         tube_radius=0.01)
 
-    robot.ik.default_weights['POSTURE'] = 1e-5
+    robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
     robot.set_pos([0, 0, 2])  # robot initially above contacts
     fsm.cur_stance.bind(robot)
     robot.ik.solve(max_it=24)
@@ -885,13 +885,13 @@ if __name__ == "__main__":
     robot.ik.tasks['COM'].update_target(com_target)
     robot.ik.solve(max_it=42)
 
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
-    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
-    robot.ik.add_task(MinCAMTask(robot, weight=1e-4))
+    robot.ik.add(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
+    robot.ik.add(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
+    robot.ik.add(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
+    robot.ik.add(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
+    robot.ik.add(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
+    robot.ik.add(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
+    robot.ik.add(MinCAMTask(robot, weight=1e-4))
 
     sim.schedule(fsm)
     sim.schedule(mpc)
