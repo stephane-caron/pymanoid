@@ -212,7 +212,7 @@ class HRP4(Humanoid):
         self.ik.add(MinCAMTask(self))
         self.add_upright_chest_task()
         self.add_shoulder_neutral_pitch_task()
-        self.ik.set_task_weights({
+        self.ik.set_weights({
             self.left_foot.name:  1.,
             self.right_foot.name: 1.,
             'COM': 1e-2,

@@ -130,9 +130,21 @@ class IKSolver(Process):
         self.qd_max = +1. * self.robot.qd_lim[active_dofs]
         self.qd_min = -1. * self.robot.qd_lim[active_dofs]
 
+    def set_gains(self, gains):
+        """
+        Set task gains from a dictionary.
+
+        Parameters
+        ----------
+        gains : string -> double dictionary
+            Dictionary mapping task labels to default gain values.
+        """
+        for (name, gain) in gains.iteritems():
+            self.tasks[name].gain = gain
+
     def set_weights(self, weights):
         """
-        Set cost-function weights for existing tasks.
+        Set task weights from a dictionary.
 
         Parameters
         ----------
