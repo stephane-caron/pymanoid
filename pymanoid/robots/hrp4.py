@@ -179,25 +179,25 @@ class HRP4(Humanoid):
             friction=0.8)
 
     def add_shoulder_abduction_task(self, weight=None):
-        self.ik.add_task(DOFTask(self, self.R_SHOULDER_R, -0.4, weight))
-        self.ik.add_task(DOFTask(self, self.L_SHOULDER_R, +0.4, weight))
+        self.ik.add(DOFTask(self, self.R_SHOULDER_R, -0.4, weight))
+        self.ik.add(DOFTask(self, self.L_SHOULDER_R, +0.4, weight))
 
     def add_shoulder_extension_task(self, weight=None):
-        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, +0.5, weight))
-        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, +0.5, weight))
+        self.ik.add(DOFTask(self, self.L_SHOULDER_P, +0.5, weight))
+        self.ik.add(DOFTask(self, self.R_SHOULDER_P, +0.5, weight))
 
     def add_shoulder_flexion_task(self, weight=None):
-        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, -0.5, weight))
-        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, -0.5, weight))
+        self.ik.add(DOFTask(self, self.L_SHOULDER_P, -0.5, weight))
+        self.ik.add(DOFTask(self, self.R_SHOULDER_P, -0.5, weight))
 
     def add_shoulder_neutral_pitch_task(self, weight=None):
-        self.ik.add_task(DOFTask(self, self.L_SHOULDER_P, 0., weight))
-        self.ik.add_task(DOFTask(self, self.R_SHOULDER_P, 0., weight))
+        self.ik.add(DOFTask(self, self.L_SHOULDER_P, 0., weight))
+        self.ik.add(DOFTask(self, self.R_SHOULDER_P, 0., weight))
 
     def add_upright_chest_task(self, weight=None):
-        self.ik.add_task(DOFTask(self, self.ROT_P, 0., weight))
-        self.ik.add_task(DOFTask(self, self.CHEST_P, 0.2, weight))
-        self.ik.add_task(DOFTask(self, self.CHEST_Y, 0., weight))
+        self.ik.add(DOFTask(self, self.ROT_P, 0., weight))
+        self.ik.add(DOFTask(self, self.CHEST_P, 0.2, weight))
+        self.ik.add(DOFTask(self, self.CHEST_Y, 0., weight))
 
     def setup_ik_for_walking(self, com_target):
         """
@@ -209,7 +209,7 @@ class HRP4(Humanoid):
             Target for the IK task on the center of mass.
         """
         self.ik.tasks['COM'].update_target(com_target)
-        self.ik.add_task(MinCAMTask(self))
+        self.ik.add(MinCAMTask(self))
         self.add_upright_chest_task()
         self.add_shoulder_neutral_pitch_task()
         self.ik.set_task_weights({
