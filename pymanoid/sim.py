@@ -33,9 +33,10 @@ from time import sleep, time
 from .misc import AvgStdEstimator, matplotlib_to_rgb, warn
 
 
+e_z = array([0., 0., 1.])
 env = None  # global OpenRAVE environment
 gravity_const = 9.80665  # ISO 80000-3
-gravity = array([0, 0, -gravity_const])  # gravity vector in the world frame
+gravity = -gravity_const * e_z
 
 
 def get_openrave_env():
