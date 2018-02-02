@@ -46,7 +46,7 @@ and [Ubuntu
 Next, install all Python dependencies with:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
-sudo pip install quadprog pycddlib pyclipper
+sudo pip install quadprog pycddlib
 sudo CVXOPT_BUILD_GLPK=1 pip install cvxopt
 ```
 Finally, clone the repository, and run the setup script:
