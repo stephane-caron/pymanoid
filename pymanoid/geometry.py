@@ -20,15 +20,26 @@
 
 from __future__ import division
 
-import cdd
-import cvxopt
-
 from numpy import array, dot, hstack, ones, vstack, zeros
 from scipy.spatial import ConvexHull
 
-from .misc import norm
+from .misc import norm, warn
 from .optim import solve_lp
 from .thirdparty import bretl
+
+
+try:
+    import cdd
+except ImportError:
+    warn("Could not import cdd, polyhedral geometry functions will fail")
+    cdd = None
+
+
+try:
+    import cvxopt
+except ImportError:
+    warn("Could not import CVXOPT, Bretl projection method will fail")
+    cvxopt = None
 
 
 PREC_TOL = 1e-10  # tolerance to numerical imprecisions
