@@ -420,11 +420,9 @@ class Robot(object):
 
         .. math::
 
-            \\begin{eqnarray}
-                t_m & = & M(q) \\ddot{q} \\\\
-                t_c & = & \\dot{q}^T C(q) \\dot{q} \\\\
-                t_g & = & g(q)
-            \\end{eqnarray}
+            t_m & = M(q) \\ddot{q} \\\\
+            t_c & = \\dot{q}^T C(q) \\dot{q} \\\\
+            t_g & = g(q)
 
         where the equations of motion are written:
 

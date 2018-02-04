@@ -291,8 +291,7 @@ class IKSolver(Process):
 
         .. math::
 
-            \\mathrm{minimize} \\quad
-                \\dot{q} J^T J \\dot{q} - 2 r^T J \\dot{q}
+            \\mathrm{minimize} \\ \\dot{q} J^T J \\dot{q} - 2 r^T J \\dot{q}
 
         Differentiating with respect to :math:`\\dot{q}` shows that the minimum
         is attained for :math:`J^T J \\dot{q} = r`, where we recognize the

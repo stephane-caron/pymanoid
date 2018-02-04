@@ -34,11 +34,9 @@ except ImportError:
 
         .. math::
 
-            \\begin{eqnarray}
-            \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
-            \\mathrm{subject\\ to} & & G x \leq h \\\\
-                & & A x = b
-            \\end{eqnarray}
+            \\mathrm{minimize} \\ & (1/2) x^T P x + q^T x \\\\
+            \\mathrm{subject\\ to} \\ & G x \leq h \\\\
+                & A x = b
 
         Parameters
         ----------

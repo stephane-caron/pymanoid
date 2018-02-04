@@ -1,12 +1,10 @@
 .. title:: Table of Contents
 
-######################
-pymanoid documentation
-######################
+####################
+Welcome to pymanoid!
+####################
 
 .. **Release 0.6.0 -- December 16, 2016**
-
-**Branch: master**
 
 .. figure:: images/logo.png
    :align:  center

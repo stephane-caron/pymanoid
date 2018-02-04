@@ -28,11 +28,9 @@ def solve_qp(P, q, G, h, A=None, b=None, sym_proj=False):
 
     .. math::
 
-        \\begin{eqnarray}
-        \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
-        \\mathrm{subject\\ to} & & G x \\leq h \\\\
-            & & A x = b
-        \\end{eqnarray}
+        \\mathrm{minimize} \\ & (1/2) x^T P x + q^T x \\\\
+        \\mathrm{subject\\ to} \\ & G x \\leq h \\\\
+            & A x = b
 
     using the `quadprog <https://pypi.python.org/pypi/quadprog/>`_ QP
     solver, which implements the Goldfarb-Idnani dual algorithm

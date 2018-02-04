@@ -419,10 +419,8 @@ def project_polyhedron(proj, ineq, eq=None, canonicalize=True):
 
     .. math::
 
-        \\begin{eqnarray}
-        A x & \\leq & b \\\\
-        C x & = & d
-        \\end{eqnarray}
+        A x & \\leq b \\\\
+        C x & = d
 
     Parameters
     ----------
@@ -499,10 +497,8 @@ def project_polytope(proj, ineq, eq=None, method='cdd'):
 
     .. math::
 
-        \\begin{eqnarray}
-        A x & \\leq & b \\\\
-        C x & = & d
-        \\end{eqnarray}
+        A x & \\leq b \\\\
+        C x & = d
 
     Parameters
     ----------
@@ -542,10 +538,8 @@ def project_polytope_bretl(proj, ineq, eq, max_radius=42.):
 
     .. math::
 
-        \\begin{eqnarray}
-        A x & \\leq & b \\\\
-        C x & = & d
-        \\end{eqnarray}
+        A x & \\leq b \\\\
+        C x & = d
 
     Parameters
     ----------

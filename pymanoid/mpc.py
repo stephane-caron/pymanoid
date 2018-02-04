@@ -42,10 +42,8 @@ class LinearPredictiveControl(object):
 
     .. math::
 
-        \\begin{eqnarray}
-        x_0 & = & x_\\mathrm{init} \\\\
-        \\forall k, \\ C_k x_k + D_k u_k & \\leq & e_k \\\\
-        \\end{eqnarray}
+        x_0 & = x_\\mathrm{init} \\\\
+        \\forall k, \\ C_k x_k + D_k u_k & \\leq e_k \\\\
 
     The output control law minimizes a weighted combination of two types of
     costs:

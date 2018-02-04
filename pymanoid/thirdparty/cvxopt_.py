@@ -49,11 +49,9 @@ def solve_lp(c, G, h, A=None, b=None, solver=GLPK_IF_AVAILABLE):
 
     .. math::
 
-        \\begin{eqnarray}
-        \\mathrm{minimize} & & c^T x \\\\
-        \\mathrm{subject\\ to} & & G x \\leq h \\\\
-            & & A x = b
-        \\end{eqnarray}
+        \\mathrm{minimize} \\ & c^T x \\\\
+        \\mathrm{subject\\ to} \\ & G x \\leq h \\\\
+            & A x = b
 
     using the `CVXOPT
     <http://cvxopt.org/userguide/coneprog.html#linear-programming>`_ interface
@@ -99,11 +97,9 @@ def solve_qp(P, q, G, h, A=None, b=None, solver=None, sym_proj=False):
 
     .. math::
 
-        \\begin{eqnarray}
-        \\mathrm{minimize} & & (1/2) x^T P x + q^T x \\\\
-        \\mathrm{subject\\ to} & & G x \\leq h \\\\
-            & & A x = b
-        \\end{eqnarray}
+        \\mathrm{minimize} \\ & (1/2) x^T P x + q^T x \\\\
+        \\mathrm{subject\\ to} \\ & G x \\leq h \\\\
+            & A x = b
 
     using CVXOPT
     <http://cvxopt.org/userguide/coneprog.html#quadratic-programming>.
