@@ -57,3 +57,5 @@ __all__ = [
     'robots',
     'warn',
 ]
+
+__version__ = '0.8'
