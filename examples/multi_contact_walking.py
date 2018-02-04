@@ -241,7 +241,6 @@ class WalkingFSM(pymanoid.Process):
         self.robot = robot
         self.stances = stances
         self.swing_foot = SwingFoot(swing_height)
-        self.verbose = True
 
     @property
     def next_stance(self):
@@ -325,8 +324,6 @@ class WalkingFSM(pymanoid.Process):
             self.cur_stance = self.stances[self.cur_stance_id]
             self.rem_time = self.cur_stance.duration
             self.update_robot_ik()
-            if self.verbose:
-                print("FSM switched to '%s' stance" % self.cur_stance.label)
 
     def update_robot_ik(self):
         prev_lf_task = self.robot.ik.tasks[self.robot.left_foot.name]
