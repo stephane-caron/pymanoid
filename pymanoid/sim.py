@@ -55,7 +55,7 @@ class Process(object):
 
     def on_tick(self, sim):
         """
-        Function called by the simulation at each clock tick.
+        Main function called by the simulation at each control cycle.
 
         Parameters
         ----------
@@ -65,11 +65,15 @@ class Process(object):
         raise NotImplementedError("should be implemented by child class")
 
     def pause(self):
-        """Stop calling the process at new clock ticks."""
+        """
+        Stop calling the process at new clock ticks.
+        """
         self.is_paused = True
 
     def resume(self):
-        """Resume calling the process at new clock ticks."""
+        """
+        Resume calling the process at new clock ticks.
+        """
         self.is_paused = False
 
 
