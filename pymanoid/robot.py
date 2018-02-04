@@ -97,8 +97,7 @@ class Robot(object):
         Parameters
         ----------
         color : tuple or string
-            RGB tuple, or color code in `matplotlib convention
-            <http://matplotlib.org/api/colors_api.html>`_.
+            RGB tuple, or color code in matplotlib convention.
         """
         if type(color) is str:
             color = matplotlib_to_rgb(color)

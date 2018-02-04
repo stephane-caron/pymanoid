@@ -17,7 +17,7 @@ Python library for humanoid robotics based on
 
 <img src="doc/source/images/logo.png" width="350" align="right" />
 
-- [Dynamic walking over rough terrains](https://github.com/stephane-caron/dynamic-walking)
+- [Dynamic walking over rough terrains](https://github.com/stephane-caron/fip-walking)
   based on nonlinear model predictive control of the floating-base inverted
   pendulum model
 - [Multi-contact walking pattern generation](https://github.com/stephane-caron/3d-walking-lmpc)

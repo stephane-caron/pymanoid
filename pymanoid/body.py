@@ -44,8 +44,7 @@ class Body(object):
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
         the same time.
     color : char, optional
-        Color code in `Matplotlib convention
-        <http://matplotlib.org/api/colors_api.html>`_.
+        Color code in matplotlib convention ('b' for blue, 'g' for green, etc.).
     visible : bool, optional
         Visibility in the GUI.
     """
@@ -80,8 +79,7 @@ class Body(object):
         Parameters
         ----------
         color : tuple or string
-            RGB tuple, or color code in `matplotlib convention
-            <http://matplotlib.org/api/colors_api.html>`_.
+            RGB tuple, or color code in matplotlib convention.
         """
         if isinstance(color, str):
             color = matplotlib_to_rgb(color)
@@ -479,8 +477,7 @@ class Manipulator(Body):
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
         the same time.
     color : char, optional
-        Color code in `Matplotlib convention
-        <http://matplotlib.org/api/colors_api.html>`_.
+        Color code in matplotlib convention ('r' for red, 'b' for blue, etc.).
     visible : bool, optional
         Visibility in the GUI.
     shape : (scalar, scalar), optional

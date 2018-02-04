@@ -247,8 +247,7 @@ def matplotlib_to_rgb(color):
     Parameters
     ----------
     color : string
-        Color code in `matplotlib convention
-        <http://matplotlib.org/api/colors_api.html>`_.
+        Color code in matplotlib convention ('r' for red, 'b' for blue, etc.).
 
     Returns
     -------
@@ -276,8 +275,7 @@ def matplotlib_to_rgba(color, alpha=0.5):
     Parameters
     ----------
     color : string
-        Color code in `matplotlib convention
-        <http://matplotlib.org/api/colors_api.html>`_.
+        Color code in matplotlib convention ('r' for red, 'g' for green, etc.).
     alpha : scalar, optional
         Transparency between 0 and 1.
 

@@ -88,7 +88,7 @@ class Contact(Box):
         Notes
         -----
         All linearized friction cones in pymanoid use the inner (conservative)
-        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        approximation. See <https://scaron.info/teaching/friction-cones.html>.
         """
         mu = self.inner_friction
         hrep_local = array([
@@ -106,7 +106,7 @@ class Contact(Box):
         Notes
         -----
         All linearized friction cones in pymanoid use the inner (conservative)
-        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        approximation. See <https://scaron.info/teaching/friction-cones.html>.
         """
         mu = self.inner_friction
         f1 = dot(self.R, [+mu, +mu, +1])
@@ -129,7 +129,7 @@ class Contact(Box):
         Notes
         -----
         All linearized friction cones in pymanoid use the inner (conservative)
-        approximation. See <https://scaron.info/teaching/friction-model.html>.
+        approximation. See <https://scaron.info/teaching/friction-cones.html>.
         """
         return array(self.force_rays).T
 

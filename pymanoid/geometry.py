@@ -308,8 +308,9 @@ def intersect_line_polygon(line, vertices, apply_hull):
 
     Notes
     -----
-    This code is adapted from <http://stackoverflow.com/a/20679579>. On the same
-    setting with `apply_hull=False`, it %timeits to 6 us.
+    This code is adapted from
+    <https://stackoverflow.com/questions/20677795/how-do-i-compute-the-intersection-point-of-two-lines-in-python/20679579#20679579>.
+    On the same setting with `apply_hull=False`, it %timeits to 6 us.
     """
     def line_coordinates(p1, p2):
         A = (p1[1] - p2[1])

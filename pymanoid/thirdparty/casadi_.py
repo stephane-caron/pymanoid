@@ -24,8 +24,8 @@ from casadi import MX, nlpsol, vertcat
 class NonlinearProgram(object):
 
     """
-    Wrapper around `CasADi <http://casadi.org>`_ to formulate and solve
-    nonlinear optimization problems.
+    Wrapper around `CasADi <https://github.com/casadi/casadi/wiki>`_ to
+    formulate and solve nonlinear optimization problems.
 
     Parameters
     ----------
