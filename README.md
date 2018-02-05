@@ -39,7 +39,10 @@ Python library for humanoid robotics based on
 The following instructions were verified on Ubuntu 14.04:
 
 - Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html)
-- Install Python dependencies: ``sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson``
+- Install Python dependencies: 
+```
+sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
+```
 - Install the LP solver: ``CVXOPT_BUILD_GLPK=1 pip install cvxopt --user``
 - Install the QP solver: ``pip install quadprog --user``
 - For polyhedral computations (optional): ``pip install pycddlib --user``
