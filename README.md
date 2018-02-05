@@ -15,7 +15,7 @@ Python library for humanoid robotics based on
 
 ## Use cases
 
-<img src="doc/source/images/logo.png" width="350" align="right" />
+<img src="doc/src/images/logo.png" width="350" align="right" />
 
 - [Dynamic walking over rough terrains](https://github.com/stephane-caron/fip-walking)
   based on nonlinear model predictive control of the floating-base inverted
