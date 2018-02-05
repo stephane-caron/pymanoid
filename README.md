@@ -36,20 +36,15 @@ Python library for humanoid robotics based on
 
 ## Installation
 
-First, you will need to install
-[OpenRAVE](https://github.com/rdiankov/openrave). Here are some [instructions
-for Ubuntu
-14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html)
-and [Ubuntu
-16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html).
+The following instructions were verified on Ubuntu 14.04:
 
-Next, install all Python dependencies with:
-```
-sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
-sudo pip install quadprog pycddlib
-sudo CVXOPT_BUILD_GLPK=1 pip install cvxopt
-```
-Finally, clone the repository, and run the setup script:
+- Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html)
+- Install Python dependencies: ``sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson``
+- Install the LP solver: ``CVXOPT_BUILD_GLPK=1 pip install cvxopt --user``
+- Install the QP solver: ``pip install quadprog --user``
+- For polyhedral computations (optional): ``pip install pycddlib --user``
+
+Finally, clone this repository and run the setup script:
 ```
 git clone https://github.com/stephane-caron/pymanoid.git && cd pymanoid
 python setup.py build
@@ -60,4 +55,4 @@ python setup.py install --user
 
 For nonlinear numeric optimization, you will need to [install
 CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
-from source to install the MA27 linear solver as well.
+from source with the MA27 linear solver.
