@@ -17,15 +17,16 @@ Python library for humanoid robotics based on
 
 <img src="doc/src/images/logo.png" width="350" align="right" />
 
-- [Dynamic walking over rough terrains](https://github.com/stephane-caron/fip-walking)
-  based on nonlinear model predictive control of the floating-base inverted
-  pendulum model
-- [Multi-contact walking pattern generation](https://github.com/stephane-caron/3d-walking-lmpc)
-  based on linear model predictive control of 3D CoM accelerations
+- [3D bipedal walking over uneven terrains](https://github.com/stephane-caron/capture-walking) 
+  based on a capturability analysis of the 3D inverted pendulum model
+- [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walking)
+  using a direct transcription of centroidal dynamics
+- [Linearized model predictive control](https://github.com/stephane-caron/3d-walking-lmpc)
+  using a conservative linearization of CoM acceleration cones
 - [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp)
   for locomotion in multi-contact scenarios (including hand contacts)
 - [Humanoid stair climbing](https://github.com/stephane-caron/stair-climbing)
-  demonstrated on a Kawada HRP-4 robot
+  demonstrated on the HRP-4 humanoid robot
 
 ## Getting started
 
