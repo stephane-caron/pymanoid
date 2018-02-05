@@ -30,7 +30,7 @@ Python library for humanoid robotics based on
 ## Getting started
 
 - [Installation instructions](#installation)
-- [Documentation](https://scaron.info/doc/pymanoid/)
+- Documentation: [html](https://scaron.info/doc/pymanoid/) or [pdf](https://scaron.info/doc/pymanoid/pymanoid.pdf)
 - [FAQ](https://github.com/stephane-caron/pymanoid/wiki/Frequently-Asked-Questions)
 - [Examples](/examples)
 
