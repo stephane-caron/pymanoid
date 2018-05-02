@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
 
@@ -53,9 +53,9 @@ def draw_2d_cone(vertices, rays, normal, combined='g-#', color=None,
     normal : array, shape=(3,)
         Unit vector normal to the drawing plane.
     combined : string
-        Drawing spec in matplotlib fashion: color letter, followed by characters
-        representing the faces of the cone to draw ('.' for vertices, '-' for
-        edges, '#' for facets). Default is 'g-#'.
+        Drawing spec in matplotlib fashion: color letter, followed by
+        characters representing the faces of the cone to draw ('.' for
+        vertices, '-' for edges, '#' for facets). Default is 'g-#'.
     color : char or triplet, optional
         Color letter or RGB values, default is 'g' for green.
     faces : string
@@ -256,8 +256,8 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
     color : char or triplet, optional
         Color letter or RGB values, default is 'g' for green.
     faces : string
-        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
-        '#' for facets.
+        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges
+        and '#' for facets.
     linewidth : scalar
         Thickness of drawn line.
     pointsize : scalar
@@ -301,11 +301,11 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     color : char or triplet, optional
         Color letter or RGB values, default is 'g' for green.
     faces : string, optional
-        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges and
-        '#' for facets.
+        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges
+        and '#' for facets.
     hull : scipy.spatial.ConvexHull
-        2D convex hull provided when drawing polygons, in which case the 3D hull
-        has zero volume.
+        2D convex hull provided when drawing polygons, in which case the 3D
+        hull has zero volume.
     linewidth : scalar
         Thickness of drawn line.
     pointsize : scalar
@@ -388,11 +388,11 @@ def draw_trajectory(points, color='b', linewidth=3, pointsize=0.01):
     """
     handles = []
     prev = points[0]
-    for (i, point) in enumerate(points):
+    for (i, pt) in enumerate(points):
         if pointsize > 5e-4:
-            handles.append(draw_point(point, color=color, pointsize=pointsize))
-        handles.append(draw_line(prev, point, color=color, linewidth=linewidth))
-        prev = point
+            handles.append(draw_point(pt, color=color, pointsize=pointsize))
+        handles.append(draw_line(prev, pt, color=color, linewidth=linewidth))
+        prev = pt
     return handles
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, dot, eye, zeros
 
@@ -381,8 +381,8 @@ class MinAccelTask(Task):
     ----
     As the differential IK returns velocities, we approximate the minimization
     over :math:`\\ddot{q}` by that over :math:`(\\dot{q}_\\mathrm{next} -
-    \\dot{q})`. See the documentation of the PendulumModeTask for details on the
-    discrete approximation of :math:`\\ddot{q}`.
+    \\dot{q})`. See the documentation of the PendulumModeTask for details on
+    the discrete approximation of :math:`\\ddot{q}`.
     """
 
     def __init__(self, robot, weight=None, gain=None, exclude_dofs=None):
@@ -487,10 +487,10 @@ class PendulumModeTask(Task):
         J_\\mathrm{CAM} \\ddot{q} + \\dot{q}^T H_\\mathrm{CAM} \\dot{q}
         = 0
 
-    Because the IK works at the velocity level, we approximate :math:`\\ddot{q}`
-    by finite difference from the previous robot velocity. Assuming that the
-    velocity :math:`\\dot{q}_\\mathrm{next}` output by the IK is applied
-    immediately, joint angles become:
+    Because the IK works at the velocity level, we approximate
+    :math:`\\ddot{q}` by finite difference from the previous robot velocity.
+    Assuming that the velocity :math:`\\dot{q}_\\mathrm{next}` output by the IK
+    is applied immediately, joint angles become:
 
     .. math::
 
@@ -500,10 +500,10 @@ class PendulumModeTask(Task):
 
     .. math::
 
-        q' = q + \\dot{q} \\delta t + \\frac12 \\ddot{q} \delta t^2,
+        q' = q + \\dot{q} \\delta t + \\frac12 \\ddot{q} \\delta t^2,
 
-    so that applying :math:`\\dot{q}_\\mathrm{next}` is equivalent to having the
-    following constant acceleration over :math:`\\delta t`:
+    so that applying :math:`\\dot{q}_\\mathrm{next}` is equivalent to having
+    the following constant acceleration over :math:`\\delta t`:
 
     .. math::
 
@@ -563,7 +563,8 @@ class PostureTask(Task):
         DOF indices not used by task.
     """
 
-    def __init__(self, robot, q_ref, weight=None, gain=None, exclude_dofs=None):
+    def __init__(self, robot, q_ref, weight=None, gain=None,
+                 exclude_dofs=None):
         super(PostureTask, self).__init__(weight, gain, exclude_dofs)
         J = eye(robot.nb_dofs)
         if exclude_dofs is None:

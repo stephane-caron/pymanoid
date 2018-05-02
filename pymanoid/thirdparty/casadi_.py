@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from casadi import MX, nlpsol, vertcat
 
@@ -321,7 +321,8 @@ class NonlinearProgram(object):
         elif self.solver_name == 'ipopt':
             options.update({
                 'expand': self.casadi_expand,
-                'ipopt.fast_step_computation': self.ipopt_fast_step_computation,
+                'ipopt.fast_step_computation':
+                self.ipopt_fast_step_computation,
                 'ipopt.fixed_variable_treatment':
                 self.ipopt_fixed_variable_treatment,
                 'ipopt.linear_solver': self.ipopt_linear_solver,
@@ -331,7 +332,8 @@ class NonlinearProgram(object):
                 'ipopt.nlp_lower_bound_inf': self.ipopt_nlp_lower_bound_inf,
                 'ipopt.nlp_upper_bound_inf': self.ipopt_nlp_upper_bound_inf,
                 'ipopt.print_level': self.ipopt_print_level,
-                'ipopt.warm_start_init_point': self.ipopt_warm_start_init_point,
+                'ipopt.warm_start_init_point':
+                self.ipopt_warm_start_init_point,
                 'print_time': self.ipopt_print_time,
                 'verbose': False,
                 'verbose_init': False,

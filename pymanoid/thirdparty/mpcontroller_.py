@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from minieigen import MatrixXd, VectorXd
 from numpy import array
@@ -47,9 +47,9 @@ def VectorXd_to_array(V):
 class LinearPredictiveControl(object):
 
     """
-    Wrapper to Vincent Samy's LMPC library. The API of this class is the same as
-    the vanilla :class:`pymanoid.mpc.LinearPredictiveControl`. Source code and
-    installation instructions for the library are available from
+    Wrapper to Vincent Samy's LMPC library. The API of this class is the same
+    as the vanilla :class:`pymanoid.mpc.LinearPredictiveControl`. Source code
+    and installation instructions for the library are available from
     <https://github.com/vsamy/preview_controller>.
 
     The discretized dynamics of a linear system are written as:

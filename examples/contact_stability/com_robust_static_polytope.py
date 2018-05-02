@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Hervé Audren <herve.audren@lirmm.fr>
+# Copyright (C) 2017 Hervé Audren <herve.audren@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,13 +15,13 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
 This example shows a contact-stability condition: the robust static-equilibrium
-CoM polyhedron. See <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362> for details.
-Running this example requires the StabiliPy
+CoM polyhedron. See <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362> for
+details. Running this example requires the StabiliPy
 <https://github.com/haudren/stabilipy> library.
 """
 
@@ -31,7 +31,7 @@ import sys
 
 try:
     import stabilipy as stab
-except:
+except Exception:
     pymanoid.error("Running this example requires the StabiliPy library")
     print(
         "You can get the StabiliPy library from: "
@@ -115,11 +115,11 @@ class SupportPolyhedronDrawer(pymanoid.Process):
                                  array([[-X, Y, 0]]).T,
                                  array([[-X, -Y, 0]]).T,
                                  array([[X, -Y, 0]]).T]
-                for displacement in displacements:
+                for disp in displacements:
                     stab_contacts.append(
                         stab.Contact(
                             contact.friction,
-                            hmatrix[:3, 3:] + hmatrix[:3, :3].dot(displacement),
+                            hmatrix[:3, 3:] + hmatrix[:3, :3].dot(disp),
                             hmatrix[:3, 2:3]))
             self.polyhedron.contacts = stab_contacts
             self.polyhedron.select_solver(self.method)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import openravepy
 
@@ -44,7 +44,7 @@ class Body(object):
         Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
         the same time.
     color : char, optional
-        Color code in matplotlib convention ('b' for blue, 'g' for green, etc.).
+        Color code in matplotlib convention ('b' for blue, 'g' for green, ...).
     visible : bool, optional
         Visibility in the GUI.
     """
@@ -152,8 +152,8 @@ class Body(object):
                 \\end{array}
                 \\right]
 
-        where `R` is a `3 x 3` rotation matrix and `p` is the vector of position
-        coordinates.
+        where `R` is a `3 x 3` rotation matrix and `p` is the vector of
+        position coordinates.
 
         Notes
         -----
@@ -599,7 +599,8 @@ class Point(Cube):
     """
 
     def __init__(self, pos, vel=None, size=0.01, color='r', visible=True):
-        super(Point, self).__init__(size, pos=pos, color=color, visible=visible)
+        super(Point, self).__init__(
+            size, pos=pos, color=color, visible=visible)
         self.__pd = zeros(3) if vel is None else array(vel)
 
     def copy(self, color='r', visible=True):

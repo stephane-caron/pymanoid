@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from numpy import concatenate, maximum, minimum
@@ -145,7 +145,7 @@ class Robot(object):
 
     def get_dof_limits(self, dof_indices=None):
         """
-        Get the couple :math:`(q_\\mathrm{min}, q_\\mathrm{max})` of DOF limits.
+        Get the pair :math:`(q_\\mathrm{min}, q_\\mathrm{max})` of DOF limits.
 
         Parameters
         ----------
@@ -161,8 +161,8 @@ class Robot(object):
 
         Notes
         -----
-        This OpenRAVE function is wrapped because it is too slow in practice. On
-        my machine:
+        This OpenRAVE function is wrapped because it is too slow in practice.
+        On my machine:
 
             In [1]: %timeit robot.get_dof_limits()
             1000000 loops, best of 3: 237 ns per loop
@@ -235,7 +235,8 @@ class Robot(object):
         """
         check_dof_limits = 0  # CLA_Nothing
         if dof_indices is not None:
-            return self.rave.SetDOFVelocities(qd, check_dof_limits, dof_indices)
+            return self.rave.SetDOFVelocities(
+                qd, check_dof_limits, dof_indices)
         return self.rave.SetDOFVelocities(qd)
 
     """
@@ -281,8 +282,8 @@ class Robot(object):
             \\left[\\begin{array}{c} \\dot{\\xi} \\\\ v_L \\end{array}\\right]
             = J(q) \\dot{q},
 
-        with :math:`\\xi` a quaternion for the link orientation and :math:`v_L =
-        \\dot{p}_L` the velocity of the origin `L` of the link frame, so that
+        with :math:`\\xi` a quaternion for the link orientation and :math:`v_L
+        = \\dot{p}_L` the velocity of the origin `L` of the link frame, so that
         the link pose is :math:`[\\xi p_L]` and the left-hand side of the
         equation above is its time-derivative.
 
@@ -589,7 +590,7 @@ class Humanoid(Robot):
         self.__com = None
         self.__com_handle = None
         self.__comd = None
-        self.__show_com = False  # mostly but not always == (com_handle is None)
+        self.__show_com = False
 
     """
     Kinematics
@@ -863,7 +864,7 @@ class Humanoid(Robot):
 
     def compute_com_acceleration(self, qdd):
         """
-        Compute the COM acceleration from joint accelerations :math:`\\ddot{q}`.
+        Compute COM acceleration from joint accelerations :math:`\\ddot{q}`.
 
         Parameters
         ----------
@@ -1003,7 +1004,7 @@ class Humanoid(Robot):
 
         .. math::
 
-            \\dot{L}_P(q, \\dot{q}) = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q},
+            \\dot{L}_P(q, \\dot{q}) = J(q) \\ddot{q} + \\dot{q}^T H(q) \\dot{q}
 
         where :math:`J(q)` is the angular-momentum jacobian.
 
@@ -1133,9 +1134,9 @@ class Humanoid(Robot):
                 (p_G - p_P) \\times m (g - \\ddot{p}_G) - \\dot{L}_G
                 \\end{array}\\right]
 
-        with `m` the robot mass, `g` the gravity vector, `G` the center of mass,
-        :math:`\\ddot{p}_G` the COM acceleration, and :math:`\\dot{L}_G` the
-        rate of change of the centroidal angular momentum.
+        with `m` the robot mass, `g` the gravity vector, `G` the center of
+        mass, :math:`\\ddot{p}_G` the COM acceleration, and :math:`\\dot{L}_G`
+        the rate of change of the centroidal angular momentum.
 
         Parameters
         ----------
@@ -1180,7 +1181,7 @@ class Humanoid(Robot):
                 f^{c} \\\\
                 \\tau^{c}_P
             \\end{array}\\right]
-            = \sum_i \\left[\\begin{array}{c}
+            = \\sum_i \\left[\\begin{array}{c}
                 f_i \\\\
                 (p_i - p_P) \\times f_i + \\tau_i
                 \\end{array}\\right]

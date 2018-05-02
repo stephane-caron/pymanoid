@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2017 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
 This example shows how to compute the Contact Wrench Cone, a generalized
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         print("- has %d lines" % CWC_wcl.shape[0])
     except ImportError:
         print("""
-============================================================================
+===========================================================================
 
 Check out WrenchConeLib <https://github.com/vsamy/WrenchConeLib> for faster
 computations:
@@ -91,7 +91,7 @@ computations:
     In [2]: %timeit stance.compute_wrench_inequalities([0, 0, 0])
     100 loops, best of 3: 4.05 ms per loop
 
-============================================================================""")
+===========================================================================""")
 
     print("")
     if IPython.get_ipython() is None:

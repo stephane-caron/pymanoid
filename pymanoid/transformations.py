@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
 Rotations and rigid-body transformations can be represented in many ways. For
@@ -24,15 +24,15 @@ rotations, the three main formats used in pymanoid are:
 
 - **Roll-pitch-yaw angles:** that is to say Euler angles corresponding to the
   sequence (1, 2, 3).
-- **Quaternions:** 4D vectors `[w x y z]`, with the scalar term `w` coming first
-  following the OpenRAVE convention.
-- **Rotation matrices:** :math:`3 \\times 3` matrices :math:`R` whose inverse is
-  equal to their transpose.
+- **Quaternions:** 4D vectors `[w x y z]`, with the scalar term `w` coming
+  first following the OpenRAVE convention.
+- **Rotation matrices:** :math:`3 \\times 3` matrices :math:`R` whose inverse
+  is equal to their transpose.
 
 Rigid-body transformations can be represented by:
 
-- **Poses:** 7D vectors consisting of the quaternion of the orientation followed
-  by its position.
+- **Poses:** 7D vectors consisting of the quaternion of the orientation
+  followed by its position.
 - **Transformation matrices:** :math:`4 \\times 4` matrices :math:`T`.
 
 Functions are provided to convert between all these representations. Most of
@@ -63,8 +63,8 @@ def apply_transform(T, p):
 
     Notes
     -----
-    For a single point, it is faster to apply the matrix multiplication directly
-    rather than calling the OpenRAVE function:
+    For a single point, it is faster to apply the matrix multiplication
+    directly rather than calling the OpenRAVE function:
 
     .. code:: python
 

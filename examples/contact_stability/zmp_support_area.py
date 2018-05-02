@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2016 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
 This example shows three contact-stability conditions: the static-equilibrium
@@ -171,10 +171,10 @@ ZMP support area
 
 Ready to go! The GUI displays three contact-stability criteria: ZMP pendular
 support area in blue. You can move the blue box (in the plane above the robot)
-around to make the robot move its center of mass. Contact wrenches are displayed
-at each contact (green dot is COP location, arrow is resultant force). When the
-COM exists the static-equilibrium polygon, you should see the background turn
-red as no feasible contact wrenches can be found.
+around to make the robot move its center of mass. Contact wrenches are
+displayed at each contact (green dot is COP location, arrow is resultant
+force). When the COM exists the static-equilibrium polygon, you should see the
+background turn red as no feasible contact wrenches can be found.
 
 Enjoy :)
 """)

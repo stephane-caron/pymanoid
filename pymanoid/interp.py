@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import hstack, linspace
 from openravepy import InterpolateQuatSlerp as quat_slerp
@@ -125,7 +125,7 @@ def interpolate_pose_quadratic(pose0, pose1, x):
 
     Note
     ----
-    Initial and final linear velocities on the interpolated trajectory are zero.
+    Initial and final linear velocities on the trajectory are zero.
     """
     pos = x ** 2 * (3 - 2 * x) * (pose1[4:] - pose0[4:]) + pose0[4:]
     quat = quat_slerp(pose0[:4], pose1[:4], x)

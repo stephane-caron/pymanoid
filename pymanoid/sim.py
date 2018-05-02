@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2018 Stephane Caron <stephane.caron@lirmm.fr>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
 import openravepy
@@ -525,10 +525,10 @@ class CameraRecorder(Process):
 
     Notes
     -----
-    When created, this process will ask the user to click on the OpenRAVE GUI to
-    get its window ID. Then, it will save a screenshot in the camera folder at
-    each tick of the simulation (don't expect real-time recording...). When your
-    simulation is over, go to the camera folder and run the script called
+    When created, this process will ask the user to click on the OpenRAVE GUI
+    to get its window ID. Then, it will save a screenshot in the camera folder
+    at each tick of the simulation (don't expect real-time recording...). When
+    your simulation is over, go to the camera folder and run the script called
     ``make_video.sh``.
     """
     def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):

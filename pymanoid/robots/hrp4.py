@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, pi
 
@@ -38,7 +38,7 @@ class HRP4(Humanoid):
     leg_length = 0.8           # [m]   (roughly, for a strechted leg)
     mass = 39.                 # [kg]  (includes batteries)
     sole_shape = (0.11, 0.05)  # (half-length [m], half-width [m]) of foot sole
-    palm_shape = (0.03, 0.04)  # (half-length [m], half-width [m]) of palm patch
+    palm_shape = (0.03, 0.04)  # (half-length [m], half-width [m]) of palm surf
 
     # DOF indexes with respect to COLLADA model
     L_F53 = 0
