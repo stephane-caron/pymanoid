@@ -18,10 +18,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-import bretl
 import cvxopt_
 import quadprog_
 
 # only necessary dependencies are imported here
 
-__all__ = ['bretl', 'cvxopt_', 'quadprog_']
+__all__ = ['cvxopt_', 'quadprog_']

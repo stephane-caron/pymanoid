@@ -22,8 +22,8 @@ from numpy import array, cross, diag, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 
 from .body import Box
-from .geometry import compute_cone_face_matrix, compute_polygon_hull
-from .geometry import project_polytope
+from .pypoman import compute_cone_face_matrix, compute_polygon_hull
+from .pypoman import project_polytope
 from .optim import solve_qp
 from .transformations import crossmat
 

@@ -36,13 +36,14 @@ import pymanoid
 
 from pymanoid import Contact, PointMass, Stance
 from pymanoid.body import Box
-from pymanoid.geometry import compute_polytope_hrep, intersect_polygons
 from pymanoid.gui import PointMassWrenchDrawer, TrajectoryDrawer
 from pymanoid.gui import draw_cone, draw_polyhedron
 from pymanoid.gui import draw_line, draw_point, draw_points
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
 from pymanoid.misc import normalize
 from pymanoid.mpc import LinearPredictiveControl
+from pymanoid.pypoman import compute_polytope_halfspaces
+from pymanoid.pypoman import intersect_polygons
 from pymanoid.robots import JVRC1
 from pymanoid.sim import gravity
 from pymanoid.tasks import ContactTask, DOFTask, PoseTask, MinCAMTask
@@ -427,7 +428,7 @@ class COMTube(object):
     def compute_primal_hrep(self):
         """Compute halfspaces of the primal tube."""
         try:
-            self.full_hrep = (compute_polytope_hrep(self.full_vrep))
+            self.full_hrep = (compute_polytope_halfspaces(self.full_vrep))
         except RuntimeError as e:
             raise Exception("Could not compute primal hrep: %s" % str(e))
 
@@ -469,7 +470,7 @@ class COMTube(object):
     def compute_dual_hrep(self):
         """Compute halfspaces of the dual cones."""
         for (stance_id, cone_vertices) in enumerate(self.dual_vrep):
-            B, c = compute_polytope_hrep(cone_vertices)
+            B, c = compute_polytope_halfspaces(cone_vertices)
             self.dual_hrep.append((B, c))
 
 
@@ -564,9 +565,9 @@ class COMTubePredictiveControl(pymanoid.Process):
         target_com = self.target_com.p
         target_comd = self.target_com.pd
         dT = horizon / self.nb_mpc_steps
-        I = eye(3)
-        A = array(bmat([[I, dT * I], [zeros((3, 3)), I]]))
-        B = array(bmat([[.5 * dT ** 2 * I], [dT * I]]))
+        eye3 = eye(3)
+        A = array(bmat([[eye3, dT * eye3], [zeros((3, 3)), eye3]]))
+        B = array(bmat([[.5 * dT ** 2 * eye3], [dT * eye3]]))
         x_init = hstack([cur_com, cur_comd])
         x_goal = hstack([target_com, target_comd])
         switch_step = int(switch_time / dT)

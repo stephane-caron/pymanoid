@@ -26,8 +26,8 @@ from scipy.spatial.qhull import QhullError
 
 from .body import PointMass
 from .contact import Contact, ContactSet
-from .geometry import compute_polygon_hull, compute_polytope_hrep
-from .geometry import project_polytope
+from .pypoman import compute_polygon_hull, compute_polytope_halfspaces
+from .pypoman import project_polytope
 from .misc import norm
 from .sim import gravity
 from .tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
@@ -201,7 +201,7 @@ class Stance(ContactSet):
         """
         sep_vertices = super(Stance, self).compute_static_equilibrium_polygon(
             method=method)
-        self.sep_hrep = compute_polytope_hrep(sep_vertices)
+        self.sep_hrep = compute_polytope_halfspaces(sep_vertices)
         self.sep_norm = array([norm(a) for a in self.sep_hrep[0]])
         self.sep_vertices = sep_vertices
         return sep_vertices
