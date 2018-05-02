@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 try:
     import casadi
@@ -29,8 +29,8 @@ from time import time
 
 from .gui import draw_line, draw_point, draw_trajectory
 from .misc import norm
-from .optim import NonlinearProgram
 from .sim import gravity
+from .thirdparty.casadi_ import NonlinearProgram
 
 
 """
@@ -334,11 +334,12 @@ class COMStepTransit(object):
         """
         dcm_last = self.p_last + self.pd_last / self.omega
         dcm_error = norm(dcm_last - self.dcm_target)
+        comp_time_s = self.nlp.solve_time
         print("\n")
         print("%14s: " % "Desired dur.", "%.3f s" % self.desired_duration)
         print("%14s: " % "Duration", "%.3f s" % self.duration)
         print("%14s: " % "DCM error", "%.3f cm" % (100 * dcm_error))
-        print("%14s: " % "Comp. time", "%.1f ms" % (1000 * self.nlp.solve_time))
+        print("%14s: " % "Comp. time", "%.1f ms" % (1000 * comp_time_s))
         print("%14s: " % "Iter. count", self.nlp.iter_count)
         print("%14s: " % "Status", self.nlp.return_status)
         print("\n")

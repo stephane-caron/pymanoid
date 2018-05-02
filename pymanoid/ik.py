@@ -15,14 +15,14 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
 from threading import Lock
 
 from .misc import norm
-from .optim import solve_qp
+from .qpsolvers import solve_qp
 from .sim import Process
 from .tasks import ContactTask, DOFTask, PoseTask
 
@@ -331,8 +331,9 @@ class IKSolver(Process):
 
         Note
         ----
-        This QP formulation is the default for :func:`pymanoid.ik.IKSolver.step`
-        as it has a more numerically-stable behavior.
+        This QP formulation is the default for
+        :func:`pymanoid.ik.IKSolver.step` as it has a more numerically-stable
+        behavior.
 
         Notes
         -----
@@ -391,8 +392,8 @@ class IKSolver(Process):
         cost_stop : scalar
             Stop when cost value is below this threshold.
         conv_tol : scalar, optional
-            Stop when cost improvement (relative variation from one iteration to
-            the next) is less than this threshold.
+            Stop when cost improvement (relative variation from one iteration
+            to the next) is less than this threshold.
         dt : scalar, optional
             Time step in [s].
         qd_relax_fact : scalar, optional
@@ -412,12 +413,12 @@ class IKSolver(Process):
         Notes
         -----
         Good values of `dt` depend on the weights of the IK tasks. Small values
-        make convergence slower, while big values make the optimization unstable
-        (in which case there may be no convergence at all).
+        make convergence slower, while big values make the optimization
+        unstable (in which case there may be no convergence at all).
 
-        To speed up convergence, this function will relax DOF velocity limits at
-        first, then progressively restore them. This behavior is set by the two
-        parameters `qd_relax_fact` (relaxation factor) and `qd_relax_steps`
+        To speed up convergence, this function will relax DOF velocity limits
+        at first, then progressively restore them. This behavior is set by the
+        two parameters `qd_relax_fact` (relaxation factor) and `qd_relax_steps`
         (number of relaxation stages).
         """
         cost = 100000.

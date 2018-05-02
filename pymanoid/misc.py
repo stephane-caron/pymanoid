@@ -15,13 +15,13 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
 from numpy import array, dot, eye, sqrt, tensordot, zeros
 
-from .optim import solve_qp
+from .qpsolvers import solve_qp
 
 
 class AvgStdEstimator(object):
@@ -167,8 +167,8 @@ def error(msg):
     msg : str
         Error message.
     """
-    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print("%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, date, msg, 0x1B))
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print("%c[0;%d;48m%s pymanoid [ERROR] %s%c[m" % (0x1B, 31, now, msg, 0x1B))
 
 
 def info(msg):
@@ -180,8 +180,8 @@ def info(msg):
     msg : str
         Information message.
     """
-    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print("%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, date, msg, 0x1B))
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print("%c[0;%d;48m%s pymanoid [INFO] %s%c[m" % (0x1B, 32, now, msg, 0x1B))
 
 
 def is_positive_combination(b, A):
@@ -322,8 +322,8 @@ def norm(v):
 
     Notes
     -----
-    This straightforward function is 2x faster than :func:`numpy.linalg.norm` on
-    my machine.
+    This straightforward function is 2x faster than :func:`numpy.linalg.norm`
+    on my machine.
     """
     return sqrt(dot(v, v))
 
@@ -397,5 +397,5 @@ def warn(msg):
     msg : str
         Warning message.
     """
-    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print("%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, date, msg, 0x1B))
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    print("%c[0;%d;48m%s pymanoid [WARN] %s%c[m" % (0x1B, 33, now, msg, 0x1B))

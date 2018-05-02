@@ -15,19 +15,20 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import dot, eye, hstack, vstack, zeros
 from time import time
 
-from .optim import solve_qp
+from .qpsolvers import solve_qp
 
 
 class LinearPredictiveControl(object):
 
     """
-    Predictive control for a system with linear dynamics and linear constraints.
+    Predictive control for a system with linear dynamics and linear
+    constraints.
 
     The discretized dynamics of a linear system are described by:
 
@@ -90,10 +91,11 @@ class LinearPredictiveControl(object):
 
     Notes
     -----
-    In numerical analysis, there are three classes of methods to solve `boundary
-    value problems <https://en.wikipedia.org/wiki/Boundary_value_problem>`_:
-    single shooting, multiple shooting and collocation. The solver implemented
-    in this class follows the `single shooting method
+    In numerical analysis, there are three classes of methods to solve
+    `boundary value problems
+    <https://en.wikipedia.org/wiki/Boundary_value_problem>`_: single shooting,
+    multiple shooting and collocation. The solver implemented in this class
+    follows the `single shooting method
     <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 

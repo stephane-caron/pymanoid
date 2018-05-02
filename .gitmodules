@@ -1,3 +1,6 @@
 [submodule "pymanoid/pypoman"]
 	path = pymanoid/pypoman
 	url = https://github.com/stephane-caron/pypoman.git
+[submodule "pymanoid/qpsolvers"]
+	path = pymanoid/qpsolvers
+	url = https://github.com/stephane-caron/qpsolvers.git
