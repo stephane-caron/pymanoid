@@ -30,7 +30,7 @@ except ImportError:
     sys.path.append(os.path.dirname(script_path) + '/../')
     import pymanoid
 
-from pymanoid.geometry import project_polytope
+from pymanoid.pypoman import project_polytope
 
 
 TINY = 1e-7
