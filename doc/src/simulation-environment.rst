@@ -1,6 +1,6 @@
-************************
-Simulation and processes
-************************
+**********************
+Simulation environment
+**********************
 
 Processes
 =========

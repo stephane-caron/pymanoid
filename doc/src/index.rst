@@ -11,11 +11,11 @@ Welcome to pymanoid!
 
 .. toctree::
 
+    forward-kinematics.rst
     inverse-kinematics.rst
-    contact.rst
+    contact-model.rst
     model-predictive-control.rst
-    numerical-optimization.rst
-    polyhedral-computations.rst
-    simulation-and-processes.rst
-    api-documentation.rst
+    simulation-environment.rst
+    graphical-user-interface.rst
+    other-useful-ingredients.rst
     references.rst

@@ -29,8 +29,8 @@ from time import time
 
 from .gui import draw_line, draw_point, draw_trajectory
 from .misc import norm
+from .nlp import NonlinearProgram
 from .sim import gravity
-from .thirdparty.casadi_ import NonlinearProgram
 
 
 """
