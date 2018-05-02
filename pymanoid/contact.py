@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import array, cross, diag, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
@@ -42,8 +42,8 @@ class Contact(Box):
     rpy : ndarray
         Contact orientation in world frame.
     pose : ndarray
-        Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at the
-        same time.
+        Initial pose. Supersedes ``pos`` and ``rpy`` if they are provided at
+        the same time.
     friction : scalar
         Static friction coefficient.
     slab_thickness : scalar, optional
@@ -185,10 +185,11 @@ class Contact(Box):
 
         .. math::
 
-            F w \leq 0
+            F w \\leq 0
 
-        where `w` is the contact wrench at the contact point (``self.p``) in the
-        world frame. See [Caron15]_ for the derivation of the formula for `F`.
+        where `w` is the contact wrench at the contact point (``self.p``) in
+        the world frame. See [Caron15]_ for the derivation of the formula for
+        `F`.
         """
         X, Y = self.shape
         mu = self.friction / sqrt(2)  # inner approximation
@@ -411,8 +412,9 @@ class ContactSet(object):
         -------
         support : list of (Contact, array) pairs
             Mapping between each contact `i` and a supporting contact wrench
-            :math:`w^i_{C_i}`. All contact wrenches satisfy friction constraints
-            and sum up to the net wrench: :math:`\\sum_c w^i_P = w_P``.
+            :math:`w^i_{C_i}`. All contact wrenches satisfy friction
+            constraints and sum up to the net wrench: :math:`\\sum_c w^i_P =
+            w_P``.
 
         Notes
         -----

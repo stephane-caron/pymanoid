@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 import simplejson
 
@@ -234,8 +234,8 @@ class Stance(ContactSet):
         The method is based on a rewriting of the CWC formula, followed by a 2D
         convex hull on dual vertices. The algorithm is described in [Caron16]_.
 
-        When ``com`` is a list of vertices, the returned cone corresponds to COM
-        accelerations that are feasible from *all* COM located inside the
+        When ``com`` is a list of vertices, the returned cone corresponds to
+        COM accelerations that are feasible from *all* COM located inside the
         polytope. See [Caron16]_ for details on this conservative criterion.
         """
         def expand_reduced_pendular_cone(reduced_hull, zdd_max=None):
@@ -287,10 +287,10 @@ class Stance(ContactSet):
 
         Notes
         -----
-        There are two polytope projection algorithms: 'bretl' is adapted from in
-        [Bretl08]_ while 'cdd' corresponds to the double-description formulation
-        from [Caron17z]_. See the Appendix from [Caron16]_ for a performance
-        comparison.
+        There are two polytope projection algorithms: 'bretl' is adapted from
+        in [Bretl08]_ while 'cdd' corresponds to the double-description
+        formulation from [Caron17z]_. See the Appendix from [Caron16]_ for a
+        performance comparison.
         """
         z_zmp = plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
@@ -340,8 +340,8 @@ class Stance(ContactSet):
         Returns
         -------
         support : list of (Contact, array) couples
-            Mapping between each contact `i` in the contact set and a supporting
-            contact wrench :math:`w^i_{C_i}`.
+            Mapping between each contact `i` in the contact set and a
+            supporting contact wrench :math:`w^i_{C_i}`.
         """
         wrench = hstack([array([0., 0., self.com.mass * 9.81]), zeros(3)])
         return self.find_supporting_wrenches(wrench, self.com.p)

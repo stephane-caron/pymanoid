@@ -15,8 +15,8 @@
 # A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 # details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with pymanoid. If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
 This example implements a complete walking pattern generator for multi-contact
@@ -355,7 +355,7 @@ class WalkingFSM(pymanoid.Process):
 class COMTube(object):
 
     """
-    Primal tube of COM locations computed along with its dual acceleration cone.
+    Primal tube of COM locations, computed with its dual acceleration cone.
 
     Parameters
     ----------
@@ -380,8 +380,8 @@ class COMTube(object):
     single-contact.
     """
 
-    def __init__(self, start_com, target_com, start_stance, next_stance, radius,
-                 margin=0.01):
+    def __init__(self, start_com, target_com, start_stance, next_stance,
+                 radius, margin=0.01):
         self.dual_hrep = []
         self.dual_vrep = []
         self.margin = margin
