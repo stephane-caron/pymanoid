@@ -36,6 +36,7 @@ from pymanoid.robots import JVRC1
 if __name__ == '__main__':
     sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
+    robot.set_transparency(0.3)
     sim.set_viewer()
     sim.viewer.SetCamera([
         [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
@@ -56,6 +57,22 @@ if __name__ == '__main__':
     robot.ik.solve(max_it=100, impr_stop=1e-4)
     sim.schedule(robot.ik)
     sim.start()
+
+    print("""
+===============================================================================
+
+Robot posture generated.
+
+Next steps:
+
+- Press [ESC] in the GUI to switch to edit mode.
+- Click on the red box and drag-and-drop it around. The robot should follow.
+- Click on the white background to de-select the box.
+- Press [ESC] again to move the camera around.
+- Click on a red contact slab under a robot foot and move the contact around.
+
+===============================================================================
+""")
 
     if IPython.get_ipython() is None:  # give the user a prompt
         IPython.embed()
