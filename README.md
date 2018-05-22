@@ -50,7 +50,7 @@ sudo apt-get install cython libglpk-dev python python-dev python-pip python-scip
 
 Finally, clone this repository and run the setup script:
 ```
-git --recursive clone https://github.com/stephane-caron/pymanoid.git
+git clone --recursive https://github.com/stephane-caron/pymanoid.git
 cd pymanoid
 python setup.py build
 python setup.py install --user
