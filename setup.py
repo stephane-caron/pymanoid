@@ -40,6 +40,8 @@ setup(
     packages=[
         'pymanoid',
         'pymanoid.pypoman',
+        'pymanoid.pypoman.pypoman',
         'pymanoid.qpsolvers',
+        'pymanoid.qpsolvers.qpsolvers',
         'pymanoid.robots']
 )
