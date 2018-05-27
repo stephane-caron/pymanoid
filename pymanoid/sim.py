@@ -40,6 +40,9 @@ gravity = -gravity_const * e_z
 
 
 def get_openrave_env():
+    if env is None:
+        raise Exception("OpenRAVE environment not initialized, "
+                        "did you create a pymanoid.Simulation?")
     return env
 
 

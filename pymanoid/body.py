@@ -425,7 +425,10 @@ class Body(object):
         """
         Add body removal to garbage collection step (effective).
         """
-        self.remove()
+        try:
+            self.remove()
+        except Exception:  # __del__ exceptions are ignored
+            pass
 
     def apply_twist(self, v, omega, dt):
         """
