@@ -2,7 +2,7 @@
 
 ## Posture generation
 
-<img align="right" src="../doc/source/images/inverse_kinematics.png" width="300" />
+<img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
 
 The examples ``posture_generation.py`` and ``inverse_kinematics.py`` (the
 latter is for advanced users) shows how to use the robot IK to reach a given
@@ -17,7 +17,7 @@ manipulate it directly in the OpenRAVE GUI.
 
 ## Contact stability conditions
 
-<img align="right" src="../doc/source/images/static_equilibrium_polygon.png" width="300" />
+<img align="right" src="../doc/src/images/static_equilibrium_polygon.png" width="300" />
 
 Contact-stability areas and volumes are conditions used to prevent contacts
 from slipping or detaching during motion. The examples in the
@@ -31,7 +31,7 @@ around, and see what happens when it exits the polygon.
 
 ## Multi-contact walking
 
-<img align="right" src="../doc/source/images/multi_contact_walking.png" width="300" />
+<img align="right" src="../doc/src/images/multi_contact_walking.png" width="300" />
 
 In this example, we make the JVRC-1 model walk accross a circular staircase
 where all contacts are tilted.
