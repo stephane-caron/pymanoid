@@ -18,7 +18,7 @@ Python library for humanoid robotics based on
 <img src="doc/src/images/logo.png" width="350" align="right" />
 
 - [3D bipedal walking over uneven terrains](https://github.com/stephane-caron/capture-walking) 
-  based on a capturability analysis of the 3D inverted pendulum model
+  based on a capturability analysis of the variable-height inverted pendulum model
 - [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walking)
   using a direct transcription of centroidal dynamics
 - [Linearized model predictive control](https://github.com/stephane-caron/3d-walking-lmpc)
