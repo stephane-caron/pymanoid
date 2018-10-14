@@ -10,15 +10,14 @@ Python library for humanoid robotics based on
   cones](https://scaron.info/research/humanoids-2016.html), etc.
 - Linear Model Predictive Control (MPC) and state machines for locomotion
 - Jacobians and Hessians for center of mass (CoM) and angular momentum
-- Types and algorithms to manipulate polytopes and polyhedral cones
-- Interface to linear programming (LP) and quadratic programming (QP) solvers
+- Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
 
 ## Use cases
 
 <img src="doc/src/images/logo.png" width="350" align="right" />
 
-- [3D bipedal walking over uneven terrains](https://github.com/stephane-caron/capture-walking) 
-  based on a capturability analysis of the variable-height inverted pendulum model
+- [Walking pattern generation over uneven terrains](https://github.com/stephane-caron/capture-walking) 
+  based on capturability of the variable-height inverted pendulum model
 - [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walking)
   using a direct transcription of centroidal dynamics
 - [Linearized model predictive control](https://github.com/stephane-caron/3d-walking-lmpc)
