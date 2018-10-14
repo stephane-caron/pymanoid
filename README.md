@@ -3,12 +3,14 @@
 Python library for humanoid robotics based on
 [OpenRAVE](https://github.com/rdiankov/openrave):
 
-- Whole-body inverse kinematics (IK) based on the [weight-prioritized
-  multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- Contact-stability areas and volumes: [multi-contact ZMP
-  support areas](https://scaron.info/research/tro-2016.html), [CoM acceleration
-  cones](https://scaron.info/research/humanoids-2016.html), etc.
-- Linear Model Predictive Control (MPC) and state machines for locomotion
+- Whole-body inverse kinematics (IK) based on the 
+  [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
+- Contact-stability areas and volumes: 
+  [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html),
+  [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
+- [Linear](https://scaron.info/publications/humanoids-2016.html) and
+  [Nonlinear Model Predictive Control](https://scaron.info/publications/iros-2017.html)
+  (MPC) for locomotion
 - Jacobians and Hessians for center of mass (CoM) and angular momentum
 - Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
 
@@ -24,7 +26,7 @@ Python library for humanoid robotics based on
   using a conservative linearization of CoM acceleration cones
 - [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp)
   for locomotion in multi-contact scenarios (including hand contacts)
-- [Humanoid stair climbing](https://github.com/stephane-caron/stair-climbing)
+- [Humanoid stair climbing](https://github.com/stephane-caron/quasistatic-stair-climbing)
   demonstrated on the HRP-4 humanoid robot
 
 ## Getting started
