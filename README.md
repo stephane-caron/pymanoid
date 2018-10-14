@@ -58,6 +58,6 @@ python setup.py install --user
 
 ### Optional
 
-For nonlinear numeric optimization, you will need to [install
+For nonlinear numerical optimization, you will need to [install
 CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
 from source with the MA27 linear solver.
