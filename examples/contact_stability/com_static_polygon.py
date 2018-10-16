@@ -25,6 +25,7 @@ See <https://scaron.info/research/tro-2016.html> for details.
 """
 
 import IPython
+import sys
 
 from numpy import zeros
 
@@ -48,16 +49,14 @@ class SupportPolygonDrawer(pymanoid.Process):
     ----------
     stance : Stance
         Contacts and COM position of the robot.
-    z : scalar, optional
-        Altitude of drawn area in the world frame.
+    method: string
+        Method to compute the static equilibrium polygon. Choices are: 'bretl',
+        'cdd' and 'hull'.
     color : tuple or string, optional
         Area color.
-    method: string, optional
-        Method to compute the static equilibrium polygon.
-        Choices are bretl, cdd and hull (default)
     """
 
-    def __init__(self, stance, z=0., color=None, method='hull'):
+    def __init__(self, stance, method, color='g'):
         if color is None:
             color = (0., 0.5, 0., 0.5)
         if type(color) is str:
@@ -68,7 +67,7 @@ class SupportPolygonDrawer(pymanoid.Process):
         self.handle = None
         self.method = method
         self.stance = stance
-        self.z = z
+        self.z = z_polygon
         #
         self.update_contact_poses()
         self.update_polygon()
@@ -154,8 +153,14 @@ if __name__ == "__main__":
     stance.bind(robot)
     robot.ik.solve()
 
+    method = "hull"
+    if "bretl" in sys.argv:
+        method = "bretl"
+    elif "cdd" in sys.argv:
+        method = "cdd"
+
     com_sync = COMSync(stance, com_above)
-    polygon_drawer = SupportPolygonDrawer(stance, z_polygon)
+    polygon_drawer = SupportPolygonDrawer(stance, method)
     wrench_drawer = StaticWrenchDrawer(stance)
 
     sim.schedule(robot.ik)
@@ -168,6 +173,8 @@ if __name__ == "__main__":
 COM static-equilibrium polygon
 ==============================
 
+Method: %s
+
 Ready to go! The GUI displays the COM static-equilibrium polygon in green. You
 can move the blue box (in the plane above the robot) around to make the robot
 move its center of mass. Contact wrenches are displayed at each contact (green
@@ -176,7 +183,7 @@ static-equilibrium polygon, you should see the background turn red as no
 feasible contact wrenches can be found.
 
 Enjoy :)
-""")
+""" % method)
 
     if IPython.get_ipython() is None:
         IPython.embed()
