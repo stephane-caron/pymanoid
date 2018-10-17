@@ -1,6 +1,6 @@
-*************
-Contact model
-*************
+*****************
+Contact stability
+*****************
 
 Single contact
 ==============

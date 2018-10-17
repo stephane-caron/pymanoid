@@ -1,7 +1,7 @@
 # pymanoid
 
-Python library for humanoid robotics based on
-[OpenRAVE](https://github.com/rdiankov/openrave):
+Humanoid robotics controller prototyping environment based on
+[OpenRAVE](https://github.com/rdiankov/openrave). Includes:
 
 - Whole-body inverse kinematics (IK) based on the 
   [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)

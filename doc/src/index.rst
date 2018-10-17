@@ -4,7 +4,7 @@
 Welcome to pymanoid!
 ####################
 
-.. **Release 0.6.0 -- December 16, 2016**
+.. **Release 1.0.0 -- October 17, 2018**
 
 .. figure:: images/logo.png
    :align:  center
@@ -13,7 +13,7 @@ Welcome to pymanoid!
 
     forward-kinematics.rst
     inverse-kinematics.rst
-    contact-model.rst
+    contact-stability.rst
     model-predictive-control.rst
     simulation-environment.rst
     graphical-user-interface.rst
