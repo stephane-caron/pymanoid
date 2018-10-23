@@ -270,6 +270,26 @@ class Robot(object):
     ======================
     """
 
+    def compute_contact_jacobian(self, contacts):
+        """
+        Compute the contact Jacobian.
+
+        Parameters
+        ----------
+        contacts : pymanoid.ContactSet
+            Contacts between the robot and its environment.
+
+        Returns
+        -------
+        J_contact : array
+            Contact Jacobian.
+        """
+        J_contact = zeros((6 * contacts.nb_contacts, self.nb_dofs))
+        for i, contact in enumerate(contacts.contacts):
+            J_i = self.compute_link_jacobian(contact.link, contact.p)
+            J_contact[6 * i:6 * (i + 1), :] = J_i
+        return J_contact
+
     def compute_link_jacobian(self, link, p=None):
         """
         Compute the Jacobian `J(q)` of a frame attached to a given link, the
