@@ -290,6 +290,27 @@ class Robot(object):
             J_contact[6 * i:6 * (i + 1), :] = J_i
         return J_contact
 
+    def compute_contact_hessian(self, contacts):
+        """
+        Compute the contact Hessian.
+
+        Parameters
+        ----------
+        contacts : pymanoid.ContactSet
+            Contacts between the robot and its environment.
+
+        Returns
+        -------
+        H_contact : array
+            Contact Hessian.
+        """
+        H_contact = zeros((self.nb_dofs, 6 * contacts.nb_contacts,
+                           self.nb_dofs))
+        for i, contact in enumerate(contacts.contacts):
+            H_i = self.compute_link_hessian(contact.link, contact.p)
+            H_contact[:, 6 * i:6 * (i + 1), :] = H_i
+        return H_contact
+
     def compute_link_jacobian(self, link, p=None):
         """
         Compute the Jacobian `J(q)` of a frame attached to a given link, the
