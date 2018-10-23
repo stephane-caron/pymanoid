@@ -536,7 +536,7 @@ class Robot(object):
             qdd, external_torque, returncomponents=True)
         return tm, tc, tg
 
-    def compute_static_torques(self, external_torque=None):
+    def compute_static_gravity_torques(self, external_torque=None):
         """
         Compute static-equilibrium torques for the manipulator.
 
