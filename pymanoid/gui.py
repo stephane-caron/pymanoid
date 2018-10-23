@@ -593,6 +593,26 @@ class RobotWrenchDrawer(WrenchDrawer):
         return support
 
 
+class StaticEquilibriumWrenchDrawer(PointMassWrenchDrawer):
+
+    """
+    Draw contact wrenches applied to a robot in static-equilibrium.
+
+    Parameters
+    ----------
+    stance : pymanoid.Stance
+        Contacts and COM position of the robot.
+    """
+
+    def __init__(self, stance):
+        super(StaticEquilibriumWrenchDrawer, self).__init__(stance.com, stance)
+        stance.com.pdd = zeros((3,))
+        self.stance = stance
+
+    def find_supporting_wrenches(self, sim):
+        return self.stance.find_static_supporting_wrenches()
+
+
 class TrajectoryDrawer(Process):
 
     """

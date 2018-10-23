@@ -27,16 +27,11 @@ See <https://scaron.info/research/tro-2016.html> for details.
 import IPython
 import sys
 
-from numpy import zeros
-
 import pymanoid
 
-from pymanoid import Stance
-from pymanoid.gui import PointMassWrenchDrawer
+from pymanoid.gui import StaticEquilibriumWrenchDrawer
 from pymanoid.gui import draw_polygon
-from pymanoid.misc import matplotlib_to_rgb, norm
-
-z_polygon = 2.
+from pymanoid.misc import norm
 
 
 class SupportPolygonDrawer(pymanoid.Process):
@@ -46,19 +41,22 @@ class SupportPolygonDrawer(pymanoid.Process):
 
     Parameters
     ----------
-    stance : Stance
+    stance : pymanoid.Stance
         Contacts and COM position of the robot.
-    method: string
+    method : string
         Method to compute the static equilibrium polygon. Choices are: 'bretl',
         'cdd' and 'hull'.
+    z_polygon : scalar
+        Height where to draw the CoM static-equilibrium polygon.
     color : tuple or string, optional
         Area color.
     """
 
-    def __init__(self, stance, method, color='g'):
+    def __init__(self, stance, method, z_polygon, color='g'):
         if color is None:
             color = (0., 0.5, 0., 0.5)
         if type(color) is str:
+            from pymanoid.misc import matplotlib_to_rgb
             color = matplotlib_to_rgb(color) + [0.5]
         super(SupportPolygonDrawer, self).__init__()
         self.color = color
@@ -103,27 +101,18 @@ class SupportPolygonDrawer(pymanoid.Process):
         self.update_polygon()
 
 
-class StaticWrenchDrawer(PointMassWrenchDrawer):
+class COMSync(pymanoid.Process):
 
     """
-    Draw contact wrenches applied to a robot in static-equilibrium.
+    Update stance CoM from the GUI handle in polygon above the robot.
 
     Parameters
     ----------
-    stance : Stance
+    stance : pymanoid.Stance
         Contacts and COM position of the robot.
+    com_above : pymanoid.Cube
+        CoM handle in static-equilibrium polygon.
     """
-
-    def __init__(self, stance):
-        super(StaticWrenchDrawer, self).__init__(stance.com, stance)
-        stance.com.pdd = zeros((3,))
-        self.stance = stance
-
-    def find_supporting_wrenches(self, sim):
-        return self.stance.find_static_supporting_wrenches()
-
-
-class COMSync(pymanoid.Process):
 
     def __init__(self, stance, com_above):
         super(COMSync, self).__init__()
@@ -142,9 +131,10 @@ if __name__ == "__main__":
     sim.set_camera_top(x=0., y=0., z=3.)
     robot.set_transparency(0.25)
 
+    z_polygon = 2.  # [m], height where to draw CoM polygon
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    stance = Stance.from_json('../stances/double.json')
+    stance = pymanoid.Stance.from_json('../stances/double.json')
     stance.com.hide()
     stance.bind(robot)
     robot.ik.solve()
@@ -156,8 +146,8 @@ if __name__ == "__main__":
         method = "cdd"
 
     com_sync = COMSync(stance, com_above)
-    polygon_drawer = SupportPolygonDrawer(stance, method)
-    wrench_drawer = StaticWrenchDrawer(stance)
+    polygon_drawer = SupportPolygonDrawer(stance, method, z_polygon)
+    wrench_drawer = StaticEquilibriumWrenchDrawer(stance)
 
     sim.schedule(robot.ik)
     sim.schedule_extra(com_sync)
