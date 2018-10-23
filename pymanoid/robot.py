@@ -213,6 +213,18 @@ class Robot(object):
         return self.rave.GetDOFVelocities()
 
     def set_dof_limits(self, q_min, q_max, dof_indices=None):
+        """
+        Set DOF limits of the robot.
+
+        Parameters
+        ----------
+        q_min : list or array
+           Lower-bound on joint angle values, ordered by DOF indices.
+        q_max : list or array
+           Upper-bound on joint angle values, ordered by DOF indices.
+        dof_indices : list, optional
+            List of DOF indices to update.
+        """
         if self.ik is not None:
             warn("DOF limit updates will not be forwarded to ongoing IK")
         self.rave.SetDOFLimits(q_min, q_max, dof_indices)
@@ -231,7 +243,7 @@ class Robot(object):
 
     def set_dof_values(self, q, dof_indices=None, clamp=False):
         """
-        Set the joint values of the robot.
+        Set DOF values of the robot.
 
         Parameters
         ----------
