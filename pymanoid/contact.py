@@ -287,7 +287,7 @@ class ContactSet(object):
             the stacked vector of contact wrenches (each wrench being taken at
             its respective contact point and in the world frame).
         """
-        return hstack([ct.compute_grasp_matrix(p) for ct in self.contacts])
+        return hstack([c.compute_grasp_matrix(p) for c in self.contacts])
 
     def compute_static_equilibrium_polygon(self, method='hull'):
         """

@@ -177,11 +177,37 @@ class Robot(object):
         return (q_min, q_max)
 
     def get_dof_values(self, dof_indices=None):
+        """
+        Get DOF values for a set of DOF indices.
+
+        Parameters
+        ----------
+        dof_indices : list of integers
+            List of DOF indices.
+
+        Returns
+        -------
+        q_indices : array
+            Vector of DOF values for these indices.
+        """
         if dof_indices is not None:
             return self.rave.GetDOFValues(dof_indices)
         return self.rave.GetDOFValues()
 
     def get_dof_velocities(self, dof_indices=None):
+        """
+        Get DOF velocities for a set of DOF indices.
+
+        Parameters
+        ----------
+        dof_indices : list of integers
+            List of DOF indices.
+
+        Returns
+        -------
+        qd_indices : array
+            Vector of DOF velocities for these indices.
+        """
         if dof_indices is not None:
             return self.rave.GetDOFVelocities(dof_indices)
         return self.rave.GetDOFVelocities()
