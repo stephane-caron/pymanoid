@@ -36,7 +36,6 @@ from pymanoid.gui import PointMassWrenchDrawer
 from pymanoid.gui import draw_polygon
 from pymanoid.misc import matplotlib_to_rgb, norm
 
-com_height = 0.9  # [m]
 z_polygon = 2.
 
 
@@ -140,16 +139,13 @@ if __name__ == "__main__":
     sim = pymanoid.Simulation(dt=0.03)
     robot = pymanoid.robots.JVRC1('JVRC-1.dae', download_if_needed=True)
     sim.set_viewer()
-    sim.viewer.SetCamera([
-        [0.60587192, -0.36596244,  0.70639274, -2.4904027],
-        [-0.79126787, -0.36933163,  0.48732874, -1.6965636],
-        [0.08254916, -0.85420468, -0.51334199,  2.79584694],
-        [0.,  0.,  0.,  1.]])
+    sim.set_camera_top(x=0., y=0., z=3.)
     robot.set_transparency(0.25)
 
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
     stance = Stance.from_json('../stances/double.json')
+    stance.com.hide()
     stance.bind(robot)
     robot.ik.solve()
 
