@@ -319,17 +319,16 @@ class ContactSet(object):
             k, a_Oz, a_x, a_y = A_O.shape[0], A_O[:, 2], A_O[:, 3], A_O[:, 4]
             B, c = hstack([-a_y.reshape((k, 1)), +a_x.reshape((k, 1))]), -a_Oz
             return compute_polygon_hull(B, c)
-        p = [0, 0, 0]  # point where contact wrench is taken at
-        G = self.compute_grasp_matrix(p)
+        G_0 = self.compute_grasp_matrix([0., 0., 0.])
         F = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
         mass = 42.  # [kg]
         # mass has no effect on the output polygon, see IV.B in [Caron16]_
-        E = 1. / (mass * 9.81) * vstack([-G[4, :], +G[3, :]])
-        f = array([p[0], p[1]])
+        E = 1. / (mass * 9.81) * vstack([-G_0[4, :], +G_0[3, :]])
+        f = array([0., 0.])
         return project_polytope(
             proj=(E, f),
             ineq=(F, zeros(F.shape[0])),
-            eq=(G[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
+            eq=(G_0[(0, 1, 2, 5), :], array([0, 0, mass * 9.81, 0])),
             method=method)
 
     def compute_wrench_inequalities(self, p):
