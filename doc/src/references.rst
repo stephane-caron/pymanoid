@@ -22,8 +22,9 @@ References
    <https://hal.archives-ouvertes.fr/hal-01349880>`_, S. Caron and A. Kheddar,
    IEEE-RAS International Conference on Humanoid Robots, November 2016.
 
-.. [Nozawa16] *Three-dimensional humanoid motion planning using COM feasible
-   region and its application to ladder climbing tasks*, Nozawa, Shunichi, et
+.. [Nozawa16] `Three-dimensional humanoid motion planning using COM feasible
+   region and its application to ladder climbing tasks
+   <https://doi.org/10.1109/HUMANOIDS.2016.7803253>`_, Nozawa, Shunichi, et
    al., IEEE-RAS International Conference on Humanoid Robots, November 2016.
 
 .. [Caron15] `Stability of surface contacts for humanoid robots: Closed-form
@@ -46,12 +47,13 @@ References
    <http://www.roboticsproceedings.org/rss07/p21.pdf>`_, O. Kanoun, Robotics:
    Science and Systems, June 2011.
 
-.. [Bretl08] *Testing Static Equilibrium for Legged Robots*, T. Bretl and S.
-   Lall, IEEE Transactions on Robotics, vol. 24, no. 4, pp. 794-807, August
-   2008.
+.. [Bretl08] `Testing Static Equilibrium for Legged Robots
+   <https://doi.org/10.1109/TRO.2008.2001360>`_, T. Bretl and S. Lall, IEEE
+   Transactions on Robotics, vol. 24, no. 4, pp. 794-807, August 2008.
 
-.. [Wieber06] *Trajectory free linear model predictive control for stable
-   walking in the presence of strong perturbations*, P.-B. Wieber, IEEE-RAS
+.. [Wieber06] `Trajectory free linear model predictive control for stable
+   walking in the presence of strong perturbations
+   <https://hal.inria.fr/inria-00390462/document>`_, P.-B. Wieber, IEEE-RAS
    International Conference on Humanoid Robots, 2006.
 
 .. [Diebel06] `Representing Attitude: Euler Angles, Unit Quaternions, and
@@ -63,14 +65,15 @@ References
    <https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf>`_, Stephen Boyd and
    Lieven Vandenberghe, Cambridge University Press, 2004.
 
-.. [Sardain04] *Forces acting on a biped robot. Center of pressure-Zero moment
-   point*, P. Sardain and G. Bessonnet, IEEE Transactions on Systems, Man and
-   Cybernetics, vol. 34, no. 5, pp. 630-637, September 2004.
+.. [Sardain04] `Forces acting on a biped robot. Center of pressure-Zero moment
+   point <https://doi.org/10.1109/TSMCA.2004.832811>`_, P. Sardain and G.
+   Bessonnet, IEEE Transactions on Systems, Man and Cybernetics, vol. 34, no.
+   5, pp. 630-637, September 2004.
 
-.. [Goldfarb83] *A numerically stable dual method for solving strictly convex
-   quadratic programs*, D. Goldfarb and A. Idnani, Mathematical Programming,
-   vol. 27, pp. 1-33, 1983.
+.. [Goldfarb83] `A numerically stable dual method for solving strictly convex
+   quadratic programs <https://doi.org/10.1007/BF02591962>`_, D. Goldfarb and
+   A. Idnani, Mathematical Programming, vol. 27, pp. 1-33, 1983.
 
-.. [Walker82] *Efficient dynamic computer simulation of robotic mechanisms*, M.
-   Walker and D. Orin, ASME Trans. J. Dynamics Systems, Measurement and
-   Control, vol. 104, pp. 205-2011, 1982.
+.. [Walker82] `Efficient dynamic computer simulation of robotic mechanisms
+   <https://doi.org/10.1115/1.3139699>`_, M. Walker and D. Orin, ASME Trans. J.
+   Dynamics Systems, Measurement and Control, vol. 104, pp. 205-2011, 1982.
