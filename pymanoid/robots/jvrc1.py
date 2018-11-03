@@ -45,13 +45,13 @@ class JVRC1(Humanoid):
     R_HIP_P = 0
     R_HIP_R = 1
     R_HIP_Y = 2
-    R_KNEE = 3
+    R_KNEE_P = 3
     R_ANKLE_R = 4
     R_ANKLE_P = 5
     L_HIP_P = 6
     L_HIP_R = 7
     L_HIP_Y = 8
-    L_KNEE = 9
+    L_KNEE_P = 9
     L_ANKLE_R = 10
     L_ANKLE_P = 11
     CHEST_Y = 12  # compatibility with HRP-4
@@ -103,7 +103,7 @@ class JVRC1(Humanoid):
     left_elbow = [L_ELBOW_P, L_ELBOW_Y]
     left_hip = [L_HIP_P, L_HIP_R, L_HIP_Y]
     left_index = [L_UINDEX, L_LINDEX]
-    left_knee = [L_KNEE]
+    left_knee = [L_KNEE_P]
     left_little = [L_ULITTLE, L_LLITTLE]
     left_shoulder = [L_SHOULDER_P, L_SHOULDER_R, L_SHOULDER_Y]
     left_thumb = [L_UTHUMB, L_LTHUMB]
@@ -113,7 +113,7 @@ class JVRC1(Humanoid):
     right_elbow = [R_ELBOW_P, R_ELBOW_Y]
     right_hip = [R_HIP_P, R_HIP_R, R_HIP_Y]
     right_index = [R_UINDEX, R_LINDEX]
-    right_knee = [R_KNEE]
+    right_knee = [R_KNEE_P]
     right_little = [R_ULITTLE, R_LLITTLE]
     right_shoulder = [R_SHOULDER_P, R_SHOULDER_R, R_SHOULDER_Y]
     right_thumb = [R_UTHUMB, R_LTHUMB]
