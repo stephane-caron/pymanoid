@@ -430,8 +430,8 @@ class IKSolver(Process):
         (number of relaxation stages).
         """
         cost = 100000.
-        lm_damping = self.lm_damping
-        maximize_margins = self.maximize_margins
+        init_lm_damping = self.lm_damping
+        init_maximize_margins = self.maximize_margins
         self.qd_max *= qd_relax_fact ** qd_relax_steps
         self.qd_min *= qd_relax_fact ** qd_relax_steps
         N = qd_relax_steps + 1
@@ -450,10 +450,12 @@ class IKSolver(Process):
             if itnum < max_it / 2:
                 self.lm_damping = 0
                 self.maximize_margins = False
-            else:  # restore initial settings
-                self.lm_damping = lm_damping
-                self.maximize_margins = maximize_margins
+            elif itnum == max_it / 2:
+                self.lm_damping = init_lm_damping
+                self.maximize_margins = init_maximize_margins
             self.step(dt)
+        self.lm_damping = init_lm_damping
+        self.maximize_margins = init_maximize_margins
         self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
         self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
