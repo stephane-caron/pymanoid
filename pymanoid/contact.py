@@ -46,6 +46,10 @@ class Contact(Box):
         the same time.
     friction : scalar
         Static friction coefficient.
+    color : char, optional
+        Color code in matplotlib convention ('b' for blue, 'g' for green, ...).
+    link : body.Manipulator, optional
+        Robot link frame in contact.
     slab_thickness : scalar, optional
         Thickness of the contact slab displayed in the GUI, in [m].
     """
