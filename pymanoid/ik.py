@@ -53,15 +53,24 @@ class IKSolver(Process):
         DOF-limit gain as described in [Kanoun12]_. In `this implementation
         <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
         between zero and one.
+    lm_damping : scalar
+        Add Levenberg-Marquardt damping as described in [Sugihara11]_. This
+        damping significantly improves numerical stability, but convergence
+        gets slower when its value is too high.
+    margin_reg : scalar
+        Regularization weight applied when ``maximize_margins`` is True.
+    margin_lin : scalar
+        Linear cost weight applied when ``maximize_margins`` is True.
+    maximize_margins : bool
+        Add slack variables to maximize joint range? This method is used in
+        [Nozawa16]_ to increase joint range, but slows down computations as the
+        optimization variable doubles in dimension. Defaults to False.
     qd : array
         Velocity returned by last solver call.
     robot : pymanoid.Robot
         Robot model.
     tasks : dict
         Dictionary of active IK tasks, indexed by task name.
-    unsafe : bool
-        Use unsafe formulation? (Faster computations but potentially jerkier
-        outputs.) Defaults to False.
 
     Notes
     -----
@@ -101,10 +110,15 @@ class IKSolver(Process):
         assert 0. <= doflim_gain <= 1.
         self.__lock = Lock()
         self.doflim_gain = doflim_gain
+        self.interaction_dist = 0.1  # [rad]
+        self.lm_damping = 1e-3
+        self.margin_lin = 1e-3
+        self.margin_reg = 1e-5
+        self.maximize_margins = False
         self.qd = zeros(robot.nb_dofs)
         self.robot = robot
+        self.safety_dist = 0.01  # [rad]
         self.tasks = {}
-        self.unsafe = False
         #
         self.set_active_dofs(active_dofs)
 
@@ -243,22 +257,23 @@ class IKSolver(Process):
 
     def __build_qp_matrices(self, dt):
         n = self.nb_active_dofs
-        q = self.robot.q[self.active_dofs]
         P = zeros((n, n))
         v = zeros(n)
         with self.__lock:
             for task in self.tasks.itervalues():
                 J = task.jacobian()[:, self.active_dofs]
                 r = task.residual(dt)
-                P += task.weight * dot(J.T, J)
+                mu = self.lm_damping * dot(r, r)
+                P += task.weight * (dot(J.T, J) + mu * eye(n))
                 v += task.weight * dot(-r.T, J)
+        q = self.robot.q[self.active_dofs]
         qd_max_doflim = self.doflim_gain * (self.q_max - q) / dt
         qd_min_doflim = self.doflim_gain * (self.q_min - q) / dt
         qd_max = minimum(self.qd_max, qd_max_doflim)
         qd_min = maximum(self.qd_min, qd_min_doflim)
         return (P, v, qd_max, qd_min)
 
-    def compute_velocity_fast(self, dt):
+    def compute_velocity(self, dt):
         """
         Compute a new velocity satisfying all tasks at best.
 
@@ -281,9 +296,10 @@ class IKSolver(Process):
         Notes
         -----
         The method implemented in this function is reasonably fast but may
-        become unstable when some tasks are widely infeasible and the optimum
-        saturates joint limits. In such situations, it is better to use
-        :func:`pymanoid.ik.IKSolver.compute_velocity_safe`.
+        become unstable when some tasks are widely infeasible. In such
+        situations, you can either increase the Levenberg-Marquardt bias
+        ``self.lm`` or set ``maximize_margins=True`` which will call
+        :func:`pymanoid.ik.IKSolver.compute_velocity_nozawa`.
 
         The returned velocity minimizes squared residuals as in the weighted
         cost function, which corresponds to the Gauss-Newton algorithm. Indeed,
@@ -310,7 +326,7 @@ class IKSolver(Process):
             raise
         return self.qd
 
-    def compute_velocity_safe(self, dt, margin_reg=1e-5, margin_lin=1e-3):
+    def compute_velocity_nozawa(self, dt):
         """
         Compute a new velocity satisfying all tasks at best, while trying to
         stay away from kinematic constraints.
@@ -319,10 +335,6 @@ class IKSolver(Process):
         ----------
         dt : scalar
             Time step in [s].
-        margin_reg : scalar
-            Regularization term on margin variables.
-        margin_lin : scalar
-            Linear penalty term on margin variables.
 
         Returns
         -------
@@ -337,17 +349,16 @@ class IKSolver(Process):
 
         Notes
         -----
-        This is a variation of the QP from
-        :func:`pymanoid.ik.IKSolver.compute_velocity_fast` that was reported in
-        Equation (10) of [Nozawa16]_. DOF limits are better taken care of by
-        margin variables, but the variable count doubles and the QP takes
-        roughly 50% more time to solve.
+        Check out the discussion of this method around Equation (10) of
+        [Nozawa16]_. DOF limits are better taken care of by margin variables,
+        but the variable count doubles and the QP takes roughly 50% more time
+        to solve.
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
         P0, v0, qd_max, qd_min = self.__build_qp_matrices(dt)
-        P = vstack([hstack([P0, Z]), hstack([Z, margin_reg * E])])
-        v = hstack([v0, -margin_lin * ones(n)])
+        P = vstack([hstack([P0, Z]), hstack([Z, self.margin_reg * E])])
+        v = hstack([v0, -self.margin_lin * ones(n)])
         G = vstack([
             hstack([+E, +E / dt]), hstack([-E, +E / dt]), hstack([Z, -E])])
         h = hstack([qd_max, -qd_min, zeros(n)])
@@ -360,7 +371,7 @@ class IKSolver(Process):
             raise
         return self.qd
 
-    def step(self, dt, unsafe=False):
+    def step(self, dt):
         """
         Apply velocities computed by inverse kinematics.
 
@@ -368,15 +379,12 @@ class IKSolver(Process):
         ----------
         dt : scalar
             Time step in [s].
-        unsafe : bool, optional
-            When set, use the faster but less numerically-stable method
-            implemented in :func:`pymanoid.ik.IKSolver.compute_velocity_fast`.
         """
         q = self.robot.q
-        if unsafe or self.unsafe:
-            qd = self.compute_velocity_fast(dt)
-        else:  # safe formulation is the default
-            qd = self.compute_velocity_safe(dt)
+        if self.maximize_margins:
+            qd = self.compute_velocity_nozawa(dt)
+        else:  # default QP formulation
+            qd = self.compute_velocity(dt)
         self.robot.set_dof_values(q + qd * dt, clamp=True)
         self.robot.set_dof_velocities(qd)
 
@@ -422,6 +430,7 @@ class IKSolver(Process):
         (number of relaxation stages).
         """
         cost = 100000.
+        maximize_margins = self.maximize_margins  # save initial choice
         self.qd_max *= qd_relax_fact ** qd_relax_steps
         self.qd_min *= qd_relax_fact ** qd_relax_steps
         N = qd_relax_steps + 1
@@ -437,7 +446,9 @@ class IKSolver(Process):
                 print("%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr))
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
-            self.step(dt, unsafe=(itnum < max_it / 2))
+            self.maximize_margins = \
+                False if (itnum < max_it / 2) else maximize_margins
+            self.step(dt)
         self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
         self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))

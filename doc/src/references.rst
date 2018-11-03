@@ -10,7 +10,7 @@ References
 .. [Caron17z] `ZMP support areas for multi-contact mobility under frictional
    constraints <https://scaron.info/papers/journal/caron-tro-2016.pdf>`_, S.
    Caron, Q.-C. Pham and Y. Nakamura, IEEE Transactions on Robotics, vol. 33,
-   no. 1, pp. 67-80, February 2017.
+   no. 1, February 2017.
 
 .. [Scianca16] `Intrinsically stable MPC for humanoid gait generation
    <http://www.dis.uniroma1.it/%7Elabrob/pub/papers/Humanoids16_MPC.pdf>`_, 
@@ -47,9 +47,13 @@ References
    <http://www.roboticsproceedings.org/rss07/p21.pdf>`_, O. Kanoun, Robotics:
    Science and Systems, June 2011.
 
+.. [Sugihara11] `Solvability-Unconcerned Inverse Kinematics by the
+   Levenberg-Marquardt Method <https://doi.org/10.1109/TRO.2011.2148230>`_, T.
+   Sugihara, IEEE Transactions on Robotics, vol. 27, no. 5, October 2011.
+
 .. [Bretl08] `Testing Static Equilibrium for Legged Robots
    <https://doi.org/10.1109/TRO.2008.2001360>`_, T. Bretl and S. Lall, IEEE
-   Transactions on Robotics, vol. 24, no. 4, pp. 794-807, August 2008.
+   Transactions on Robotics, vol. 24, no. 4, August 2008.
 
 .. [Wieber06] `Trajectory free linear model predictive control for stable
    walking in the presence of strong perturbations
@@ -68,12 +72,12 @@ References
 .. [Sardain04] `Forces acting on a biped robot. Center of pressure-Zero moment
    point <https://doi.org/10.1109/TSMCA.2004.832811>`_, P. Sardain and G.
    Bessonnet, IEEE Transactions on Systems, Man and Cybernetics, vol. 34, no.
-   5, pp. 630-637, September 2004.
+   5, September 2004.
 
 .. [Goldfarb83] `A numerically stable dual method for solving strictly convex
    quadratic programs <https://doi.org/10.1007/BF02591962>`_, D. Goldfarb and
-   A. Idnani, Mathematical Programming, vol. 27, pp. 1-33, 1983.
+   A. Idnani, Mathematical Programming, vol. 27, 1983.
 
 .. [Walker82] `Efficient dynamic computer simulation of robotic mechanisms
    <https://doi.org/10.1115/1.3139699>`_, M. Walker and D. Orin, ASME Trans. J.
-   Dynamics Systems, Measurement and Control, vol. 104, pp. 205-2011, 1982.
+   Dynamics Systems, Measurement and Control, vol. 104, 1982.
