@@ -137,12 +137,16 @@ class Stance(ContactSet):
         """
         tasks = []
         if self.left_foot is not None:
+            self.left_foot.link = robot.left_foot
             tasks.append(ContactTask(robot, robot.left_foot, self.left_foot))
         if self.left_hand is not None:
+            self.left_hand.link = robot.left_hand
             tasks.append(ContactTask(robot, robot.left_hand, self.left_hand))
         if self.right_foot is not None:
+            self.right_foot.link = robot.right_foot
             tasks.append(ContactTask(robot, robot.right_foot, self.right_foot))
         if self.right_hand is not None:
+            self.right_hand.link = robot.right_hand
             tasks.append(ContactTask(robot, robot.right_hand, self.right_hand))
         for dof_id, dof_target in self.dof_tasks.iteritems():
             tasks.append(DOFTask(robot, dof_id, dof_target))
