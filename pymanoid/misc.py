@@ -30,6 +30,9 @@ class AvgStdEstimator(object):
     """
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.last_value = None
         self.n = 0
         self.x = 0.
