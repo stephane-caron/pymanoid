@@ -298,7 +298,7 @@ class IKSolver(Process):
         The method implemented in this function is reasonably fast but may
         become unstable when some tasks are widely infeasible. In such
         situations, you can either increase the Levenberg-Marquardt bias
-        ``self.lm`` or set ``maximize_margins=True`` which will call
+        ``self.lm_damping`` or set ``maximize_margins=True`` which will call
         :func:`pymanoid.ik.IKSolver.compute_velocity_nozawa`.
 
         The returned velocity minimizes squared residuals as in the weighted
