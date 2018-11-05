@@ -263,7 +263,7 @@ class IKSolver(Process):
             for task in self.tasks.itervalues():
                 J = task.jacobian()[:, self.active_dofs]
                 r = task.residual(dt)
-                mu = self.lm_damping * dot(r, r)
+                mu = self.lm_damping * max(1e-3, dot(r, r))
                 P += task.weight * (dot(J.T, J) + mu * eye(n))
                 v += task.weight * dot(-r.T, J)
         q = self.robot.q[self.active_dofs]
