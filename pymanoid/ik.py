@@ -119,6 +119,7 @@ class IKSolver(Process):
         self.robot = robot
         self.safety_dist = 0.01  # [rad]
         self.tasks = {}
+        self.verbosity = 0
         #
         self.set_active_dofs(active_dofs)
 
@@ -385,6 +386,8 @@ class IKSolver(Process):
             qd = self.compute_velocity_nozawa(dt)
         else:  # default QP formulation
             qd = self.compute_velocity(dt)
+        if self.verbosity >= 2:
+            self.print_costs(qd, dt)
         self.robot.set_dof_values(q + qd * dt, clamp=True)
         self.robot.set_dof_velocities(qd)
 
@@ -443,7 +446,7 @@ class IKSolver(Process):
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
-            if debug:
+            if debug or self.verbosity >= 1:
                 print("%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr))
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
