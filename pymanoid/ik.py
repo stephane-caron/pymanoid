@@ -392,7 +392,7 @@ class IKSolver(Process):
         self.robot.set_dof_velocities(qd)
 
     def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3,
-              qd_relax_fact=10., qd_relax_steps=2, debug=False):
+              debug=False):
         """
         Compute joint-angles that satisfy all kinematic constraints at best.
 
@@ -402,15 +402,11 @@ class IKSolver(Process):
             Maximum number of solver iterations.
         cost_stop : scalar
             Stop when cost value is below this threshold.
-        conv_tol : scalar, optional
+        impr_stop : scalar, optional
             Stop when cost improvement (relative variation from one iteration
             to the next) is less than this threshold.
         dt : scalar, optional
             Time step in [s].
-        qd_relax_fact : scalar, optional
-            Relaxation factor on DOF velocity limits.
-        qd_relax_steps : int, optional
-            Number of DOF-velocity relaxation stages.
         debug : bool, optional
             Set to True for additional debug messages.
 
@@ -427,22 +423,19 @@ class IKSolver(Process):
         make convergence slower, while big values make the optimization
         unstable (in which case there may be no convergence at all).
 
-        To speed up convergence, this function will relax DOF velocity limits
-        at first, then progressively restore them. This behavior is set by the
-        two parameters `qd_relax_fact` (relaxation factor) and `qd_relax_steps`
-        (number of relaxation stages).
+        To speed up convergence, this function starts by an exploration phase
+        where DOF velocity limits are relaxed and Levenberg-Marquardt damping
+        is disabled.
         """
         cost = 100000.
         init_lm_damping = self.lm_damping
         init_maximize_margins = self.maximize_margins
-        self.qd_max *= qd_relax_fact ** qd_relax_steps
-        self.qd_min *= qd_relax_fact ** qd_relax_steps
-        N = qd_relax_steps + 1
-        qd_stepdowns = [max_it * i / N for i in xrange(1, N)]
+        exploration_phase = True
+        self.lm_damping = 0
+        self.maximize_margins = False
+        self.qd_max = +10. * self.robot.qd_lim[self.active_dofs]
+        self.qd_min = -10. * self.robot.qd_lim[self.active_dofs]
         for itnum in xrange(max_it):
-            if itnum in qd_stepdowns:
-                self.qd_max /= qd_relax_fact
-                self.qd_min /= qd_relax_fact
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost
@@ -450,12 +443,12 @@ class IKSolver(Process):
                 print("%2d: %.3e (impr: %+.2e)" % (itnum, cost, impr))
             if abs(cost) < cost_stop or impr < impr_stop:
                 break
-            if itnum < max_it / 2:
-                self.lm_damping = 0
-                self.maximize_margins = False
-            elif itnum == max_it / 2:
+            if exploration_phase and (itnum >= max_it / 2 or impr < 1e-2):
+                exploration_phase = False
                 self.lm_damping = init_lm_damping
                 self.maximize_margins = init_maximize_margins
+                self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
+                self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
             self.step(dt)
         self.lm_damping = init_lm_damping
         self.maximize_margins = init_maximize_margins
