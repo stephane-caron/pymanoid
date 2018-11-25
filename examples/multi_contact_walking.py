@@ -37,7 +37,7 @@ import pymanoid
 from pymanoid import Contact, PointMass, Stance
 from pymanoid.body import Box
 from pymanoid.gui import PointMassWrenchDrawer, TrajectoryDrawer
-from pymanoid.gui import draw_cone, draw_polyhedron
+from pymanoid.gui import draw_cone, draw_polytope
 from pymanoid.gui import draw_line, draw_point, draw_points
 from pymanoid.interp import interpolate_pose_linear, quat_slerp
 from pymanoid.misc import normalize
@@ -797,7 +797,7 @@ class TubeDrawer(pymanoid.Process):
                     draw_point(vertices[0], color=color, pointsize=0.01))
             else:
                 self.poly_handles.extend(
-                    draw_polyhedron(vertices, '*.-#', color=color))
+                    draw_polytope(vertices, '*.-#', color=color))
 
     def draw_dual(self, tube):
         self.cone_handles = []

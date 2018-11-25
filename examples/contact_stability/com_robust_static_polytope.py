@@ -41,7 +41,7 @@ except Exception:
 from numpy import array, zeros
 from pymanoid import Stance
 from pymanoid.gui import PointMassWrenchDrawer
-from pymanoid.gui import draw_polyhedron
+from pymanoid.gui import draw_polytope
 from pymanoid.misc import matplotlib_to_rgb, norm
 from openravepy import matrixFromPose
 
@@ -127,7 +127,7 @@ class SupportPolyhedronDrawer(pymanoid.Process):
             self.polyhedron.init_algo()
             self.polyhedron.build_polys()
             vertices = self.polyhedron.polyhedron()
-            self.handle = draw_polyhedron(
+            self.handle = draw_polytope(
                 [(x[0], x[1], x[2]) for x in vertices])
         except Exception as e:
             print("SupportPolyhedronDrawer: {}".format(e))
@@ -136,7 +136,7 @@ class SupportPolyhedronDrawer(pymanoid.Process):
         try:
             self.polyhedron.next_edge()
             vertices = self.polyhedron.polyhedron()
-            self.handle = draw_polyhedron(
+            self.handle = draw_polytope(
                 [(x[0], x[1], x[2]) for x in vertices])
         except Exception as e:
             print("SupportPolyhedronDrawer: {}".format(e))

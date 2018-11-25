@@ -32,7 +32,7 @@ import pymanoid
 
 from pymanoid import Stance
 from pymanoid.gui import PointMassWrenchDrawer
-from pymanoid.gui import draw_polyhedron
+from pymanoid.gui import draw_polytope
 from pymanoid.misc import matplotlib_to_rgb, norm
 
 com_height = 0.9  # [m]
@@ -95,7 +95,7 @@ class AccelConeDrawer(pymanoid.Process):
         try:
             vertices = self.stance.compute_pendular_accel_cone()
             vscale = [self.stance.com.p + self.scale * acc for acc in vertices]
-            self.handle = draw_polyhedron(vscale, 'r.-#')
+            self.handle = draw_polytope(vscale, 'r.-#')
         except Exception as e:
             print("AccelConeDrawer: {}".format(e))
 

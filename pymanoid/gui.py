@@ -283,12 +283,12 @@ def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
     except IndexError:
         warn("Qhull raised an IndexError for points2d=%s" % repr(points2d))
         return []
-    return draw_polyhedron(
+    return draw_polytope(
         points, combined, color, faces, linewidth, pointsize, hull=hull)
 
 
-def draw_polyhedron(points, combined='g-#', color=None, faces=None,
-                    linewidth=1., pointsize=0.01, hull=None):
+def draw_polytope(points, combined='g-#', color=None, faces=None,
+                  linewidth=1., pointsize=0.01, hull=None):
     """
     Draw a polyhedron defined as the convex hull of a set of points.
 
@@ -301,7 +301,7 @@ def draw_polyhedron(points, combined='g-#', color=None, faces=None,
     color : char or triplet, optional
         Color letter or RGB values, default is 'g' for green.
     faces : string, optional
-        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges
+        Faces of the polytope to draw. Use '.' for vertices, '-' for edges
         and '#' for facets.
     hull : scipy.spatial.ConvexHull
         2D convex hull provided when drawing polygons, in which case the 3D
