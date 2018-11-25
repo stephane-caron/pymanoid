@@ -400,6 +400,21 @@ class Simulation(object):
             [0,  0, -1, z],
             [0,  0,  0, 1.]])
 
+    def set_camera_transform(self, T):
+        """
+        Set camera transform.
+
+        Parameters
+        ----------
+        T : (4, 4) array
+            Target transform.
+
+        Notes
+        -----
+        See also :func:`pymanoid.sim.Simulation.move_camera_to`.
+        """
+        self.viewer.SetCamera(T)
+
     def move_camera_to(self, T, duration=0., dt=3e-2):
         """
         Continuously move the camera frame to a target transform.
