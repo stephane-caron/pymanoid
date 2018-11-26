@@ -195,7 +195,7 @@ def draw_line(start_point, end_point, color='g', linewidth=1.):
         array([start_point, end_point]), linewidth=linewidth, colors=color)
 
 
-def draw_point(point, color='g', pointsize=0.025):
+def draw_point(point, color='g', pointsize=0.01):
     """
     Draw a point.
 
@@ -215,7 +215,7 @@ def draw_point(point, color='g', pointsize=0.025):
     return draw_points([point], color, pointsize)
 
 
-def draw_points(points, color='g', pointsize=0.05):
+def draw_points(points, color='g', pointsize=0.01):
     """
     Draw a list of points.
 
