@@ -57,7 +57,7 @@ if __name__ == '__main__':
         [-0.02267371, -0.90901857, -0.41613837,  2.06654644],
         [0.,  0.,  0.,  1.]])
 
-    # IK targets
+    # Prepare targets
     lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0])
     rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0])
 
@@ -65,21 +65,21 @@ if __name__ == '__main__':
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
     com = PointMass(pos=robot.com, mass=robot.mass)
 
-    # IK tasks
-    lf_task = ContactTask(
+    # Prepare tasks
+    left_foot_task = ContactTask(
         robot, robot.left_foot, lf_target, weight=1., gain=0.85)
-    rf_task = ContactTask(
+    right_foot_task = ContactTask(
         robot, robot.right_foot, rf_target, weight=1., gain=0.85)
     com_task = COMTask(robot, com, weight=1e-2, gain=0.85)
-    reg_task = PostureTask(robot, robot.q_halfsit, weight=1e-6, gain=0.85)
+    posture_task = PostureTask(robot, robot.q_halfsit, weight=1e-6, gain=0.85)
 
-    # IK setup
-    robot.ik.add(lf_task)
-    robot.ik.add(rf_task)
+    # Add tasks to the IK solver
+    robot.ik.add(left_foot_task)
+    robot.ik.add(right_foot_task)
     robot.ik.add(com_task)
-    robot.ik.add(reg_task)
+    robot.ik.add(posture_task)
 
-    # Add some DOFTasks for a nicer posture
+    # Add shoulder DOF tasks for a nicer posture
     robot.ik.add(DOFTask(
         robot, robot.R_SHOULDER_R, -0.5, gain=0.5, weight=1e-5))
     robot.ik.add(DOFTask(
