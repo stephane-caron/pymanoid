@@ -391,7 +391,7 @@ class IKSolver(Process):
         self.robot.set_dof_values(q + qd * dt, clamp=True)
         self.robot.set_dof_velocities(qd)
 
-    def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3,
+    def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=1e-2,
               warm_start=False, debug=False):
         """
         Compute joint-angles that satisfy all kinematic constraints at best.
