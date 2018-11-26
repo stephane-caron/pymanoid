@@ -392,7 +392,7 @@ class IKSolver(Process):
         self.robot.set_dof_velocities(qd)
 
     def solve(self, max_it=1000, cost_stop=1e-10, impr_stop=1e-5, dt=5e-3,
-              debug=False):
+              warm_start=False, debug=False):
         """
         Compute joint-angles that satisfy all kinematic constraints at best.
 
@@ -407,6 +407,10 @@ class IKSolver(Process):
             to the next) is less than this threshold.
         dt : scalar, optional
             Time step in [s].
+        warm_start : bool, optional
+            Set to True if the current robot posture is a good guess for IK.
+            Otherwise, the solver will start by an exploration phase with DOF
+            velocity limits relaxed and no Levenberg-Marquardt damping.
         debug : bool, optional
             Set to True for additional debug messages.
 
@@ -422,19 +426,16 @@ class IKSolver(Process):
         Good values of `dt` depend on the weights of the IK tasks. Small values
         make convergence slower, while big values make the optimization
         unstable (in which case there may be no convergence at all).
-
-        To speed up convergence, this function starts by an exploration phase
-        where DOF velocity limits are relaxed and Levenberg-Marquardt damping
-        is disabled.
         """
         cost = 100000.
         init_lm_damping = self.lm_damping
         init_maximize_margins = self.maximize_margins
-        exploration_phase = True
-        self.lm_damping = 0
-        self.maximize_margins = False
-        self.qd_max = +10. * self.robot.qd_lim[self.active_dofs]
-        self.qd_min = -10. * self.robot.qd_lim[self.active_dofs]
+        exploration_phase = not warm_start
+        if exploration_phase:
+            self.lm_damping = 0
+            self.maximize_margins = False
+            self.qd_max = +10. * self.robot.qd_lim[self.active_dofs]
+            self.qd_min = -10. * self.robot.qd_lim[self.active_dofs]
         for itnum in xrange(max_it):
             prev_cost = cost
             cost = self.compute_cost(dt)
