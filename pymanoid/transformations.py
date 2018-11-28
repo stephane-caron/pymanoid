@@ -43,6 +43,7 @@ from math import asin, atan2, cos, sin
 from numpy import array, dot, eye, hstack, zeros
 from openravepy import quatFromRotationMatrix as __quatFromRotationMatrix
 from openravepy import rotationMatrixFromQuat as __rotationMatrixFromQuat
+from openravepy import axisAngleFromQuat as axis_angle_from_quat
 
 
 def apply_transform(T, p):
@@ -316,6 +317,7 @@ def transform_inverse(T):
 
 __all__ = [
     'apply_transform',
+    'axis_angle_from_quat',
     'crossmat',
     'pose_from_transform',
     'quat_from_rotation_matrix',
