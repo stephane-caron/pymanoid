@@ -240,7 +240,7 @@ def draw_points(points, color='g', pointsize=0.01):
 
 
 def draw_polygon(points, normal, combined='g-#', color=None, faces=None,
-                 linewidth=1., pointsize=0.02):
+                 linewidth=1., pointsize=0.01):
     """
     Draw a polygon defined as the convex hull of a set of points. The normal
     vector n of the plane containing the polygon must also be supplied.
