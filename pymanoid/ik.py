@@ -24,7 +24,7 @@ from threading import Lock
 from .misc import norm
 from .qpsolvers import solve_qp
 from .sim import Process
-from .tasks import ContactTask, DOFTask, PoseTask
+from .tasks import AngleAxisContactTask, ContactTask, DOFTask, PoseTask
 
 
 RANK_DEFICIENCY_MSG = "rank deficiency in IK problem, " \
@@ -172,7 +172,7 @@ class IKSolver(Process):
     def __fill_gain(self, task):
         if task.name in self.DEFAULT_GAINS:
             task.gain = self.DEFAULT_GAINS[task.name]
-        elif type(task) is ContactTask:
+        elif type(task) in [AngleAxisContactTask, ContactTask]:
             task.gain = self.DEFAULT_GAINS['CONTACT']
         elif type(task) is DOFTask:
             task.gain = self.DEFAULT_GAINS['DOF']
@@ -184,7 +184,7 @@ class IKSolver(Process):
     def __fill_weight(self, task):
         if task.name in self.DEFAULT_WEIGHTS:
             task.weight = self.DEFAULT_WEIGHTS[task.name]
-        elif type(task) is ContactTask:
+        elif type(task) in [AngleAxisContactTask, ContactTask]:
             task.weight = self.DEFAULT_WEIGHTS['CONTACT']
         elif type(task) is DOFTask:
             task.weight = self.DEFAULT_WEIGHTS['DOF']

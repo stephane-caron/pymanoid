@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, dot, eye, zeros
+from numpy import array, dot, eye, hstack, ones, zeros
 
 from .misc import PointWrap, PoseWrap
 
@@ -602,3 +602,88 @@ class ContactTask(PoseTask):
                  exclude_dofs=None):
         super(ContactTask, self).__init__(
             robot, link, target, weight, gain, exclude_dofs)
+
+
+class AngleAxisContactTask(Task):
+
+    """
+    Contact task using angle-axis rather than quaternion computations. The
+    benefit of this task is that some degrees of constraint (DOC) of the
+    contact constraint can be (fully or partially) disabled via the `doc_mask`
+    attribute.
+
+    Parameters
+    ----------
+    robot : Robot
+        Target robot.
+    link : Link or string
+        Robot Link, or name of the link field in the ``robot`` argument.
+    target : list or array (shape=(7,)) or pymanoid.Body
+        Pose coordinates of the link's target.
+    weight : scalar, optional
+        Task weight used in IK cost function. If None, needs to be set later.
+    gain : scalar, optional
+        Proportional gain of the task.
+    exclude_dofs : list of integers, optional
+        DOF indices not used by task.
+
+    Attributes
+    ----------
+    doc_mask : array
+        Array of dimension six whose values lie between 0 (degree of constraint
+        fully disabled) and 1 (fully enabled). The first three values
+        correspond to translation (Tx, Ty, Tz) while the last three values
+        correspond to rotation (Rx, Ry, Rz).
+    """
+
+    def __init__(self, robot, link, target, weight=None, gain=None,
+                 exclude_dofs=None):
+        super(AngleAxisContactTask, self).__init__(weight, gain, exclude_dofs)
+        if type(link) is str:
+            link = robot.__getattribute__(link)
+        self.doc_mask = ones(6)
+        self.link = link
+        self.name = self.link.name
+        self.robot = robot
+        self.update_target(target)
+
+    def _jacobian(self):
+        return self.robot.compute_link_jacobian(self.link)
+
+    def _residual(self, dt):
+        """
+        Desired task velocity.
+
+        Parameters
+        ----------
+        dt : scalar
+            Simulation timestep.
+
+        Notes
+        -----
+        This function is adapted from Equation (24) of "Natural motion
+        animation through constraining and deconstraining at will" (Yamane and
+        Nakamura, 2003).
+        """
+        pos_diff = self.target.p - self.link.p
+        R0 = dot(self.target.R, self.link.R.transpose())
+        from transformations import rpy_from_rotation_matrix
+        from transformations import rotation_matrix_from_rpy
+        rpy = rpy_from_rotation_matrix(R0)
+        R = rotation_matrix_from_rpy(self.doc_mask[3:] * rpy)
+        ang_diff = 0.5 * array([
+            R[0, 1] - R[1, 2],
+            R[0, 2] - R[2, 0],
+            R[1, 0] - R[2, 1]])
+        return hstack([self.doc_mask[:3] * pos_diff, ang_diff]) / dt
+
+    def update_target(self, target):
+        """
+        Update the task residual with a new target.
+
+        Parameters
+        ----------
+        target : Point or array or list
+            New link position target.
+        """
+        self.target = target if hasattr(target, 'pose') else PoseWrap(target)
