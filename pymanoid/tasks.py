@@ -604,7 +604,7 @@ class ContactTask(PoseTask):
             robot, link, target, weight, gain, exclude_dofs)
 
 
-class AngleAxisContactTask(Task):
+class AxisAngleContactTask(Task):
 
     """
     Contact task using angle-axis rather than quaternion computations. The
@@ -638,7 +638,7 @@ class AngleAxisContactTask(Task):
 
     def __init__(self, robot, link, target, weight=None, gain=None,
                  exclude_dofs=None):
-        super(AngleAxisContactTask, self).__init__(weight, gain, exclude_dofs)
+        super(AxisAngleContactTask, self).__init__(weight, gain, exclude_dofs)
         if type(link) is str:
             link = robot.__getattribute__(link)
         self.doc_mask = ones(6)
