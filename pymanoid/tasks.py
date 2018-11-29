@@ -666,12 +666,12 @@ class AxisAngleContactTask(Task):
         Nakamura, 2003).
         """
         pos_diff = self.target.p - self.link.p
-        R0 = dot(self.target.R, self.link.R.transpose())
+        R0 = dot(self.link.R, self.target.R.transpose())
         from transformations import rpy_from_rotation_matrix
         from transformations import rotation_matrix_from_rpy
         rpy = rpy_from_rotation_matrix(R0)
         R = rotation_matrix_from_rpy(self.doc_mask[3:] * rpy)
-        ang_diff = 0.5 * array([
+        ang_diff = -0.5 * array([
             R[0, 1] - R[1, 2],
             R[0, 2] - R[2, 0],
             R[1, 0] - R[2, 1]])
