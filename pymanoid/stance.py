@@ -274,8 +274,8 @@ class Stance(ContactSet):
 
     def compute_zmp_support_area(self, plane, method='bretl'):
         """
-        Compute the (pendular) multi-contact ZMP support area.
-
+        Compute an extension of the (pendular) multi-contact ZMP support area
+        with optional pressure limits on each contact.
 
         Parameters
         ----------
@@ -299,8 +299,10 @@ class Stance(ContactSet):
         z_zmp = plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
         G = self.compute_grasp_matrix([0, 0, 0])
-        F = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
-        mass = 42.  # [kg]
+        F_list, b_list = zip(*[ct.wrench_hrep for ct in self.contacts])
+        F = block_diag(*F_list)
+        b = hstack(b_list)
+        mass = 42.  # [kg], does not affect the output
         # mass has no effect on the output polygon, c.f. Section IV.C in
         # <https://hal.archives-ouvertes.fr/hal-01349880>
         B1 = hstack([self.com.z * eye(3), crossmat_n])
@@ -313,7 +315,7 @@ class Stance(ContactSet):
         f = array([self.com.x, self.com.y])
         return project_polytope(
             proj=(E, f),
-            ineq=(F, zeros(F.shape[0])),
+            ineq=(F, b),
             eq=(C, d),
             method=method)
 

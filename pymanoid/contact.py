@@ -52,6 +52,8 @@ class Contact(Box):
         Robot link frame in contact.
     slab_thickness : scalar, optional
         Thickness of the contact slab displayed in the GUI, in [m].
+    max_pressure : scalar, optional
+        Maximum pressure on contact.
     """
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
@@ -64,6 +66,7 @@ class Contact(Box):
         self.friction = friction  # isotropic Coulomb friction
         self.inner_friction = inner_friction  # pyramidal approximation
         self.link = link
+        self.max_pressure = None
         self.shape = shape
 
     def copy(self, color=None, link=None):
@@ -216,6 +219,33 @@ class Contact(Box):
             [-Y, +X, -(X + Y) * mu, -mu, +mu,  +1],
             [-Y, -X, -(X + Y) * mu, -mu, -mu,  +1]])
         return dot(local_cone, block_diag(self.R.T, self.R.T))
+
+    @property
+    def wrench_hrep(self):
+        """
+        H-representation of friction inequalities (and optional pressure
+        limits) in world frame.
+
+        This matrix-vector pair describes the linearized Coulomb friction model
+        (in the fixed contact mode) and pressure limits by:
+
+        .. math::
+
+            F w \\leq g
+
+        where `w` is the contact wrench at the contact point (``self.p``) in
+        the world frame. See [Caron15]_ for the derivation of the formula for
+        `F`.
+        """
+        if self.max_pressure is None:
+            F = self.wrench_inequalities
+            b = zeros(F.shape[0])
+        else:  # self.max_pressure is not None
+            pressure_select = hstack([self.n, zeros(3)])
+            F = vstack([self.wrench_inequalities, pressure_select])
+            b = zeros(F.shape[0])
+            b[-1] = self.max_pressure
+        return (F, b)
 
     @property
     def wrench_rays(self):
