@@ -168,6 +168,41 @@ def draw_force(point, force, scale=0.0025, color='r', linewidth=0.015):
     return draw_arrow(point, point + f_scale, color=color, linewidth=linewidth)
 
 
+def draw_horizontal_polygon(points, height, combined='g-#', color=None,
+                            faces=None, linewidth=1., pointsize=0.01):
+    """
+    Draw a horizontal polygon defined as the convex hull of a set of 2D points.
+
+    Parameters
+    ----------
+    points : list of arrays
+        List of coplanar 2D points.
+    height : scalar
+        Height to draw the polygon at.
+    combined : string, optional
+        Drawing spec in matplotlib fashion. Default: 'g-#'.
+    color : char or triplet, optional
+        Color letter or RGB values, default is 'g' for green.
+    faces : string
+        Faces of the polyhedron to draw. Use '.' for vertices, '-' for edges
+        and '#' for facets.
+    linewidth : scalar
+        Thickness of drawn line.
+    pointsize : scalar
+        Vertex size.
+
+    Returns
+    -------
+    handles : list of openravepy.GraphHandle
+        OpenRAVE graphical handles. Must be stored in some variable, otherwise
+        the drawn object will vanish instantly.
+    """
+    return draw_polygon(
+        [(p[0], p[1], height) for p in points],
+        normal=[0, 0, 1], combined=combined, color=color, faces=faces,
+        linewidth=linewidth, pointsize=pointsize)
+
+
 def draw_line(start_point, end_point, color='g', linewidth=1.):
     """
     Draw a line between two points.
