@@ -58,3 +58,6 @@ target/
 
 # Rope
 .ropeproject
+
+# Local copy of pymanoid wiki
+wiki/
