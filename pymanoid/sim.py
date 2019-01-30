@@ -94,6 +94,18 @@ class Simulation(object):
         Load environment from XML/DAE file.
     env_xml : string, optional
         Load environment from XML string.
+
+    Attributes
+    ----------
+    dt : scalar, optional
+        Simulation timestep, that is, time interval between two ticks in
+        simulation time. The default value of 30 [ms] is chosen so that stock
+        simulations run real-time on modern computers. Lower simulation steps
+        make forward integration more precise, but will result in loss of
+        real-timeness at some point (a simulation runs real-time when the
+        computer spends less than ``dt`` to carry out all computations at every
+        tick, so that it takes N seconds of real time to simulate N seconds of
+        simulation time).
     """
 
     def __init__(self, dt, env_path=None, env_xml=None):
