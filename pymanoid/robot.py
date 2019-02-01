@@ -23,7 +23,7 @@ from numpy import concatenate, maximum, minimum
 from os.path import basename, isfile, splitext
 from warnings import warn
 
-from .body import PointMass
+from .body import Body, PointMass
 from .gui import draw_line, draw_point
 from .ik import IKSolver
 from .misc import matplotlib_to_rgb, middot
@@ -79,6 +79,23 @@ class Robot(object):
         self.transparency = 0.  # initially opaque
         #
         self.ik = IKSolver(self)
+
+    def get_link(self, name):
+        """
+        Get robot link.
+
+        Parameters
+        ----------
+        name : string
+            Link name in the robot model.
+
+        Returns
+        -------
+        link : pymanoid.Body
+            Link handle.
+        """
+        link = Body(self.rave.GetLink(name))
+        return link
 
     """
     Visualization

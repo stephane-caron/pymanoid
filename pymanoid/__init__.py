@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+from .body import Body
 from .body import Box
 from .body import Cube
 from .body import Manipulator
@@ -38,6 +39,7 @@ from .stance import Stance
 import robots
 
 __all__ = [
+    'Body',
     'Box',
     'Contact',
     'ContactFeed',
