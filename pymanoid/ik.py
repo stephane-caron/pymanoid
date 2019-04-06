@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import dot, eye, hstack, maximum, minimum, ones, vstack, zeros
+from numpy import dot, eye, hstack, maximum, minimum, ones, sqrt, vstack, zeros
 from threading import Lock
 
 from .misc import norm
@@ -140,10 +140,26 @@ class IKSolver(Process):
         """
         self.active_dofs = active_dofs
         self.nb_active_dofs = len(active_dofs)
-        self.q_max = self.robot.q_max[active_dofs]
-        self.q_min = self.robot.q_min[active_dofs]
-        self.qd_max = +1. * self.robot.qd_lim[active_dofs]
-        self.qd_min = -1. * self.robot.qd_lim[active_dofs]
+        self.__reset_dof_limits()
+
+    def __relax_dof_limits(self):
+        """
+        Relax DOF velocity and acceleration limits.
+        """
+        self.qd_lim = +10. * self.robot.qd_lim[self.active_dofs]
+        self.qdd_lim = None
+
+    def __reset_dof_limits(self):
+        """
+        Read DOF position, velocity and acceleration limits from robot model.
+        """
+        self.q_max = self.robot.q_max[self.active_dofs]
+        self.q_min = self.robot.q_min[self.active_dofs]
+        self.qd_lim = +1. * self.robot.qd_lim[self.active_dofs]
+        if self.robot.qdd_lim is not None:
+            self.qdd_lim = self.robot.qdd_lim[self.active_dofs]
+        else:  # robot model has no joint acceleration limit
+            self.qdd_lim = None
 
     def set_gains(self, gains):
         """
@@ -275,6 +291,16 @@ class IKSolver(Process):
             Maximum joint velocity vector.
         qd_min : array
             Minimum joint velocity vector.
+
+        Notes
+        -----
+        When the robot model has joint acceleration limits, special care should
+        be taken when computing the corresponding velocity bounds for the IK.
+        In short, the robot now needs to avoid the velocity range where it (1)
+        is not going to collide with a DOF limit in one iteration but (2)
+        cannot brake fast enough to avoid a collision in the future due to
+        acceleration limits. This function implements the solution to this
+        problem described in Equation (14) of [Flacco15]_.
         """
         n = self.nb_active_dofs
         P = zeros((n, n))
@@ -287,10 +313,21 @@ class IKSolver(Process):
                 P += task.weight * (dot(J.T, J) + mu * eye(n))
                 v += task.weight * dot(-r.T, J)
         q = self.robot.q[self.active_dofs]
-        qd_max_doflim = self.doflim_gain * (self.q_max - q) / dt
-        qd_min_doflim = self.doflim_gain * (self.q_min - q) / dt
-        qd_max = minimum(self.qd_max, qd_max_doflim)
-        qd_min = maximum(self.qd_min, qd_min_doflim)
+        qd_max_doflim = (self.q_max - q) / dt
+        qd_min_doflim = (self.q_min - q) / dt
+        qd_max = minimum(+self.qd_lim, self.doflim_gain * qd_max_doflim)
+        qd_min = maximum(-self.qd_lim, self.doflim_gain * qd_min_doflim)
+        if self.qdd_lim is not None:  # straightforward acceleration bounds
+            qd = self.robot.qd[self.active_dofs]
+            qd_max_acc = qd + self.qdd_lim * dt
+            qd_min_acc = qd - self.qdd_lim * dt
+            qd_max = minimum(qd_max, qd_max_acc)
+            qd_min = maximum(qd_min, qd_min_acc)
+        if self.qdd_lim is not None:  # DOF-limit acceleration bounds
+            qd_max_doflim_acc = +sqrt(2 * self.qdd_lim * (self.q_max - q))
+            qd_min_doflim_acc = -sqrt(2 * self.qdd_lim * (q - self.q_min))
+            qd_max = minimum(qd_max, self.doflim_gain * qd_max_doflim_acc)
+            qd_min = maximum(qd_min, self.doflim_gain * qd_min_doflim_acc)
         return (P, v, qd_max, qd_min)
 
     def compute_velocity(self, dt):
@@ -453,8 +490,7 @@ class IKSolver(Process):
         if exploration_phase:
             self.lm_damping = 0
             self.maximize_margins = False
-            self.qd_max = +10. * self.robot.qd_lim[self.active_dofs]
-            self.qd_min = -10. * self.robot.qd_lim[self.active_dofs]
+            self.__relax_dof_limits()
         for itnum in xrange(max_it):
             prev_cost = cost
             cost = self.compute_cost(dt)
@@ -467,13 +503,11 @@ class IKSolver(Process):
                 exploration_phase = False
                 self.lm_damping = init_lm_damping
                 self.maximize_margins = init_maximize_margins
-                self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
-                self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
+                self.__reset_dof_limits()
             self.step(dt)
         self.lm_damping = init_lm_damping
         self.maximize_margins = init_maximize_margins
-        self.qd_max = +1. * self.robot.qd_lim[self.active_dofs]
-        self.qd_min = -1. * self.robot.qd_lim[self.active_dofs]
+        self.__reset_dof_limits()
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
         return 1 + itnum, cost
 

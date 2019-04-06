@@ -65,6 +65,9 @@ if __name__ == '__main__':
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
     com = PointMass(pos=robot.com, mass=robot.mass)
 
+    # Add low acceleration limits to the robot model
+    robot.qdd_lim = 10. * numpy.ones(robot.q.shape)
+
     # Prepare tasks
     left_foot_task = ContactTask(
         robot, robot.left_foot, lf_target, weight=1., gain=0.85)

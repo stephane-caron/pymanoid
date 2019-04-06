@@ -33,6 +33,11 @@ References
    Q.-C. Pham and Y. Nakamura, IEEE International Conference on Robotics and
    Automation, May 2015.
 
+.. [Flacco15] `Control of Redundant Robots Under Hard Joint Constraints:
+   Saturation in the Null Space <https://doi.org/10.1109/TRO.2015.2418582>`_,
+   F. Flacco, A. De Luca and O. Khatib, IEEE Transactions on Robotics, vol. 31,
+   no. 3, June 2015.
+
 .. [Audren14] `Model preview control in multi-contact motion-application to a
    humanoid robot <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01256511/document>`_,
    H. Audren et al., IEEE-RSJ International Conference on Intelligent Robots
