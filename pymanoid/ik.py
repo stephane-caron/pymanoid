@@ -257,6 +257,25 @@ class IKSolver(Process):
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
     def __build_qp_matrices(self, dt):
+        """
+        Build matrices of the quatratic program.
+
+        Parameters
+        ----------
+        dt : scalar
+            Time step in [s].
+
+        Returns
+        -------
+        P : (n, n) array
+            Positive semi-definite cost matrix.
+        q : array
+            Cost vector.
+        qd_max : array
+            Maximum joint velocity vector.
+        qd_min : array
+            Minimum joint velocity vector.
+        """
         n = self.nb_active_dofs
         P = zeros((n, n))
         v = zeros(n)
