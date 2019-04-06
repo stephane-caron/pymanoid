@@ -37,9 +37,9 @@ def print_contact(name, contact):
     print("%s:" % name)
     print("- pos = %s" % repr(contact.p))
     print("- rpy = %s" % repr(contact.rpy))
-    print("- half-length =", contact.shape[0])
-    print("- half-width =", contact.shape[1])
-    print("- friction =", contact.friction)
+    print("- half-length = %s" % repr(contact.shape[0]))
+    print("- half-width = %s" % repr(contact.shape[1]))
+    print("- friction = %f" % contact.friction)
     print("")
 
 
@@ -66,33 +66,5 @@ if __name__ == "__main__":
     print("Contact Wrench Cone at %s:" % str(p))
     print("- has %d lines" % CWC_O.shape[0])
 
-    try:
-        import WrenchConeLib as wcl
-        lf_surf = wcl.rectangular_surface(
-            robot.sole_shape[0], robot.sole_shape[1], stance.left_foot.p,
-            stance.left_foot.R.T, stance.left_foot.friction)
-        rf_surf = wcl.rectangular_surface(
-            robot.sole_shape[0], robot.sole_shape[1], stance.right_foot.p,
-            stance.right_foot.R.T, stance.right_foot.friction)
-        CWC = wcl.WrenchCone(p, [lf_surf, rf_surf])
-        S = CWC.get_rays()
-        CWC_wcl = CWC.get_halfspaces()
-        print("- has %d lines" % CWC_wcl.shape[0])
-    except ImportError:
-        print("""
-===========================================================================
-
-Check out WrenchConeLib <https://github.com/vsamy/WrenchConeLib> for faster
-computations:
-
-    In [1]: %timeit wcl.WrenchCone(p, [lf_surf, rf_surf]).get_halfspaces()
-    100 loops, best of 3: 2.06 ms per loop
-
-    In [2]: %timeit stance.compute_wrench_inequalities([0, 0, 0])
-    100 loops, best of 3: 4.05 ms per loop
-
-===========================================================================""")
-
-    print("")
     if IPython.get_ipython() is None:
         IPython.embed()
