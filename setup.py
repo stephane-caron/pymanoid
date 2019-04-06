@@ -22,7 +22,7 @@ from distutils.core import setup
 
 setup(
     name='pymanoid',
-    version='1.0.0',
+    version='1.1.0',
     description="Python library for humanoid robotics using OpenRAVE",
     url="https://github.com/stephane-caron/pymanoid",
     author="Stéphane Caron",

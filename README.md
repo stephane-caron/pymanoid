@@ -27,7 +27,7 @@ Humanoid robotics controller prototyping environment based on
 - [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp)
   for locomotion in multi-contact scenarios (including hand contacts)
 - [Humanoid stair climbing](https://github.com/stephane-caron/quasistatic-stair-climbing)
-  demonstrated on the HRP-4 humanoid robot
+  demonstrated on the HRP-4 robot
 
 ## Getting started
 
