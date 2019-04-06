@@ -142,20 +142,13 @@ class IKSolver(Process):
         self.nb_active_dofs = len(active_dofs)
         self.__reset_dof_limits()
 
-    def __relax_dof_limits(self):
-        """
-        Relax DOF velocity and acceleration limits.
-        """
-        self.qd_lim = +10. * self.robot.qd_lim[self.active_dofs]
-        self.qdd_lim = None
-
     def __reset_dof_limits(self):
         """
         Read DOF position, velocity and acceleration limits from robot model.
         """
         self.q_max = self.robot.q_max[self.active_dofs]
         self.q_min = self.robot.q_min[self.active_dofs]
-        self.qd_lim = +1. * self.robot.qd_lim[self.active_dofs]
+        self.qd_lim = self.robot.qd_lim[self.active_dofs]
         if self.robot.qdd_lim is not None:
             self.qdd_lim = self.robot.qdd_lim[self.active_dofs]
         else:  # robot model has no joint acceleration limit
@@ -490,7 +483,8 @@ class IKSolver(Process):
         if exploration_phase:
             self.lm_damping = 0
             self.maximize_margins = False
-            self.__relax_dof_limits()
+            self.qd_lim = 10. * self.robot.qd_lim[self.active_dofs]
+            self.qdd_lim = None
         for itnum in xrange(max_it):
             prev_cost = cost
             cost = self.compute_cost(dt)
@@ -503,7 +497,7 @@ class IKSolver(Process):
                 exploration_phase = False
                 self.lm_damping = init_lm_damping
                 self.maximize_margins = init_maximize_margins
-                self.__reset_dof_limits()
+                self.qd_lim = self.robot.qd_lim[self.active_dofs]
             self.step(dt)
         self.lm_damping = init_lm_damping
         self.maximize_margins = init_maximize_margins
