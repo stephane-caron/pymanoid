@@ -18,11 +18,11 @@ Humanoid robotics controller prototyping environment based on
 
 <img src="doc/src/images/logo.png" width="350" align="right" />
 
-- [Walking pattern generation over uneven terrains](https://github.com/stephane-caron/capture-walking) 
+- [Walking pattern generation over uneven terrains](https://github.com/stephane-caron/capture-walkgen)
   based on capturability of the variable-height inverted pendulum model
-- [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walking)
+- [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walkgen)
   using a direct transcription of centroidal dynamics
-- [Linearized model predictive control](https://github.com/stephane-caron/3d-walking-lmpc)
+- [Linearized model predictive control](https://github.com/stephane-caron/multi-contact-walkgen)
   using a conservative linearization of CoM acceleration cones
 - [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp)
   for locomotion in multi-contact scenarios (including hand contacts)

@@ -47,7 +47,7 @@ class COMStepTransit(object):
     Implements a short-sighted optimization with a DCM boundedness constraint,
     defined within the floating-base inverted pendulum (FIP) of constant
     :math:`\\omega`. This approach is used in the `nonlinear predictive
-    controller <https://github.com/stephane-caron/fip-walking>`_ of [Caron17w]_
+    controller <https://github.com/stephane-caron/fip-walkgen>`_ of [Caron17w]_
     for dynamic walking over rough terrains.
 
     Parameters
