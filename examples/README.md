@@ -1,19 +1,21 @@
 # Examples
 
-## Posture generation
+## Inverse kinematics
 
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
 
-The examples ``posture_generation.py`` and ``inverse_kinematics.py`` (the
-latter is for advanced users) shows how to use the robot IK to reach a given
-posture.
+The ``inverse_kinematics_stance.py`` and ``inverse_kinematics_tasks.py``
+scripts show how to use the inverse kinematics to achieve a given posture. The
+former is best-suited for beginners as it uses the simpler ``Stance``
+interface. The latter is for more advanced users and shows how to add
+individual tasks one by one.
 
-It loads (and downloads, if necessary) the
+Both examples load (and download, if necessary) the
 [JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
 humanoid model, then generates a posture where the robot has both feet on
-pre-defined contact locations. Next, it tracks a reference COM motion given by
-the green virtual box. The box is moved around for a while, then you can
-manipulate it directly in the OpenRAVE GUI.
+pre-defined contact locations. The robot tracks a reference COM position given
+by the red box, which you can move around directly by using the interaction
+mode of the OpenRAVE GUI.
 
 ## Contact stability conditions
 

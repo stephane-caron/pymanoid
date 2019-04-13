@@ -50,6 +50,7 @@ def move_com_back_and_forth(duration, dt=1e-2):
 if __name__ == '__main__':
     sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
+    robot.set_transparency(0.3)
     sim.set_viewer()
     sim.viewer.SetCamera([
         [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     com = PointMass(pos=robot.com, mass=robot.mass)
 
     # Add low acceleration limits to the robot model
-    robot.qdd_lim = 10. * numpy.ones(robot.q.shape)
+    robot.qdd_lim = 100. * numpy.ones(robot.q.shape)
 
     # Prepare tasks
     left_foot_task = ContactTask(
@@ -93,8 +94,8 @@ if __name__ == '__main__':
     robot.ik.solve(max_it=100, impr_stop=1e-4)
     robot.ik.verbosity = 0
 
-    # Next, we move the COM back and forth for 10 seconds
-    move_com_back_and_forth(10)
+    # We can move the COM back and forth for 10 seconds
+    #move_com_back_and_forth(10)
 
     # Finally, we start the simulation with the IK on
     sim.schedule(robot.ik)
