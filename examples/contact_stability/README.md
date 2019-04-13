@@ -12,8 +12,6 @@ realized during contact-stable motions. They are a 6D generalization of Coulomb
 friction cones, and can also be used to encode other power limitations such as
 maximum joint torques.
 
-<img align="right" src="../../doc/src/images/static_equilibrium_polygon.png" width="300" />
-    
 ## CoM static-equilibrium polygon
 
 The ``com_static_polygon.py`` script illustrates the polygon of CoM positions
