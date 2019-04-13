@@ -169,12 +169,12 @@ if __name__ == "__main__":
 ZMP support area
 ================
 
-Ready to go! The GUI displays three contact-stability criteria: ZMP pendular
-support area in blue. You can move the blue box (in the plane above the robot)
-around to make the robot move its center of mass. Contact wrenches are
-displayed at each contact (green dot is COP location, arrow is resultant
-force). When the COM exists the static-equilibrium polygon, you should see the
-background turn red as no feasible contact wrenches can be found.
+Ready to go! The GUI displays the ZMP pendular support area in blue. You can
+move the blue box (in the plane above the robot) around to make the robot move
+its center of mass. Contact wrenches are displayed at each contact (green dot
+is COP location, arrow is resultant force). When the COM exists the
+static-equilibrium polygon, you should see the background turn red as no
+feasible contact wrenches can be found.
 
 Enjoy :)
 """)
