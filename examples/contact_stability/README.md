@@ -6,11 +6,12 @@ from slipping or detaching during motion.
 ## Wrench friction cones
 
 The ``wrench_friction_cones.py`` script computes the wrench friction cone of
-the robot's contacts. Wrench friction cones are 6D polyhedral convex cones that
-characterize feasible contact wrenches, that is to say, wrenches that can be
-realized during contact-stable motions. They are a 6D generalization of Coulomb
-friction cones, and can also be used to encode other power limitations such as
-maximum joint torques.
+the robot's contacts, as described in [this
+paper](http://www.roboticsproceedings.org/rss11/p28.pdf). Wrench friction cones
+are 6D polyhedral convex cones that characterize feasible contact wrenches,
+that is to say, wrenches that can be realized during contact-stable motions.
+They are a 6D generalization of Coulomb friction cones, and can also be used to
+encode other power limitations such as maximum joint torques.
 
 ## CoM static-equilibrium polygon
 
