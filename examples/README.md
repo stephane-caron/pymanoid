@@ -6,9 +6,9 @@
 
 The ``inverse_kinematics_stance.py`` and ``inverse_kinematics_tasks.py``
 scripts show how to use the inverse kinematics to achieve a given posture. The
-former is best-suited for beginners as it uses the simpler ``Stance``
-interface. The latter is for more advanced users and shows how to add
-individual tasks one by one.
+former is best for beginners as it uses the simpler ``Stance`` interface. The
+latter is for more advanced users and shows how to add individual tasks one by
+one.
 
 Both examples load (and download, if necessary) the
 [JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
