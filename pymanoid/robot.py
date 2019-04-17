@@ -634,16 +634,19 @@ class Humanoid(Robot):
                         <body>TRANS_X_LINK</body>
                         <body>TRANS_Y_LINK</body>
                         <axis>1 0 0</axis>
+                        <limits>-10000 10000</limits>
                     </joint>
                     <joint name="TRANS_Y" type="slider">
                         <body>TRANS_Y_LINK</body>
                         <body>TRANS_Z_LINK</body>
                         <axis>0 1 0</axis>
+                        <limits>-10000 10000</limits>
                     </joint>
                     <joint name="TRANS_Z" type="slider">
                         <body>TRANS_Z_LINK</body>
                         <body>ROT_Y_LINK</body>
                         <axis>0 0 1</axis>
+                        <limits>-10000 10000</limits>
                     </joint>
                     <joint name="ROT_Y" type="hinge" circular="true">
                         <body>ROT_Y_LINK</body>
