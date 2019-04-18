@@ -57,14 +57,16 @@ class IKSolver(Process):
         Add Levenberg-Marquardt damping as described in [Sugihara11]_. This
         damping significantly improves numerical stability, but convergence
         gets slower when its value is too high.
-    margin_reg : scalar
-        Regularization weight applied when ``maximize_margins`` is True.
-    margin_lin : scalar
-        Linear cost weight applied when ``maximize_margins`` is True.
-    maximize_margins : bool
-        Add slack variables to maximize joint range? This method is used in
-        [Nozawa16]_ to increase joint range, but slows down computations as the
-        optimization variable doubles in dimension. Defaults to False.
+    slack_dof_limits : bool
+        Add slack variables to maximize DOF range? This method is used in
+        [Nozawa16]_ to keep joint angles as far away from their limits as
+        possible. It slows down computations as there are twice as many
+        optimization variables, but is more numerically stable and won't
+        produce inconsistent constraints. Defaults to False.
+    slack_maximize : scalar
+        Linear cost weight applied when ``slack_dof_limits`` is True.
+    slack_regularize : scalar
+        Regularization weight applied when ``slack_dof_limits`` is True.
     qd : array
         Velocity returned by last solver call.
     robot : pymanoid.Robot
@@ -112,12 +114,12 @@ class IKSolver(Process):
         self.doflim_gain = doflim_gain
         self.interaction_dist = 0.1  # [rad]
         self.lm_damping = 1e-3
-        self.margin_lin = 1e-3
-        self.margin_reg = 1e-5
-        self.maximize_margins = False
         self.qd = zeros(robot.nb_dofs)
         self.robot = robot
         self.safety_dist = 0.01  # [rad]
+        self.slack_dof_limits = False
+        self.slack_maximize = 1e-3
+        self.slack_regularize = 1e-5
         self.tasks = {}
         self.verbosity = 0
         #
@@ -348,8 +350,8 @@ class IKSolver(Process):
         The method implemented in this function is reasonably fast but may
         become unstable when some tasks are widely infeasible. In such
         situations, you can either increase the Levenberg-Marquardt bias
-        ``self.lm_damping`` or set ``maximize_margins=True`` which will call
-        :func:`pymanoid.ik.IKSolver.compute_velocity_nozawa`.
+        ``self.lm_damping`` or set ``slack_dof_limits=True`` which will call
+        :func:`pymanoid.ik.IKSolver.compute_velocity_with_slack`.
 
         The returned velocity minimizes squared residuals as in the weighted
         cost function, which corresponds to the Gauss-Newton algorithm. Indeed,
@@ -376,7 +378,7 @@ class IKSolver(Process):
             raise
         return self.qd
 
-    def compute_velocity_nozawa(self, dt):
+    def compute_velocity_with_slack(self, dt):
         """
         Compute a new velocity satisfying all tasks at best, while trying to
         stay away from kinematic constraints.
@@ -400,15 +402,15 @@ class IKSolver(Process):
         Notes
         -----
         Check out the discussion of this method around Equation (10) of
-        [Nozawa16]_. DOF limits are better taken care of by margin variables,
+        [Nozawa16]_. DOF limits are better taken care of by slack variables,
         but the variable count doubles and the QP takes roughly 50% more time
         to solve.
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
         P0, v0, qd_max, qd_min = self.__build_qp_matrices(dt)
-        P = vstack([hstack([P0, Z]), hstack([Z, self.margin_reg * E])])
-        v = hstack([v0, -self.margin_lin * ones(n)])
+        P = vstack([hstack([P0, Z]), hstack([Z, self.slack_regularize * E])])
+        v = hstack([v0, -self.slack_maximize * ones(n)])
         G = vstack([
             hstack([+E, +E / dt]), hstack([-E, +E / dt]), hstack([Z, -E])])
         h = hstack([qd_max, -qd_min, zeros(n)])
@@ -431,8 +433,8 @@ class IKSolver(Process):
             Time step in [s].
         """
         q = self.robot.q
-        if self.maximize_margins:
-            qd = self.compute_velocity_nozawa(dt)
+        if self.slack_dof_limits:
+            qd = self.compute_velocity_with_slack(dt)
         else:  # default QP formulation
             qd = self.compute_velocity(dt)
         if self.verbosity >= 2:
@@ -478,11 +480,11 @@ class IKSolver(Process):
         """
         cost = 100000.
         init_lm_damping = self.lm_damping
-        init_maximize_margins = self.maximize_margins
+        init_slack_dof_limits = self.slack_dof_limits
         exploration_phase = not warm_start
         if exploration_phase:
             self.lm_damping = 0
-            self.maximize_margins = False
+            self.slack_dof_limits = False
             self.qd_lim = 10. * self.robot.qd_lim[self.active_dofs]
             self.qdd_lim = None
         for itnum in xrange(max_it):
@@ -496,11 +498,11 @@ class IKSolver(Process):
             if exploration_phase and (itnum >= max_it / 2 or impr < 1e-2):
                 exploration_phase = False
                 self.lm_damping = init_lm_damping
-                self.maximize_margins = init_maximize_margins
+                self.slack_dof_limits = init_slack_dof_limits
                 self.qd_lim = self.robot.qd_lim[self.active_dofs]
             self.step(dt)
         self.lm_damping = init_lm_damping
-        self.maximize_margins = init_maximize_margins
+        self.slack_dof_limits = init_slack_dof_limits
         self.__reset_dof_limits()
         self.robot.set_dof_velocities(zeros(self.robot.qd.shape))
         return 1 + itnum, cost

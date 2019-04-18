@@ -95,7 +95,7 @@ if __name__ == '__main__':
     robot.ik.verbosity = 0
 
     # We can move the COM back and forth for 10 seconds
-    #move_com_back_and_forth(10)
+    # move_com_back_and_forth(10)
 
     # Finally, we start the simulation with the IK on
     sim.schedule(robot.ik)
