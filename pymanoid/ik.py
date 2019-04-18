@@ -319,8 +319,10 @@ class IKSolver(Process):
             qd_max = minimum(qd_max, qd_max_acc)
             qd_min = maximum(qd_min, qd_min_acc)
         if self.qdd_lim is not None:  # DOF-limit acceleration bounds
-            qd_max_doflim_acc = +sqrt(2 * self.qdd_lim * (self.q_max - q))
-            qd_min_doflim_acc = -sqrt(2 * self.qdd_lim * (q - self.q_min))
+            Delta_q_max = maximum(self.q_max - q, 1e-32)
+            Delta_q_min = maximum(q - self.q_min, 1e-32)
+            qd_max_doflim_acc = +sqrt(2 * self.qdd_lim * Delta_q_max)
+            qd_min_doflim_acc = -sqrt(2 * self.qdd_lim * Delta_q_min)
             qd_max = minimum(qd_max, self.doflim_gain * qd_max_doflim_acc)
             qd_min = maximum(qd_min, self.doflim_gain * qd_min_doflim_acc)
         return (P, v, qd_max, qd_min)
