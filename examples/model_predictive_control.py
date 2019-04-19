@@ -74,6 +74,33 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
     return contacts
 
 
+class WalkingFSM(pymanoid.Process):
+
+    def __init__(self, robot, stance):
+        super(WalkingFSM, self).__init__()
+        self.robot = robot
+        self.stance = stance
+        self.state = "Standing"
+
+    def on_tick(self, sim):
+        if self.state == "Standing":
+            return self.run_standing()
+        elif self.state == "DoubleSupport":
+            return self.run_double_support()
+        elif self.state == "SingleSupport":
+            return self.run_single_support()
+        raise Exception("Unknown state: " + self.state)
+
+    def run_standing(self):
+        pass
+
+    def run_double_support(self):
+        pass
+
+    def run_single_support(self):
+        pass
+
+
 if __name__ == "__main__":
     numpy.random.seed(42)
     sim = pymanoid.Simulation(dt=0.03)
@@ -100,7 +127,7 @@ if __name__ == "__main__":
     stance.bind(robot)
 
     # robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
-    robot.ik.solve(max_it=50)
+    robot.ik.solve(max_it=42)
     robot.ik.add(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
     robot.ik.add(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
     robot.ik.add(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
@@ -108,7 +135,11 @@ if __name__ == "__main__":
     robot.ik.add(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
     robot.ik.add(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
     robot.ik.add(MinCAMTask(robot, weight=1e-4))
+    robot.ik.solve(max_it=42)
 
+    fsm = WalkingFSM(robot, stance)
+
+    sim.schedule(fsm)
     sim.schedule(robot.ik, log_comp_times=True)
 
     com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
