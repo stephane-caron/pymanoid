@@ -76,6 +76,17 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
 
 class WalkingFSM(pymanoid.Process):
 
+    """
+    Finite State Machine for biped walking.
+
+    Parameters
+    ----------
+    robot : pymanoid.Robot
+        Controller robot.
+    footsteps : pymanoid.Contact list
+        List of footstep contacts.
+    """
+
     def __init__(self, robot, footsteps):
         super(WalkingFSM, self).__init__()
         com_target = PointMass([0, 0, robot.leg_length], robot.mass)

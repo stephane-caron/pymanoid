@@ -214,23 +214,20 @@ class WalkingFSM(pymanoid.Process):
 
     """
     Finite State Machine for biped walking.
+
+    Parameters
+    ----------
+    stances : list of Stances
+        Consecutives stances traversed by the FSM.
+    robot : Robot
+        Controller robot.
+    swing_height : scalar
+        Relative height in [m] for the apex of swing foot trajectories.
+    cycle : bool, optional
+        If ``True``, the first stance will succeed the last one.
     """
 
     def __init__(self, stances, robot, swing_height, cycle=False):
-        """
-        Create a new finite state machine.
-
-        Parameters
-        ----------
-        stances : list of Stances
-            Consecutives stances traversed by the FSM.
-        robot : Robot
-            Controller robot.
-        swing_height : scalar
-            Relative height in [m] for the apex of swing foot trajectories.
-        cycle : bool, optional
-            If ``True``, the first stance will succeed the last one.
-        """
         super(WalkingFSM, self).__init__()
         self.cur_phase = stances[0].label
         self.cur_stance = stances[0]
