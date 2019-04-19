@@ -103,6 +103,14 @@ class WalkingFSM(pymanoid.Process):
         self.state = "Standing"
 
     def on_tick(self, sim):
+        """
+        Update function run at every simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
+        """
         if self.state == "Standing":
             return self.run_standing()
         elif self.state == "DoubleSupport":
@@ -112,14 +120,23 @@ class WalkingFSM(pymanoid.Process):
         raise Exception("Unknown state: " + self.state)
 
     def run_standing(self):
+        """
+        Standing state of the FSM.
+        """
         if self.start_walking:
             self.state = "DoubleSupport"
             self.start_walking = False
 
     def run_double_support(self):
+        """
+        Double-support state of the FSM.
+        """
         pass
 
     def run_single_support(self):
+        """
+        Single-support state of the FSM.
+        """
         pass
 
 
