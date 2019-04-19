@@ -76,10 +76,19 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
 
 class WalkingFSM(pymanoid.Process):
 
-    def __init__(self, robot, stance):
+    def __init__(self, robot, footsteps):
         super(WalkingFSM, self).__init__()
+        com_target = PointMass([0, 0, robot.leg_length], robot.mass)
+        stance = Stance(
+            com=com_target,
+            left_foot=footsteps[0],
+            right_foot=footsteps[1])
+        stance.bind(robot)
+        self.footsteps = footsteps
+        self.next_footstep = 2
         self.robot = robot
         self.stance = stance
+        self.start_walking = False
         self.state = "Standing"
 
     def on_tick(self, sim):
@@ -92,7 +101,9 @@ class WalkingFSM(pymanoid.Process):
         raise Exception("Unknown state: " + self.state)
 
     def run_standing(self):
-        pass
+        if self.start_walking:
+            self.state = "DoubleSupport"
+            self.start_walking = False
 
     def run_double_support(self):
         pass
@@ -113,18 +124,12 @@ if __name__ == "__main__":
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.3)
 
-    com_target = PointMass([0, 0, 0.85], robot.mass)
     footsteps = generate_footsteps(
         distance=2.1,
         step_length=0.3,
         foot_spread=0.1,
         friction=0.7)
-
-    stance = Stance(
-        com=com_target,
-        left_foot=footsteps[0],
-        right_foot=footsteps[1])
-    stance.bind(robot)
+    fsm = WalkingFSM(robot, footsteps)
 
     # robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
     robot.ik.solve(max_it=42)
@@ -135,14 +140,12 @@ if __name__ == "__main__":
     robot.ik.add(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
     robot.ik.add(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
     robot.ik.add(MinCAMTask(robot, weight=1e-4))
-    robot.ik.solve(max_it=42)
-
-    fsm = WalkingFSM(robot, stance)
+    robot.ik.solve(max_it=24)
 
     sim.schedule(fsm)
     sim.schedule(robot.ik, log_comp_times=True)
 
-    com_traj_drawer = TrajectoryDrawer(com_target, 'b-')
+    com_traj_drawer = TrajectoryDrawer(robot.stance.com, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
     # preview_drawer = PreviewDrawer()
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
@@ -154,23 +157,19 @@ if __name__ == "__main__":
     sim.schedule_extra(rf_traj_drawer)
     # sim.schedule_extra(wrench_drawer)
 
+    sim.start()
+
+    def start_walking():
+        fsm.start_walking = True
+
     print("""
 
 Linear Model Predictive Control
 ===============================
 
-Ready to go! You can control the simulation by:
+Ready to go! Start walking by running:
 
-    sim.start() -- run/resume simulation in a separate thread
-    sim.step(100) -- run simulation in current thread for 100 steps
-    sim.stop() -- stop/pause simulation
-
-You can access all state variables via this IPython shell.
-Here is the list of global objects. Use <TAB> to see what's inside.
-
-    robot -- kinematic model of the robot (includes IK solver)
-
-Enjoy :)
+    start_walking()
 
 """)
 
