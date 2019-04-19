@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Example: [horizontal walking](examples/horizontal_walking.py) by linear model predictive control
 - IK: can now take joint acceleration limits into account
 - IK: upgraded with Levenberg-Marquardt damping
 - IK: warm-start parameter to ``solve()``
@@ -22,6 +23,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Contact: ``copy()`` now takes optional ``hide`` keyword argument
 - GUI: default point size is now 1 cm
 - GUI: renamed ``draw_polyhedron()`` to ``draw_polytope()``
 - IK: task strings now print both weight and gain coefficients
