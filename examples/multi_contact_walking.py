@@ -574,7 +574,7 @@ class COMTubePredictiveControl(pymanoid.Process):
         D1, e1 = self.tube.dual_hrep[0]
         if 0 <= switch_step < self.nb_mpc_steps - 1:
             D2, e2 = self.tube.dual_hrep[1]
-        for k in xrange(self.nb_mpc_steps):
+        for k in range(self.nb_mpc_steps):
             D[k] = D1 if k <= switch_step else D2
             e[k] = e1 if k <= switch_step else e2
         if state_constraints:
@@ -725,7 +725,7 @@ class PreviewDrawer(pymanoid.Process):
         self.handles = []
         self.handles.append(
             draw_point(com_target.p, color='m', pointsize=0.007))
-        for preview_index in xrange(preview_buffer.nb_steps):
+        for preview_index in range(preview_buffer.nb_steps):
             com_pre0 = com_pre
             j = 3 * preview_index
             comdd = preview_buffer._U[j:j + 3]
