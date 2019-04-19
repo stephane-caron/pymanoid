@@ -97,9 +97,6 @@ class SwingFoot(object):
         self.duration = duration
         self.end_contact = end_contact.copy(hide=True)
         self.foot_vel = zeros(3)
-        self.handles = []
-        self.max_accel = 6. * array([1., 1., 0.8])  # in [m] [s]^{-2}
-        self.nb_steps = 10
         self.playback_time = 0.
         self.start_contact = start_contact.copy(hide=True)
         #
@@ -151,14 +148,17 @@ class SwingFoot(object):
         path = interpolate_cubic_hermite(p0, x[0] * n0, p1, x[1] * n1)
         return path
 
-    def draw(self):
+    def draw(self, color='r'):
         """
         Draw swing foot trajectory.
+
+        Parameters
+        ----------
+        color : char or triplet, optional
+            Color letter or RGB values, default is 'b' for blue.
         """
-        new_handles = []
-        path = self.path.eval(linspace(0., 1., 20))
-        new_handles.extend(draw_trajectory(path, color='g', pointsize=0))
-        self.handles += new_handles
+        points = [self.path(s) for s in linspace(0, 1, 10)]
+        return draw_trajectory(points, color=color)
 
     def integrate(self, dt):
         """

@@ -184,7 +184,7 @@ class PoseInterpolator(object):
         Parameters
         ----------
         color : char or triplet, optional
-            Color letter or RGB values, default is 'b' for green.
+            Color letter or RGB values, default is 'b' for blue.
 
         Returns
         -------
