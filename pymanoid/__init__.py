@@ -35,6 +35,7 @@ from .robot import Robot
 from .sim import Process
 from .sim import Simulation
 from .stance import Stance
+from .swing_foot import SwingFoot
 
 import robots
 
@@ -54,6 +55,7 @@ __all__ = [
     'Robot',
     'Simulation',
     'Stance',
+    'SwingFoot',
     'error',
     'info',
     'robots',

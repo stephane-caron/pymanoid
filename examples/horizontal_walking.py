@@ -34,6 +34,7 @@ from pymanoid.contact import Contact
 from pymanoid.gui import TrajectoryDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
+from pymanoid.swing_foot import SwingFoot
 from pymanoid.tasks import DOFTask
 from pymanoid.tasks import MinCAMTask
 
@@ -143,7 +144,8 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.start_walking:
             self.start_walking = False
-            return self.start_double_support()
+            if self.next_footstep < self.nb_footsteps:
+                return self.start_double_support()
 
     def start_double_support(self):
         """
@@ -171,12 +173,13 @@ class WalkingFSM(pymanoid.Process):
         else:  # right foot swings
             self.stance_foot = self.stance.left_foot
             self.swing_foot = self.stance.right_foot
-        swing_foot_target = self.footsteps[self.next_footstep]
+        ssp_duration = self.ssp_duration
+        swing_start = self.swing_foot
+        swing_target = self.footsteps[self.next_footstep]
         self.next_footstep += 1
-        self.rem_time = self.ssp_duration
+        self.rem_time = ssp_duration
         self.state = "SingleSupport"
-        self.swing_foot_start = self.swing_foot.pose
-        self.swing_foot_target = swing_foot_target.pose
+        self.swing_interp = SwingFoot(swing_start, swing_target, ssp_duration)
         return self.run_single_support()
 
     def run_single_support(self):
@@ -188,10 +191,7 @@ class WalkingFSM(pymanoid.Process):
                 return self.start_double_support()
             else:  # footstep sequence is over
                 return self.start_standing()
-        # Swing foot: dummy code, to be replaced by proper swing trajectory
-        a = min(1., max(0., self.rem_time / self.ssp_duration))
-        interp = a * self.swing_foot_start + (1. - a) * self.swing_foot_target
-        self.swing_foot.set_pose(interp)
+        self.swing_foot.set_pose(self.swing_interp.integrate(self.dt))
         # CoM: dummy code, to be replaced by linear model predictive control
         self.stance.com.set_x(0.5 * (self.swing_foot.x + self.stance_foot.x))
         self.rem_time -= self.dt
@@ -258,5 +258,6 @@ Ready to go! Start walking by running:
 
 """)
 
+    start_walking()
     if IPython.get_ipython() is None:
         IPython.embed()
