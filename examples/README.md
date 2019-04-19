@@ -4,11 +4,11 @@
 
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
 
-The ``inverse_kinematics_stance.py`` and ``inverse_kinematics_tasks.py``
-scripts show how to use the inverse kinematics to achieve a given posture. The
-former is best for beginners as it uses the simpler ``Stance`` interface. The
-latter is for more advanced users and shows how to add individual tasks one by
-one.
+The [inverse\_kinematics\_stance.py](inverse_kinematics_stance.py) and
+[inverse\_kinematics\_tasks.py](inverse_kinematics_tasks.py) scripts show how
+to use the inverse kinematics to achieve a given posture. The former is best
+for beginners as it uses the simpler ``Stance`` interface. The latter is for
+more advanced users and shows how to add individual tasks one by one.
 
 Both examples load (and download, if necessary) the
 [JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
@@ -31,6 +31,13 @@ Contact wrenches are computed at each contact to support the robot in
 static-equilibrium. Try moving the blue box (in the plane above the robot)
 around, and see what happens when it exits the polygon.
 
+## Horizontal walking
+
+In this example, we make the JVRC-1 model walk straight on a flat horizontal
+floor. The COM trajectory is generated on the fly by [linear model predictive
+control](https://hal.inria.fr/file/index/docid/390462/filename/Preview.pdf).
+Try moving contacts around while the robot walk to see how it reacts.
+
 ## Multi-contact walking
 
 <img align="right" src="../doc/src/images/multi_contact_walking.png" width="300" />
@@ -41,5 +48,4 @@ where all contacts are tilted.
 The environment is generated so as to make the locomotion task difficult. We
 solve it using a [multi-contact linear
 MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is
-kept linear thanks to the pendular COM acceleration cone (see the other example
-below).
+kept linear thanks to the pendular COM acceleration cone.
