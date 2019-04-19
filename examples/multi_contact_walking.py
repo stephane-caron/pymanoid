@@ -19,9 +19,9 @@
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example implements a complete walking pattern generator for multi-contact
-locomotion. It is based on predictive control of the 3D acceleration of the
-center of mass. See <https://scaron.info/research/humanoids-2016.html>.
+This example implements a walking pattern generator for multi-contact
+locomotion based on predictive control of the 3D acceleration of the center of
+mass <https://scaron.info/research/humanoids-2016.html>.
 """
 
 import IPython
