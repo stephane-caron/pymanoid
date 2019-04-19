@@ -14,8 +14,9 @@ Welcome to pymanoid!
     forward-kinematics.rst
     inverse-kinematics.rst
     contact-stability.rst
-    model-predictive-control.rst
+    interpolation.rst
+    walking-pattern-generation.rst
+    numerical-optimization.rst
     simulation-environment.rst
     graphical-user-interface.rst
-    other-useful-ingredients.rst
     references.rst

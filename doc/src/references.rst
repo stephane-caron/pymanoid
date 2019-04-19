@@ -40,7 +40,7 @@ References
 
 .. [Audren14] `Model preview control in multi-contact motion-application to a
    humanoid robot <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01256511/document>`_,
-   H. Audren et al., IEEE-RSJ International Conference on Intelligent Robots
+   H. Audren et al., IEEE/RSJ International Conference on Intelligent Robots
    and Systems, September 2014.
 
 .. [ElKhoury13] `Planning Optimal Motions for Anthropomorphic Systems
@@ -67,7 +67,7 @@ References
 
 .. [Diebel06] `Representing Attitude: Euler Angles, Unit Quaternions, and
    Rotation Vectors
-   <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134>`_, James
+   <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134>`_, J.
    Diebel, 2006.
 
 .. [Boyd04] `Convex Optimization
@@ -78,6 +78,12 @@ References
    point <https://doi.org/10.1109/TSMCA.2004.832811>`_, P. Sardain and G.
    Bessonnet, IEEE Transactions on Systems, Man and Cybernetics, vol. 34, no.
    5, September 2004.
+
+.. [Kajita01] `The 3D Linear Inverted Pendulum Mode: A simple modeling for a
+    biped walking pattern generation
+    <http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=973365>`_, S.
+    Kajita, F. Kanehiro, K. Kaneko, K. Yokoi and H. Hirukawa, IEEE/RSJ
+    International Conference on Intelligent Robots and Systems, 2001.
 
 .. [Goldfarb83] `A numerically stable dual method for solving strictly convex
    quadratic programs <https://doi.org/10.1007/BF02591962>`_, D. Goldfarb and

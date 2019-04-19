@@ -1,12 +1,6 @@
-************************
-Other useful ingredients
-************************
-
-Interpolation primitives
-========================
-
-.. automodule:: pymanoid.interp
-    :members:
+**********************
+Numerical optimization
+**********************
 
 Quadratic programming
 =====================

@@ -16,11 +16,11 @@ simulation loop.
 Simulation
 ==========
 
-The simulation object is both a global environment and a process scheduler. As
-an environment, it is passed as argument when calling the :func:`on_tick`
-functions of child processes, and also contains a number of fields, such as
-``dt`` (simulation time step) or ``gravity`` (gravity vector in the world
-frame).
+The simulation object is both a global environment and a serial process
+scheduler. As an environment, it is passed as argument when calling the
+:func:`on_tick` functions of child processes, and also contains a number of
+fields, such as ``dt`` (simulation time step) or ``gravity`` (gravity vector in
+the world frame).
 
 .. autoclass:: pymanoid.sim.Simulation
     :members:
