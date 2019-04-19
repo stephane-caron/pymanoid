@@ -89,8 +89,8 @@ class SwingFoot(object):
         Swing duration in [s].
     """
 
-    default_start_clearance = 0.05  # [m]
-    default_end_clearance = 0.1  # [m]
+    default_start_clearance = 0.075  # [m]
+    default_end_clearance = 0.05  # [m]
 
     def __init__(self, start_contact, end_contact, duration):
         self.draw_trajectory = False
@@ -110,6 +110,27 @@ class SwingFoot(object):
         -------
         path : pymanoid.NDPolynomial
             Polynomial path with index between 0 and 1.
+
+        Notes
+        -----
+        A swing foot trajectory comes under two conflicting imperatives: stay
+        close to the ground while avoiding collisions. We assume here that the
+        terrain is uneven but free from obstacles. To avoid robot-ground
+        collisions, we enforce two clearance distances: one at toe level for
+        the takeoff contact and the other at heel level for the landing
+        contact.
+
+        .. figure:: images/swing_foot.png
+            :align:  center
+
+        We interpolate swing foot trajectories as cubic Hermite curves with
+        four boundary constraints: initial and final positions corresponding to
+        contact centers, and tangent directions parallel to contact normals.
+        This leaves two free parameters, corresponding to the norms of the
+        initial and final tangents, that can be optimized upon. It can be shown
+        that minimizing these two parameters subject to the clearance
+        conditions ``a > a_min`` and ``b > b_min`` is a small constrained least
+        squares problem.
         """
         n0 = self.start_contact.n
         n1 = self.end_contact.n
@@ -119,12 +140,8 @@ class SwingFoot(object):
         end_clearance = self.default_end_clearance
         if hasattr(self.end_contact, 'landing_clearance'):
             end_clearance = self.end_contact.landing_clearance
-        if hasattr(self.end_contact, 'landing_tangent'):
-            n1 = self.end_contact.landing_tangent
         if hasattr(self.start_contact, 'takeoff_clearance'):
             start_clearance = self.start_contact.takeoff_clearance
-        if hasattr(self.start_contact, 'takeoff_tangent'):
-            n0 = self.start_contact.takeoff_tangent
         # H(s) = H_lambda(s) * lambda + H_mu(s) * mu + H_cst(s)
         H_lambda, H_mu, H_cst = factor_cubic_hermite_curve(p0, n0, p1, n1)
         s0 = 1. / 4
