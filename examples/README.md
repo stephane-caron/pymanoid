@@ -4,13 +4,13 @@
 
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
 
-The [inverse\_kinematics\_stance.py](inverse_kinematics_stance.py) and
-[inverse\_kinematics\_tasks.py](inverse_kinematics_tasks.py) scripts show how
-to use the inverse kinematics to achieve a given posture. The former is best
-for beginners as it uses the simpler ``Stance`` interface. The latter is for
-more advanced users and shows how to add individual tasks one by one.
+The [inverse\_kinematics.py](inverse_kinematics.py) script shows how to use the
+inverse kinematics to achieve a given posture. It contains two equivalent
+implementations of the IK solver setup. The former is best for beginners as it
+uses the simpler ``Stance`` interface. The latter is for more advanced users
+and shows how to add individual tasks one by one.
 
-Both examples load (and download, if necessary) the
+The example loads (and downloads, if necessary) the
 [JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
 humanoid model, then generates a posture where the robot has both feet on
 pre-defined contact locations. The robot tracks a reference COM position given
