@@ -2,26 +2,40 @@
 Inverse kinematics
 ******************
 
-IK Solver
-=========
+Inverse kinematics (IK) is the problem of computing *motions* (velocities,
+accelerations) that make the robot achieve a given set of *tasks*, such as
+putting a foot on a surface, moving the center of mass (COM) to a target
+location, etc. If you are not familiar with these concepts, check out `this
+introduction to inverse kinematics
+<https://scaron.info/teaching/inverse-kinematics.html>`_.
 
-.. autoclass:: pymanoid.ik.IKSolver
-    :members:
-    :undoc-members:
+Tasks
+=====
 
-IK Tasks
-========
+Tasks are the way to specify objectives to the robot model in a human-readable
+way.
 
 .. automodule:: pymanoid.tasks
     :members:
-    :undoc-members:
 
-Example: Posture Generation
-===========================
+Solver
+======
 
-The example script ``examples/inverse_kinematics.py`` shows how to use the
-robot IK to generate whole-body motions. Let us execute it step by step. First,
-we initialize a simulation with a 30 ms timestep and load the JVRC-1 humanoid:
+The IK solver is the numerical optimization program that converts task targets
+and the current robot state to joint motions. In pymanoid, joint motions are
+computed as velocities that are integrated forward during each simulation cycle
+(other IK solvers may compute acceleration or jerk values, which are then
+integrated twice or thrice respectively).
+
+.. autoclass:: pymanoid.ik.IKSolver
+    :members:
+
+Example
+=======
+
+In this example, we will see how to put the humanoid robot model in a desired
+configuration. Let us initialize a simulation with a 30 ms timestep and load
+the JVRC-1 humanoid:
 
 .. code::
 
@@ -41,16 +55,17 @@ We define targets for foot contacts;
     lf_target = Contact(robot.sole_shape, pos=[0, 0.3, 0], visible=True)
     rf_target = Contact(robot.sole_shape, pos=[0, -0.3, 0], visible=True)
 
-Next, we set the altitude of the robot's free-flyer (attached to the waist
-link) 80 cm above contacts:
+Next, let us set the altitude of the robot's free-flyer (attached to the waist
+link) 80 cm above contacts. This is useful to give the IK solver a good initial
+guess and avoid coming out with a valid but weird solution in the end.
 
 .. code::
 
     robot.set_dof_values([0.8], dof_indices=[robot.TRANS_Z])
 
-This being done, we initialize a point-mass that will serve as COM target for
-the IK. Its initial position is set to ``robot.com``, which will be roughly 80
-cm above contacts as it is close to the waist link:
+This being done, we initialize a point-mass that will serve as center-of-mass
+(COM) target for the IK. Its initial position is set to ``robot.com``, which
+will be roughly 80 cm above contacts as it is close to the waist link:
 
 .. code::
 

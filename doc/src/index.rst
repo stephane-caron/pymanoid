@@ -11,10 +11,10 @@ Welcome to pymanoid!
 
 .. toctree::
 
+    interpolation.rst
     forward-kinematics.rst
     inverse-kinematics.rst
     contact-stability.rst
-    interpolation.rst
     walking-pattern-generation.rst
     numerical-optimization.rst
     simulation-environment.rst
