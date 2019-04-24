@@ -13,8 +13,9 @@ Swing foot trajectory
 
 The foot in the air during a single-support phase is called the *swing foot*.
 Its trajectory can be implemented by `spherical linear interpolation
-<https://en.wikipedia.org/wiki/Slerp>`_ for the orientation and polynomial
-interpolation for the position of the foot in the air.
+<https://en.wikipedia.org/wiki/Slerp>`_ for the orientation and `polynomial
+interpolation <https://en.wikipedia.org/wiki/Polynomial_interpolation>`_ for
+the position of the foot in the air.
 
 .. autoclass:: pymanoid.swing_foot.SwingFoot
     :members:

@@ -49,6 +49,8 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
         Total distance to walk forward in [m].
     step_length : scalar
         Distance between right and left heel in double support.
+    foot_spread : scalar
+        Lateral distance between left and right foot centers.
     friction : scalar
         Friction coefficient between a robot foot and a step.
     """
