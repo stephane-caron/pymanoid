@@ -20,9 +20,10 @@
 
 from numpy import array, dot, eye, hstack, linspace, zeros
 from openravepy import InterpolateQuatSlerp as quat_slerp
-from pymanoid.gui import draw_trajectory
-from pymanoid.interp import interpolate_cubic_hermite
 from qpsolvers import solve_qp
+
+from .gui import draw_trajectory
+from .interp import interpolate_cubic_hermite
 
 
 def factor_cubic_hermite_curve(p0, n0, p1, n1):
@@ -87,18 +88,22 @@ class SwingFoot(object):
         Target contact.
     duration : scalar
         Swing duration in [s].
+    takeoff_clearance : scalar, optional
+        Takeoff clearance height at 1/4th of the interpolated trajectory.
+    landing_clearance : scalar, optional
+        Landing clearance height at 3/4th of the interpolated trajectory.
     """
 
-    default_start_clearance = 0.075  # [m]
-    default_end_clearance = 0.05  # [m]
-
-    def __init__(self, start_contact, end_contact, duration):
+    def __init__(self, start_contact, end_contact, duration,
+                 takeoff_clearance=0.05, landing_clearance=0.05):
         self.draw_trajectory = False
         self.duration = duration
         self.end_contact = end_contact.copy(hide=True)
         self.foot_vel = zeros(3)
+        self.landing_clearance = landing_clearance
         self.playback_time = 0.
         self.start_contact = start_contact.copy(hide=True)
+        self.takeoff_clearance = takeoff_clearance
         #
         self.path = self.interpolate()
 
@@ -121,7 +126,7 @@ class SwingFoot(object):
         contact.
 
         .. figure:: images/swing_foot.png
-            :align:  center
+            :align: center
 
         We interpolate swing foot trajectories as cubic Hermite curves with
         four boundary constraints: initial and final positions corresponding to
@@ -136,25 +141,25 @@ class SwingFoot(object):
         n1 = self.end_contact.n
         p0 = self.start_contact.p
         p1 = self.end_contact.p
-        start_clearance = self.default_start_clearance
-        end_clearance = self.default_end_clearance
-        if hasattr(self.end_contact, 'landing_clearance'):
-            end_clearance = self.end_contact.landing_clearance
+        takeoff_clearance = self.takeoff_clearance
+        landing_clearance = self.landing_clearance
         if hasattr(self.start_contact, 'takeoff_clearance'):
-            start_clearance = self.start_contact.takeoff_clearance
+            takeoff_clearance = self.start_contact.takeoff_clearance
+        if hasattr(self.end_contact, 'landing_clearance'):
+            landing_clearance = self.end_contact.landing_clearance
         # H(s) = H_lambda(s) * lambda + H_mu(s) * mu + H_cst(s)
         H_lambda, H_mu, H_cst = factor_cubic_hermite_curve(p0, n0, p1, n1)
         s0 = 1. / 4
         a0 = dot(H_lambda(s0), n0)
         b0 = dot(H_mu(s0), n0)
         c0 = dot(H_cst(s0) - p0, n0)
-        h0 = start_clearance
+        h0 = takeoff_clearance
         # a0 * lambda + b0 * mu + c0 >= h0
         s1 = 3. / 4
         a1 = dot(H_lambda(s1), n1)
         b1 = dot(H_mu(s1), n1)
         c1 = dot(H_cst(s1) - p1, n1)
-        h1 = end_clearance
+        h1 = landing_clearance
         # a1 * lambda + b1 * mu + c1 >= h1
         P = eye(2)
         q = zeros(2)

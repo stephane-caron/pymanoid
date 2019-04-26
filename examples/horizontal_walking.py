@@ -165,7 +165,9 @@ class WalkingFSM(pymanoid.Process):
         self.next_footstep += 1
         self.rem_time = ssp_duration
         self.state = "SingleSupport"
-        self.swing_interp = SwingFoot(swing_start, swing_target, ssp_duration)
+        self.swing_interp = SwingFoot(
+            swing_start, swing_target, ssp_duration, takeoff_clearance=0.075,
+            landing_clearance=0.05)
         return self.run_single_support()
 
     def run_single_support(self):
