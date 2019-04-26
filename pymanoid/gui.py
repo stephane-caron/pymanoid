@@ -387,7 +387,7 @@ def draw_polytope(points, combined='g-#', color=None, faces=None,
     if '#' in faces:  # facets
         if is_2d:
             nv = len(vertices)
-            indices = array([(0, i, i + 1) for i in xrange(nv - 1)], int64)
+            indices = array([(0, i, i + 1) for i in range(nv - 1)], int64)
             handles.append(env.drawtrimesh(vertices, indices, colors=color))
         else:
             indices = array(hull.simplices, int64)
@@ -698,6 +698,6 @@ class TrajectoryDrawer(Process):
         self.last_pos = self.body.p
 
     def dash_graph_handles(self):
-        for i in xrange(len(self.handles)):
+        for i in range(len(self.handles)):
             if i % 2 == 0:
                 self.handles[i] = None
