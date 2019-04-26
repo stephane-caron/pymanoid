@@ -36,7 +36,7 @@ from .tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 class Stance(ContactSet):
 
     """
-    A stance is a set of IK tasks.
+    Set of IK tasks for the humanoid's center of mass (COM) and end effectors.
 
     Parameters
     ----------
@@ -162,17 +162,26 @@ class Stance(ContactSet):
 
     @property
     def bodies(self):
+        """
+        List of end-effector and COM bodies.
+        """
         return filter(None, [
             self.com, self.left_foot, self.left_hand, self.right_foot,
             self.right_hand])
 
     @property
     def contacts(self):
+        """
+        List of active contacts.
+        """
         return filter(None, [
             self.left_foot, self.left_hand, self.right_foot, self.right_hand])
 
     @property
     def nb_contacts(self):
+        """
+        Number of active contacts.
+        """
         nb_contacts = 0
         if self.left_foot is not None:
             nb_contacts += 1
@@ -185,10 +194,16 @@ class Stance(ContactSet):
         return nb_contacts
 
     def hide(self):
+        """
+        Hide end-effector and COM body handles.
+        """
         for body in self.bodies:
             body.hide()
 
     def show(self):
+        """
+        Show end-effector and COM body handles.
+        """
         for body in self.bodies:
             body.show()
 
