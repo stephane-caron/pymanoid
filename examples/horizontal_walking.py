@@ -32,6 +32,8 @@ import pymanoid
 from pymanoid.body import PointMass
 from pymanoid.contact import Contact
 from pymanoid.gui import TrajectoryDrawer
+# from pymanoid.gui import PointMassWrenchDrawer
+# from pymanoid.gui import RobotWrenchDrawer
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
 from pymanoid.swing_foot import SwingFoot
@@ -155,19 +157,20 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.next_footstep % 2 == 1:  # left foot swings
             self.stance_foot = stance.right_foot
-            self.swing_foot = stance.left_foot
+            self.swing_foot = stance.free_contact('left_foot')
         else:  # right foot swings
             self.stance_foot = stance.left_foot
-            self.swing_foot = stance.right_foot
+            self.swing_foot = stance.free_contact('right_foot')
         ssp_duration = self.ssp_duration
-        swing_start = self.swing_foot
         swing_target = footsteps[self.next_footstep]
         self.next_footstep += 1
         self.rem_time = ssp_duration
         self.state = "SingleSupport"
+        self.swing_start = self.swing_foot.pose
+        self.swing_target = swing_target
         self.swing_interp = SwingFoot(
-            swing_start, swing_target, ssp_duration, takeoff_clearance=0.075,
-            landing_clearance=0.05)
+            self.swing_foot, self.swing_target, ssp_duration,
+            takeoff_clearance=0.05, landing_clearance=0.05)
         return self.run_single_support()
 
     def run_single_support(self):
@@ -175,6 +178,7 @@ class WalkingFSM(pymanoid.Process):
         Run single-support state.
         """
         if self.rem_time <= 0.:
+            stance.set_contact(self.swing_foot)
             if self.next_footstep < len(footsteps):
                 return self.start_double_support()
             else:  # footstep sequence is over
@@ -230,12 +234,14 @@ if __name__ == "__main__":
     # preview_drawer = PreviewDrawer()
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
     # wrench_drawer = PointMassWrenchDrawer(com_target, lambda: fsm.cur_stance)
+    # robot_wrench_drawer = RobotWrenchDrawer(robot)
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(lf_traj_drawer)
     # sim.schedule_extra(preview_drawer)
     sim.schedule_extra(rf_traj_drawer)
     # sim.schedule_extra(wrench_drawer)
+    # sim.schedule_extra(robot_wrench_drawer)
 
     sim.start()
 

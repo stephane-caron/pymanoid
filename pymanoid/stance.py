@@ -63,6 +63,7 @@ class Stance(ContactSet):
         self.left_hand = left_hand
         self.right_foot = right_foot
         self.right_hand = right_hand
+        self.robot = None
         self.sep_hrep = None
 
     def load(self, path):
@@ -159,6 +160,7 @@ class Stance(ContactSet):
         for task in tasks:
             robot.ik.add(task)
         robot.stance = self
+        self.robot = robot
 
     @property
     def bodies(self):
@@ -365,3 +367,48 @@ class Stance(ContactSet):
         """
         wrench = hstack([array([0., 0., self.com.mass * 9.81]), zeros(3)])
         return self.find_supporting_wrenches(wrench, self.com.p)
+
+    def free_contact(self, effector_name):
+        """
+        Free a contact from the stance and get the corresponding end-effector
+        target. Its task stays in the IK, but the effector is not considered in
+        contact any more (e.g. for contact wrench computations).
+
+        Parameters
+        ----------
+        effector_name : string
+            Name of end-effector target, for example "left_foot".
+
+        Returns
+        -------
+        effector : pymanoid.Contact
+            IK target contact.
+        """
+        if self.__dict__[effector_name] is None:
+            raise Exception("Stance's %s is not in contact" % effector_name)
+        effector = self.__dict__[effector_name]
+        self.__dict__[effector_name] = None
+        return effector
+
+    def set_contact(self, effector):
+        """
+        Set contact on a effector.
+
+        Parameters
+        ----------
+        effector : pymanoid.Contact
+            IK target contact.
+        """
+        if effector.link.name == self.robot.left_foot.name:
+            effector_name = 'left_foot'
+        elif effector.link.name == self.robot.left_hand.name:
+            effector_name = 'left_hand'
+        elif effector.link.name == self.robot.right_foot.name:
+            effector_name = 'right_foot'
+        elif effector.link.name == self.robot.right_hand.name:
+            effector_name = 'right_hand'
+        else:
+            raise Exception("Unknown robot effector: " + effector.link.name)
+        if self.__dict__[effector_name] is not None:
+            raise Exception("Stance's %s already in contact" % effector_name)
+        self.__dict__[effector_name] = effector
