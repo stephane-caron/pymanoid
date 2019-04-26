@@ -84,34 +84,20 @@ class WalkingFSM(pymanoid.Process):
 
     Parameters
     ----------
-    robot : pymanoid.Robot
-        Controller robot.
-    footsteps : pymanoid.Contact list
-        List of footstep contacts.
     ssp_duration : scalar
         Duration of single-support phases, in [s].
     dsp_duration : scalar
         Duration of double-support phases, in [s].
     """
 
-    def __init__(self, robot, footsteps, ssp_duration, dsp_duration):
+    def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
-        com_target = PointMass([0, 0, robot.leg_length], robot.mass)
-        stance = Stance(
-            com=com_target,
-            left_foot=footsteps[0].copy(hide=True),
-            right_foot=footsteps[1].copy(hide=True))
-        stance.bind(robot)
         self.dsp_duration = dsp_duration
-        self.dt = None
-        self.footsteps = footsteps
-        self.nb_footsteps = len(footsteps)
         self.next_footstep = 2
-        self.robot = robot
         self.ssp_duration = ssp_duration
-        self.stance = stance
-        self.start_walking = False
-        self.state = "Standing"
+        self.state = None
+        #
+        self.start_standing()
 
     def on_tick(self, sim):
         """
@@ -122,8 +108,6 @@ class WalkingFSM(pymanoid.Process):
         sim : Simulation
             Instance of the current simulation.
         """
-        if self.dt is None:
-            self.dt = sim.dt
         if self.state == "Standing":
             return self.run_standing()
         elif self.state == "DoubleSupport":
@@ -146,7 +130,7 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.start_walking:
             self.start_walking = False
-            if self.next_footstep < self.nb_footsteps:
+            if self.next_footstep < len(footsteps):
                 return self.start_double_support()
 
     def start_double_support(self):
@@ -163,21 +147,21 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.rem_time <= 0.:
             return self.start_single_support()
-        self.rem_time -= self.dt
+        self.rem_time -= dt
 
     def start_single_support(self):
         """
         Switch to single-support state.
         """
         if self.next_footstep % 2 == 1:  # left foot swings
-            self.stance_foot = self.stance.right_foot
-            self.swing_foot = self.stance.left_foot
+            self.stance_foot = stance.right_foot
+            self.swing_foot = stance.left_foot
         else:  # right foot swings
-            self.stance_foot = self.stance.left_foot
-            self.swing_foot = self.stance.right_foot
+            self.stance_foot = stance.left_foot
+            self.swing_foot = stance.right_foot
         ssp_duration = self.ssp_duration
         swing_start = self.swing_foot
-        swing_target = self.footsteps[self.next_footstep]
+        swing_target = footsteps[self.next_footstep]
         self.next_footstep += 1
         self.rem_time = ssp_duration
         self.state = "SingleSupport"
@@ -189,19 +173,20 @@ class WalkingFSM(pymanoid.Process):
         Run single-support state.
         """
         if self.rem_time <= 0.:
-            if self.next_footstep < self.nb_footsteps:
+            if self.next_footstep < len(footsteps):
                 return self.start_double_support()
             else:  # footstep sequence is over
                 return self.start_standing()
-        self.swing_foot.set_pose(self.swing_interp.integrate(self.dt))
+        self.swing_foot.set_pose(self.swing_interp.integrate(dt))
         # CoM: dummy code, to be replaced by linear model predictive control
-        self.stance.com.set_x(0.5 * (self.swing_foot.x + self.stance_foot.x))
-        self.rem_time -= self.dt
+        stance.com.set_x(0.5 * (self.swing_foot.x + self.stance_foot.x))
+        self.rem_time -= dt
 
 
 if __name__ == "__main__":
     numpy.random.seed(42)
-    sim = pymanoid.Simulation(dt=0.03)
+    dt = 0.03  # [s]
+    sim = pymanoid.Simulation(dt=dt)
     robot = JVRC1(download_if_needed=True)
     sim.set_viewer()
     sim.set_camera_transform([
@@ -216,7 +201,13 @@ if __name__ == "__main__":
         step_length=0.3,
         foot_spread=0.1,
         friction=0.7)
-    fsm = WalkingFSM(robot, footsteps, ssp_duration=0.7, dsp_duration=0.1)
+    com_target = PointMass([0, 0, robot.leg_length], robot.mass)
+    stance = Stance(
+        com=com_target,
+        left_foot=footsteps[0].copy(hide=True),
+        right_foot=footsteps[1].copy(hide=True))
+    stance.bind(robot)
+    fsm = WalkingFSM(ssp_duration=0.7, dsp_duration=0.1)
 
     # robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
     robot.ik.solve(max_it=42)

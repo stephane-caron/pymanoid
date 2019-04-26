@@ -4,7 +4,7 @@
 Welcome to pymanoid!
 ####################
 
-.. **Release 1.0.0 -- October 17, 2018**
+.. **Release 1.1.0 -- Apr 24, 2019**
 
 .. figure:: images/logo.png
    :align:  center

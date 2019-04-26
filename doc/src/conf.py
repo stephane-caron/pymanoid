@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pymanoid'
-copyright = u'2015–2018, Stéphane Caron'
+copyright = u'2015–2019, Stéphane Caron'
 author = u'Stéphane Caron'
 
 # The version info for the project you're documenting, acts as replacement for
