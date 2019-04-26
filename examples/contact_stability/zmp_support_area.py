@@ -48,13 +48,13 @@ class SupportAreaDrawer(pymanoid.Process):
     ----------
     stance : Stance
         Contacts and COM position of the robot.
-    z : scalar, optional
-        Altitude of drawn area in the world frame.
+    height : scalar, optional
+        Height of the ZMP support area in the world frame.
     color : tuple or string, optional
         Area color.
     """
 
-    def __init__(self, stance, z=0., color=None):
+    def __init__(self, stance, height=0., color=None):
         self.stance = stance  # before calling parent constructor
         if color is None:
             color = (0., 0.5, 0., 0.5)
@@ -64,9 +64,9 @@ class SupportAreaDrawer(pymanoid.Process):
         self.color = color
         self.contact_poses = {}
         self.handle = None
+        self.height = height
         self.last_com = stance.com.p
         self.stance = stance
-        self.z = z
         #
         self.update_contact_poses()
         self.update_polygon()
@@ -78,16 +78,16 @@ class SupportAreaDrawer(pymanoid.Process):
         for contact in self.stance.contacts:
             self.contact_poses[contact.name] = contact.pose
 
-    def update_z(self, z):
-        self.z = z
+    def update_height(self, height):
+        self.height = height
         self.update_polygon()
 
     def update_polygon(self):
         self.handle = None
         try:
-            vertices = self.stance.compute_zmp_support_area([0, 0, self.z])
+            vertices = self.stance.compute_zmp_support_area(self.height)
             self.handle = draw_polygon(
-                [(x[0], x[1], self.z) for x in vertices],
+                [(x[0], x[1], self.height) for x in vertices],
                 normal=[0, 0, 1], color=(0.0, 0.0, 0.5, 0.5))
         except Exception as e:
             print("SupportAreaDrawer: {}".format(e))

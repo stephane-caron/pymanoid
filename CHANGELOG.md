@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - GUI: renamed ``draw_polyhedron()`` to ``draw_polytope()``
 - IK: task strings now print both weight and gain coefficients
 - Stances now bind end-effector links as well
+- Stance: simplified prototype of ``compute_zmp_support_area``
 
 ## [1.0.0] - 2018/10/17
 

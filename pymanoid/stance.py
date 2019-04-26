@@ -272,17 +272,17 @@ class Stance(ContactSet):
         except QhullError:
             raise Exception("Cannot compute 2D polar for acceleration cone")
 
-    def compute_zmp_support_area(self, plane, method='bretl'):
+    def compute_zmp_support_area(self, height, method='bretl'):
         """
         Compute an extension of the (pendular) multi-contact ZMP support area
         with optional pressure limits on each contact.
 
         Parameters
         ----------
-        plane : array, shape=(3,)
-            Origin of the virtual plane.
+        height : array, shape=(3,)
+            Height at which the ZMP support area is computed.
         method : string, default='bretl'
-            Polytope projection algorithm, between ``"bretl"`` or ``"cdd"``.
+            Polytope projection algorithm, can be ``"bretl"`` or ``"cdd"``.
 
         Returns
         -------
@@ -296,7 +296,6 @@ class Stance(ContactSet):
         formulation from [Caron17z]_. See the Appendix from [Caron16]_ for a
         performance comparison.
         """
-        z_zmp = plane[2]
         crossmat_n = array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])  # n = [0, 0, 1]
         G = self.compute_grasp_matrix([0, 0, 0])
         F_list, b_list = zip(*[ct.wrench_hrep for ct in self.contacts])
@@ -311,7 +310,7 @@ class Stance(ContactSet):
         B = vstack([B1, B2])
         C = 1. / (mass * 9.81) * dot(B, G)
         d = hstack([self.com.p, [0]])
-        E = (z_zmp - self.com.z) / (mass * 9.81) * G[:2, :]
+        E = (height - self.com.z) / (mass * 9.81) * G[:2, :]
         f = array([self.com.x, self.com.y])
         return project_polytope(
             proj=(E, f),

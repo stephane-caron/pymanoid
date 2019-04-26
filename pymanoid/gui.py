@@ -618,13 +618,14 @@ class RobotWrenchDrawer(WrenchDrawer):
         self.robot = robot
 
     def find_supporting_wrenches(self, sim):
-        o = zeros(3)
+        world_origin = zeros(3)
+        stance = self.robot.stance
         qd = self.robot.qd
         qdd_disc = (qd - self.qd_prev) / sim.dt
         self.qd_prev = qd
         qdd = qdd_disc + exp(-1. / self.delay) * (self.qdd_prev - qdd_disc)
-        contact_wrench = self.robot.compute_net_contact_wrench(qdd, o)
-        support = self.robot.stance.find_supporting_wrenches(contact_wrench, o)
+        wrench = self.robot.compute_net_contact_wrench(qdd, world_origin)
+        support = stance.find_supporting_wrenches(wrench, world_origin)
         return support
 
 
