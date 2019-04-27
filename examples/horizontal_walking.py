@@ -219,7 +219,6 @@ class WalkingFSM(pymanoid.Process):
         nb_dsp_steps = int(round(self.dsp_duration / T))
         A = array([[1., T, T ** 2 / 2.], [0., 1., T], [0., 0., 1.]])
         B = array([T ** 3 / 6., T ** 2 / 2., T]).reshape((3,1))
-        print "B =", repr(B)
         h = stance.com.z
         g = -sim.gravity[2]
         zmp_from_state = array([1., 0., -h / g])
@@ -259,12 +258,16 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.preview_index >= 3:
             self.update_mpc(0., self.rem_time)
-        com_jerk = array([
-            self.x_mpc.U[self.preview_index][0],
-            self.y_mpc.U[self.preview_index][0],
-            0.])
-        stance.com.pdd += com_jerk * dt
-        stance.com.integrate_euler(stance.com.pdd, dt)
+        com_jerk = array([self.x_mpc.U[0][0], self.y_mpc.U[0][0], 0.])
+        com_pos = stance.com.p
+        com_vel = stance.com.pd
+        com_accel = stance.com.pdd
+        com_pos += dt * (com_vel + dt * (com_accel / 2. + dt * com_jerk / 6.))
+        com_vel += dt * (com_accel + dt * com_jerk / 2.)
+        com_accel += dt * com_jerk
+        stance.com.set_pos(com_pos)
+        stance.com.set_vel(com_vel)
+        stance.com.pdd = com_accel
         self.preview_index += 1
 
 
