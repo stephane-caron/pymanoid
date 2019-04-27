@@ -233,7 +233,7 @@ class WalkingFSM(pymanoid.Process):
             next_min = min(v[coord] for v in self.swing_target.vertices)
             e[coord] = [
                 array([+1000., +1000.]) if i < nb_init_dsp_steps else
-                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_dsp_steps else
+                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_ssp_steps else
                 array([+1000., +1000.]) if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps else
                 array([+next_max, -next_min])
                 for i in range(nb_preview_steps)]
