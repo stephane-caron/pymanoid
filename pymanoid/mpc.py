@@ -126,12 +126,10 @@ class LinearPredictiveControl(object):
         self.x_dim = x_dim
         self.x_goal = x_goal
         self.x_init = x_init
+        #
+        self.__build()
 
-    @property
-    def solve_and_build_time(self):
-        return self.build_time + self.solve_time
-
-    def build(self):
+    def __build(self):
         """
         Compute internal matrices defining the preview QP.
 
@@ -187,12 +185,7 @@ class LinearPredictiveControl(object):
     def solve(self):
         """
         Compute the series of controls that minimizes the preview QP.
-
-        Note
-        ----
-        This function can only be called after ``build()``.
         """
-        assert self.P is not None, "you need to build() the MPC problem first"
         t_solve_start = time()
         U = solve_qp(self.P, self.q, self.G, self.h)
         self.U = U.reshape((self.nb_steps, self.u_dim))
@@ -216,3 +209,10 @@ class LinearPredictiveControl(object):
             X[k + 1] = dot(self.A, X[k]) + dot(self.B, self.U[k])
         self.__X = X
         return X
+
+    @property
+    def solve_and_build_time(self):
+        """
+        Total computation time taken by MPC computations.
+        """
+        return self.build_time + self.solve_time

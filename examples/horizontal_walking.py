@@ -27,13 +27,15 @@ based on linear model predictive control
 import IPython
 import numpy
 
+from numpy import array
+
 import pymanoid
 
 from pymanoid.body import PointMass
 from pymanoid.contact import Contact
 from pymanoid.gui import TrajectoryDrawer
-# from pymanoid.gui import PointMassWrenchDrawer
-# from pymanoid.gui import RobotWrenchDrawer
+from pymanoid.gui import PointMassWrenchDrawer
+from pymanoid.mpc import LinearPredictiveControl
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
 from pymanoid.swing_foot import SwingFoot
@@ -94,6 +96,7 @@ class WalkingFSM(pymanoid.Process):
 
     def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
+        self.com_accel = array([0., 0., 0.])
         self.dsp_duration = dsp_duration
         self.next_footstep = 2
         self.ssp_duration = ssp_duration
@@ -139,9 +142,18 @@ class WalkingFSM(pymanoid.Process):
         """
         Switch to double-support state.
         """
+        if self.next_footstep % 2 == 1:  # left foot swings
+            self.stance_foot = stance.right_foot
+        else:  # right foot swings
+            self.stance_foot = stance.left_foot
+        self.swing_target = footsteps[self.next_footstep]
         self.rem_time = self.dsp_duration
         self.state = "DoubleSupport"
+        self.start_com_mpc_dsp()
         return self.run_double_support()
+
+    def start_com_mpc_dsp(self):
+        self.update_mpc(self.dsp_duration, self.ssp_duration)
 
     def run_double_support(self):
         """
@@ -149,6 +161,7 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.rem_time <= 0.:
             return self.start_single_support()
+        self.run_com_mpc()
         self.rem_time -= dt
 
     def start_single_support(self):
@@ -156,18 +169,27 @@ class WalkingFSM(pymanoid.Process):
         Switch to single-support state.
         """
         if self.next_footstep % 2 == 1:  # left foot swings
-            self.stance_foot = stance.right_foot
             self.swing_foot = stance.free_contact('left_foot')
         else:  # right foot swings
-            self.stance_foot = stance.left_foot
             self.swing_foot = stance.free_contact('right_foot')
-        swing_target = footsteps[self.next_footstep]
         self.next_footstep += 1
         self.rem_time = self.ssp_duration
         self.state = "SingleSupport"
-        self.start_swing_foot(swing_target)
-        self.start_com_ssp()
+        self.start_swing_foot()
+        self.start_com_mpc_ssp()
         return self.run_single_support()
+
+    def start_swing_foot(self):
+        """
+        Initialize swing foot interpolator for single-support state.
+        """
+        self.swing_start = self.swing_foot.pose
+        self.swing_interp = SwingFoot(
+            self.swing_foot, self.swing_target, self.ssp_duration,
+            takeoff_clearance=0.05, landing_clearance=0.05)
+
+    def start_com_mpc_ssp(self):
+        self.update_mpc(0., self.ssp_duration)
 
     def run_single_support(self):
         """
@@ -180,25 +202,68 @@ class WalkingFSM(pymanoid.Process):
             else:  # footstep sequence is over
                 return self.start_standing()
         self.run_swing_foot()
-        self.run_com_ssp()
+        self.run_com_mpc()
         self.rem_time -= dt
 
-    def start_swing_foot(self, swing_target):
-        self.swing_start = self.swing_foot.pose
-        self.swing_target = swing_target
-        self.swing_interp = SwingFoot(
-            self.swing_foot, self.swing_target, self.ssp_duration,
-            takeoff_clearance=0.05, landing_clearance=0.05)
-
     def run_swing_foot(self):
+        """
+        Run swing foot interpolator for single-support state.
+        """
         self.swing_foot.set_pose(self.swing_interp.integrate(dt))
 
-    def start_com_ssp(self):
-        pass
+    def update_mpc(self, dsp_duration, ssp_duration):
+        preview_step = 3  # update MPC every 90 [ms]
+        T = preview_step * dt
+        h = stance.com.z
+        g = -sim.gravity[2]
+        nb_steps = 16
+        nb_init_dsp_steps = int(round(dsp_duration / T))
+        nb_init_ssp_steps = int(round(ssp_duration / T))
+        nb_dsp_steps = int(round(self.dsp_duration / T))
+        A = array([[1., T, T ** 2 / 2.], [0., 1., T], [0., 0., 1.]])
+        B = array([T ** 3 / 6., T ** 2 / 2., T]).reshape((3,1))
+        zmp_from_state = array([1., 0., -h / g])
+        C = array([+zmp_from_state, -zmp_from_state])
+        D = None
+        e = [[], []]
+        for coord in [0, 1]:
+            cur_max = max(v[coord] for v in self.stance_foot.vertices)
+            cur_min = min(v[coord] for v in self.stance_foot.vertices)
+            next_max = max(v[coord] for v in self.swing_target.vertices)
+            next_min = min(v[coord] for v in self.swing_target.vertices)
+            e[coord] = [
+                array([+1000., +1000.]) if i < nb_init_dsp_steps else
+                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_dsp_steps else
+                array([+1000., +1000.]) if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps else
+                array([+next_max, -next_min])
+                for i in range(nb_steps)]
+        self.x_mpc = LinearPredictiveControl(
+            A, B, C, D, e[0],
+            x_init=array([stance.com.x, stance.com.xd, self.com_accel[0]]),
+            x_goal=array([self.swing_target.x, 0., 0.]),
+            nb_steps=nb_steps,
+            wxt=1., wu=0.1)
+        self.y_mpc = LinearPredictiveControl(
+            A, B, C, D, e[1],
+            x_init=array([stance.com.y, stance.com.yd, self.com_accel[1]]),
+            x_goal=array([self.swing_target.y, 0., 0.]),
+            nb_steps=nb_steps,
+            wxt=1., wu=0.1)
+        self.x_mpc.solve()
+        self.y_mpc.solve()
+        self.preview_index = 0
 
-    def run_com_ssp(self):
-        # CoM: dummy code, to be replaced by linear model predictive control
-        stance.com.set_x(0.5 * (self.swing_foot.x + self.stance_foot.x))
+    def run_com_mpc(self):
+        """
+        Run CoM predictive control for single-support state.
+        """
+        if self.preview_index >= 3:
+            self.update_mpc(0., self.rem_time)
+        self.com_accel[0] = self.x_mpc.X[self.preview_index][2]
+        self.com_accel[1] = self.y_mpc.X[self.preview_index][2]
+        stance.com.pdd = self.com_accel  # for PointMassWrenchDrawer
+        stance.com.integrate_euler(self.com_accel, dt)
+        self.preview_index += 1
 
 
 if __name__ == "__main__":
@@ -225,7 +290,9 @@ if __name__ == "__main__":
         left_foot=footsteps[0].copy(hide=True),
         right_foot=footsteps[1].copy(hide=True))
     stance.bind(robot)
-    fsm = WalkingFSM(ssp_duration=0.7, dsp_duration=0.1)
+    ssp_duration = 24 * dt  # 720 [ms]
+    dsp_duration = 3 * dt  # 90 [ms]
+    fsm = WalkingFSM(ssp_duration, dsp_duration)
 
     # robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
     robot.ik.solve(max_it=42)
@@ -243,17 +310,13 @@ if __name__ == "__main__":
 
     com_traj_drawer = TrajectoryDrawer(robot.stance.com, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
-    # preview_drawer = PreviewDrawer()
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
-    # wrench_drawer = PointMassWrenchDrawer(com_target, lambda: fsm.cur_stance)
-    # robot_wrench_drawer = RobotWrenchDrawer(robot)
+    # wrench_drawer = PointMassWrenchDrawer(stance.com, stance)
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(lf_traj_drawer)
-    # sim.schedule_extra(preview_drawer)
     sim.schedule_extra(rf_traj_drawer)
     # sim.schedule_extra(wrench_drawer)
-    # sim.schedule_extra(robot_wrench_drawer)
 
     sim.start()
 

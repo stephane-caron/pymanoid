@@ -584,7 +584,6 @@ class COMTubePredictiveControl(pymanoid.Process):
             A, B, C, D, e, x_init, x_goal, self.nb_mpc_steps, wxt=1000., wu=1.)
         self.preview_control.switch_step = switch_step
         self.preview_control.timestep = dT
-        self.preview_control.build()
         try:
             self.preview_control.solve()
             U = self.preview_control.U.flatten()

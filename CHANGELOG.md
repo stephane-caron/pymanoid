@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - GUI: default point size is now 1 cm
 - GUI: renamed ``draw_polyhedron()`` to ``draw_polytope()``
 - IK: task strings now print both weight and gain coefficients
+- MPC: no need to call the ``build()`` function any more
 - Removed outdated [Copra](https://github.com/vsamy/copra/) wrapper
 - Stance: now bind end-effector links as well
 - Stance: simplified prototype of ``compute_zmp_support_area``
