@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 
 - IK: singularity fix from [Pfeiffer et al.](https://doi.org/10.1109/LRA.2018.2855265)
 - Knee joint names in JVRC-1 model
+- Python 3 compatibility
 - Restore initial settings in IK solve()
 
 ### Changed

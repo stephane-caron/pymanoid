@@ -91,11 +91,9 @@ class LinearPredictiveControl(object):
 
     Notes
     -----
-    In numerical analysis, there are three classes of methods to solve
-    `boundary value problems
-    <https://en.wikipedia.org/wiki/Boundary_value_problem>`_: single shooting,
-    multiple shooting and collocation. The solver implemented in this class
-    follows the `single shooting method
+    In numerical analysis, there are three classes of methods to solve boundary
+    value problems: single shooting, multiple shooting and collocation. The
+    solver implemented in this class follows the `single shooting method
     <https://en.wikipedia.org/wiki/Shooting_method>`_.
     """
 
@@ -147,7 +145,7 @@ class LinearPredictiveControl(object):
         psi = zeros((self.x_dim, self.U_dim))
         G_list, h_list = [], []
         phi_list, psi_list = [], []
-        for k in xrange(self.nb_steps):
+        for k in range(self.nb_steps):
             # Loop invariant: x == psi * U + phi * x_init
             if self.wxc is not None:
                 phi_list.append(phi)
@@ -214,7 +212,7 @@ class LinearPredictiveControl(object):
         assert self.U is not None, "you need to solve() the MPC problem first"
         X = zeros((self.nb_steps + 1, self.x_dim))
         X[0] = self.x_init
-        for k in xrange(self.nb_steps):
+        for k in range(self.nb_steps):
             X[k + 1] = dot(self.A, X[k]) + dot(self.B, self.U[k])
         self.__X = X
         return X
@@ -225,19 +223,19 @@ try:
 
     def array_to_MatrixXd(a):
         A = MatrixXd.Zero(a.shape[0], a.shape[1])
-        for i in xrange(a.shape[0]):
-            for j in xrange(a.shape[1]):
+        for i in range(a.shape[0]):
+            for j in range(a.shape[1]):
                 A[i, j] = a[i, j]
         return A
 
     def array_to_VectorXd(v):
         V = VectorXd.Zero(v.shape[0])
-        for i in xrange(v.shape[0]):
+        for i in range(v.shape[0]):
             V[i] = v[i]
         return V
 
     def VectorXd_to_array(V):
-        return array([V[i] for i in xrange(V.rows())])
+        return array([V[i] for i in range(V.rows())])
 except ImportError:
     pass
 
