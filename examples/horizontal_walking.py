@@ -161,16 +161,12 @@ class WalkingFSM(pymanoid.Process):
         else:  # right foot swings
             self.stance_foot = stance.left_foot
             self.swing_foot = stance.free_contact('right_foot')
-        ssp_duration = self.ssp_duration
         swing_target = footsteps[self.next_footstep]
         self.next_footstep += 1
-        self.rem_time = ssp_duration
+        self.rem_time = self.ssp_duration
         self.state = "SingleSupport"
-        self.swing_start = self.swing_foot.pose
-        self.swing_target = swing_target
-        self.swing_interp = SwingFoot(
-            self.swing_foot, self.swing_target, ssp_duration,
-            takeoff_clearance=0.05, landing_clearance=0.05)
+        self.start_swing_foot(swing_target)
+        self.start_com_ssp()
         return self.run_single_support()
 
     def run_single_support(self):
@@ -183,10 +179,26 @@ class WalkingFSM(pymanoid.Process):
                 return self.start_double_support()
             else:  # footstep sequence is over
                 return self.start_standing()
+        self.run_swing_foot()
+        self.run_com_ssp()
+        self.rem_time -= dt
+
+    def start_swing_foot(self, swing_target):
+        self.swing_start = self.swing_foot.pose
+        self.swing_target = swing_target
+        self.swing_interp = SwingFoot(
+            self.swing_foot, self.swing_target, self.ssp_duration,
+            takeoff_clearance=0.05, landing_clearance=0.05)
+
+    def run_swing_foot(self):
         self.swing_foot.set_pose(self.swing_interp.integrate(dt))
+
+    def start_com_ssp(self):
+        pass
+
+    def run_com_ssp(self):
         # CoM: dummy code, to be replaced by linear model predictive control
         stance.com.set_x(0.5 * (self.swing_foot.x + self.stance_foot.x))
-        self.rem_time -= dt
 
 
 if __name__ == "__main__":
