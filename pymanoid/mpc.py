@@ -182,12 +182,20 @@ class LinearPredictiveControl(object):
         self.h = hstack(h_list)
         self.build_time = time() - t_build_start
 
-    def solve(self):
+    def solve(self, **kwargs):
         """
         Compute the series of controls that minimizes the preview QP.
+
+        Parameters
+        ----------
+        solver : string, optional
+            Name of the QP solver in ``qpsolvers.available_solvers``.
+        initvals : array, optional
+            Vector of initial `U` values used to warm-start the QP solver.
         """
         t_solve_start = time()
-        U = solve_qp(self.P, self.q, self.G, self.h)
+        kwargs['sym_proj'] = False  # self.P is symmetric
+        U = solve_qp(self.P, self.q, self.G, self.h, **kwargs)
         self.U = U.reshape((self.nb_steps, self.u_dim))
         self.solve_time = time() - t_solve_start
 
