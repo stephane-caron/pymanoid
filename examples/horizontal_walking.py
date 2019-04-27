@@ -96,7 +96,7 @@ class WalkingFSM(pymanoid.Process):
 
     def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
-        self.com_accel = array([0., 0., 0.])
+        stance.com.pdd = array([0., 0., 0.])
         self.dsp_duration = dsp_duration
         self.next_footstep = 2
         self.ssp_duration = ssp_duration
@@ -239,13 +239,13 @@ class WalkingFSM(pymanoid.Process):
                 for i in range(nb_steps)]
         self.x_mpc = LinearPredictiveControl(
             A, B, C, D, e[0],
-            x_init=array([stance.com.x, stance.com.xd, self.com_accel[0]]),
+            x_init=array([stance.com.x, stance.com.xd, stance.com.pdd[0]]),
             x_goal=array([self.swing_target.x, 0., 0.]),
             nb_steps=nb_steps,
             wxt=1., wu=0.1)
         self.y_mpc = LinearPredictiveControl(
             A, B, C, D, e[1],
-            x_init=array([stance.com.y, stance.com.yd, self.com_accel[1]]),
+            x_init=array([stance.com.y, stance.com.yd, stance.com.pdd[1]]),
             x_goal=array([self.swing_target.y, 0., 0.]),
             nb_steps=nb_steps,
             wxt=1., wu=0.1)
@@ -259,10 +259,12 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.preview_index >= 3:
             self.update_mpc(0., self.rem_time)
-        self.com_accel[0] = self.x_mpc.X[self.preview_index][2]
-        self.com_accel[1] = self.y_mpc.X[self.preview_index][2]
-        stance.com.pdd = self.com_accel  # for PointMassWrenchDrawer
-        stance.com.integrate_euler(self.com_accel, dt)
+        com_jerk = array([
+            self.x_mpc.U[self.preview_index][0],
+            self.y_mpc.U[self.preview_index][0],
+            0.])
+        stance.com.pdd += com_jerk * dt
+        stance.com.integrate_euler(stance.com.pdd, dt)
         self.preview_index += 1
 
 
