@@ -95,7 +95,6 @@ class WalkingFSM(pymanoid.Process):
 
     def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
-        stance.com.pdd = array([0., 0., 0.])
         self.dsp_duration = dsp_duration
         self.next_footstep = 2
         self.ssp_duration = ssp_duration
@@ -214,11 +213,10 @@ class WalkingFSM(pymanoid.Process):
         T = 3 * dt  # update MPC every 90 [ms]
         nb_preview_steps = 16
         nb_init_dsp_steps = int(round(dsp_duration / T))
-        print "nb_init_dsp_steps =", nb_init_dsp_steps
         nb_init_ssp_steps = int(round(ssp_duration / T))
         nb_dsp_steps = int(round(self.dsp_duration / T))
         A = array([[1., T, T ** 2 / 2.], [0., 1., T], [0., 0., 1.]])
-        B = array([T ** 3 / 6., T ** 2 / 2., T]).reshape((3,1))
+        B = array([T ** 3 / 6., T ** 2 / 2., T]).reshape((3, 1))
         h = stance.com.z
         g = -sim.gravity[2]
         zmp_from_state = array([1., 0., -h / g])
@@ -259,15 +257,7 @@ class WalkingFSM(pymanoid.Process):
         if self.preview_index >= 3:
             self.update_mpc(0., self.rem_time)
         com_jerk = array([self.x_mpc.U[0][0], self.y_mpc.U[0][0], 0.])
-        com_pos = stance.com.p
-        com_vel = stance.com.pd
-        com_accel = stance.com.pdd
-        com_pos += dt * (com_vel + dt * (com_accel / 2. + dt * com_jerk / 6.))
-        com_vel += dt * (com_accel + dt * com_jerk / 2.)
-        com_accel += dt * com_jerk
-        stance.com.set_pos(com_pos)
-        stance.com.set_vel(com_vel)
-        stance.com.pdd = com_accel
+        stance.com.integrate_constant_jerk(com_jerk, dt)
         self.preview_index += 1
 
 

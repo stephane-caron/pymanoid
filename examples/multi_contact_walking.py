@@ -833,7 +833,7 @@ class UpdateCOMTargetAccel(pymanoid.Process):
         sim : Simulation
             Instance of the current simulation.
         """
-        self.com_target.pdd = self.preview_buffer.cur_control
+        self.com_target.set_accel(self.preview_buffer.cur_control)
 
 
 class PointMassWrenchDrawer(PointMassWrenchDrawer):
@@ -863,7 +863,7 @@ if __name__ == "__main__":
     com_target = PointMass([0, 0, 0], 20.)
     preview_buffer = PreviewBuffer(
         u_dim=3,
-        callback=lambda u, dT: com_target.integrate_euler(u, dT))
+        callback=lambda u, dT: com_target.integrate_constant_accel(u, dT))
     fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
 
     mpc = COMTubePredictiveControl(

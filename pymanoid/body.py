@@ -593,6 +593,8 @@ class Point(Cube):
         Initial position in the world frame.
     vel : array, shape=(3,), optional
         Initial velocity in the world frame.
+    accel : array, shape=(3,), optional
+        Initial acceleration in the world frame.
     size : scalar, optional
         Half-length of a side of the cube in [m].
     color : char
@@ -601,10 +603,12 @@ class Point(Cube):
         Visibility in the GUI.
     """
 
-    def __init__(self, pos, vel=None, size=0.01, color='r', visible=True):
+    def __init__(self, pos, vel=None, accel=None, size=0.01, color='r',
+                 visible=True):
         super(Point, self).__init__(
             size, pos=pos, color=color, visible=visible)
         self.__pd = zeros(3) if vel is None else array(vel)
+        self.__pdd = zeros(3) if accel is None else array(accel)
 
     def copy(self, color='r', visible=True):
         """
@@ -650,10 +654,40 @@ class Point(Cube):
         """
         self.__pd = array(pd)
 
-    def integrate_euler(self, pdd, dt):
+    @property
+    def pdd(self):
+        """Point acceleration."""
+        return self.__pdd.copy()
+
+    @property
+    def xdd(self):
+        """Point acceleration along x-axis."""
+        return self.__pdd[0]
+
+    @property
+    def ydd(self):
+        """Point acceleration along y-axis."""
+        return self.__pdd[1]
+
+    @property
+    def zdd(self):
+        """Point acceleration along z-axis."""
+        return self.__pdd[2]
+
+    def set_accel(self, pdd):
         """
-        Apply Euler integration for a constant acceleration ``pdd`` over
-        duration ``dt``.
+        Update the point acceleration.
+
+        Parameters
+        ----------
+        pdd : array, shape=(3,)
+            Acceleration coordinates in the world frame.
+        """
+        self.__pdd = array(pdd)
+
+    def integrate_constant_accel(self, pdd, dt):
+        """
+        Apply Euler integration for a constant acceleration.
 
         Parameters
         ----------
@@ -664,6 +698,23 @@ class Point(Cube):
         """
         self.set_pos(self.p + (self.pd + .5 * pdd * dt) * dt)
         self.set_vel(self.pd + pdd * dt)
+        self.set_accel(pdd)
+
+    def integrate_constant_jerk(self, pddd, dt):
+        """
+        Apply Euler integration for a constant jerk.
+
+        Parameters
+        ----------
+        pddd : array, shape=(3,)
+            Point jerk in the world frame.
+        dt : scalar
+            Duration in [s].
+        """
+        self.set_pos(self.p + dt * (
+            self.pd + .5 * dt * (self.pdd + dt * pddd / 3.)))
+        self.set_vel(self.pd + dt * (self.pdd + dt * pddd / 2.))
+        self.set_accel(self.pdd + dt * pddd)
 
 
 class PointMass(Point):

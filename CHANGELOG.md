@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 - IK: can now take joint acceleration limits into account
 - IK: upgraded with Levenberg-Marquardt damping
 - IK: warm-start parameter to ``solve()``
+- Point: new attribute ``point.pdd`` for the acceleration
+- Point: new function ``point.integrate_constant_jerk()``
 - Robot model gets a ``get_link()`` function
 - Simulation gets ``set_camera_transform()`` function
 - SwingFoot type: a polynomial swing foot interpolator
