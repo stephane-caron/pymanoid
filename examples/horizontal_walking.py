@@ -25,7 +25,6 @@ based on linear model predictive control
 """
 
 import IPython
-import numpy
 
 from numpy import array
 
@@ -212,16 +211,17 @@ class WalkingFSM(pymanoid.Process):
         self.swing_foot.set_pose(self.swing_interp.integrate(dt))
 
     def update_mpc(self, dsp_duration, ssp_duration):
-        preview_step = 3  # update MPC every 90 [ms]
-        T = preview_step * dt
-        h = stance.com.z
-        g = -sim.gravity[2]
-        nb_steps = 16
+        T = 3 * dt  # update MPC every 90 [ms]
+        nb_preview_steps = 16
         nb_init_dsp_steps = int(round(dsp_duration / T))
+        print "nb_init_dsp_steps =", nb_init_dsp_steps
         nb_init_ssp_steps = int(round(ssp_duration / T))
         nb_dsp_steps = int(round(self.dsp_duration / T))
         A = array([[1., T, T ** 2 / 2.], [0., 1., T], [0., 0., 1.]])
         B = array([T ** 3 / 6., T ** 2 / 2., T]).reshape((3,1))
+        print "B =", repr(B)
+        h = stance.com.z
+        g = -sim.gravity[2]
         zmp_from_state = array([1., 0., -h / g])
         C = array([+zmp_from_state, -zmp_from_state])
         D = None
@@ -236,18 +236,18 @@ class WalkingFSM(pymanoid.Process):
                 array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_dsp_steps else
                 array([+1000., +1000.]) if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps else
                 array([+next_max, -next_min])
-                for i in range(nb_steps)]
+                for i in range(nb_preview_steps)]
         self.x_mpc = LinearPredictiveControl(
             A, B, C, D, e[0],
             x_init=array([stance.com.x, stance.com.xd, stance.com.pdd[0]]),
             x_goal=array([self.swing_target.x, 0., 0.]),
-            nb_steps=nb_steps,
+            nb_steps=nb_preview_steps,
             wxt=1., wu=0.1)
         self.y_mpc = LinearPredictiveControl(
             A, B, C, D, e[1],
             x_init=array([stance.com.y, stance.com.yd, stance.com.pdd[1]]),
             x_goal=array([self.swing_target.y, 0., 0.]),
-            nb_steps=nb_steps,
+            nb_steps=nb_preview_steps,
             wxt=1., wu=0.1)
         self.x_mpc.solve()
         self.y_mpc.solve()
@@ -269,7 +269,6 @@ class WalkingFSM(pymanoid.Process):
 
 
 if __name__ == "__main__":
-    numpy.random.seed(42)
     dt = 0.03  # [s]
     sim = pymanoid.Simulation(dt=dt)
     robot = JVRC1(download_if_needed=True)
