@@ -96,6 +96,7 @@ class WalkingFSM(pymanoid.Process):
     def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
         self.dsp_duration = dsp_duration
+        self.mpc_timestep = 3 * dt  # update MPC every 90 [ms]
         self.next_footstep = 2
         self.ssp_duration = ssp_duration
         self.state = None
@@ -144,14 +145,18 @@ class WalkingFSM(pymanoid.Process):
             self.stance_foot = stance.right_foot
         else:  # right foot swings
             self.stance_foot = stance.left_foot
+        dsp_duration = self.dsp_duration
+        if self.next_footstep == 2 or self.next_footstep == len(footsteps) - 1:
+            dsp_duration = 5 * self.dsp_duration
+        print("dsp_duration = %f" % dsp_duration)
         self.swing_target = footsteps[self.next_footstep]
-        self.rem_time = self.dsp_duration
+        self.rem_time = dsp_duration
         self.state = "DoubleSupport"
         self.start_com_mpc_dsp()
         return self.run_double_support()
 
     def start_com_mpc_dsp(self):
-        self.update_mpc(self.dsp_duration, self.ssp_duration)
+        self.update_mpc(self.rem_time, self.ssp_duration)
 
     def run_double_support(self):
         """
@@ -159,6 +164,8 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.rem_time <= 0.:
             return self.start_single_support()
+        if self.preview_time >= self.mpc_timestep:
+            self.update_mpc(self.rem_time, self.ssp_duration)
         self.run_com_mpc()
         self.rem_time -= dt
 
@@ -200,6 +207,8 @@ class WalkingFSM(pymanoid.Process):
             else:  # footstep sequence is over
                 return self.start_standing()
         self.run_swing_foot()
+        if self.preview_time >= self.mpc_timestep:
+            self.update_mpc(0., self.rem_time)
         self.run_com_mpc()
         self.rem_time -= dt
 
@@ -210,7 +219,7 @@ class WalkingFSM(pymanoid.Process):
         self.swing_foot.set_pose(self.swing_interp.integrate(dt))
 
     def update_mpc(self, dsp_duration, ssp_duration):
-        T = 3 * dt  # update MPC every 90 [ms]
+        T = self.mpc_timestep
         nb_preview_steps = 16
         nb_init_dsp_steps = int(round(dsp_duration / T))
         nb_init_ssp_steps = int(round(ssp_duration / T))
@@ -254,11 +263,9 @@ class WalkingFSM(pymanoid.Process):
         """
         Run CoM predictive control for single-support state.
         """
-        if self.preview_index >= 3:
-            self.update_mpc(0., self.rem_time)
         com_jerk = array([self.x_mpc.U[0][0], self.y_mpc.U[0][0], 0.])
         stance.com.integrate_constant_jerk(com_jerk, dt)
-        self.preview_index += 1
+        self.preview_time += dt
 
 
 if __name__ == "__main__":
