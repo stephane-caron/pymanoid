@@ -145,8 +145,8 @@ class WalkingFSM(pymanoid.Process):
             self.stance_foot = stance.left_foot
         dsp_duration = self.dsp_duration
         if self.next_footstep == 2 or self.next_footstep == len(footsteps) - 1:
+            # double support is a bit longer for the first and last steps
             dsp_duration = 4 * self.dsp_duration
-        print("dsp_duration = %f" % dsp_duration)
         self.swing_target = footsteps[self.next_footstep]
         self.rem_time = dsp_duration
         self.state = "DoubleSupport"
@@ -162,8 +162,6 @@ class WalkingFSM(pymanoid.Process):
         """
         if self.rem_time <= 0.:
             return self.start_single_support()
-        if self.preview_time >= self.mpc_timestep:
-            self.update_mpc(self.rem_time, self.ssp_duration)
         self.run_com_mpc()
         self.rem_time -= dt
 
@@ -192,7 +190,7 @@ class WalkingFSM(pymanoid.Process):
             takeoff_clearance=0.05, landing_clearance=0.05)
 
     def start_com_mpc_ssp(self):
-        self.update_mpc(0., self.ssp_duration)
+        self.update_mpc(0., self.rem_time)
 
     def run_single_support(self):
         """
@@ -205,8 +203,6 @@ class WalkingFSM(pymanoid.Process):
             else:  # footstep sequence is over
                 return self.start_standing()
         self.run_swing_foot()
-        if self.preview_time >= self.mpc_timestep:
-            self.update_mpc(0., self.rem_time)
         self.run_com_mpc()
         self.rem_time -= dt
 
@@ -217,8 +213,8 @@ class WalkingFSM(pymanoid.Process):
         self.swing_foot.set_pose(self.swing_interp.integrate(dt))
 
     def update_mpc(self, dsp_duration, ssp_duration):
-        T = self.mpc_timestep
         nb_preview_steps = 16
+        T = self.mpc_timestep
         nb_init_dsp_steps = int(round(dsp_duration / T))
         nb_init_ssp_steps = int(round(ssp_duration / T))
         nb_dsp_steps = int(round(self.dsp_duration / T))
@@ -230,8 +226,8 @@ class WalkingFSM(pymanoid.Process):
         C = array([+zmp_from_state, -zmp_from_state])
         D = None
         e = [[], []]
-        cur_vertices = self.stance_foot.get_scaled_contact_area(0.8)
-        next_vertices = self.swing_target.get_scaled_contact_area(0.8)
+        cur_vertices = self.stance_foot.get_scaled_contact_area(0.9)
+        next_vertices = self.swing_target.get_scaled_contact_area(0.9)
         for coord in [0, 1]:
             cur_max = max(v[coord] for v in cur_vertices)
             cur_min = min(v[coord] for v in cur_vertices)
@@ -258,7 +254,6 @@ class WalkingFSM(pymanoid.Process):
         self.x_mpc.solve()
         self.y_mpc.solve()
         self.preview_time = 0.
-        # self.plot_mpc_preview()
 
     def plot_mpc_preview(self):
         import pylab
@@ -279,6 +274,11 @@ class WalkingFSM(pymanoid.Process):
         """
         Run CoM predictive control for single-support state.
         """
+        if self.preview_time >= self.mpc_timestep:
+            if self.state == "DoubleSupport":
+                self.update_mpc(self.rem_time, self.ssp_duration)
+            else:  # self.state == "SingleSupport":
+                self.update_mpc(0., self.rem_time)
         com_jerk = array([self.x_mpc.U[0][0], self.y_mpc.U[0][0], 0.])
         stance.com.integrate_constant_jerk(com_jerk, dt)
         self.preview_time += dt
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     sim.schedule_extra(rf_traj_drawer)
     sim.schedule_extra(wrench_drawer)
 
-    # sim.start()
+    sim.start()
 
     def start_walking():
         fsm.start_walking = True
