@@ -33,10 +33,13 @@ around, and see what happens when it exits the polygon.
 
 ## Horizontal walking
 
-In this example, we make the JVRC-1 model walk straight on a flat horizontal
+<img align="right" src="../doc/src/images/horizontal_walking.png" width="300" />
+
+In this example, we make the JVRC-1 model walk forward on a flat horizontal
 floor. The COM trajectory is generated on the fly by [linear model predictive
-control](https://hal.inria.fr/file/index/docid/390462/filename/Preview.pdf).
-Try moving contacts around while the robot walk to see how it reacts.
+control](https://scaron.info/doc/pymanoid/walking-pattern-generation.html#pymanoid.mpc.LinearPredictiveControl).
+This examples illustrates the tutorial [Prototyping a walking pattern
+generator](https://scaron.info/teaching/prototyping-a-walking-pattern-generator.html).
 
 ## Multi-contact walking
 
