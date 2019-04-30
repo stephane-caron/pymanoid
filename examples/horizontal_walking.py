@@ -38,8 +38,6 @@ from pymanoid.mpc import LinearPredictiveControl
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
 from pymanoid.swing_foot import SwingFoot
-from pymanoid.tasks import DOFTask
-from pymanoid.tasks import MinCAMTask
 
 
 def generate_footsteps(distance, step_length, foot_spread, friction):
@@ -260,7 +258,7 @@ class WalkingFSM(pymanoid.Process):
         self.x_mpc.solve()
         self.y_mpc.solve()
         self.preview_time = 0.
-        self.plot_mpc_preview()
+        # self.plot_mpc_preview()
 
     def plot_mpc_preview(self):
         import pylab
@@ -309,20 +307,11 @@ if __name__ == "__main__":
         left_foot=footsteps[0].copy(hide=True),
         right_foot=footsteps[1].copy(hide=True))
     stance.bind(robot)
+    robot.ik.solve(max_it=42)
+
     ssp_duration = 24 * dt  # 720 [ms]
     dsp_duration = 3 * dt  # 90 [ms]
     fsm = WalkingFSM(ssp_duration, dsp_duration)
-
-    # robot.ik.DEFAULT_WEIGHTS['POSTURE'] = 1e-5
-    robot.ik.solve(max_it=42)
-    robot.ik.add(DOFTask(robot, robot.WAIST_P, 0.2, weight=1e-3))
-    robot.ik.add(DOFTask(robot, robot.WAIST_Y, 0., weight=1e-3))
-    robot.ik.add(DOFTask(robot, robot.WAIST_R, 0., weight=1e-3))
-    robot.ik.add(DOFTask(robot, robot.ROT_P, 0., weight=1e-3))
-    robot.ik.add(DOFTask(robot, robot.R_SHOULDER_R, -0.5, weight=1e-3))
-    robot.ik.add(DOFTask(robot, robot.L_SHOULDER_R, 0.5, weight=1e-3))
-    robot.ik.add(MinCAMTask(robot, weight=1e-4))
-    robot.ik.solve(max_it=24)
 
     sim.schedule(fsm)
     sim.schedule(robot.ik, log_comp_times=True)
