@@ -38,8 +38,12 @@ around, and see what happens when it exits the polygon.
 In this example, we make the JVRC-1 model walk forward on a flat horizontal
 floor. The COM trajectory is generated on the fly by [linear model predictive
 control](https://scaron.info/doc/pymanoid/walking-pattern-generation.html#pymanoid.mpc.LinearPredictiveControl).
+
 This examples illustrates the tutorial [Prototyping a walking pattern
 generator](https://scaron.info/teaching/prototyping-a-walking-pattern-generator.html).
+The concepts it introduces are the same as those implemented in a [full-fledged
+walking controller](https://github.com/stephane-caron/lipm_walking_controller/)
+applied for walking and stair climbing with the HRP-4 humanoid.
 
 ## Multi-contact walking
 
