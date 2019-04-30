@@ -190,7 +190,27 @@ class Contact(Box):
 
     @property
     def vertices(self):
-        X, Y = self.shape
+        """
+        Vertices of the contact area.
+        """
+        return self.get_scaled_contact_area(1.)
+
+    def get_scaled_contact_area(self, scale):
+        """
+        Get the vertices of the scaled contact area.
+
+        Parameters
+        ----------
+        scale : scalar
+            Contact area is scaled by this ratio.
+
+        Returns
+        -------
+        vertices : list of arrays
+            List of vertex coordinates in the world frame.
+        """
+        X = scale * self.shape[0]
+        Y = scale * self.shape[1]
         v1 = dot(self.T, array([+X, +Y, 0., 1.]))[:3]
         v2 = dot(self.T, array([+X, -Y, 0., 1.]))[:3]
         v3 = dot(self.T, array([-X, -Y, 0., 1.]))[:3]

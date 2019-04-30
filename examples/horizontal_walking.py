@@ -232,11 +232,13 @@ class WalkingFSM(pymanoid.Process):
         C = array([+zmp_from_state, -zmp_from_state])
         D = None
         e = [[], []]
+        cur_vertices = self.stance_foot.get_scaled_contact_area(0.8)
+        next_vertices = self.swing_target.get_scaled_contact_area(0.8)
         for coord in [0, 1]:
-            cur_max = max(v[coord] for v in self.stance_foot.vertices)
-            cur_min = min(v[coord] for v in self.stance_foot.vertices)
-            next_max = max(v[coord] for v in self.swing_target.vertices)
-            next_min = min(v[coord] for v in self.swing_target.vertices)
+            cur_max = max(v[coord] for v in cur_vertices)
+            cur_min = min(v[coord] for v in cur_vertices)
+            next_max = max(v[coord] for v in next_vertices)
+            next_min = min(v[coord] for v in next_vertices)
             e[coord] = [
                 array([+1000., +1000.]) if i < nb_init_dsp_steps else
                 array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_ssp_steps else
@@ -245,19 +247,35 @@ class WalkingFSM(pymanoid.Process):
                 for i in range(nb_preview_steps)]
         self.x_mpc = LinearPredictiveControl(
             A, B, C, D, e[0],
-            x_init=array([stance.com.x, stance.com.xd, stance.com.pdd[0]]),
+            x_init=array([stance.com.x, stance.com.xd, stance.com.xdd]),
             x_goal=array([self.swing_target.x, 0., 0.]),
             nb_steps=nb_preview_steps,
-            wxt=1., wu=0.1)
+            wxt=1., wu=0.01)
         self.y_mpc = LinearPredictiveControl(
             A, B, C, D, e[1],
-            x_init=array([stance.com.y, stance.com.yd, stance.com.pdd[1]]),
+            x_init=array([stance.com.y, stance.com.yd, stance.com.ydd]),
             x_goal=array([self.swing_target.y, 0., 0.]),
             nb_steps=nb_preview_steps,
-            wxt=1., wu=0.1)
+            wxt=1., wu=0.01)
         self.x_mpc.solve()
         self.y_mpc.solve()
-        self.preview_index = 0
+        self.preview_time = 0.
+        self.plot_mpc_preview()
+
+    def plot_mpc_preview(self):
+        import pylab
+        T = self.mpc_timestep
+        h = stance.com.z
+        g = -sim.gravity[2]
+        trange = [sim.time + k * T for k in range(len(self.x_mpc.X))]
+        pylab.ion()
+        pylab.clf()
+        pylab.subplot(211)
+        pylab.plot(trange, [v[0] for v in self.x_mpc.X])
+        pylab.plot(trange, [v[0] - v[2] * h / g for v in self.x_mpc.X])
+        pylab.subplot(212)
+        pylab.plot(trange, [v[0] for v in self.y_mpc.X])
+        pylab.plot(trange, [v[0] - v[2] * h / g for v in self.y_mpc.X])
 
     def run_com_mpc(self):
         """
@@ -312,14 +330,14 @@ if __name__ == "__main__":
     com_traj_drawer = TrajectoryDrawer(robot.stance.com, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
-    # wrench_drawer = PointMassWrenchDrawer(stance.com, stance)
+    wrench_drawer = PointMassWrenchDrawer(stance.com, stance)
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(lf_traj_drawer)
     sim.schedule_extra(rf_traj_drawer)
-    # sim.schedule_extra(wrench_drawer)
+    sim.schedule_extra(wrench_drawer)
 
-    sim.start()
+    # sim.start()
 
     def start_walking():
         fsm.start_walking = True
