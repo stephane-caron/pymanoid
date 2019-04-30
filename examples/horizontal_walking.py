@@ -145,7 +145,7 @@ class WalkingFSM(pymanoid.Process):
             self.stance_foot = stance.left_foot
         dsp_duration = self.dsp_duration
         if self.next_footstep == 2 or self.next_footstep == len(footsteps) - 1:
-            dsp_duration = 5 * self.dsp_duration
+            dsp_duration = 4 * self.dsp_duration
         print("dsp_duration = %f" % dsp_duration)
         self.swing_target = footsteps[self.next_footstep]
         self.rem_time = dsp_duration
@@ -239,7 +239,7 @@ class WalkingFSM(pymanoid.Process):
             next_min = min(v[coord] for v in next_vertices)
             e[coord] = [
                 array([+1000., +1000.]) if i < nb_init_dsp_steps else
-                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps < nb_init_ssp_steps else
+                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps <= nb_init_ssp_steps else
                 array([+1000., +1000.]) if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps else
                 array([+next_max, -next_min])
                 for i in range(nb_preview_steps)]
