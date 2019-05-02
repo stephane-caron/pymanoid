@@ -72,9 +72,7 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
             x += step_length
         y *= -1.
         append_contact(x, y)
-    # here x == distance
-    y *= -1.
-    append_contact(x, y)
+    append_contact(x, -y)  # here x == distance
     return contacts
 
 

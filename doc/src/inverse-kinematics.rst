@@ -30,6 +30,32 @@ integrated twice or thrice respectively).
 .. autoclass:: pymanoid.ik.IKSolver
     :members:
 
+Stance
+======
+
+The most common IK tasks for humanoid locomotion are the `COM task
+<#pymanoid.tasks.COMTask>`_ and `end-effector pose task
+<#pymanoid.tasks.PoseTask>`_. The ``Stance`` class avoids the hassle of
+creating and adding these tasks one by one. To use it, first create your targets:
+
+.. code::
+
+    com_target = robot.get_com_point_mass()
+    lf_target = robot.left_foot.get_contact(pos=[0, 0.3, 0])
+    rf_target = robot.right_foot.get_contact(pos=[0, -0.3, 0])
+
+Then create the stance and bind it to the robot:
+
+.. code::
+
+   stance = Stance(com=com_target, left_foot=lf_target, right_foot=rf_target)
+   stance.bind(robot)
+
+Calling the `bind <#pymanoid.stance.Stance.bind>`_ function will automatically add the corresponding tasks to the robot IK solver. See the `inverse_kinematics.py <https://github.com/stephane-caron/pymanoid/blob/master/examples/inverse_kinematics.py>`_ example for more details.
+
+.. autoclass:: pymanoid.stance.Stance
+    :members:
+
 Example
 =======
 
@@ -42,11 +68,6 @@ the JVRC-1 humanoid:
     sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1('JVRC-1.dae', download_if_needed=True)
     sim.set_viewer()  # open GUI window
-    sim.viewer.SetCamera([
-        [-0.28985317,  0.40434422, -0.86746233,  2.73872042],
-        [0.95680251,  0.10095043, -0.2726499,  0.86080128],
-        [-0.02267371, -0.90901857, -0.41613837,  2.06654644],
-        [0.,  0.,  0.,  1.]])
 
 We define targets for foot contacts;
 
@@ -69,7 +90,7 @@ will be roughly 80 cm above contacts as it is close to the waist link:
 
 .. code::
 
-    com = PointMass(pos=robot.com, mass=robot.mass)
+    com_target = PointMass(pos=robot.com, mass=robot.mass)
 
 All our targets being defined, we initialize IK tasks for the feet and COM
 position, as well as a posture task for the (necessary) regularization of the
@@ -79,7 +100,7 @@ underlying QP problem:
 
     lf_task = ContactTask(robot, robot.left_foot, lf_target, weight=1.)
     rf_task = ContactTask(robot, robot.right_foot, rf_target, weight=1.)
-    com_task = COMTask(robot, com, weight=1e-2)
+    com_task = COMTask(robot, com_target, weight=1e-2)
     reg_task = PostureTask(robot, robot.q, weight=1e-6)
 
 We initialize the robot's IK using all DOFs, and insert our tasks:
@@ -111,3 +132,16 @@ The resulting posture looks like this:
    :align:  center
 
    Robot posture found by inverse kinematics.
+
+Alternatively, rather than creating and adding all tasks one by one, we could
+have used the `Stance <#pymanoid.stance.Stance>`_ interface:
+
+.. code::
+
+    stance = Stance(com=com_target, left_foot=lf_target, right_foot=rf_target)
+    stance.bind(robot)
+    robot.ik.add_task(DOFTask(robot, robot.R_SHOULDER_R, -0.5, gain=0.5, weight=1e-5))
+    robot.ik.add_task(DOFTask(robot, robot.L_SHOULDER_R, +0.5, gain=0.5, weight=1e-5))
+    robot.ik.solve(max_it=100, impr_stop=1e-4)
+
+This code is more concise and yields the same result.
