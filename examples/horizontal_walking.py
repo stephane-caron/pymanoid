@@ -92,7 +92,7 @@ class WalkingFSM(pymanoid.Process):
     def __init__(self, ssp_duration, dsp_duration):
         super(WalkingFSM, self).__init__()
         self.dsp_duration = dsp_duration
-        self.mpc_timestep = 3 * dt  # update MPC every 90 [ms]
+        self.mpc_timestep = round(0.1 / dt) * dt  # update MPC every ~0.1 [s]
         self.next_footstep = 2
         self.ssp_duration = ssp_duration
         self.state = None
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     stance.bind(robot)
     robot.ik.solve(max_it=42)
 
-    ssp_duration = 24 * dt  # 720 [ms]
-    dsp_duration = 3 * dt  # 90 [ms]
+    ssp_duration = round(0.7 / dt) * dt  # close to 0.7 [s]
+    dsp_duration = round(0.1 / dt) * dt  # close to 0.1 [s]
     fsm = WalkingFSM(ssp_duration, dsp_duration)
 
     sim.schedule(fsm)
