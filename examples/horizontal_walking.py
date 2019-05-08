@@ -329,17 +329,6 @@ if __name__ == "__main__":
     def start_walking():
         fsm.start_walking = True
 
-    print("""
-
-Linear Model Predictive Control
-===============================
-
-Ready to go! Start walking by running:
-
-    start_walking()
-
-""")
-
-    start_walking()
+    start_walking()  # comment this out to start walking manually
     if IPython.get_ipython() is None:
         IPython.embed()

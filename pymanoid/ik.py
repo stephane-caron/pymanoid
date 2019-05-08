@@ -267,7 +267,7 @@ class IKSolver(Process):
         """
         return sum(task.cost(dt) for task in self.tasks.itervalues())
 
-    def __build_qp_matrices(self, dt):
+    def build_qp_matrices(self, dt):
         """
         Build matrices of the quatratic program.
 
@@ -368,7 +368,7 @@ class IKSolver(Process):
         Gauss-Newton update rule.
         """
         n = self.nb_active_dofs
-        P, v, qd_max, qd_min = self.__build_qp_matrices(dt)
+        P, v, qd_max, qd_min = self.build_qp_matrices(dt)
         G = vstack([+eye(n), -eye(n)])
         h = hstack([qd_max, -qd_min])
         try:
@@ -410,7 +410,7 @@ class IKSolver(Process):
         """
         n = self.nb_active_dofs
         E, Z = eye(n), zeros((n, n))
-        P0, v0, qd_max, qd_min = self.__build_qp_matrices(dt)
+        P0, v0, qd_max, qd_min = self.build_qp_matrices(dt)
         P = vstack([hstack([P0, Z]), hstack([Z, self.slack_regularize * E])])
         v = hstack([v0, -self.slack_maximize * ones(n)])
         G = vstack([
