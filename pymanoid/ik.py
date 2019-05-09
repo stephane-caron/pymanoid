@@ -489,7 +489,7 @@ class IKSolver(Process):
             self.slack_dof_limits = False
             self.qd_lim = 10. * self.robot.qd_lim[self.active_dofs]
             self.qdd_lim = None
-        for itnum in xrange(max_it):
+        for itnum in range(max_it):
             prev_cost = cost
             cost = self.compute_cost(dt)
             impr = abs(cost - prev_cost) / prev_cost

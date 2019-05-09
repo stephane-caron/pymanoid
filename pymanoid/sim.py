@@ -180,7 +180,7 @@ class Simulation(object):
         n : int, optional
             Number of simulation steps.
         """
-        for _ in xrange(n):
+        for _ in range(n):
             t0 = time()
             self._tick_processes()
             rem_time = self.dt - (time() - t0)
@@ -601,5 +601,5 @@ class CameraRecorder(Process):
         wait_time : scalar
             Duration in [s].
         """
-        for _ in xrange(int(wait_time / sim.dt)):
+        for _ in range(int(wait_time / sim.dt)):
             self.on_tick(sim)

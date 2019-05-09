@@ -123,7 +123,7 @@ class COMStepTransit(object):
         #
         self.cum_dT = []
         t = 0.
-        for k in xrange(self.nb_steps):
+        for k in range(self.nb_steps):
             t += self.dT
             self.cum_dT.append(t)
 
@@ -147,7 +147,7 @@ class COMStepTransit(object):
         W_comdd = list(self.weights['minimize_comdd'])
         assert len(W_comdd) in [1, 3]
 
-        for k in xrange(self.nb_steps):
+        for k in range(self.nb_steps):
             z_min = list(foothold.p - [0.42, 0.42, 0.42])
             z_max = list(foothold.p + [0.42, 0.42, 0.42])
             pdd_k = self.nlp.new_variable(
@@ -365,7 +365,7 @@ class COMStepTransit(object):
         dcm_last = self.p_last + self.pd_last / self.omega
         cp_target = self.dcm_target + gravity / self.omega2
         cp_last = dcm_last + gravity / self.omega2
-        for k in xrange(self.nb_steps):
+        for k in range(self.nb_steps):
             p, z = self.P[k], self.Z[k]
             handles.append(draw_line(z, p, color='c', linewidth=0.2))
         handles.extend([

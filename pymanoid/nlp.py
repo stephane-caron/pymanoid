@@ -234,7 +234,7 @@ class NonlinearProgram(object):
         """
         assert len(lb) == len(ub)
         i = self.var_index[name]
-        for j in xrange(len(lb)):
+        for j in range(len(lb)):
             self.var_lbounds[i + j] = lb[j]
             self.var_ubounds[i + j] = ub[j]
 
@@ -300,7 +300,7 @@ class NonlinearProgram(object):
             New upper-bound of the constraint.
         """
         i = self.cons_index[name]
-        for j in xrange(len(lb)):
+        for j in range(len(lb)):
             self.cons_lbounds[i + j] = lb[j]
             self.cons_ubounds[i + j] = ub[j]
 
