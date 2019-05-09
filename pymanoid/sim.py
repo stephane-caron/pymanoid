@@ -566,11 +566,8 @@ class CameraRecorder(Process):
     Note
     ----
     The GUI window should stay visible on your screen for the whole duration of
-    the recording.
-
-    Note
-    ----
-    Don't resize the GUI window while recording.
+    the recording. Also, don't resize it, otherwise video conversion will fail
+    later on.
     """
     def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):
         super(CameraRecorder, self).__init__()
