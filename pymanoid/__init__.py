@@ -32,6 +32,7 @@ from .misc import info
 from .misc import warn
 from .robot import Humanoid
 from .robot import Robot
+from .sim import CameraRecorder
 from .sim import Process
 from .sim import Simulation
 from .stance import Stance
@@ -42,6 +43,7 @@ import robots
 __all__ = [
     'Body',
     'Box',
+    'CameraRecorder',
     'Contact',
     'ContactFeed',
     'ContactSet',

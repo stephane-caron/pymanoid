@@ -539,6 +539,12 @@ class CameraRecorder(Process):
     """
     Video recording process.
 
+    When created, this process will ask the user to click on the OpenRAVE GUI
+    to get its window ID. Then, it will save a screenshot in the camera folder
+    at each tick of the simulation (don't expect real-time recording...). When
+    your simulation is over, go to the camera folder and run the script called
+    ``make_video.sh``.
+
     Parameters
     ----------
     sim : Simulation
@@ -550,16 +556,21 @@ class CameraRecorder(Process):
 
     Note
     ----
-    Creating videos requires the following dependencies (here listed as package
-    names for Ubuntu 14.04): ``x11-utils``, ``imagemagick``, ``libav-tools``.
+    Creating videos requires the following dependencies (here listed for Ubuntu
+    14.04): ``sudo apt-get install x11-utils imagemagick libav-tools``.
 
-    Notes
-    -----
-    When created, this process will ask the user to click on the OpenRAVE GUI
-    to get its window ID. Then, it will save a screenshot in the camera folder
-    at each tick of the simulation (don't expect real-time recording...). When
-    your simulation is over, go to the camera folder and run the script called
-    ``make_video.sh``.
+    Note
+    ----
+    Don't expect the simulation to run real-time while recording.
+
+    Note
+    ----
+    The GUI window should stay visible on your screen for the whole duration of
+    the recording.
+
+    Note
+    ----
+    Don't resize the GUI window while recording.
     """
     def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):
         super(CameraRecorder, self).__init__()
