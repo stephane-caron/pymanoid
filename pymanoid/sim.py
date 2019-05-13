@@ -584,7 +584,7 @@ class CameraRecorder(Process):
             frate = int(1. / sim.dt)
             script.write(
                 ("#!/bin/sh\n") +
-                (("avconv -r %d -qscale 1" % frate) +
+                (("avconv -r %d" % frate) +
                  (" -i %s/%%05d.png" % tmp_folder) +
                  (" -vf crop=\"trunc(iw/2)*2:trunc(ih/2)*2:0:0\"") +
                  (" %s" % fname)) +
