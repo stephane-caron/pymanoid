@@ -167,6 +167,37 @@ class Body(object):
         return self.rave.GetTransform()
 
     @property
+    def transform(self):
+        """
+        Homogeneous coordinates of the rigid body.
+
+        These coordinates describe the orientation and position of the rigid
+        body by the 4 x 4 transformation matrix
+
+        .. math::
+
+            T = \\left[
+                \\begin{array}{cc}
+                    R & p \\\\
+                    0_{1 \\times 3} & 1
+                \\end{array}
+                \\right]
+
+        where `R` is a `3 x 3` rotation matrix and `p` is the vector of
+        position coordinates.
+
+        Notes
+        -----
+        More precisely, `T` is the transformation matrix *from* the body frame
+        *to* the world frame: if
+        :math:`\\tilde{p}_\\mathrm{body} = [x\\ y\\ z\\ 1]` denotes the
+        homogeneous coordinates of a point in the body frame, then the
+        homogeneous coordinates of this point in the world frame are
+        :math:`\\tilde{p}_\\mathrm{world} = T \\tilde{p}_\\mathrm{body}`.
+        """
+        return self.T
+
+    @property
     def pose(self):
         """
         Body pose as a 7D quaternion + position vector.
@@ -188,9 +219,19 @@ class Body(object):
         return self.T[0:3, 0:3]
 
     @property
+    def rotation_matrix(self):
+        """Rotation matrix `R` from local to world coordinates."""
+        return self.R
+
+    @property
     def p(self):
-        """Position coordinates `p = [x y z]` in the world frame."""
+        """Position coordinates `[x y z]` in the world frame."""
         return self.T[0:3, 3]
+
+    @property
+    def pos(self):
+        """Position coordinates `[x y z]` in the world frame."""
+        return self.p
 
     @property
     def x(self):

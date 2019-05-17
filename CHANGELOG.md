@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Updated ``RobotWrenchDrawer`` to fetch results from the stance wrench distributor
 - Contact: added ``wrench``, ``force`` and ``moment`` attributes
 - Manipulator: added ``wrench``, ``force`` and ``moment`` attributes
+- Body: added ``pos``, ``rotation_matrix`` and ``transform`` aliases
 
 ### Fixed
 
