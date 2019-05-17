@@ -106,7 +106,7 @@ class Contact(Box):
     @property
     def force(self):
         """
-        Resultant of contact forces, if defined.
+        Resultant of contact forces in the contact frame (if defined).
         """
         if self.wrench is None:
             return None
@@ -115,7 +115,7 @@ class Contact(Box):
     @property
     def moment(self):
         """
-        Moment of contact forces, if defined.
+        Moment of contact forces in the contact frame (if defined).
         """
         if self.wrench is None:
             return None

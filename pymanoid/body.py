@@ -511,7 +511,8 @@ class Manipulator(Body):
     @property
     def force(self):
         """
-        Resultant of contact forces applied on the effector, if defined.
+        Resultant of contact forces applied on the effector (if defined).
+        Coordinates are given in the end-effector frame.
         """
         if self.wrench is None:
             return None
@@ -527,7 +528,8 @@ class Manipulator(Body):
     @property
     def moment(self):
         """
-        Moment of contact forces applied on the effector, if defined.
+        Moment of contact forces applied on the effector (if defined).
+        Coordinates are given in the end-effector frame.
         """
         if self.wrench is None:
             return None
