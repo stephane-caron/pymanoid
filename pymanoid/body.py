@@ -497,6 +497,7 @@ class Manipulator(Body):
         self.end_effector = manipulator.GetEndEffector()
         self.friction = friction
         self.shape = shape
+        self.wrench = None
 
     def get_contact(self, pos=None, color='r'):
         from contact import Contact
@@ -508,11 +509,29 @@ class Manipulator(Body):
             link=self)
 
     @property
+    def force(self):
+        """
+        Resultant of contact forces applied on the effector, if defined.
+        """
+        if self.wrench is None:
+            return None
+        return self.wrench[0:3]
+
+    @property
     def index(self):
         """
         Index used in Jacobian and Hessian computations.
         """
         return self.end_effector.GetIndex()
+
+    @property
+    def moment(self):
+        """
+        Moment of contact forces applied on the effector, if defined.
+        """
+        if self.wrench is None:
+            return None
+        return self.wrench[3:6]
 
 
 class Box(Body):

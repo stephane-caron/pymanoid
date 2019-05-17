@@ -32,8 +32,8 @@ import pymanoid
 
 from pymanoid.body import PointMass
 from pymanoid.contact import Contact
+from pymanoid.gui import RobotWrenchDrawer
 from pymanoid.gui import TrajectoryDrawer
-from pymanoid.gui import PointMassWrenchDrawer
 from pymanoid.mpc import LinearPredictiveControl
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
@@ -313,11 +313,12 @@ if __name__ == "__main__":
 
     sim.schedule(fsm)
     sim.schedule(robot.ik, log_comp_times=True)
+    sim.schedule(robot.wrench_distributor, log_comp_times=True)
 
     com_traj_drawer = TrajectoryDrawer(robot.stance.com, 'b-')
     lf_traj_drawer = TrajectoryDrawer(robot.left_foot, 'g-')
     rf_traj_drawer = TrajectoryDrawer(robot.right_foot, 'r-')
-    wrench_drawer = PointMassWrenchDrawer(stance.com, stance)
+    wrench_drawer = RobotWrenchDrawer(robot)
 
     sim.schedule_extra(com_traj_drawer)
     sim.schedule_extra(lf_traj_drawer)

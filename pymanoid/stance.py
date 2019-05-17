@@ -23,12 +23,14 @@ import simplejson
 from numpy import array, cross, dot, eye, hstack, vstack, zeros
 from scipy.linalg import block_diag
 from scipy.spatial.qhull import QhullError
+from time import time
 
 from .body import PointMass
 from .contact import Contact, ContactSet
+from .misc import norm
 from .pypoman import compute_polygon_hull, compute_polytope_halfspaces
 from .pypoman import project_polytope
-from .misc import norm
+from .sim import Process
 from .sim import gravity
 from .tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 
@@ -160,6 +162,7 @@ class Stance(ContactSet):
         for task in tasks:
             robot.ik.add(task)
         robot.stance = self
+        robot.wrench_distributor = StanceWrenchDistributor(robot.stance)
         self.robot = robot
 
     @property
@@ -412,3 +415,33 @@ class Stance(ContactSet):
         if self.__dict__[effector_name] is not None:
             raise Exception("Stance's %s already in contact" % effector_name)
         self.__dict__[effector_name] = effector
+
+
+class StanceWrenchDistributor(Process):
+
+    def __init__(self, stance):
+        self.last_bkgnd_switch = None
+        self.nb_fails = 0
+        self.stance = stance
+        super(StanceWrenchDistributor, self).__init__()
+
+    def on_tick(self, sim):
+        mass = self.stance.com.mass
+        p = self.stance.com.p
+        pdd = self.stance.com.pdd
+        wrench = hstack([mass * (pdd - sim.gravity), zeros(3)])
+        try:
+            support = self.stance.find_supporting_wrenches(wrench, p)
+            d = {sup[0].name: sup[1] for sup in support}
+            for contact in self.stance.contacts:
+                contact.link.wrench = d[contact.name]
+                contact.wrench = d[contact.name]
+        except ValueError:
+            self.nb_fails += 1
+            sim.viewer.SetBkgndColor([.8, .4, .4])
+            self.last_bkgnd_switch = time()
+        if self.last_bkgnd_switch is not None \
+                and time() - self.last_bkgnd_switch > 0.2:
+            # let's keep epilepsy at bay
+            sim.viewer.SetBkgndColor([1., 1., 1.])
+            self.last_bkgnd_switch = None

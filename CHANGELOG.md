@@ -4,9 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- New ``StanceWrenchDistributor`` class to distribute contact wrenches of a stance
+- Robot: binding a stance now creates a ``robot.wrench_distributor`` process
+- Updated ``RobotWrenchDrawer`` to fetch results from the stance wrench distributor
+- Contact: added ``wrench``, ``force`` and ``moment`` attributes
+- Manipulator: added ``wrench``, ``force`` and ``moment`` attributes
+
 ### Fixed
 
 - Video recording and conversion script
+
+### Changed
+
+- ``RobotWrenchDrawer`` became ``RobotDiscWrenchDrawer`` (discrete velocity differentiation)
 
 ## [1.1.0] - 2019/04/30
 

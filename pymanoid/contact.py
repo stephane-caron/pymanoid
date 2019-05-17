@@ -68,6 +68,7 @@ class Contact(Box):
         self.link = link
         self.max_pressure = None
         self.shape = shape
+        self.wrench = None
 
     def copy(self, color=None, link=None, hide=False):
         """
@@ -101,6 +102,24 @@ class Contact(Box):
             'rpy': list(self.rpy),
             'shape': list(self.shape),
         }
+
+    @property
+    def force(self):
+        """
+        Resultant of contact forces, if defined.
+        """
+        if self.wrench is None:
+            return None
+        return self.wrench[0:3]
+
+    @property
+    def moment(self):
+        """
+        Moment of contact forces, if defined.
+        """
+        if self.wrench is None:
+            return None
+        return self.wrench[3:6]
 
     @property
     def force_inequalities(self):

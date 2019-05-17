@@ -551,7 +551,7 @@ class WrenchDrawer(Process):
         try:
             support = self.find_supporting_wrenches(sim)
             self.handles = [
-                draw_wrench(contact, w_c) for (contact, w_c) in support]
+                draw_wrench(contact, wrench) for (contact, wrench) in support]
         except ValueError:
             self.handles = []
             self.nb_fails += 1
@@ -597,10 +597,23 @@ class PointMassWrenchDrawer(WrenchDrawer):
         super(PointMassWrenchDrawer, self).on_tick(sim)
 
 
-class RobotWrenchDrawer(WrenchDrawer):
+class RobotWrenchDrawer(Process):
+
+    def __init__(self, robot):
+        self.robot = robot
+        self.handles = []
+        super(RobotWrenchDrawer, self).__init__()
+
+    def on_tick(self, sim):
+        contacts = self.robot.stance.contacts
+        self.handles = [draw_wrench(c, c.wrench) for c in contacts]
+
+
+class RobotDiscWrenchDrawer(WrenchDrawer):
 
     """
-    Draw contact wrenches applied to a humanoid in multi-contact.
+    Draw contact wrenches applied to the robot using the discrete differential
+    of its joint velocities.
 
     Parameters
     ----------
