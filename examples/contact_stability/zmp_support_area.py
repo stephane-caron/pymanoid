@@ -119,7 +119,7 @@ class StaticWrenchDrawer(PointMassWrenchDrawer):
 
     def __init__(self, stance):
         super(StaticWrenchDrawer, self).__init__(stance.com, stance)
-        stance.com.pdd = zeros((3,))
+        stance.com.set_accel(zeros((3,)))
         self.stance = stance
 
     def find_supporting_wrenches(self, sim):
