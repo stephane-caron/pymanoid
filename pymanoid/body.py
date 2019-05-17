@@ -20,7 +20,7 @@
 
 import openravepy
 
-from numpy import array, dot, ndarray, zeros
+from numpy import array, dot, eye, hstack, ndarray, vstack, zeros
 
 from .misc import matplotlib_to_rgb, norm
 from .sim import get_openrave_env
@@ -502,6 +502,26 @@ class Body(object):
         if isinstance(point, ndarray):
             return norm(point - self.p)
         return norm(point.p - self.p)
+
+    @property
+    def adjoint_matrix(self):
+        """
+        Adjoint matrix converting wrenches in the local frame :math:`\\cal L`
+        to the inertial frame :math:`\\cal W`, that is the matrix
+        :math:`{}^{\\cal W}A_{\\cal L}` such that:
+
+        .. math::
+
+            {}^{\\cal W}w = {}^{\\cal W}A_{\\cal L} {}^{\\cal L} w
+
+        Returns
+        -------
+        A : array
+            Adjoint matrix.
+        """
+        return vstack([
+            hstack([self.R, eye(3)]),
+            hstack([dot(crossmat(self.p), self.R), self.R])])
 
 
 class Manipulator(Body):

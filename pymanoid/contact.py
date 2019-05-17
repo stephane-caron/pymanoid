@@ -342,6 +342,15 @@ class Contact(Box):
             dot(vstack([eye(3), crossmat(v - self.p)]), self.force_span)
             for v in self.vertices])
 
+    @property
+    def world_wrench(self):
+        """
+        Contact wrench in the world (inertial) frame.
+        """
+        if self.wrench is None:
+            return None
+        return dot(self.adjoint_matrix, self.wrench)
+
 
 class ContactSet(object):
 

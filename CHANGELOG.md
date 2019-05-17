@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Contact: added ``wrench``, ``force`` and ``moment`` attributes
 - Manipulator: added ``wrench``, ``force`` and ``moment`` attributes
 - Body: added ``pos``, ``rotation_matrix`` and ``transform`` aliases
+- Body: compute the adjoint matrix in ``body.adjoint_matrix``
 
 ### Fixed
 
