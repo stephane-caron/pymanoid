@@ -78,6 +78,7 @@ class Robot(object):
         self.stance = None
         self.tau_max = None  # set by hand in child robot class
         self.transparency = 0.  # initially opaque
+        self.wrench_distributor = None  # created upon stance.bind(robot)
         #
         self.ik = IKSolver(self)
 
