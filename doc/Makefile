@@ -49,6 +49,10 @@ linkcheck:
 pdfopen: latexpdf
 	zathura $(BUILDDIR)/latex/$(PDFFILE)
 
+.PHONY: open
+open:
+	firefox $(BUILDDIR)/html/index.html
+
 .PHONY: upload
 upload: html latexpdf
 	cp $(BUILDDIR)/latex/$(PDFFILE) $(BUILDDIR)/html/$(PDFFILE)

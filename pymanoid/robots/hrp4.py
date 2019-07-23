@@ -31,7 +31,7 @@ class HRP4(Humanoid):
     HRP-4 (HRP4R) humanoid robot.
 
     This file includes information that is publicly released in
-    <http://doai.io/10.1109/IROS.2011.6094465> or over the Web for the total
+    <https://doi.org/10.1109/IROS.2011.6094465> or over the Web for the total
     mass and kinematic chain. Other information is read from the COLLADA model.
     """
 
