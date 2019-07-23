@@ -78,7 +78,9 @@ class Stance(ContactSet):
             Path to the JSON file.
         """
         def cfd(contact_dict):
-            keys = ['shape', 'friction', 'pos', 'rpy']
+            keys = ['shape', 'friction']
+            pose_keys = ['rpy', 'quat', 'pos', 'pose']
+            keys.extend([k for k in pose_keys if k in contact_dict])
             return Contact(**{k: contact_dict[k] for k in keys})
         with open(path, 'r') as fp:
             d = simplejson.load(fp)
