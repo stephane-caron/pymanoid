@@ -40,10 +40,12 @@ them are adapted from the comprehensive guide [Diebel06]_.
 """
 
 from math import asin, atan2, cos, sin
-from numpy import array, dot, eye, hstack, zeros
+from numpy import array, cross, dot, eye, hstack, zeros
 from openravepy import quatFromRotationMatrix as __quatFromRotationMatrix
 from openravepy import rotationMatrixFromQuat as __rotationMatrixFromQuat
 from openravepy import axisAngleFromQuat as axis_angle_from_quat
+
+from .misc import norm
 
 
 def apply_transform(T, p):
@@ -100,6 +102,120 @@ def crossmat(x):
         [0., -x[2], x[1]],
         [x[2], 0., -x[0]],
         [-x[1], x[0], 0.]])
+
+
+def integrate_angular_acceleration(R, omega, omegad, dt):
+    """
+    Integrate constant angular acceleration :math:`\\dot{\\omega}` for a
+    duration `dt` starting from the orientation :math:`R` and angular velocity
+    :math:`\\omega`.
+
+    Parameters
+    ----------
+    R : (3, 3) array
+        Rotation matrix.
+    omega : (3,) array
+        Initial angular velocity.
+    omegad : (3,) array
+        Constant angular acceleration.
+    dt : scalar
+        Duration.
+
+    Returns
+    -------
+    Ri : (3, 3) array
+        Rotation matrix after integration.
+
+    Notes
+    -----
+    This function applies `Rodrigues' rotation formula
+    <https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula>`_. See also
+    the following nice post on `integrating rotations
+    <https://cwzx.wordpress.com/2013/12/16/numerical-integration-for-rotational-dynamics/>`_.
+    """
+    Omega = magnus_expansion(omega, omegad, dt)
+    theta = norm(Omega)
+    if theta < 1e-5:
+        return eye(3)
+    K = crossmat(Omega / theta)
+    exp_Omega = eye(3) + sin(theta) * K + (1. - cos(theta)) * dot(K, K)
+    return dot(exp_Omega, R)
+
+
+def integrate_body_acceleration(T, v, a, dt):
+    """
+    Integrate constant body acceleration :math:`a` for a duration `dt` starting
+    from the affine transform :math:`T` and body velocity :math:`v`.
+
+    Parameters
+    ----------
+    T : (4, 4) array
+        Affine transform of the rigid body.
+    v : (3,) array
+        Initial body velocity of the rigid body.
+    a : (3,) array
+        Constant body acceleration.
+    dt : scalar
+        Duration.
+
+    Returns
+    -------
+    T_f : (3, 3) array
+        Affine transform after integration.
+
+    Notes
+    -----
+    With full frame notations, the affine transform :math:`T = {}^W T_B` maps
+    vectors from the rigid body frame :math:`B` to the inertial frame
+    :math:`W`. Its body velocity :math:`v = \\begin{bmatrix} v_B & \\omega
+    \\end{bmatrix}` is a twist in the inertial frame, with coordinates taken at
+    the origin of :math:`B`. The same goes for its body acceleration :math:`a =
+    \\begin{bmatrix} a_B & \\dot{\\omega} \\end{bmatrix}`.
+    """
+    R = T[0:3, 0:3]
+    p = T[0:3, 3]
+    omega = v[3:6]
+    omegad = a[3:6]
+    R_f = integrate_angular_acceleration(R, omega, omegad, dt)
+    v_f = v + a * dt
+    p_f = p + v_f[0:3] * dt  # semi-implicit Euler integration
+    T_f = eye(4)
+    T_f[0:3, 0:3] = R_f
+    T_f[0:3, 3] = p_f
+    return T_f
+
+
+def magnus_expansion(omega, omegad, dt):
+    """
+    Compute the integral :math:`\\Omega` obtained by integrating
+    :math:`\\dot{\\omega}` for a duration `dt` starting from :math:`\\omega`.
+
+    Parameters
+    ----------
+    omega : (3,) array
+        Initial angular velocity.
+    omegad : (3,) array
+        Constant angular acceleration.
+    dt : scalar
+        Duration.
+
+    Returns
+    -------
+    Omega : (3,) array
+        Integral of ``omegad`` for ``dt`` starting from ``omega``.
+
+    Notes
+    -----
+    This function only computes the first three terms of the Magnus expansion.
+    See <https://github.com/jrl-umi3218/RBDyn/pull/66/files> if you need a more
+    advanced version.
+    """
+    dt_sq = dt * dt
+    omega1 = omega + omegad * dt
+    Omega1 = (omega + omega1) * dt / 2.
+    Omega2 = cross(omega1, omega) * dt_sq / 12.
+    Omega3 = cross(omegad, Omega2) * dt_sq / 20.
+    return Omega1 + Omega2 + Omega3
 
 
 def quat_from_rotation_matrix(R):
@@ -319,6 +435,9 @@ __all__ = [
     'apply_transform',
     'axis_angle_from_quat',
     'crossmat',
+    'integrate_angular_acceleration',
+    'integrate_body_acceleration',
+    'magnus_expansion',
     'pose_from_transform',
     'quat_from_rotation_matrix',
     'quat_from_rpy',
