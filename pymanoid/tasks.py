@@ -51,14 +51,6 @@ class Task(object):
         self.gain = gain
         self.weight = weight
 
-    @property
-    def stiffness(self):
-        """
-        Compatibility field for cohabitation with `Tasks
-        <https://github.com/jrl-umi3218/Tasks>`_.
-        """
-        return self.gain
-
     def cost(self, dt):
         """
         Compute the weighted norm of the task residual.
