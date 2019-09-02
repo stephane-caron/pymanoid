@@ -61,7 +61,7 @@ class InvertedPendulum(Process):
         self.draw_parabola = False
         self.handle = None
         self.is_visible = visible
-        self.lambda_ = 9.81 * (com.z - contact.z)
+        self.lambda_ = -gravity[2] / (com.z - contact.z)
         self.lambda_max = lambda_max
         self.lambda_min = lambda_min
 
