@@ -107,7 +107,7 @@ class InvertedPendulum(Process):
         """
         self.contact = contact
 
-    def set_cop(self, cop):
+    def set_cop(self, cop, clamp=False):
         """
         Update the CoP location on the contact surface.
 
@@ -115,6 +115,8 @@ class InvertedPendulum(Process):
         ----------
         cop : (3,) array
             New CoP location in the world frame.
+        clamp : bool, optional
+            Clamp CoP within the contact area if it lies outside.
         """
         if self.check_cop:
             cop_check = dot(self.contact.R.T, cop - self.contact.p)
@@ -124,6 +126,17 @@ class InvertedPendulum(Process):
                 warn("CoP crosses contact area along lateral axis")
             if abs(cop_check[2]) > 0.01:
                 warn("CoP does not lie on contact area")
+        if clamp:
+            cop_local = dot(self.contact.R.T, cop - self.contact.p)
+            if cop_local[0] >= self.contact.shape[0]:
+                cop_local[0] = self.contact.shape[0] - 1e-5
+            if cop_local[0] <= -self.contact.shape[0]:
+                cop_local[0] = -self.contact.shape[0] + 1e-5
+            if cop_local[1] >= self.contact.shape[1]:
+                cop_local[1] = self.contact.shape[1] - 1e-5
+            if cop_local[1] <= -self.contact.shape[1]:
+                cop_local[1] = -self.contact.shape[1] + 1e-5
+            cop = self.contact.p + dot(self.contact.R, cop_local)
         self.cop = cop
 
     def set_lambda(self, lambda_):
