@@ -1,5 +1,10 @@
 # Examples
 
+## Pendulum stabilization
+
+This example implements a basic stabilizer for the inverted pendulum model
+based on proportional feedback of the divergent component of motion.
+
 ## Inverse kinematics
 
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
