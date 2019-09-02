@@ -50,20 +50,21 @@ class InvertedPendulum(Process):
     def __init__(self, pos, vel, contact, lambda_min=None, lambda_max=None,
                  visible=True):
         super(InvertedPendulum, self).__init__()
-        com = Point(pos, vel)
-        if not visible:
-            com.hide()
+        com = Point(pos, vel, size=0.02)
         self.check_cop = __debug__
         self.check_lambda = __debug__
         self.com = com
         self.contact = contact
         self.cop = contact.p
-        self.draw_parabola = False
         self.handle = None
         self.is_visible = visible
         self.lambda_ = -gravity[2] / (com.z - contact.z)
         self.lambda_max = lambda_max
         self.lambda_min = lambda_min
+        if visible:
+            self.show()
+        else:  # not visible
+            self.hide()
 
     def copy(self, visible=True):
         """
@@ -77,12 +78,23 @@ class InvertedPendulum(Process):
         return InvertedPendulum(
             self.com.p, self.com.pd, self.contact, visible=visible)
 
+    def draw(self):
+        """Draw inverted pendulum."""
+        self.handle = draw_line(
+            self.com.p, self.cop, linewidth=4, color='g')
+
     def hide(self):
-        """Hide the pendulum in the GUI."""
+        """Hide pendulum from the GUI."""
         self.com.hide()
         if self.handle is not None:
             self.handle.Close()
         self.is_visible = False
+
+    def show(self):
+        """Show pendulum in the GUI."""
+        self.com.show()
+        self.draw()
+        self.is_visible = True
 
     def set_contact(self, contact):
         """
@@ -160,5 +172,4 @@ class InvertedPendulum(Process):
         """
         self.integrate(sim.dt)
         if self.is_visible:
-            self.handle = draw_line(
-                self.com.p, self.cop, linewidth=4, color='g')
+            self.draw()
