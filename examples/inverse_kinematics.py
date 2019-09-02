@@ -18,6 +18,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+This example uses inverse kinematics (IK) to achieve a set of whole-body tasks.
+It contains two equivalent implementations of the IK solver setup. The former
+is best for beginners as it uses the simpler ``Stance`` interface. The latter
+is for more advanced users and shows how to add individual tasks one by one.
+
+The example loads the JVRC-1 humanoid model, then generates a posture where the
+robot has both feet on pre-defined contact locations. The robot tracks a
+reference COM position given by the red box, which you can move around directly
+by using the interaction mode of the OpenRAVE GUI.
+"""
+
 import IPython
 import numpy
 import random

@@ -6,12 +6,12 @@
 
 The [inverse\_kinematics.py](inverse_kinematics.py) script shows how to use
 [inverse kinematics (IK)](https://scaron.info/teaching/inverse-kinematics.html)
-to achieve a given posture. It contains two equivalent implementations of the
-IK solver setup. The former is best for beginners as it uses the simpler
-``Stance`` interface. The latter is for more advanced users and shows how to
-add individual tasks one by one.
+to achieve a set of whole-body tasks. It contains two equivalent
+implementations of the IK solver setup. The former is best for beginners as it
+uses the simpler ``Stance`` interface. The latter is for more advanced users
+and shows how to add individual tasks one by one.
 
-The example loads (and downloads, if necessary) the
+The example loads the
 [JVRC-1](https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1)
 humanoid model, then generates a posture where the robot has both feet on
 pre-defined contact locations. The robot tracks a reference COM position given
