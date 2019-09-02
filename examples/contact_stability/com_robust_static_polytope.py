@@ -177,7 +177,7 @@ if __name__ == "__main__":
         [0.,  0.,  0.,  1.]])
     robot.set_transparency(0.25)
 
-    stance = Stance.from_json('../stances/double.json')
+    stance = Stance.from_json('stances/double.json')
     stance.bind(robot)
     robot.ik.solve()
 
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     sim.schedule_extra(wrench_drawer)
     sim.start()
 
-    print """
+    print("""
 COM robust static-equilibrium polygon
 =====================================
 
@@ -199,7 +199,7 @@ Sample contact wrenches are displayed at each contact (green dot is COP
 location, arrow is resultant force).
 
 Enjoy :)
-"""
+""")
 
     if IPython.get_ipython() is None:
         IPython.embed()

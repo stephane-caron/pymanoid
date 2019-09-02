@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    stance = Stance.from_json('../stances/double.json')
+    stance = Stance.from_json('stances/double.json')
     stance.bind(robot)
     robot.ik.solve()
 

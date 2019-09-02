@@ -134,7 +134,7 @@ if __name__ == "__main__":
     z_polygon = 2.  # [m], height where to draw CoM polygon
     com_above = pymanoid.Cube(0.02, [0.05, 0.04, z_polygon], color='b')
 
-    stance = pymanoid.Stance.from_json('../stances/double.json')
+    stance = pymanoid.Stance.from_json('stances/double.json')
     stance.com.hide()
     stance.bind(robot)
     robot.ik.solve()
