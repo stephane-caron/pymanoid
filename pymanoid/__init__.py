@@ -38,6 +38,7 @@ from .sim import Simulation
 from .stance import Stance
 from .swing_foot import SwingFoot
 
+import models
 import robots
 
 __all__ = [
@@ -60,6 +61,7 @@ __all__ = [
     'SwingFoot',
     'error',
     'info',
+    'models',
     'robots',
     'warn',
 ]
