@@ -118,14 +118,6 @@ class InvertedPendulum(Process):
         clamp : bool, optional
             Clamp CoP within the contact area if it lies outside.
         """
-        if self.check_cop:
-            cop_check = dot(self.contact.R.T, cop - self.contact.p)
-            if abs(cop_check[0]) > 1.05 * self.contact.shape[0]:
-                warn("CoP crosses contact area along sagittal axis")
-            if abs(cop_check[1]) > 1.05 * self.contact.shape[1]:
-                warn("CoP crosses contact area along lateral axis")
-            if abs(cop_check[2]) > 0.01:
-                warn("CoP does not lie on contact area")
         if clamp:
             cop_local = dot(self.contact.R.T, cop - self.contact.p)
             if cop_local[0] >= self.contact.shape[0]:
@@ -137,6 +129,14 @@ class InvertedPendulum(Process):
             if cop_local[1] <= -self.contact.shape[1]:
                 cop_local[1] = -self.contact.shape[1] + 1e-5
             cop = self.contact.p + dot(self.contact.R, cop_local)
+        elif self.check_cop:
+            cop_check = dot(self.contact.R.T, cop - self.contact.p)
+            if abs(cop_check[0]) > 1.05 * self.contact.shape[0]:
+                warn("CoP crosses contact area along sagittal axis")
+            if abs(cop_check[1]) > 1.05 * self.contact.shape[1]:
+                warn("CoP crosses contact area along lateral axis")
+            if abs(cop_check[2]) > 0.01:
+                warn("CoP does not lie on contact area")
         self.cop = cop
 
     def set_lambda(self, lambda_):
