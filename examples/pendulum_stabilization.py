@@ -88,7 +88,7 @@ class Pusher(pymanoid.Process):
     Parameters
     ----------
     pendulum : pymanoid.models.InvertedPendulum
-        Inverted pendulum to de-stabilizer.
+        Inverted pendulum to de-stabilize.
     gain : scalar
         Magnitude of velocity jumps.
 

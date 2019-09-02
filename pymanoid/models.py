@@ -45,16 +45,21 @@ class InvertedPendulum(Process):
         Maximum virtual leg stiffness.
     visible : bool, optional
         Draw the pendulum model in GUI?
+    color : char, optional
+        Color code in matplotlib convention ('r' for red, 'b' for blue, etc.).
+    size : scalar, optional
+        Half-length of a side of the CoM cube handle, in [m].
     """
 
     def __init__(self, pos, vel, contact, lambda_min=None, lambda_max=None,
-                 visible=True):
+                 visible=True, color='g', size=0.02):
         super(InvertedPendulum, self).__init__()
-        com = Point(pos, vel, size=0.02)
+        com = Point(pos, vel, size=size, color=color)
         self.check_cop = __debug__
         self.check_lambda = __debug__
         self.com = com
         self.contact = contact
+        self.color = color
         self.cop = contact.p
         self.handle = None
         self.is_visible = visible
@@ -81,7 +86,7 @@ class InvertedPendulum(Process):
     def draw(self):
         """Draw inverted pendulum."""
         self.handle = draw_line(
-            self.com.p, self.cop, linewidth=4, color='g')
+            self.com.p, self.cop, linewidth=4, color=self.color)
 
     def hide(self):
         """Hide pendulum from the GUI."""
