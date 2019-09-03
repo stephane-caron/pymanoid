@@ -30,7 +30,7 @@ from numpy import dot
 
 import pymanoid
 
-from pymanoid.gui import draw_arrow
+from pymanoid.gui import draw_arrow, draw_point
 from pymanoid.misc import norm
 
 
@@ -50,12 +50,30 @@ class Stabilizer(pymanoid.Process):
     def __init__(self, pendulum, gain=2.):
         super(Stabilizer, self).__init__()
         assert gain > 1., "DCM feedback gain needs to be greater than one"
-        self.gain = gain
         self.desired_dcm = pendulum.com.p
         self.desired_vrp = pendulum.com.p
+        self.gain = gain
+        self.handles = None
         self.omega = numpy.sqrt(pendulum.lambda_)
         self.omega2 = self.omega ** 2
         self.pendulum = pendulum
+
+    def draw(self, dcm, cop):
+        """
+        Draw extra points to illustrate stabilizer behavior.
+
+        Parameters
+        ----------
+        dcm : (3,) array
+            Divergent component of motion.
+        cop : (3,) array
+            Center of pressure.
+        """
+        n = self.pendulum.contact.n
+        dcm_ground = dcm - dot(n, dcm) * n
+        self.handles = [
+            draw_point(dcm_ground, color='b'),
+            draw_point(cop, color='g')]
 
     def on_tick(self, sim):
         """
@@ -78,6 +96,7 @@ class Stabilizer(pymanoid.Process):
         cop = com - gravito_inertial_force / lambda_
         self.pendulum.set_cop(cop, clamp=True)
         self.pendulum.set_lambda(lambda_)
+        self.draw(dcm, cop)
 
 
 class Pusher(pymanoid.Process):

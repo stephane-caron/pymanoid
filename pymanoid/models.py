@@ -52,7 +52,7 @@ class InvertedPendulum(Process):
     """
 
     def __init__(self, pos, vel, contact, lambda_min=None, lambda_max=None,
-                 visible=True, color='g', size=0.02):
+                 visible=True, color='b', size=0.02):
         super(InvertedPendulum, self).__init__()
         com = Point(pos, vel, size=size, color=color)
         self.check_cop = __debug__
