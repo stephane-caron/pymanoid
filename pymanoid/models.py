@@ -55,8 +55,6 @@ class InvertedPendulum(Process):
                  visible=True, color='b', size=0.02):
         super(InvertedPendulum, self).__init__()
         com = Point(pos, vel, size=size, color=color)
-        self.check_cop = __debug__
-        self.check_lambda = __debug__
         self.com = com
         self.contact = contact
         self.color = color
@@ -112,7 +110,7 @@ class InvertedPendulum(Process):
         """
         self.contact = contact
 
-    def set_cop(self, cop, clamp=False):
+    def set_cop(self, cop, clamp=True):
         """
         Update the CoP location on the contact surface.
 
@@ -127,14 +125,14 @@ class InvertedPendulum(Process):
             cop_local = dot(self.contact.R.T, cop - self.contact.p)
             if cop_local[0] >= self.contact.shape[0]:
                 cop_local[0] = self.contact.shape[0] - 1e-5
-            if cop_local[0] <= -self.contact.shape[0]:
+            elif cop_local[0] <= -self.contact.shape[0]:
                 cop_local[0] = -self.contact.shape[0] + 1e-5
             if cop_local[1] >= self.contact.shape[1]:
                 cop_local[1] = self.contact.shape[1] - 1e-5
-            if cop_local[1] <= -self.contact.shape[1]:
+            elif cop_local[1] <= -self.contact.shape[1]:
                 cop_local[1] = -self.contact.shape[1] + 1e-5
             cop = self.contact.p + dot(self.contact.R, cop_local)
-        elif self.check_cop:
+        elif __debug__:
             cop_check = dot(self.contact.R.T, cop - self.contact.p)
             if abs(cop_check[0]) > 1.05 * self.contact.shape[0]:
                 warn("CoP crosses contact area along sagittal axis")
@@ -144,7 +142,7 @@ class InvertedPendulum(Process):
                 warn("CoP does not lie on contact area")
         self.cop = cop
 
-    def set_lambda(self, lambda_):
+    def set_lambda(self, lambda_, clamp=True):
         """
         Update the leg stiffness coefficient.
 
@@ -152,8 +150,15 @@ class InvertedPendulum(Process):
         ----------
         lambda_ : scalar
             Leg stiffness coefficient (positive).
+        clamp : bool, optional
+            Clamp value if it exits the [lambda_min, lambda_max] interval.
         """
-        if self.check_lambda:
+        if clamp:
+            if self.lambda_min is not None and lambda_ < self.lambda_min:
+                lambda_ = self.lambda_min
+            if self.lambda_max is not None and lambda_ > self.lambda_max:
+                lambda_ = self.lambda_max
+        elif __debug__:
             if self.lambda_min is not None and lambda_ < self.lambda_min:
                 warn("Stiffness %f below %f" % (lambda_, self.lambda_min))
             if self.lambda_max is not None and lambda_ > self.lambda_max:
