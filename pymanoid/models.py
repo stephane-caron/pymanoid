@@ -51,7 +51,7 @@ class InvertedPendulum(Process):
         Half-length of a side of the CoM cube handle, in [m].
     """
 
-    def __init__(self, pos, vel, contact, lambda_min=None, lambda_max=None,
+    def __init__(self, pos, vel, contact, lambda_min=1e-5, lambda_max=None,
                  visible=True, color='b', size=0.02):
         super(InvertedPendulum, self).__init__()
         com = Point(pos, vel, size=size, color=color)
