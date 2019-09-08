@@ -821,10 +821,14 @@ class PointMass(Point):
         Color letter in ['r', 'g', 'b'].
     visible : bool, optional
         Visibility in the GUI.
+    size : scalar, optional
+        Half-length of a side of the CoM cube handle, in [m].
     """
 
-    def __init__(self, pos, mass, vel=None, color='r', visible=True):
-        size = max(5e-3, 6e-4 * mass)
+    def __init__(self, pos, mass, vel=None, color='r', visible=True,
+                 size=None):
+        if size is None:
+            size = max(5e-3, 6e-4 * mass)
         super(PointMass, self).__init__(
             pos, vel=vel, size=size, color=color, visible=visible)
         self.mass = mass
