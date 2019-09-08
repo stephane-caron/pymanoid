@@ -264,6 +264,11 @@ class Body(object):
         return self.T[0:3, 2]
 
     @property
+    def normal(self):
+        """Normal vector directing the `z`-axis of the body frame."""
+        return self.T[0:3, 2]
+
+    @property
     def quat(self):
         """Quaternion of the rigid body orientation."""
         return self.pose[0:4]
