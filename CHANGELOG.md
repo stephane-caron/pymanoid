@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 
 - ``RobotWrenchDrawer`` became ``RobotDiscWrenchDrawer`` (discrete velocity differentiation)
 - InvertedPendulum: clamping is now the default behavior for ``set_cop`` and ``set_lambda``
+- InvertedPendulum: clamping is enabled/disabled by ``self.clamp``
 
 ## [1.1.0] - 2019/04/30
 

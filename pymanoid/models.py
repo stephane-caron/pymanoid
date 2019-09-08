@@ -43,6 +43,8 @@ class InvertedPendulum(Process):
         Minimum virtual leg stiffness.
     lambda_max : scalar
         Maximum virtual leg stiffness.
+    clamp : bool, optional
+        Clamp inputs (e.g. CoP) if they exceed constraints (e.g. support area)?
     visible : bool, optional
         Draw the pendulum model in GUI?
     color : char, optional
@@ -52,12 +54,13 @@ class InvertedPendulum(Process):
     """
 
     def __init__(self, pos, vel, contact, lambda_min=1e-5, lambda_max=None,
-                 visible=True, color='b', size=0.02):
+                 clamp=True, visible=True, color='b', size=0.02):
         super(InvertedPendulum, self).__init__()
         com = Point(pos, vel, size=size, color=color)
+        self.clamp = clamp
+        self.color = color
         self.com = com
         self.contact = contact
-        self.color = color
         self.cop = contact.p
         self.handle = None
         self.is_visible = visible
@@ -110,7 +113,7 @@ class InvertedPendulum(Process):
         """
         self.contact = contact
 
-    def set_cop(self, cop, clamp=True):
+    def set_cop(self, cop, clamp=None):
         """
         Update the CoP location on the contact surface.
 
@@ -119,9 +122,10 @@ class InvertedPendulum(Process):
         cop : (3,) array
             New CoP location in the world frame.
         clamp : bool, optional
-            Clamp CoP within the contact area if it lies outside.
+            Clamp CoP within the contact area if it lies outside. Overrides
+            ``self.clamp``.
         """
-        if clamp:
+        if (self.clamp if clamp is None else clamp):
             cop_local = dot(self.contact.R.T, cop - self.contact.p)
             if cop_local[0] >= self.contact.shape[0]:
                 cop_local[0] = self.contact.shape[0] - 1e-5
@@ -142,7 +146,7 @@ class InvertedPendulum(Process):
                 warn("CoP does not lie on contact area")
         self.cop = cop
 
-    def set_lambda(self, lambda_, clamp=True):
+    def set_lambda(self, lambda_, clamp=None):
         """
         Update the leg stiffness coefficient.
 
@@ -152,8 +156,9 @@ class InvertedPendulum(Process):
             Leg stiffness coefficient (positive).
         clamp : bool, optional
             Clamp value if it exits the [lambda_min, lambda_max] interval.
+            Overrides ``self.clamp``.
         """
-        if clamp:
+        if (self.clamp if clamp is None else clamp):
             if self.lambda_min is not None and lambda_ < self.lambda_min:
                 lambda_ = self.lambda_min
             if self.lambda_max is not None and lambda_ > self.lambda_max:
