@@ -1,6 +1,6 @@
 # Examples
 
-## Pendulum stabilization
+## Inverted pendulum stabilization
 
 <img align="right" src="../doc/src/images/pendulum_push.png" width="300" />
 
