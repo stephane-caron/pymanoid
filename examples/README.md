@@ -68,8 +68,8 @@ where all contacts are tilted.
 
 The environment is generated so as to make the locomotion task difficult. We
 solve it using a [multi-contact linear
-MPC](https://scaron.info/research/humanoids-2016.html) where the formulation is
-kept linear thanks to the pendular COM acceleration cone.
+MPC](https://hal.archives-ouvertes.fr/hal-01349880/document) where the
+formulation is kept linear thanks to the pendular COM acceleration cone.
 
 ## VHIP stabilization
 
