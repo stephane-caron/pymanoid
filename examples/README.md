@@ -7,6 +7,12 @@
 This example implements a basic stabilizer for the inverted pendulum model
 based on proportional feedback of the divergent component of motion.
 
+Balancing is the action of constantly compensating undesired motions of the
+center of mass by regulating interaction forces with the environment. The core
+question is: what forces should be applied in response to an undesired center
+of mass motion? This example illustrates the solution based on [feedback of the
+3D DCM](https://doi.org/10.1109/TRO.2015.2405592).
+
 ## Inverse kinematics
 
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
