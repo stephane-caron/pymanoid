@@ -33,6 +33,7 @@ import IPython
 import cvxpy
 import numpy
 import scipy.signal
+import sys
 
 from numpy import array, dot, eye, hstack, sqrt, vstack, zeros
 from qpsolvers import solve_qp
@@ -141,6 +142,13 @@ class VRPStabilizer(Stabilizer):
     pendulum : pymanoid.models.InvertedPendulum
         Inverted pendulum to stabilize.
 
+    Attributes
+    ----------
+    ref_dcm : (3,) array
+        Desired (3D) divergent component of motion.
+    ref_vrp : (3,) array
+        Desired virtual repellent point (VRP).
+
     Notes
     -----
     See "Three-Dimensional Bipedal Walking Control Based on Divergent Component
@@ -149,7 +157,6 @@ class VRPStabilizer(Stabilizer):
 
     def __init__(self, pendulum):
         super(VRPStabilizer, self).__init__(pendulum)
-        self.handles = None
         self.ref_dcm = self.ref_com
         self.ref_vrp = self.ref_com
 
@@ -176,6 +183,26 @@ class VRPStabilizer(Stabilizer):
 
 class VHIPStabilizer(Stabilizer):
 
+    """
+    Stabilizer based on proportional feedback of the 4D divergent component of
+    motion of the variable-height inverted pendulum (VHIP).
+
+    Parameters
+    ----------
+    pendulum : pymanoid.models.InvertedPendulum
+        Inverted pendulum to stabilize.
+
+    Notes
+    -----
+    This implementation uses CVXPY <https://www.cvxpy.org/>. Using this
+    modeling language here allowed us to try various formulations of the
+    controller before converging on this one. We can only praise the agility of
+    this approach, as opposed to e.g. writing QP matrices directly.
+
+    See "Biped Stabilization by Linear Feedback of the Variable-Height Inverted
+    Pendulum Model" (Caron, 2019) for detail on the controller itself.
+    """
+
     def __init__(self, pendulum):
         super(VHIPStabilizer, self).__init__(pendulum)
         r_d_contact = dot(self.contact.R.T, self.ref_cop - self.contact.p)[:2]
@@ -185,6 +212,9 @@ class VHIPStabilizer(Stabilizer):
         self.ref_vrp = self.ref_com
 
     def compute_compensation(self):
+        """
+        Compute CoP and normalized leg stiffness compensation.
+        """
         Delta_com = self.pendulum.com.p - self.ref_com
         Delta_comd = self.pendulum.com.pd - self.ref_comd
         measured_comd = self.pendulum.com.pd
@@ -241,8 +271,6 @@ class VHIPStabilizer(Stabilizer):
                 omega <= omega_max,
                 omega >= omega_min])
         prob.solve()
-        if prob.status != 'optimal':
-            print("status:", prob.status)
         Delta_lambda_opt = Delta_lambda.value
         Delta_r_opt = array(Delta_r.value).reshape((2,))
         self.omega = omega_d + Delta_omega.value
@@ -253,7 +281,28 @@ class VHIPStabilizer(Stabilizer):
 
 class VHIPQPStabilizer(VHIPStabilizer):
 
+    """
+    Stabilizer based on proportional feedback of the 4D divergent component of
+    motion of the variable-height inverted pendulum (VHIP).
+
+    Parameters
+    ----------
+    pendulum : pymanoid.models.InvertedPendulum
+        Inverted pendulum to stabilize.
+
+    Notes
+    -----
+    This implementation transcripts QP matrices from :class:`VHIPStabilizer`.
+    We checked that the two produce the same outputs before switching to C++ in
+    <https://github.com/stephane-caron/vhip_walking_controller/>. (This step
+    would not have been necessary if we had a modeling language for convex
+    optimization directly in C++.)
+    """
+
     def compute_compensation(self):
+        """
+        Compute CoP and normalized leg stiffness compensation.
+        """
         Delta_com = self.pendulum.com.p - self.ref_com
         Delta_comd = self.pendulum.com.pd - self.ref_comd
         measured_comd = self.pendulum.com.pd
@@ -638,8 +687,8 @@ if __name__ == '__main__':
 
     pendulums.append(pymanoid.models.InvertedPendulum(
         init_pos, init_vel, contact, color='b', size=0.015))
-    qp_stabilizer = VHIPQPStabilizer(pendulums[-1])
-    stabilizers.append(qp_stabilizer)
+    vhip_stabilizer = VHIPQPStabilizer(pendulums[-1])
+    stabilizers.append(vhip_stabilizer)
 
     pendulums.append(pymanoid.models.InvertedPendulum(
         init_pos, init_vel, contact, color='g', size=0.02))
@@ -647,11 +696,11 @@ if __name__ == '__main__':
     vrp_stabilizer = VRPStabilizer(pendulums[-1])
     stabilizers.append(vrp_stabilizer)
 
-    if False:  # set to True to add the BonusPolePlacementStabilizer
+    if '--bonus' in sys.argv:
         pendulums.append(pymanoid.models.InvertedPendulum(
             init_pos, init_vel, contact, color='r', size=0.015))
-        vhip_stabilizer = BonusPolePlacementStabilizer(pendulums[-1], k_z=100)
-        stabilizers.append(vhip_stabilizer)
+        bonus_stabilizer = BonusPolePlacementStabilizer(pendulums[-1], k_z=100)
+        stabilizers.append(bonus_stabilizer)
 
     pusher = Pusher(pendulums)
     plotter = Plotter(stabilizers)
