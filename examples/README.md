@@ -2,6 +2,8 @@
 
 ## Pendulum stabilization
 
+<img align="right" src="../doc/src/images/pendulum_push.png" width="300" />
+
 This example implements a basic stabilizer for the inverted pendulum model
 based on proportional feedback of the divergent component of motion.
 
