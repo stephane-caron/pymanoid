@@ -30,6 +30,7 @@ from .contact import ContactSet
 from .misc import error
 from .misc import info
 from .misc import warn
+from .models import InvertedPendulum
 from .robot import Humanoid
 from .robot import Robot
 from .sim import CameraRecorder
@@ -51,6 +52,7 @@ __all__ = [
     'Cube',
     'Humanoid',
     'Humanoid',
+    'InvertedPendulum',
     'Manipulator',
     'Point',
     'PointMass',

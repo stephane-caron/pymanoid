@@ -6,14 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- New ``StanceWrenchDistributor`` class to distribute contact wrenches of a stance
-- Robot: binding a stance now creates a ``robot.wrench_distributor`` process
-- Updated ``RobotWrenchDrawer`` to fetch results from the stance wrench distributor
-- Contact: added ``wrench``, ``force`` and ``moment`` attributes
-- Manipulator: added ``wrench``, ``force`` and ``moment`` attributes
-- Body: added ``pos``, ``rotation_matrix`` and ``transform`` aliases
+- Body: ``pos``, ``rotation_matrix`` and ``transform`` aliases
 - Body: compute the adjoint matrix in ``body.adjoint_matrix``
-- Contact: added ``contact.normal`` alias
+- Contact: ``contact.normal`` alias
+- Contact: ``wrench``, ``force`` and ``moment`` attributes
+- Example: [stabilization with height variations](https://hal.archives-ouvertes.fr/hal-02289919v1/document)
+- Manipulator: ``wrench``, ``force`` and ``moment`` attributes
+- Robot: stance binding creates a new ``robot.wrench_distributor`` process
+- StanceWrenchDistributor class to distribute contact wrenches of a stance
 
 ### Fixed
 
@@ -21,9 +21,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- ``RobotWrenchDrawer`` became ``RobotDiscWrenchDrawer`` (discrete velocity differentiation)
-- InvertedPendulum: clamping is now the default behavior for ``set_cop`` and ``set_lambda``
 - InvertedPendulum: clamping is enabled/disabled by ``self.clamp``
+- InvertedPendulum: clamping is now the default behavior for ``set_cop`` and ``set_lambda``
+- RobotWrenchDrawer became RobotDiscWrenchDrawer (discrete velocity differentiation)
+- RobotWrenchDrawer now fetches results from stance wrench distributor
 
 ## [1.1.0] - 2019/04/30
 
