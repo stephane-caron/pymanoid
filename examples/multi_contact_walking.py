@@ -25,6 +25,7 @@ mass <https://scaron.info/research/humanoids-2016.html>.
 """
 
 import IPython
+import pyclipper
 import time
 
 from numpy import arange, array, bmat, cross, dot, eye, hstack, zeros
@@ -849,6 +850,7 @@ if __name__ == "__main__":
     robot = JVRC1(download_if_needed=True)
     sim.set_viewer()
     robot.set_transparency(0.3)
+    pc = pyclipper.Pyclipper()
 
     staircase = generate_staircase(
         radius=1.4,
