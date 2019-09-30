@@ -48,7 +48,7 @@ max_dcm_height = 1.  # [m]
 max_force = 1000.  # [N]
 min_dcm_height = 0.5  # [m]
 min_force = 1.  # [N]
-ref_offset = array([0.05, 0.02, 0.])  # [m]
+ref_offset = array([0.0, 0.0, 0.])  # [m]
 k_p = 3.  # proportional DCM feedback gain
 
 assert k_p > 1., "DCM feedback gain needs to be greater than one"
@@ -670,6 +670,79 @@ def push_three_times():
     plotter.plot()
 
 
+class DCMPlotter(pymanoid.Process):
+
+    def __init__(self, stabilizers):
+        super(DCMPlotter, self).__init__()
+        self.handles = []
+        self.stabilizers = stabilizers
+
+    def on_tick(self, sim):
+        from pymanoid.gui import draw_point
+        self.handles = [
+            draw_point(stab.dcm, color=stab.pendulum.color, pointsize=0.01)
+            for stab in self.stabilizers
+            if stab.pendulum.is_visible]
+
+
+def record_video():
+    """
+    Record accompanying video of the paper.
+    """
+    from pymanoid.sim import CameraRecorder
+    global k_p
+
+    k_p = 2.
+    sim.set_camera_front(x=1.6, y=0, z=0.5)
+    contact.hide()
+    sim.contact_handle = pymanoid.gui.draw_polygon(
+        [array([v[0], v[1], 0]) for v in contact.vertices],
+        normal=[0, 0, 1])
+    sim.max_dcm_line = pymanoid.gui.draw_line([0, 2, 1], [0, -2, 1], color='k')
+    # sim.ref_line = pymanoid.gui.draw_line([0, 2, 0.8], [0, -2, 0.8])
+
+    reading_time = 3  # [s]
+
+    recorder = CameraRecorder(sim, "vrp_only.mp4")
+    dcm_plotter = DCMPlotter(stabilizers)
+    sim.schedule_extra(recorder)
+    sim.schedule_extra(dcm_plotter)
+
+    recorder.wait_for(2 * reading_time)
+
+    vhip_stabilizer.pendulum.hide()
+
+    dv = array([0., -0.08, 0.])
+    pusher.push(dv=dv)
+    print("Impulse: {} N.s".format(mass * numpy.linalg.norm(dv)))
+    recorder.wait_for(reading_time)
+    sim.step(1)
+    recorder.wait_for(reading_time)
+    sim.step(49)
+
+    dv = array([0., -0.12, 0.])
+    pusher.push(dv=dv)
+    print("Impulse: {} N.s".format(mass * numpy.linalg.norm(dv)))
+    recorder.wait_for(reading_time)
+    sim.step(1)
+    recorder.wait_for(reading_time)
+    sim.step(99)
+
+    vhip_stabilizer.pendulum.show()
+
+    dv = array([0., -0.18, 0.])
+    pusher.push(dv=dv)
+    print("Impulse: {} N.s".format(mass * numpy.linalg.norm(dv)))
+    recorder.wait_for(reading_time)
+    sim.step(1)
+    recorder.wait_for(2 * reading_time)
+    sim.step(10)
+    recorder.wait_for(reading_time)
+    sim.step(49)
+    vrp_stabilizer.pendulum.hide()
+    sim.step(100)
+
+
 if __name__ == '__main__':
     sim = pymanoid.Simulation(dt=0.03)
     sim.set_viewer()
@@ -686,15 +759,16 @@ if __name__ == '__main__':
     stabilizers = []
 
     pendulums.append(pymanoid.models.InvertedPendulum(
-        init_pos, init_vel, contact, color='b', size=0.015))
+        init_pos, init_vel, contact, color='b', size=0.019))
     vhip_stabilizer = VHIPQPStabilizer(pendulums[-1])
     stabilizers.append(vhip_stabilizer)
 
     pendulums.append(pymanoid.models.InvertedPendulum(
         init_pos, init_vel, contact, color='g', size=0.02))
-    pendulums[-1].com.set_transparency(0.4)
+    # pendulums[-1].com.set_transparency(0.4)
     vrp_stabilizer = VRPStabilizer(pendulums[-1])
     stabilizers.append(vrp_stabilizer)
+    # vrp_stabilizer.pendulum.hide()
 
     if '--bonus' in sys.argv:
         pendulums.append(pymanoid.models.InvertedPendulum(
@@ -717,5 +791,6 @@ if __name__ == '__main__':
 
     sim.step(42)  # go to reference
     push_three_times()  # scenario for Fig. 1 of the paper
+    # record_video()  # video for v1 of the paper
     if IPython.get_ipython() is None:  # give the user a prompt
         IPython.embed()
