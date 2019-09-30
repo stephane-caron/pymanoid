@@ -593,6 +593,7 @@ class CameraRecorder(Process):
         st = fstat(script_name)
         chmod(script_name, st.st_mode | S_IEXEC)
         self.frame_index = 0
+        self.sim = sim
         self.tmp_folder = tmp_folder
 
     def on_tick(self, sim):
@@ -600,16 +601,14 @@ class CameraRecorder(Process):
         sim.take_screenshot(fname)
         self.frame_index += 1
 
-    def wait_for(self, wait_time, sim):
+    def wait_for(self, wait_time):
         """
         Pause the video by repeating the last frame for a certain duration.
 
         Parameters
         ----------
-        sim : Simulation
-            Current simulation instance.
         wait_time : scalar
             Duration in [s].
         """
-        for _ in range(int(wait_time / sim.dt)):
-            self.on_tick(sim)
+        for _ in range(int(wait_time / self.sim.dt)):
+            self.on_tick(self.sim)

@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- CameraRecorder: ``wait_for()`` does not require ``sim`` argument any more
 - InvertedPendulum: clamping is enabled/disabled by ``self.clamp``
 - InvertedPendulum: clamping is now the default behavior for ``set_cop`` and ``set_lambda``
 - RobotWrenchDrawer became RobotDiscWrenchDrawer (discrete velocity differentiation)
