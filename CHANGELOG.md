@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Contact: ``contact.normal`` alias
 - Contact: ``wrench``, ``force`` and ``moment`` attributes
 - Example: [stabilization with height variations](https://hal.archives-ouvertes.fr/hal-02289919v1/document)
+- InvertedPendulum: draw center of pressure by ``draw_point``
 - Manipulator: ``wrench``, ``force`` and ``moment`` attributes
 - Robot: stance binding creates a new ``robot.wrench_distributor`` process
 - StanceWrenchDistributor class to distribute contact wrenches of a stance

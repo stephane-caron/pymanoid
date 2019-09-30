@@ -21,7 +21,7 @@
 from numpy import cosh, dot, sinh, sqrt
 
 from .body import Point
-from .gui import draw_line
+from .gui import draw_line, draw_point
 from .misc import warn
 from .sim import Process, gravity
 
@@ -62,7 +62,7 @@ class InvertedPendulum(Process):
         self.com = com
         self.contact = contact
         self.cop = contact.p
-        self.handle = None
+        self.handles = None
         self.is_visible = visible
         self.lambda_ = -gravity[2] / (com.z - contact.z)
         self.lambda_max = lambda_max
@@ -86,14 +86,16 @@ class InvertedPendulum(Process):
 
     def draw(self):
         """Draw inverted pendulum."""
-        self.handle = draw_line(
-            self.com.p, self.cop, linewidth=4, color=self.color)
+        fulcrum = draw_point(self.cop, pointsize=0.01, color=self.color)
+        leg = draw_line(self.com.p, self.cop, linewidth=4, color=self.color)
+        self.handles = [fulcrum, leg]
 
     def hide(self):
         """Hide pendulum from the GUI."""
         self.com.hide()
-        if self.handle is not None:
-            self.handle.Close()
+        if self.handles:
+            for handle in self.handles:
+                handle.Close()
         self.is_visible = False
 
     def show(self):
