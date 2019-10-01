@@ -19,7 +19,10 @@
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example applies an external force
+This example applies an external force at the right hand of the JVRC-1 humanoid
+while the robot is standing on its two feet. It illustrates how to use managed
+contacts (external force provided by an independent process, here SoftContact)
+in addition to the default supporting contacts.
 """
 
 import IPython
@@ -32,6 +35,28 @@ from pymanoid.gui import RobotWrenchDrawer
 
 
 class SoftContact(pymanoid.Process):
+
+    """
+    Model a simple elastic contact with a vertical surface.
+
+    Parameters
+    ----------
+    contact : Contact
+        Contact frame of the robot's end-effector.
+    stiffness : scalar, optional
+        Stiffness of the elastic surface.
+
+    Attributes
+    ----------
+    contact : Contact
+        Contact frame of the robot's end-effector.
+    handle : openravepy.GraphHandle
+        Polygon drawing to represent the elastic surface.
+    init_y : scalar
+        Position of the wall in the world frame.
+    stiffness : scalar
+        Stiffness of the elastic surface.
+    """
 
     def __init__(self, contact, stiffness=2000.):
         super(SoftContact, self).__init__()
@@ -47,6 +72,14 @@ class SoftContact(pymanoid.Process):
         self.stiffness = stiffness
 
     def on_tick(self, sim):
+        """
+        Update function run at every simulation tick.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Instance of the current simulation.
+        """
         F_z = max(0.1, self.stiffness * (self.init_y - self.contact.y))
         self.contact.set_wrench([0., 0., F_z, 0., 0., 0.])
 
