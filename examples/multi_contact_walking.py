@@ -849,6 +849,11 @@ if __name__ == "__main__":
     sim = pymanoid.Simulation(dt=0.03)
     robot = JVRC1(download_if_needed=True)
     sim.set_viewer()
+    sim.set_camera_transform([
+        [-0.68761848, -0.36326682, 0.6286637, -3.33307052],
+        [-0.72355521, 0.27080287, -0.63492808, 3.36691594],
+        [0.06040437, -0.89146118, -0.44905265, 4.5055232],
+        [0., 0., 0., 1.]])
     robot.set_transparency(0.3)
     pc = pyclipper.Pyclipper()
 
