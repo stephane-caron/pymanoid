@@ -61,3 +61,6 @@ target/
 
 # Local copy of pymanoid wiki
 wiki/
+
+# COLLADA models
+*.dae

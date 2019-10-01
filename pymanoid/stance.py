@@ -38,7 +38,7 @@ from .tasks import COMTask, ContactTask, DOFTask, MinVelTask, PostureTask
 class Stance(ContactSet):
 
     """
-    Set of IK tasks for the humanoid's center of mass (COM) and end effectors.
+    Set of contact and center of mass (COM) targets for the humanoid.
 
     Parameters
     ----------
@@ -444,6 +444,5 @@ class StanceWrenchDistributor(Process):
             self.last_bkgnd_switch = time()
         if self.last_bkgnd_switch is not None \
                 and time() - self.last_bkgnd_switch > 0.2:
-            # let's keep epilepsy at bay
             sim.viewer.SetBkgndColor([1., 1., 1.])
             self.last_bkgnd_switch = None
