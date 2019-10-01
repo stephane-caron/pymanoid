@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import array, cross, diag, dot, eye, hstack, sqrt, vstack, zeros
+from numpy import array, ndarray
+from numpy import cross, diag, dot, eye, hstack, sqrt, vstack, zeros
 from scipy.linalg import block_diag
 
 from .body import Box
@@ -46,23 +47,27 @@ class Contact(Box):
         the same time.
     friction : scalar
         Static friction coefficient.
-    color : char, optional
-        Color code in matplotlib convention ('b' for blue, 'g' for green, ...).
     link : body.Manipulator, optional
         Robot link frame in contact.
     slab_thickness : scalar, optional
         Thickness of the contact slab displayed in the GUI, in [m].
     max_pressure : scalar, optional
         Maximum pressure on contact.
+
+    Attributes
+    ----------
+    wrench : array, shape=(6,)
+        Contact wrench coordinates at the contact point in the inertial frame.
     """
 
     def __init__(self, shape, pos=None, rpy=None, pose=None, friction=None,
-                 color='r', link=None, slab_thickness=0.01):
+                 link=None, slab_thickness=0.01):
         X, Y = shape
         super(Contact, self).__init__(
-            X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
+            X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color='r',
             dZ=-slab_thickness)
         self.friction = friction  # isotropic Coulomb friction
+        self.is_managed = False
         self.link = link
         self.max_pressure = None
         self.shape = shape
@@ -88,6 +93,8 @@ class Contact(Box):
         contact_copy = Contact(
             self.shape, pose=self.pose, friction=self.friction, color=color,
             link=link)
+        contact_copy.max_pressure = self.max_pressure
+        contact_copy.wrench = self.wrench
         if hide:
             contact_copy.hide()
         return contact_copy
@@ -104,7 +111,7 @@ class Contact(Box):
     @property
     def force(self):
         """
-        Resultant of contact forces in the contact frame (if defined).
+        Resultant of contact forces in the world frame (if defined).
         """
         if self.wrench is None:
             return None
@@ -113,7 +120,7 @@ class Contact(Box):
     @property
     def moment(self):
         """
-        Moment of contact forces in the contact frame (if defined).
+        Moment of contact forces in the world frame (if defined).
         """
         if self.wrench is None:
             return None
@@ -234,6 +241,58 @@ class Contact(Box):
         v4 = dot(self.T, array([-X, +Y, 0., 1.]))[:3]
         return [v1, v2, v3, v4]
 
+    def set_wrench(self, wrench):
+        """
+        Set contact wrench directly.
+
+        Parameters
+        ----------
+        wrench : array, shape=(6,)
+            Wrench coordinates given in the contact frame.
+
+        Notes
+        -----
+        This function switches the contact to "managed" mode, as opposed to the
+        default "supporting" mode where the wrench distributor finds contact
+        wrenches by numerical optimization.
+        """
+        if not type(wrench) is ndarray:
+            wrench = array(wrench)
+        if not self.is_managed:
+            self.set_color('b')
+        self.is_managed = True
+        self.wrench = dot(block_diag(self.R, self.R), wrench)
+
+    def unset_wrench(self):
+        """
+        Return contact to supporting mode.
+        """
+        if self.is_managed:
+            self.set_color('r')
+        self.is_managed = False
+        self.wrench = None
+
+    def wrench_at(self, point):
+        """
+        Get contact wrench at a given point in the world frame.
+
+        Parameters
+        ----------
+        point : array, shape=(3,)
+            Point `P` where the wrench is expressed.
+
+        Returns
+        -------
+        wrench : array, shape=(6,)
+            Contact wrench :math:`w_P` at `P` in the world frame.
+        """
+        if self.wrench is None:
+            return None
+        X_world_point = vstack([
+            hstack([eye(3), eye(3)]),
+            hstack([crossmat(point), eye(3)])])
+        return dot(X_world_point, self.wrench)
+
     @property
     def wrench_inequalities(self):
         """
@@ -339,15 +398,6 @@ class Contact(Box):
         return hstack([
             dot(vstack([eye(3), crossmat(v - self.p)]), self.force_span)
             for v in self.vertices])
-
-    @property
-    def world_wrench(self):
-        """
-        Contact wrench in the world (inertial) frame.
-        """
-        if self.wrench is None:
-            return None
-        return dot(self.adjoint_matrix, self.wrench)
 
 
 class ContactSet(object):
@@ -498,17 +548,16 @@ class ContactSet(object):
         cop_weight : scalar, optional
             Weight on COP deviations from the center of the contact patch.
         solver : string, optional
-            Name of the QP solver to use. Default is 'quadprog' (fastest). If
-            you are planning on using extremal wrenches, 'cvxopt' is slower but
-            works better on corner cases.
+            Name of the QP solver to use. Options are 'quadprog' (default) or
+            'cvxopt'. The latter is slower but more numerically stable if your
+            resulting wrenches are extremal.
 
         Returns
         -------
         support : list of (Contact, array) pairs
             Mapping between each contact `i` and a supporting contact wrench
-            :math:`w^i_{C_i}`. All contact wrenches satisfy friction
-            constraints and sum up to the net wrench: :math:`\\sum_c w^i_P =
-            w_P``.
+            :math:`w^i_{C_i}`. Contact wrenches satisfy friction constraints
+            and sum up to the net wrench: :math:`\\sum_c w^i_P = w_P``.
 
         Notes
         -----
