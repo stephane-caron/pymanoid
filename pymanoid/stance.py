@@ -435,7 +435,7 @@ class StanceWrenchDistributor(Process):
         try:
             support = self.stance.find_supporting_wrenches(wrench, p)
             d = {sup[0].name: sup[1] for sup in support}
-            for contact in self.stance.contacts:
+            for contact in self.stance.supporting_contacts:
                 contact.link.wrench = d[contact.name]
                 contact.wrench = d[contact.name]
         except ValueError:

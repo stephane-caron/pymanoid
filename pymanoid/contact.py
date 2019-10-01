@@ -565,20 +565,26 @@ class ContactSet(object):
         (:math:`w^i_{C_i}`), not at the point `P` where the net wrench
         :math:`w_P` is given.
         """
-        n = 6 * self.nb_contacts
+        n = 6 * len(self.supporting_contacts)
+        ext_wrench = zeros(6)
+        for contact in self.contacts:
+            if contact.is_managed and contact.wrench is not None:
+                ext_wrench += contact.wrench_at(point)
         epsilon = min(friction_weight, cop_weight, yaw_weight) * 1e-3
         W_f = diag([friction_weight, friction_weight, epsilon])
         W_tau = diag([cop_weight, cop_weight, yaw_weight])
         P = block_diag(*[
             block_diag(
-                dot(ct.R, dot(W_f, ct.R.T)),
-                dot(ct.R, dot(W_tau, ct.R.T)))
-            for ct in self.contacts])
+                dot(contact.R, dot(W_f, contact.R.T)),
+                dot(contact.R, dot(W_tau, contact.R.T)))
+            for contact in self.supporting_contacts])
         q = zeros((n,))
-        G = block_diag(*[ct.wrench_inequalities for ct in self.contacts])
+        G = block_diag(*[contact.wrench_inequalities
+                         for contact in self.supporting_contacts])
         h = zeros((G.shape[0],))  # G * x <= h
-        A = self.compute_grasp_matrix(point)
-        b = wrench
+        A = hstack([contact.compute_grasp_matrix(point)
+                    for contact in self.supporting_contacts])
+        b = wrench + ext_wrench  # A * x == b
         w_all = solve_qp(P, q, G, h, A, b, solver=solver)
         if w_all is None:
             return None
@@ -586,6 +592,14 @@ class ContactSet(object):
             (contact, w_all[6 * i:6 * (i + 1)])
             for i, contact in enumerate(self.contacts)]
         return support
+
+    @property
+    def supporting_contacts(self):
+        """
+        Set of supporting contacts, i.e. excluding managed contacts where the
+        user provides the external wrench.
+        """
+        return [contact for contact in self.contacts if not contact.is_managed]
 
 
 class ContactFeed(object):
