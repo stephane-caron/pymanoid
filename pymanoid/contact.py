@@ -62,9 +62,7 @@ class Contact(Box):
         super(Contact, self).__init__(
             X, Y, Z=slab_thickness, pos=pos, rpy=rpy, pose=pose, color=color,
             dZ=-slab_thickness)
-        inner_friction = None if friction is None else friction / sqrt(2)
         self.friction = friction  # isotropic Coulomb friction
-        self.inner_friction = inner_friction  # pyramidal approximation
         self.link = link
         self.max_pressure = None
         self.shape = shape
@@ -131,7 +129,7 @@ class Contact(Box):
         All linearized friction cones in pymanoid use the inner (conservative)
         approximation. See <https://scaron.info/teaching/friction-cones.html>.
         """
-        mu = self.inner_friction
+        mu = self.friction / sqrt(2)
         hrep_local = array([
             [-1, 0, -mu],
             [+1, 0, -mu],
@@ -149,7 +147,7 @@ class Contact(Box):
         All linearized friction cones in pymanoid use the inner (conservative)
         approximation. See <https://scaron.info/teaching/friction-cones.html>.
         """
-        mu = self.inner_friction
+        mu = self.friction / sqrt(2)
         f1 = dot(self.R, [+mu, +mu, +1])
         f2 = dot(self.R, [+mu, -mu, +1])
         f3 = dot(self.R, [-mu, +mu, +1])
