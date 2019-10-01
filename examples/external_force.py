@@ -27,6 +27,28 @@ import IPython
 import pymanoid
 
 from pymanoid import Contact, PointMass, Stance
+from pymanoid.gui import draw_polygon
+from pymanoid.gui import RobotWrenchDrawer
+
+
+class SoftContact(pymanoid.Process):
+
+    def __init__(self, contact, stiffness=2000.):
+        super(SoftContact, self).__init__()
+        x, y, z = contact.x, contact.y, contact.z
+        polygon = [
+            (x + 0.5, y, z - 0.5),
+            (x + 0.5, y, z + 0.5),
+            (x - 0.5, y, z + 0.5),
+            (x - 0.5, y, z - 0.5)]
+        self.contact = contact
+        self.handle = draw_polygon(polygon, [0, 1, 0], color='k')
+        self.init_y = y + 0.01
+        self.stiffness = stiffness
+
+    def on_tick(self, sim):
+        F_z = max(0.1, self.stiffness * (self.init_y - self.contact.y))
+        self.contact.set_wrench([0., 0., F_z, 0., 0., 0.])
 
 
 if __name__ == "__main__":
@@ -64,8 +86,13 @@ if __name__ == "__main__":
     stance.bind(robot)
     robot.ik.solve()
 
+    soft_contact = SoftContact(stance.right_hand)
+    wrench_drawer = RobotWrenchDrawer(robot)
+
     sim.schedule(robot.ik)
+    sim.schedule(soft_contact)
     sim.schedule(robot.wrench_distributor, log_comp_times=True)
+    sim.schedule_extra(wrench_drawer)
     sim.start()
 
     if IPython.get_ipython() is None:
