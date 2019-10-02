@@ -195,6 +195,17 @@ class Simulation(object):
                 sleep((self.slowdown - 1.) * self.dt)
             self.nb_steps += 1
 
+    def unschedule(self, process):
+        """
+        Remove a process to the schedule list.
+
+        Parameters
+        ----------
+        process : pymanoid.Process
+            Process that will be called at every simulation tick.
+        """
+        del self.processes[self.processes.index(process)]
+
     def _tick_processes(self):
         for process in self.processes:
             if not hasattr(process, 'is_paused'):

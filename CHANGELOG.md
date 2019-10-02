@@ -9,13 +9,14 @@ All notable changes to this project will be documented in this file.
 - Body: ``pos``, ``rotation_matrix`` and ``transform`` aliases
 - Body: compute the adjoint matrix in ``body.adjoint_matrix``
 - Contact: ``contact.normal`` alias
-- Contact: ``wrench``, ``force`` and ``moment`` attributes
 - Contact: ``set_wrench()`` function that switches a contact to managed mode
 - Contact: ``wrench_at()`` function to get wrench at a given point in the world frame
+- Contact: ``wrench``, ``force`` and ``moment`` attributes
 - Example: [stabilization with height variations](https://hal.archives-ouvertes.fr/hal-02289919v1/document)
 - InvertedPendulum: draw center of pressure by ``draw_point``
 - Manipulator: ``wrench``, ``force`` and ``moment`` attributes
 - Robot: stance binding creates a new ``robot.wrench_distributor`` process
+- Simulation: can now ``unschedule()`` a process
 - StanceWrenchDistributor class to distribute contact wrenches of a stance
 
 ### Fixed
