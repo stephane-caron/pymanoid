@@ -565,7 +565,20 @@ class Manipulator(Body):
         self.shape = shape
         self.wrench = None
 
-    def get_contact(self, pos=None, color='r'):
+    def get_contact(self, pos=None):
+        """
+        Get contact located at the current manipulator pose.
+
+        Parameters
+        ----------
+        pos : (3,) array, optional
+            Override manipulator position with this one.
+
+        Returns
+        -------
+        contact : Contact
+            Contact located at manipulator pose.
+        """
         from contact import Contact
         pose = self.pose.copy()
         if pos is not None:
