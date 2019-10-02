@@ -33,6 +33,7 @@ by using the interaction mode of the OpenRAVE GUI.
 import IPython
 import numpy
 import random
+import sys
 
 import pymanoid
 
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     robot.qdd_lim = 100. * numpy.ones(robot.q.shape)
 
     # Setup IK tasks
-    if random.randint(0, 1) == 0:
+    if random.randint(0, 1) == 0 or "--stance" in sys.argv:
         setup_ik_from_stance()
     else:  # the two functions are equivalent, pick one at random
         setup_ik_from_tasks()
