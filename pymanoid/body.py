@@ -571,8 +571,7 @@ class Manipulator(Body):
         if pos is not None:
             pose[4:] = pos
         return Contact(
-            self.shape, pose=pose, friction=self.friction, color=color,
-            link=self)
+            self.shape, pose=pose, friction=self.friction, link=self)
 
     @property
     def force(self):
