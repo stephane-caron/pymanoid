@@ -565,7 +565,7 @@ class Manipulator(Body):
         self.shape = shape
         self.wrench = None
 
-    def get_contact(self, pos=None):
+    def get_contact(self, pos=None, shape=None):
         """
         Get contact located at the current manipulator pose.
 
@@ -573,6 +573,8 @@ class Manipulator(Body):
         ----------
         pos : (3,) array, optional
             Override manipulator position with this one.
+        shape : (scalar, scalar), optional
+            Dimensions (half-length, half-width) of contact patch in [m].
 
         Returns
         -------
@@ -583,8 +585,11 @@ class Manipulator(Body):
         pose = self.pose.copy()
         if pos is not None:
             pose[4:] = pos
+        shape = self.shape if shape is None else shape
+        if shape is None:
+            raise Exception("Please provide a shape for the contact area")
         return Contact(
-            self.shape, pose=pose, friction=self.friction, link=self)
+            shape, pose=pose, friction=self.friction, link=self)
 
     @property
     def force(self):
