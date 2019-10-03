@@ -441,7 +441,7 @@ def draw_wrench(surface, wrench, scale=0.005, pointsize=0.02, linewidth=0.01,
     ----------
     surface : surface
         Surface at which the wrench is acting.
-    force : ndarray
+    wrench : ndarray
         6D wrench vector in world-frame coordinates.
     scale : scalar
         Scaling factor between Euclidean and Force spaces.

@@ -52,8 +52,8 @@ drawer process:
 Once the wrench distributor is scheduled, it will store its outputs in the
 contacts of the stance as well as in the robot's manipulators. Therefore, you
 can access ``robot.left_foot.wrench`` or ``robot.stance.left_foot.wrench``
-equivalently. Note that wrenches are given in their respective contact frames,
-not in the world frame.
+equivalently. Note that wrenches are given in the *world frame* rooted at their
+respective contact points.
 
 .. autoclass:: pymanoid.stance.StanceWrenchDistributor
    :members:

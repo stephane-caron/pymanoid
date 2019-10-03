@@ -421,6 +421,23 @@ class Stance(ContactSet):
 
 class StanceWrenchDistributor(Process):
 
+    """
+    Wrench distribution process.
+
+    Parameters
+    ----------
+    stance : Stance
+        Stance to distribute wrenches from.
+
+    Notes
+    -----
+    This process computes wrenches for supporting contacts and stores them in
+    each contact, as well as in the robot's manipulators. For instance, you
+    will be able to access ``robot.left_foot.wrench`` or
+    ``robot.stance.left_foot.wrench`` equivalently. Note that supporting
+    wrenches are given in the world frame rooted at their respective contacts.
+    """
+
     def __init__(self, stance):
         self.last_bkgnd_switch = None
         self.nb_fails = 0
@@ -428,6 +445,14 @@ class StanceWrenchDistributor(Process):
         super(StanceWrenchDistributor, self).__init__()
 
     def on_tick(self, sim):
+        """
+        Main function called by the simulation at each control cycle.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
         mass = self.stance.com.mass
         p = self.stance.com.p
         pdd = self.stance.com.pdd
