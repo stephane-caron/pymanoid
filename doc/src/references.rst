@@ -8,7 +8,7 @@ References
    Kheddar, pre-print, March 2017.
 
 .. [Caron17z] `ZMP support areas for multi-contact mobility under frictional
-   constraints <https://scaron.info/papers/journal/caron-tro-2016.pdf>`_, S.
+   constraints <https://hal.archives-ouvertes.fr/hal-02108589/document>`_, S.
    Caron, Q.-C. Pham and Y. Nakamura, IEEE Transactions on Robotics, vol. 33,
    no. 1, February 2017.
 
@@ -19,8 +19,9 @@ References
 
 .. [Caron16] `Multi-contact Walking Pattern Generation based on Model Preview
    Control of 3D COM Accelerations
-   <https://hal.archives-ouvertes.fr/hal-01349880>`_, S. Caron and A. Kheddar,
-   IEEE-RAS International Conference on Humanoid Robots, November 2016.
+   <https://hal.archives-ouvertes.fr/hal-01349880/document>`_, S. Caron and A.
+   Kheddar, IEEE-RAS International Conference on Humanoid Robots, November
+   2016.
 
 .. [Nozawa16] `Three-dimensional humanoid motion planning using COM feasible
    region and its application to ladder climbing tasks
@@ -29,7 +30,7 @@ References
 
 .. [Caron15] `Stability of surface contacts for humanoid robots: Closed-form
    formulae of the contact wrench cone for rectangular support areas
-   <https://scaron.info/papers/conf/caron-icra-2015.pdf>`_, S. Caron,
+   <https://hal.archives-ouvertes.fr/hal-02108449/document>`_, S. Caron,
    Q.-C. Pham and Y. Nakamura, IEEE International Conference on Robotics and
    Automation, May 2015.
 
