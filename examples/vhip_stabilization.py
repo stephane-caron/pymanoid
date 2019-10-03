@@ -30,10 +30,14 @@ proportional feedback of a 4D DCM of the same model; see the paper for details.
 """
 
 import IPython
-import cvxpy
 import numpy
 import scipy.signal
 import sys
+
+try:
+    import cvxpy
+except ImportError:
+    raise ImportError("This example requires CVXPY, install it e.g. via pip")
 
 from numpy import array, dot, eye, hstack, sqrt, vstack, zeros
 from qpsolvers import solve_qp
