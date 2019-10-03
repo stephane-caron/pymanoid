@@ -166,7 +166,7 @@ COM acceleration cone
 Ready to go! The GUI displays the COM pendular acceleration cone in red. You
 can move the blue box (in the plane above the robot) around to make the robot
 move its center of mass. Contact wrenches are displayed at each contact (green
-dot is COP location, arrow is resultant force). When the COM exists the
+dot is COP location, arrow is resultant force). When the COM exits the
 static-equilibrium polygon, you should see the background turn red as no
 feasible contact wrenches can be found.
 
