@@ -80,7 +80,7 @@ class SoftContact(pymanoid.Process):
         sim : Simulation
             Instance of the current simulation.
         """
-        F_z = max(0.1, self.stiffness * (self.init_y - self.contact.y))
+        F_z = max(0., self.stiffness * (self.init_y - self.contact.y))
         self.contact.set_wrench([0., 0., F_z, 0., 0., 0.])
 
 

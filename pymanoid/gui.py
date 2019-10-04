@@ -462,7 +462,10 @@ def draw_wrench(surface, wrench, scale=0.005, pointsize=0.02, linewidth=0.01,
         wrench = array(wrench)
     assert wrench.shape == (6,)
     f, tau = wrench[:3], wrench[3:]
-    cop = surface.p + cross(surface.n, tau) / dot(surface.n, f)
+    normal_force = dot(surface.n, f)
+    if norm(normal_force) < 1e-5:
+        return []
+    cop = surface.p + cross(surface.n, tau) / normal_force
     tau_z = dot(surface.n, tau)
     h1 = draw_point(cop, pointsize=pointsize)
     h2 = draw_force(cop, f, scale=scale, linewidth=linewidth)

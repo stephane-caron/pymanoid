@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- GUI: don't draw zero wrenches
 - Video recording and conversion script
 
 ### Changed
