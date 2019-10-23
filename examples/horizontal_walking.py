@@ -231,10 +231,12 @@ class WalkingFSM(pymanoid.Process):
             next_max = max(v[coord] for v in next_vertices)
             next_min = min(v[coord] for v in next_vertices)
             e[coord] = [
-                array([+1000., +1000.]) if i < nb_init_dsp_steps else
-                array([+cur_max, -cur_min]) if i - nb_init_dsp_steps <= nb_init_ssp_steps else
-                array([+1000., +1000.]) if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps else
-                array([+next_max, -next_min])
+                array([+1000., +1000.]) if i < nb_init_dsp_steps
+                else array([+cur_max, -cur_min])
+                if i - nb_init_dsp_steps <= nb_init_ssp_steps
+                else array([+1000., +1000.])
+                if i - nb_init_dsp_steps - nb_init_ssp_steps < nb_dsp_steps
+                else array([+next_max, -next_min])
                 for i in range(nb_preview_steps)]
         self.x_mpc = LinearPredictiveControl(
             A, B, C, D, e[0],
