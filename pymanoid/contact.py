@@ -72,26 +72,21 @@ class Contact(Box):
         self.shape = shape
         self.wrench = None
 
-    def copy(self, color=None, link=None, hide=False):
+    def copy(self, link=None, hide=False):
         """
         Return a copy of the contact.
 
         Parameters
         ----------
-        color : char, optional
-            Color code in matplotlib convention (e.g. 'b' for blue).
         link : body.Manipulator, optional
             Robot link frame in contact in the copy.
         hide : bool, optional
             Hide copy?
         """
-        if color is None:
-            color = self.color
         if link is None:
             link = self.link
         contact_copy = Contact(
-            self.shape, pose=self.pose, friction=self.friction, color=color,
-            link=link)
+            self.shape, pose=self.pose, friction=self.friction, link=link)
         contact_copy.max_pressure = self.max_pressure
         contact_copy.wrench = self.wrench
         if hide:
