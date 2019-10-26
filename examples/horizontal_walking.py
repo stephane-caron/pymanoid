@@ -41,7 +41,7 @@ from pymanoid.swing_foot import SwingFoot
 
 def generate_footsteps(distance, step_length, foot_spread, friction):
     """
-    Generate a new slanted staircase with tilted steps.
+    Generate a set of footsteps for walking forward.
 
     Parameters
     ----------
@@ -300,9 +300,8 @@ if __name__ == "__main__":
         step_length=0.3,
         foot_spread=0.1,
         friction=0.7)
-    com_target = PointMass([0, 0, robot.leg_length], robot.mass)
     stance = Stance(
-        com=com_target,
+        com=PointMass([0, 0, robot.leg_length], robot.mass),
         left_foot=footsteps[0].copy(hide=True),
         right_foot=footsteps[1].copy(hide=True))
     stance.bind(robot)

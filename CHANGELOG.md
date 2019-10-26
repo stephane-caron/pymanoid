@@ -32,6 +32,7 @@ All notable changes to this project will be documented in this file.
 - RobotWrenchDrawer became RobotDiscWrenchDrawer (discrete velocity differentiation)
 - RobotWrenchDrawer now fetches results from stance wrench distributor
 - License: switched to GPL as cddlib (and thus pypoman) is GPLv2
+- Updated qpsolvers submodule to v1.0.7
 
 ## [1.1.0] - 2019/04/30
 
