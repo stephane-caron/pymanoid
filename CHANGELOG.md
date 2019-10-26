@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## [1.2.0] - 2019/10/26
 
 ### Added
 
@@ -12,17 +12,13 @@ All notable changes to this project will be documented in this file.
 - Contact: ``set_wrench()`` function that switches a contact to managed mode
 - Contact: ``wrench_at()`` function to get wrench at a given point in the world frame
 - Contact: ``wrench``, ``force`` and ``moment`` attributes
+- Example: [external force](examples/external_force.py) acting on the right hand of the humanoid
 - Example: [stabilization with height variations](https://hal.archives-ouvertes.fr/hal-02289919v1/document)
 - InvertedPendulum: draw center of pressure by ``draw_point``
 - Manipulator: ``wrench``, ``force`` and ``moment`` attributes
 - Robot: stance binding creates a new ``robot.wrench_distributor`` process
 - Simulation: can now ``unschedule()`` a process
 - StanceWrenchDistributor class to distribute contact wrenches of a stance
-
-### Fixed
-
-- GUI: don't draw zero wrenches
-- Video recording and conversion script
 
 ### Changed
 
@@ -33,6 +29,11 @@ All notable changes to this project will be documented in this file.
 - RobotWrenchDrawer now fetches results from stance wrench distributor
 - License: switched to GPL as cddlib (and thus pypoman) is GPLv2
 - Updated qpsolvers submodule to v1.0.7
+
+### Fixed
+
+- GUI: don't draw zero wrenches
+- Video recording and conversion script
 
 ## [1.1.0] - 2019/04/30
 
@@ -50,13 +51,6 @@ All notable changes to this project will be documented in this file.
 - This change log
 - ZMP support areas can now take optional contact pressure limits
 
-### Fixed
-
-- IK: singularity fix from [Pfeiffer et al.](https://doi.org/10.1109/LRA.2018.2855265)
-- Knee joint names in JVRC-1 model
-- Python 3 compatibility
-- Restore initial settings in IK solve()
-
 ### Changed
 
 - Contact: ``copy()`` now takes optional ``hide`` keyword argument
@@ -69,7 +63,15 @@ All notable changes to this project will be documented in this file.
 - Stance: now bind end-effector links as well
 - Stance: simplified prototype of ``compute_zmp_support_area``
 
+### Fixed
+
+- IK: singularity fix from [Pfeiffer et al.](https://doi.org/10.1109/LRA.2018.2855265)
+- Knee joint names in JVRC-1 model
+- Python 3 compatibility
+- Restore initial settings in IK solve()
+
 ## [1.0.0] - 2018/10/17
 
 ### Added
+
 - Initial release of the project. Let's take it from there.

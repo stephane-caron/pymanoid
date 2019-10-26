@@ -21,7 +21,7 @@ from distutils.core import setup
 
 setup(
     name='pymanoid',
-    version='1.1.1',
+    version='1.2.0',
     description="Python library for humanoid robotics using OpenRAVE",
     url="https://github.com/stephane-caron/pymanoid",
     author="Stéphane Caron",
