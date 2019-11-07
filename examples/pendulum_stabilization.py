@@ -82,6 +82,23 @@ class Stabilizer(pymanoid.Process):
         ----------
         sim : pymanoid.Simulation
             Simulation instance.
+
+        Notes
+        -----
+        See [Englsberger2015]_ for details on the definition of the virtual
+        repellent point (VRP). Here we differentiate between the constants
+        lambda and omega: lambda corresponds to the "CoP-based inverted
+        pendulum" and omega to the "floating-base inverted pendulum" models
+        described in Section II.B of [Caron17w]_.
+
+        Overall, we can interpret ``omega`` as a normalized stiffness between
+        the CoM and VRP, while ``lambda`` corresponds to the virtual leg
+        stiffness between the CoM and ZMP. The reason why the mapping is
+        nonlinear is that the ZMP is constrained to lie on the contact surface,
+        while the CoM can move in 3D.
+
+        If we study further the relationship between lambda and omega, we find
+        that they are actually related by a Riccati equation [Caron19]_.
         """
         com = self.pendulum.com.p
         comd = self.pendulum.com.pd

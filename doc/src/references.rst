@@ -2,10 +2,16 @@
 References
 **********
 
+.. [Caron19] `Capturability-based Pattern Generation for Walking with Variable
+   Height <https://hal.archives-ouvertes.fr/hal-01689331/document>`_, S. Caron,
+   A. Escande, L. Lanari and B. Mallein, IEEE Transactions on Robotics, July
+   2019.
+
 .. [Caron17w] `Dynamic Walking over Rough Terrains by Nonlinear Predictive
    Control of the Floating-base Inverted Pendulum
    <https://hal.archives-ouvertes.fr/hal-01481052/document>`_, S. Caron and A.
-   Kheddar, pre-print, March 2017.
+   Kheddar, IEEE/RSJ International Conference on Intelligent Robots and
+   Systems, September 2017.
 
 .. [Caron17z] `ZMP support areas for multi-contact mobility under frictional
    constraints <https://hal.archives-ouvertes.fr/hal-02108589/document>`_, S.
@@ -33,6 +39,11 @@ References
    <https://hal.archives-ouvertes.fr/hal-02108449/document>`_, S. Caron,
    Q.-C. Pham and Y. Nakamura, IEEE International Conference on Robotics and
    Automation, May 2015.
+
+.. [Englsberger15] `Three-Dimensional Bipedal Walking Control Based on
+   Divergent Component of Motion <https://doi.org/10.1109/TRO.2015.2405592>`_,
+   J. Englsberger, C. Ott and A. Albu-Schäffer, IEEE Transactions on Robotics,
+   vol. 31, no. 2, March 2015.
 
 .. [Flacco15] `Control of Redundant Robots Under Hard Joint Constraints:
    Saturation in the Null Space <https://doi.org/10.1109/TRO.2015.2418582>`_,
