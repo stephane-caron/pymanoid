@@ -7,6 +7,10 @@ References
    A. Escande, L. Lanari and B. Mallein, IEEE Transactions on Robotics, July
    2019.
 
+.. [Audren18] `3D robust stability polyhedron in multi-contact
+   <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362/document>`_, H. Audren and A.
+   Kheddar, IEEE Transactions on Robotics, vol., 34, no. 2, February 2018.
+
 .. [Caron17w] `Dynamic Walking over Rough Terrains by Nonlinear Predictive
    Control of the Floating-base Inverted Pendulum
    <https://hal.archives-ouvertes.fr/hal-01481052/document>`_, S. Caron and A.

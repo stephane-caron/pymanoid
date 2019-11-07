@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Examples are now part of the documentation
+
 ## [1.2.0] - 2019/10/26
 
 ### Added

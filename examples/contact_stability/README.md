@@ -3,9 +3,9 @@
 Contact-stability areas and volumes are conditions used to prevent contacts
 from slipping or detaching during motion.
 
-## Wrench friction cones
+## Wrench friction cone
 
-The ``wrench_friction_cones.py`` script computes the wrench friction cone of
+The ``wrench_friction_cone.py`` script computes the wrench friction cone of
 the robot's contacts, as described in [this
 paper](http://www.roboticsproceedings.org/rss11/p28.pdf). Wrench friction cones
 are 6D polyhedral convex cones that characterize feasible contact wrenches,
@@ -31,7 +31,7 @@ paper](https://scaron.info/research/tro-2016.html). It depends on both contact
 locations and the position of the center of mass, so when you move it or its
 projection (blue box) you will see the blue area change as well.
 
-## CoM acceleration cones
+## CoM acceleration cone
 
 The ``com_accel_cone.py`` script displays the cone of CoM accelerations that
 the robot can execute while keeping contacts, as derived in [this

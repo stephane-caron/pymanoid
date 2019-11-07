@@ -11,6 +11,7 @@ Welcome to pymanoid!
 
 .. toctree::
 
+    examples.rst
     interpolation.rst
     forward-kinematics.rst
     inverse-kinematics.rst

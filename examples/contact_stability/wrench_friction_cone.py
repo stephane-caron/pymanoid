@@ -18,9 +18,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example shows how to compute the Contact Wrench Cone, a generalized
-multi-contact friction cone. See <https://scaron.info/research/rss-2015.html>
-for details.
+This example shows how to compute the contact wrench cone (CWC), a generalized
+multi-contact friction cone. See [Caron15]_ for details.
 """
 
 import IPython

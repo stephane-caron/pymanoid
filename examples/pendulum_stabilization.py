@@ -85,7 +85,7 @@ class Stabilizer(pymanoid.Process):
 
         Notes
         -----
-        See [Englsberger2015]_ for details on the definition of the virtual
+        See [Englsberger15]_ for details on the definition of the virtual
         repellent point (VRP). Here we differentiate between the constants
         lambda and omega: lambda corresponds to the "CoP-based inverted
         pendulum" and omega to the "floating-base inverted pendulum" models

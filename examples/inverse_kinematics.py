@@ -71,7 +71,8 @@ def setup_ik_from_tasks():
 
     Notes
     -----
-    See <https://scaron.info/teaching/inverse-kinematics.html> for details.
+    See this `tutorial on inverse kinematics
+    <https://scaron.info/teaching/inverse-kinematics.html>`_ for details.
     """
     from pymanoid.tasks import COMTask, ContactTask, DOFTask, PostureTask
 

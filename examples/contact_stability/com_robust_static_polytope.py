@@ -18,10 +18,9 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example shows a contact-stability condition: the robust static-equilibrium
-CoM polyhedron. See <https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362> for
-details. Running this example requires the StabiliPy
-<https://github.com/haudren/stabilipy> library.
+This example computes the robust static-equilibrium CoM polyhedron. See
+[Audren18]_ for details. Running this example requires the `StabiliPy
+<https://github.com/haudren/stabilipy>`_ library.
 """
 
 import IPython

@@ -20,7 +20,7 @@
 """
 This example implements a walking pattern generator for multi-contact
 locomotion based on predictive control of the 3D acceleration of the center of
-mass <https://scaron.info/research/humanoids-2016.html>.
+mass [Caron16]_.
 """
 
 import IPython

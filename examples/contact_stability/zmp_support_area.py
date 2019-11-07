@@ -18,9 +18,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example shows three contact-stability conditions: the static-equilibrium
-COM polygon, the dynamic ZMP support area, and the 3D COM acceleration cone.
-See <https://scaron.info/research/tro-2016.html> for details.
+This example computes the multi-contact ZMP support area for a given robot
+stance (contacts and CoM position). See [Caron16] for details.
 """
 
 import IPython

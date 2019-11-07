@@ -41,7 +41,8 @@ class Task(object):
 
     Note
     ----
-    See <https://scaron.info/teaching/inverse-kinematics.html> for an
+    See this `tutorial on inverse kinematics
+    <https://scaron.info/teaching/inverse-kinematics.html>`_ for an
     introduction to the concepts used here.
     """
 
