@@ -32,7 +32,7 @@ Humanoid robotics controller prototyping environment based on
 ## Getting started
 
 - [Installation instructions](#installation)
-- Documentation: [HTML](https://scaron.info/doc/pymanoid/) or [PDF](https://scaron.info/doc/pymanoid/pymanoid.pdf)
+- [Documentation](https://scaron.info/doc/pymanoid/) ([PDF](https://scaron.info/doc/pymanoid/pymanoid.pdf))
 - [FAQ](https://github.com/stephane-caron/pymanoid/wiki/Frequently-Asked-Questions)
 - [Examples](/examples)
 - Tutorial: [Prototyping a walking pattern generator](https://scaron.info/teaching/prototyping-a-walking-pattern-generator.html)
