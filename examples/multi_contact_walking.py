@@ -210,7 +210,7 @@ class SwingFoot(Box):
         self.set_pose(hstack([quat, pos]))
 
 
-class WalkingFSM(pymanoid.Process):
+class MultiContactWalkingFSM(pymanoid.Process):
 
     """
     Finite State Machine for biped walking.
@@ -228,7 +228,7 @@ class WalkingFSM(pymanoid.Process):
     """
 
     def __init__(self, stances, robot, swing_height, cycle=False):
-        super(WalkingFSM, self).__init__()
+        super(MultiContactWalkingFSM, self).__init__()
         self.cur_phase = stances[0].label
         self.cur_stance = stances[0]
         self.cur_stance_id = 0
@@ -481,7 +481,7 @@ class COMTubePredictiveControl(pymanoid.Process):
     ----------
     com : PointMass
         Current state (position and velocity) of the COM.
-    fsm : WalkingFSM
+    fsm : MultiContactWalkingFSM
         Instance of finite state machine.
     preview_buffer : PreviewBuffer
         MPC outputs are sent to this buffer.
@@ -870,7 +870,8 @@ if __name__ == "__main__":
     preview_buffer = PreviewBuffer(
         u_dim=3,
         callback=lambda u, dT: com_target.integrate_constant_accel(u, dT))
-    fsm = WalkingFSM(staircase, robot, swing_height=0.15, cycle=True)
+    fsm = MultiContactWalkingFSM(
+        staircase, robot, swing_height=0.15, cycle=True)
 
     mpc = COMTubePredictiveControl(
         com_target, fsm, preview_buffer,

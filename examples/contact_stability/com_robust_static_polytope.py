@@ -28,12 +28,10 @@ import pymanoid
 import sys
 
 try:
-    import stabilipy as stab
+    import stabilipy
 except Exception:
     pymanoid.error("Running this example requires the StabiliPy library")
-    print(
-        "You can get the StabiliPy library from: "
-        "https://github.com/haudren/stabilipy\n")
+    print("You can get it from: https://github.com/haudren/stabilipy\n")
     sys.exit(-1)
 
 from numpy import array, zeros
@@ -103,9 +101,9 @@ class SupportPolyhedronDrawer(pymanoid.Process):
         self.handle = None
         self.nr_iter = 0
         try:
-            self.polyhedron = stab.StabilityPolygon(
+            self.polyhedron = stabilipy.StabilityPolygon(
                 robot.mass, dimension=3, radius=1.5)
-            stab_contacts = []
+            stabilipy_contacts = []
             for contact in contacts:
                 hmatrix = matrixFromPose(contact.pose)
                 X, Y = contact.shape
@@ -114,12 +112,12 @@ class SupportPolyhedronDrawer(pymanoid.Process):
                                  array([[-X, -Y, 0]]).T,
                                  array([[X, -Y, 0]]).T]
                 for disp in displacements:
-                    stab_contacts.append(
-                        stab.Contact(
+                    stabilipy_contacts.append(
+                        stabilipy.Contact(
                             contact.friction,
                             hmatrix[:3, 3:] + hmatrix[:3, :3].dot(disp),
                             hmatrix[:3, 2:3]))
-            self.polyhedron.contacts = stab_contacts
+            self.polyhedron.contacts = stabilipy_contacts
             self.polyhedron.select_solver(self.method)
             self.polyhedron.make_problem()
             self.polyhedron.init_algo()

@@ -2,10 +2,10 @@
 Examples
 ********
 
-Inverted pendulum stabilization
--------------------------------
+Linear inverted pendulum stabilization
+--------------------------------------
 
-.. automodule:: pendulum_stabilization
+.. automodule:: lip_stabilization
     :members:
 
 Inverse kinematics

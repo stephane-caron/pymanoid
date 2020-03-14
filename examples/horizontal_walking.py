@@ -75,7 +75,7 @@ def generate_footsteps(distance, step_length, foot_spread, friction):
     return contacts
 
 
-class WalkingFSM(pymanoid.Process):
+class HorizontalWalkingFSM(pymanoid.Process):
 
     """
     Finite State Machine for biped walking.
@@ -89,7 +89,7 @@ class WalkingFSM(pymanoid.Process):
     """
 
     def __init__(self, ssp_duration, dsp_duration):
-        super(WalkingFSM, self).__init__()
+        super(HorizontalWalkingFSM, self).__init__()
         self.dsp_duration = dsp_duration
         self.mpc_timestep = round(0.1 / dt) * dt  # update MPC every ~0.1 [s]
         self.next_footstep = 2
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
     ssp_duration = round(0.7 / dt) * dt  # close to 0.7 [s]
     dsp_duration = round(0.1 / dt) * dt  # close to 0.1 [s]
-    fsm = WalkingFSM(ssp_duration, dsp_duration)
+    fsm = HorizontalWalkingFSM(ssp_duration, dsp_duration)
 
     sim.schedule(fsm)
     sim.schedule(robot.ik, log_comp_times=True)
