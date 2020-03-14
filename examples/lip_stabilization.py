@@ -182,5 +182,31 @@ if __name__ == '__main__':
     sim.schedule_extra(pusher)
     sim.start()
 
+    print("""
+
+Linear Inverted Pendulum Stabilization
+======================================
+
+Ready to go! You can access all state variables via this IPython shell.
+Here is the list of global objects. Use <TAB> to see what's inside.
+
+    pendulum -- linear inverted pendulum state
+    pusher -- applies an external impulse on the pendulum at regular intervals
+
+You can pause/resume processes or the whole simulation by:
+
+    pusher.pause() -- stop pushing the pendulum at regular intervals
+    pusher.resume() -- start pushing again
+    sim.stop() -- stop/pause simulation
+    sim.step(100) -- run simulation in current thread for 100 steps
+    sim.start() -- resume simulation
+
+When the simulation is paused, you can edit the position of the center of mass
+of the pendulum using the GUI's edit mode (<ESC> then click on the blue box).
+
+Enjoy :)
+
+""")
+
     if IPython.get_ipython() is None:  # give the user a prompt
         IPython.embed()
