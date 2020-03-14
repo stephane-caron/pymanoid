@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2019 Stephane Caron <stephane.caron@lirmm.fr>
+# Copyright (C) 2015-2020 Stephane Caron <stephane.caron@normalesup.org>
 #
 # This file is part of pymanoid <https://github.com/stephane-caron/pymanoid>.
 #
@@ -25,7 +25,7 @@ setup(
     description="Python library for humanoid robotics using OpenRAVE",
     url="https://github.com/stephane-caron/pymanoid",
     author="Stéphane Caron",
-    author_email="stephane.caron@lirmm.fr",
+    author_email="stephane.caron@normalesup.org",
     license="GPL",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
