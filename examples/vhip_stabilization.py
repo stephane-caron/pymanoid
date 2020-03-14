@@ -18,14 +18,10 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This script comes with the research paper "Biped Stabilization by Linear
-Feedback of the Variable-Height Inverted Pendulum Model" (Caron, 2019)
-<https://hal.archives-ouvertes.fr/hal-02289919v1/document>.
-
-In this example, we compare two stabilizers for the inverted pendulum model.
-The first one (baseline) is based on proportional feedback of the 3D DCM
-<https://doi.org/10.1109/TRO.2015.2405592>. The second one (proposed) performs
-proportional feedback of a 4D DCM of the same model; see the paper for details.
+This example compares two stabilizers for the inverted pendulum model. The
+first one (baseline) is based on proportional feedback of the 3D DCM
+[Englsberger15]_. The second one (proposed) performs proportional feedback of a
+4D DCM of the same model [Caron20]_.
 """
 
 import IPython

@@ -18,8 +18,8 @@
 # pymanoid. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This example implements a basic stabilizer for the inverted pendulum model
-based on proportional feedback of the divergent component of motion.
+This example implements a basic stabilizer for the linear inverted pendulum
+model based on proportional feedback of the divergent component of motion.
 """
 
 import IPython

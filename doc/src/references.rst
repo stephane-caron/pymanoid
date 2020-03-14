@@ -2,6 +2,11 @@
 References
 **********
 
+.. [Caron20] `Biped Stabilization by Linear Feedback of the Variable-Height
+   Inverted Pendulum Model
+   <https://hal.archives-ouvertes.fr/hal-02289919/document>`_, S. Caron, IEEE
+   International Conference on Robotics and Automation, May 2020.
+
 .. [Caron19] `Capturability-based Pattern Generation for Walking with Variable
    Height <https://hal.archives-ouvertes.fr/hal-01689331/document>`_, S. Caron,
    A. Escande, L. Lanari and B. Mallein, IEEE Transactions on Robotics, July
