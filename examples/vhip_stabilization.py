@@ -214,26 +214,31 @@ class VHIPStabilizer(Stabilizer):
         """
         Compute CoP and normalized leg stiffness compensation.
         """
-        Delta_com = self.pendulum.com.p - self.ref_com
-        Delta_comd = self.pendulum.com.pd - self.ref_comd
-        measured_comd = self.pendulum.com.pd
-        lambda_d = self.ref_lambda
-        nu_d = self.ref_vrp
-        omega_d = self.ref_omega
-        r_d_contact = self.ref_cop_contact
-        xi_d = self.ref_dcm
-        height = dot(self.contact.normal, self.pendulum.com.p - self.contact.p)
+        # Force limits
         lambda_max = max_force / (mass * height)
         lambda_min = min_force / (mass * height)
         omega_max = sqrt(lambda_max)
         omega_min = sqrt(lambda_min)
 
+        # Measurements
+        Delta_com = self.pendulum.com.p - self.ref_com
+        Delta_comd = self.pendulum.com.pd - self.ref_comd
+        height = dot(self.contact.normal, self.pendulum.com.p - self.contact.p)
+        lambda_d = self.ref_lambda
+        measured_comd = self.pendulum.com.pd
+        nu_d = self.ref_vrp
+        omega_d = self.ref_omega
+        r_d_contact = self.ref_cop_contact
+        xi_d = self.ref_dcm
+
+        # Optimization variables
         Delta_lambda = cvxpy.Variable(1)
         Delta_nu = cvxpy.Variable(3)
         Delta_omega = cvxpy.Variable(1)
         Delta_r = cvxpy.Variable(2)
         u = cvxpy.Variable(3)
 
+        # Linearized variation dynamics
         Delta_xi = Delta_com + Delta_comd / omega_d \
             - measured_comd / (omega_d ** 2) * Delta_omega
         Delta_omegad = 2 * omega_d * Delta_omega - Delta_lambda
@@ -242,19 +247,23 @@ class VHIPStabilizer(Stabilizer):
         lambda_ = lambda_d + Delta_lambda
         omega = omega_d + Delta_omega
 
+        # Pole placement
         Delta_xid = (
             Delta_lambda * (xi_d - nu_d)
             + lambda_d * (Delta_xi - Delta_nu) +
             - Delta_omega * lambda_d * (xi_d - nu_d) / omega_d) / omega_d
+
+        # Kinematic DCM height constraint
         xi_z = self.ref_dcm[2] + Delta_xi[2] + 1.5 * sim.dt * Delta_xid[2]
+
+        # Cost function
         costs = []
-        sq_costs = [
-            (1., u[0]),
-            (1., u[1]),
-            (1e-3, u[2])]
+        sq_costs = [(1., u[0]), (1., u[1]), (1e-3, u[2])]
         for weight, expr in sq_costs:
             costs.append((weight, cvxpy.sum_squares(expr)))
         cost = sum(weight * expr for (weight, expr) in costs)
+
+        # Quadratic program
         prob = cvxpy.Problem(
             objective=cvxpy.Minimize(cost),
             constraints=[
@@ -270,6 +279,8 @@ class VHIPStabilizer(Stabilizer):
                 omega <= omega_max,
                 omega >= omega_min])
         prob.solve()
+
+        # Read outputs from solution
         Delta_lambda_opt = Delta_lambda.value
         Delta_r_opt = array(Delta_r.value).reshape((2,))
         self.omega = omega_d + Delta_omega.value
