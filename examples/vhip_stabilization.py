@@ -797,6 +797,7 @@ if __name__ == '__main__':
     def reset():
         for stab in stabilizers:
             stab.reset_pendulum()
+        sim.step()
 
     sim.step(42)  # go to reference
     push_three_times()  # scenario for Fig. 1 of the paper
