@@ -800,7 +800,8 @@ if __name__ == '__main__':
         sim.step()
 
     sim.step(42)  # go to reference
-    push_three_times()  # scenario for Fig. 1 of the paper
+    impulse = array([0., -0.09, 0.])
+    # push_three_times()  # scenario for Fig. 1 of the paper
     # record_video()  # video for v1 of the paper
     reset()
 
