@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-### Added
-
+- Add an example for recording joint angle data to the simulation documentation
 - Examples are now part of the documentation
+- Updated VHIP stabilization example to match [ICRA 2020 video](https://scaron.info/videos/icra-2020.mp4)
 
 ## [1.2.0] - 2019/10/26
 
