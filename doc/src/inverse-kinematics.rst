@@ -33,8 +33,8 @@ integrated twice or thrice respectively).
 Acceleration limits
 -------------------
 
-When the robot model has joint acceleration limits, _i.e._ when a vector of
-size `robot.nb_dofs` is specified in `robot.qdd_lim` at initialization, the
+When the robot model has joint acceleration limits, *i.e.* when a vector of
+size ``robot.nb_dofs`` is specified in ``robot.qdd_lim`` at initialization, the
 inverse kinematics will include them in its optimization problem. The
 formulation is more complex than a finite-difference approximation: joint
 velocities will be selected so that (1) the joint does not collide with its

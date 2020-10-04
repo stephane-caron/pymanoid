@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 - Add an example for recording joint angle data to the simulation documentation
+- Document joint acceleration limits in inverse kinematics
 - Examples are now part of the documentation
 - Updated VHIP stabilization example to match [ICRA 2020 video](https://scaron.info/videos/icra-2020.mp4)
 
