@@ -30,6 +30,19 @@ integrated twice or thrice respectively).
 .. autoclass:: pymanoid.ik.IKSolver
     :members:
 
+Acceleration limits
+-------------------
+
+When the robot model has joint acceleration limits, _i.e._ when a vector of
+size `robot.nb_dofs` is specified in `robot.qdd_lim` at initialization, the
+inverse kinematics will include them in its optimization problem. The
+formulation is more complex than a finite-difference approximation: joint
+velocities will be selected so that (1) the joint does not collide with its
+position limit in one iteration, but also (2) despite its acceleration limit,
+it can still brake fast enough to avoid colliding with its position limit in
+the future. The inverse kinematics in pymanoid implements the solution to this
+problem described in Equation (14) of [Flacco15]_.
+
 Stance
 ======
 
