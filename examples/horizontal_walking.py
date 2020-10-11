@@ -34,7 +34,6 @@ from pymanoid.contact import Contact
 from pymanoid.gui import RobotWrenchDrawer
 from pymanoid.gui import TrajectoryDrawer
 from pymanoid.mpc import LinearPredictiveControl
-from pymanoid.proc import JointRecorder
 from pymanoid.robots import JVRC1
 from pymanoid.stance import Stance
 from pymanoid.swing_foot import SwingFoot
