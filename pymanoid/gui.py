@@ -26,7 +26,8 @@ from time import time
 from warnings import warn
 
 from .misc import matplotlib_to_rgb, matplotlib_to_rgba, norm
-from .sim import Process, get_openrave_env
+from .proc import Process
+from .sim import get_openrave_env
 
 
 BIG_DIST = 1000.  # [m]
