@@ -30,6 +30,7 @@ from threading import Lock, Thread
 from time import sleep, time
 
 from .misc import AvgStdEstimator, matplotlib_to_rgb, warn
+from .proc import CameraRecorder, Process
 
 
 e_z = array([0., 0., 1.])
@@ -43,40 +44,6 @@ def get_openrave_env():
         raise Exception("OpenRAVE environment not initialized, "
                         "did you create a pymanoid.Simulation?")
     return env
-
-
-class Process(object):
-
-    """
-    Processes implement the ``on_tick`` method called by the simulation.
-    """
-
-    def __init__(self):
-        self.log_comp_times = False
-        self.is_paused = False
-
-    def on_tick(self, sim):
-        """
-        Main function called by the simulation at each control cycle.
-
-        Parameters
-        ----------
-        sim : Simulation
-            Current simulation instance.
-        """
-        raise NotImplementedError("should be implemented by child class")
-
-    def pause(self):
-        """
-        Stop calling the process at new clock ticks.
-        """
-        self.is_paused = True
-
-    def resume(self):
-        """
-        Resume calling the process at new clock ticks.
-        """
-        self.is_paused = False
 
 
 class Simulation(object):
@@ -542,83 +509,3 @@ class Simulation(object):
         """
         self.recorder = CameraRecorder(self, fname=fname)
         self.schedule_extra(self.recorder)
-
-
-class CameraRecorder(Process):
-
-    """
-    Video recording process.
-
-    When created, this process will ask the user to click on the OpenRAVE GUI
-    to get its window ID. Then, it will save a screenshot in the camera folder
-    at each tick of the simulation (don't expect real-time recording...). When
-    your simulation is over, go to the camera folder and run the script called
-    ``make_video.sh``.
-
-    Parameters
-    ----------
-    sim : Simulation
-        Simulation instance.
-    fname : string, optional
-        Video file name.
-    tmp_folder : string, optional
-        Temporary folder where screenshots will be recorded.
-
-    Note
-    ----
-    Creating videos requires the following dependencies (here listed for Ubuntu
-    14.04): ``sudo apt-get install x11-utils imagemagick libav-tools``.
-
-    Note
-    ----
-    Don't expect the simulation to run real-time while recording.
-
-    Note
-    ----
-    The GUI window should stay visible on your screen for the whole duration of
-    the recording. Also, don't resize it, otherwise video conversion will fail
-    later on.
-    """
-    def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):
-        super(CameraRecorder, self).__init__()
-        if fname is None:
-            now = datetime.datetime.now()
-            fname = now.strftime('pymanoid-%Y-%m-%d-%H%M%S.mp4')
-        while tmp_folder.endswith('/'):
-            tmp_folder = tmp_folder[:-1]
-        sim.get_viewer_window_id()
-        if not os.path.exists(tmp_folder):
-            os.makedirs(tmp_folder)
-        script_name = 'make_pymanoid_video.sh'
-        with open(script_name, 'w') as script:
-            frate = int(1. / sim.dt)
-            script.write(
-                ("#!/bin/sh\n") +
-                (("avconv -r %d" % frate) +
-                 (" -i %s/%%05d.png" % tmp_folder) +
-                 (" -vf crop=\"trunc(iw/2)*2:trunc(ih/2)*2:0:0\"") +
-                 (" %s" % fname)) +
-                (" && rm -rf %s" % tmp_folder) +
-                (" && rm %s" % script_name))
-        st = fstat(script_name)
-        chmod(script_name, st.st_mode | S_IEXEC)
-        self.frame_index = 0
-        self.sim = sim
-        self.tmp_folder = tmp_folder
-
-    def on_tick(self, sim):
-        fname = '%s/%05d.png' % (self.tmp_folder, self.frame_index)
-        sim.take_screenshot(fname)
-        self.frame_index += 1
-
-    def wait_for(self, wait_time):
-        """
-        Pause the video by repeating the last frame for a certain duration.
-
-        Parameters
-        ----------
-        wait_time : scalar
-            Duration in [s].
-        """
-        for _ in range(int(wait_time / self.sim.dt)):
-            self.on_tick(self.sim)

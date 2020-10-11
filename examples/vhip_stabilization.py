@@ -698,7 +698,7 @@ def record_video():
     """
     Record accompanying video of the paper.
     """
-    from pymanoid.sim import CameraRecorder
+    from pymanoid import CameraRecorder
     global k_p
 
     k_p = 2.
