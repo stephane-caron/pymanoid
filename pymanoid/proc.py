@@ -89,6 +89,7 @@ class CameraRecorder(Process):
     the recording. Also, don't resize it, otherwise video conversion will fail
     later on.
     """
+
     def __init__(self, sim, fname=None, tmp_folder='pymanoid_rec'):
         super(CameraRecorder, self).__init__()
         if fname is None:
@@ -117,6 +118,14 @@ class CameraRecorder(Process):
         self.tmp_folder = tmp_folder
 
     def on_tick(self, sim):
+        """
+        Main function called by the simulation at each control cycle.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
         fname = '%s/%05d.png' % (self.tmp_folder, self.frame_index)
         sim.take_screenshot(fname)
         self.frame_index += 1
@@ -145,6 +154,7 @@ class JointRecorder(Process):
     robot : Robot
         Target robot state to record from.
     """
+
     def __init__(self, robot):
         super(JointRecorder, self).__init__()
         self.q = [robot.q]
@@ -155,6 +165,14 @@ class JointRecorder(Process):
         self.times = [0.]
 
     def on_tick(self, sim):
+        """
+        Main function called by the simulation at each control cycle.
+
+        Parameters
+        ----------
+        sim : Simulation
+            Current simulation instance.
+        """
         qd_prev = self.qd[-1]
         qdd = (self.robot.qd - qd_prev) / sim.dt
         tm, tc, tg = self.robot.compute_inverse_dynamics(qdd)
@@ -165,6 +183,14 @@ class JointRecorder(Process):
         self.times.append(sim.time)
 
     def plot(self, dofs=None):
+        """
+        Plot recorded joint trajectories.
+
+        Parameters
+        ----------
+        dofs : list of integers
+            DOF indices to plot trajectories for, e.g. ``robot.left_leg``.
+        """
         import pylab
         if dofs is None:
             dofs = range(self.robot.nb_dofs)
