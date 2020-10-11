@@ -10,7 +10,7 @@ which represents the control loop of the robot. A process is a simple wrapper
 around an :func:`on_tick` function, which is called at each iteration of the
 simulation loop.
 
-.. autoclass:: pymanoid.sim.Process
+.. autoclass:: pymanoid.proc.Process
     :members:
 
 Simulation
@@ -57,13 +57,16 @@ current directory:
 After completion, the file ``my_video.mp4`` is created in the current
 directory.
 
-.. autoclass:: pymanoid.sim.CameraRecorder
+.. autoclass:: pymanoid.proc.CameraRecorder
     :members:
 
 Making a new process
 ====================
 
-Imagine we want to record knee angles while the robot moves in the `horizontal walking example <https://github.com/stephane-caron/pymanoid/blob/master/examples/horizontal_walking.py>`_. We can create a new process class:
+Imagine we want to record knee angles while the robot moves in the `horizontal
+walking example
+<https://github.com/stephane-caron/pymanoid/blob/master/examples/horizontal_walking.py>`_.
+We can create a new process class:
 
 .. code:: python
 
