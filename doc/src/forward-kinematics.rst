@@ -1,5 +1,5 @@
 ******************
-Forward Kinematics
+Forward kinematics
 ******************
 
 Rigid transformations
