@@ -1,11 +1,15 @@
 # pymanoid
 
+[![License](https://img.shields.io/badge/License-GPL-green.svg)](https://opensource.org/licenses/GPL-3.0)
+[![Documentation](https://img.shields.io/badge/documentation-online-brightgreen?logo=read-the-docs&style=flat)](https://scaron.info/doc/pymanoid/)
+![Status](https://img.shields.io/badge/status-archive-lightgrey.svg)
+
 Humanoid robotics controller prototyping environment based on
 [OpenRAVE](https://github.com/rdiankov/openrave). Includes:
 
-- Whole-body inverse kinematics (IK) based on the 
+- Whole-body inverse kinematics (IK) based on the
   [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- Contact-stability areas and volumes: 
+- Contact-stability areas and volumes:
   [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html),
   [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
 - [Linear](https://scaron.info/publications/humanoids-2016.html) and
@@ -42,7 +46,7 @@ Humanoid robotics controller prototyping environment based on
 The following instructions were verified on Ubuntu 14.04:
 
 - Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html)
-- Install Python dependencies: 
+- Install Python dependencies:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
 ```
