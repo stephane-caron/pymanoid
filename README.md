@@ -1,6 +1,6 @@
 # pymanoid
 
-[![License](https://img.shields.io/badge/License-GPL-green.svg)](https://opensource.org/licenses/GPL-3.0)
+[![License](https://img.shields.io/badge/License-GPLv3-green.svg)](https://opensource.org/licenses/GPL-3.0)
 [![Documentation](https://img.shields.io/badge/documentation-online-brightgreen?logo=read-the-docs&style=flat)](https://scaron.info/doc/pymanoid/)
 ![Status](https://img.shields.io/badge/status-archive-lightgrey.svg)
 
