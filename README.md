@@ -67,3 +67,19 @@ python setup.py install --user
 For nonlinear numerical optimization, you will need to [install
 CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
 from source with the MA27 linear solver.
+
+## Citing pymanoid
+
+I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, feel free to show it with academic kudos :-)
+
+```bibtex
+@phdthesis{caron2016thesis,
+    title = {Computational Foundation for Planner-in-the-Loop Multi-Contact Whole-Body Control of Humanoid Robots},
+    author = {Caron, St{\'e}phane},
+    year = {2016},
+    month = jan,
+    school = {The University of Tokyo},
+    url = {https://scaron.info/papers/thesis.pdf},
+    doi = {10.15083/00074003},
+}
+```
