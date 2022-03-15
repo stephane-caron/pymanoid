@@ -4,7 +4,7 @@ authors:
 - family-names: "Caron"
   given-names: "Stéphane"
   orcid: "https://orcid.org/0000-0003-2906-692X"
-title: "Pymanoid"
+title: "pymanoid"
 version: 1.2.0
 doi: 10.15083/00074003
 date-released: 2016-03-24
