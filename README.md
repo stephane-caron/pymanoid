@@ -70,7 +70,7 @@ from source with the MA27 linear solver.
 
 ## Citing pymanoid
 
-I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, feel free to show it with academic kudos :-)
+I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, feel free to show it with academic kudos, *a.k.a.* citations :-)
 
 ```bibtex
 @phdthesis{caron2016thesis,
