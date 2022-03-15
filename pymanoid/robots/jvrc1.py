@@ -30,7 +30,7 @@ class JVRC1(Humanoid):
     """
     JVRC-1 robot model.
 
-    See <https://github.com/stephane-caron/jvrc_models/tree/openrave/JVRC-1>.
+    See <https://github.com/stephane-caron/openrave_models/tree/master/JVRC-1>.
     """
 
     MODEL_URL = 'https://raw.githubusercontent.com/stephane-caron/' \
