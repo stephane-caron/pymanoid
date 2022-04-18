@@ -4,17 +4,14 @@
 [![Documentation](https://img.shields.io/badge/documentation-online-brightgreen?logo=read-the-docs&style=flat)](https://scaron.info/doc/pymanoid/)
 ![Status](https://img.shields.io/badge/status-archive-lightgrey.svg)
 
-Humanoid robotics controller prototyping environment based on
-[OpenRAVE](https://github.com/rdiankov/openrave). Includes:
+Humanoid robotics controller prototyping environment based on [OpenRAVE](https://github.com/rdiankov/openrave). Includes:
 
-- Whole-body inverse kinematics (IK) based on the
-  [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
-- Contact-stability areas and volumes:
-  [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html),
-  [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
-- [Linear](https://scaron.info/publications/humanoids-2016.html) and
-  [Nonlinear Model Predictive Control](https://scaron.info/publications/iros-2017.html)
-  (MPC) for locomotion
+- Whole-body inverse kinematics (IK) based on the [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
+
+    > Check out ![pink](https://via.placeholder.com/15/db1a83/000000?text=+) [Pink](https://github.com/tasts-robots/pink) for a more recent and actively maintained whole-body inverse kinematics.
+
+- Contact-stability areas and volumes: [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html), [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
+- [Linear](https://scaron.info/publications/humanoids-2016.html) and [Nonlinear Model Predictive Control](https://scaron.info/publications/iros-2017.html) (NMPC) for locomotion
 - Jacobians and Hessians for center of mass (CoM) and angular momentum
 - Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
 
