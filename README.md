@@ -27,8 +27,8 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 
 ### Model predictive control
 
-- [Linear model predictive control](https://scaron.info/publications/humanoids-2016.html) (LMPC) for locomotion
-- [Nonlinear model predictive control](https://scaron.info/publications/iros-2017.html) (NMPC) for locomotion
+- [Linear model predictive control](https://hal.archives-ouvertes.fr/hal-01349880/document) (LMPC) for locomotion
+- [Nonlinear model predictive control](https://hal.archives-ouvertes.fr/hal-01481052/document) (NMPC) for locomotion
 - Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
 
 ## Use cases
@@ -83,7 +83,7 @@ from source with the MA27 linear solver.
 
 ## Citing pymanoid
 
-I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, feel free to show it with academic kudos, *a.k.a.* citations :-)
+I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, please use the following BibTeX template to cite it in scientific discourse:
 
 ```bibtex
 @phdthesis{caron2016thesis,
