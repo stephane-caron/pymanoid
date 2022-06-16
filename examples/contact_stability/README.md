@@ -27,7 +27,7 @@ polygon.
 
 Th ``zmp_support_area.py`` script displays the ZMP support area under a given
 set of contacts. The derivation of this area is detailed in [this
-paper](https://scaron.info/research/tro-2016.html). It depends on both contact
+paper](https://hal.archives-ouvertes.fr/hal-02108589/document). It depends on both contact
 locations and the position of the center of mass, so when you move it or its
 projection (blue box) you will see the blue area change as well.
 
@@ -35,7 +35,7 @@ projection (blue box) you will see the blue area change as well.
 
 The ``com_accel_cone.py`` script displays the cone of CoM accelerations that
 the robot can execute while keeping contacts, as derived in [this
-paper](https://scaron.info/research/humanoids-2016.html). Like ZMP support
+paper](https://hal.archives-ouvertes.fr/hal-01349880/document). Like ZMP support
 areas, this cone depends on both contact locations and the position of the
 center of mass, so that when you move it or its projection (blue box) you will
 see its shape change as well.
