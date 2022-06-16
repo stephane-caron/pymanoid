@@ -126,9 +126,9 @@ class LinearPredictiveControl(object):
         self.x_goal = x_goal
         self.x_init = x_init
         #
-        self.__build()
+        self.build()
 
-    def __build(self):
+    def build(self):
         """
         Compute internal matrices defining the preview QP.
 
