@@ -4,7 +4,7 @@ Interpolation
 
 Interpolation is the operation of computing trajectories that connect an
 initial state (position and its derivatives such as velocity and acceleration)
-to a desired one. 
+to a desired one.
 
 Position
 ========
