@@ -8,7 +8,7 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 
 - Whole-body inverse kinematics (IK) based on the [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
 
-    > Check out ![pink](https://via.placeholder.com/15/db1a83/000000?text=+) [Pink](https://github.com/tasts-robots/pink) for a more recent and actively maintained whole-body inverse kinematics.
+    > Check out 🟣 [Pink](https://github.com/tasts-robots/pink) for a more recent and actively maintained whole-body inverse kinematics.
 
 - Contact-stability areas and volumes: [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html), [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
 - [Linear](https://scaron.info/publications/humanoids-2016.html) and [Nonlinear Model Predictive Control](https://scaron.info/publications/iros-2017.html) (NMPC) for locomotion
