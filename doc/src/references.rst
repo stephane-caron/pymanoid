@@ -91,10 +91,6 @@ References
    <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.110.5134>`_, J.
    Diebel, 2006.
 
-.. [Boyd04] `Convex Optimization
-   <https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf>`_, Stephen Boyd and
-   Lieven Vandenberghe, Cambridge University Press, 2004.
-
 .. [Sardain04] `Forces acting on a biped robot. Center of pressure-Zero moment
    point <https://doi.org/10.1109/TSMCA.2004.832811>`_, P. Sardain and G.
    Bessonnet, IEEE Transactions on Systems, Man and Cybernetics, vol. 34, no.
@@ -105,10 +101,6 @@ References
     <http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=973365>`_, S.
     Kajita, F. Kanehiro, K. Kaneko, K. Yokoi and H. Hirukawa, IEEE/RSJ
     International Conference on Intelligent Robots and Systems, 2001.
-
-.. [Goldfarb83] `A numerically stable dual method for solving strictly convex
-   quadratic programs <https://doi.org/10.1007/BF02591962>`_, D. Goldfarb and
-   A. Idnani, Mathematical Programming, vol. 27, 1983.
 
 .. [Walker82] `Efficient dynamic computer simulation of robotic mechanisms
    <https://doi.org/10.1115/1.3139699>`_, M. Walker and D. Orin, ASME Trans. J.
