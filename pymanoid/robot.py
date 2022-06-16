@@ -1305,8 +1305,8 @@ class Humanoid(Robot):
         Notes
         -----
         From the `Newton-Euler equations
-        <https://scaron.info/teaching/newton-euler-equations.html>`_ of the
-        system, the net contact wrench is opposite to the gravito-inertial
+        <https://scaron.info/robot-locomotion/newton-euler-equations.html>`_ of
+        the system, the net contact wrench is opposite to the gravito-inertial
         wrench computed by
         :func:`pymanoid.robot.Humanoid.compute_gravito_inertial_wrench`.
         """

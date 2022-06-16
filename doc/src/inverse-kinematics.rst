@@ -7,7 +7,7 @@ accelerations) that make the robot achieve a given set of *tasks*, such as
 putting a foot on a surface, moving the center of mass (COM) to a target
 location, etc. If you are not familiar with these concepts, check out `this
 introduction to inverse kinematics
-<https://scaron.info/teaching/inverse-kinematics.html>`_.
+<https://scaron.info/robot-locomotion/inverse-kinematics.html>`_.
 
 Tasks
 =====

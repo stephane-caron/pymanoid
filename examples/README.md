@@ -23,7 +23,7 @@ floor. The COM trajectory is generated on the fly by [linear model predictive
 control](https://scaron.info/doc/pymanoid/walking-pattern-generation.html#pymanoid.mpc.LinearPredictiveControl).
 
 This examples illustrates the tutorial [Prototyping a walking pattern
-generator](https://scaron.info/teaching/prototyping-a-walking-pattern-generator.html).
+generator](https://scaron.info/robot-locomotion/prototyping-a-walking-pattern-generator.html).
 The concepts it introduces are the same as those implemented in a [full-fledged
 walking controller](https://github.com/stephane-caron/lipm_walking_controller/)
 applied for walking and stair climbing with the HRP-4 humanoid.
@@ -33,7 +33,7 @@ applied for walking and stair climbing with the HRP-4 humanoid.
 <img align="right" src="../doc/src/images/inverse_kinematics.png" width="300" />
 
 The [inverse\_kinematics.py](inverse_kinematics.py) script shows how to use
-[inverse kinematics (IK)](https://scaron.info/teaching/inverse-kinematics.html)
+[inverse kinematics (IK)](https://scaron.info/robot-locomotion/inverse-kinematics.html)
 to achieve a set of whole-body tasks. It contains two equivalent
 implementations of the IK solver setup. The former is best for beginners as it
 uses the simpler ``Stance`` interface. The latter is for more advanced users

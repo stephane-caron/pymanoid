@@ -6,7 +6,7 @@
 
 Humanoid robotics controller prototyping environment based on [OpenRAVE](https://github.com/rdiankov/openrave). Includes:
 
-- Whole-body inverse kinematics (IK) based on the [weight-prioritized multi-task framework](https://scaron.info/teaching/inverse-kinematics.html)
+- Whole-body inverse kinematics (IK) based on the [weight-prioritized multi-task framework](https://scaron.info/robot-locomotion/inverse-kinematics.html)
 
     > Check out 🟣 [Pink](https://github.com/tasts-robots/pink) for a more recent and actively maintained whole-body inverse kinematics.
 
@@ -36,13 +36,13 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 - [Documentation](https://scaron.info/doc/pymanoid/) ([PDF](https://scaron.info/doc/pymanoid/pymanoid.pdf))
 - [FAQ](https://github.com/stephane-caron/pymanoid/wiki/Frequently-Asked-Questions)
 - [Examples](/examples)
-- Tutorial: [Prototyping a walking pattern generator](https://scaron.info/teaching/prototyping-a-walking-pattern-generator.html)
+- Tutorial: [Prototyping a walking pattern generator](https://scaron.info/robot-locomotion/prototyping-a-walking-pattern-generator.html)
 
 ## Installation
 
 The following instructions were verified on Ubuntu 14.04:
 
-- Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/teaching/installing-openrave-on-ubuntu-16.04.html)
+- Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/robot-locomotion/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/robot-locomotion/installing-openrave-on-ubuntu-16.04.html)
 - Install Python dependencies:
 ```
 sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson

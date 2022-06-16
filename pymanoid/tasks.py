@@ -42,7 +42,7 @@ class Task(object):
     Note
     ----
     See this `tutorial on inverse kinematics
-    <https://scaron.info/teaching/inverse-kinematics.html>`_ for an
+    <https://scaron.info/robot-locomotion/inverse-kinematics.html>`_ for an
     introduction to the concepts used here.
     """
 

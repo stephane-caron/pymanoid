@@ -43,15 +43,15 @@ class IKSolver(Process):
         List of DOFs updated by the IK solver.
     doflim_gain : scalar, optional
         DOF-limit gain as described in [Kanoun12]_. In `this implementation
-        <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
-        between zero and one.
+        <https://scaron.info/robot-locomotion/inverse-kinematics.html>`_, it
+        should be between zero and one.
 
     Attributes
     ----------
     doflim_gain : scalar, optional
         DOF-limit gain as described in [Kanoun12]_. In `this implementation
-        <https://scaron.info/teaching/inverse-kinematics.html>`_, it should be
-        between zero and one.
+        <https://scaron.info/robot-locomotion/inverse-kinematics.html>`_, it
+        should be between zero and one.
     lm_damping : scalar
         Add Levenberg-Marquardt damping as described in [Sugihara11]_. This
         damping significantly improves numerical stability, but convergence
