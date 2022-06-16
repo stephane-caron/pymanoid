@@ -19,7 +19,7 @@
 
 """
 This example computes the multi-contact ZMP support area for a given robot
-stance (contacts and CoM position). See [Caron16] for details.
+stance (contacts and CoM position). See [Caron16]_ for details.
 """
 
 import IPython
