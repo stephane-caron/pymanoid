@@ -39,8 +39,8 @@ from .sim import Simulation
 from .stance import Stance
 from .swing_foot import SwingFoot
 
-import models
-import robots
+import models  # comment out this import when building the docs
+import robots  # comment out this import when building the docs
 
 __all__ = [
     'Body',
