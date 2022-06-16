@@ -1,18 +1,34 @@
 # pymanoid
 
 [![License](https://img.shields.io/badge/License-GPLv3-green.svg)](https://opensource.org/licenses/GPL-3.0)
-[![Documentation](https://img.shields.io/badge/documentation-online-brightgreen?logo=read-the-docs&style=flat)](https://scaron.info/doc/pymanoid/)
+[![Documentation](https://img.shields.io/badge/docs-online-brightgreen?logo=read-the-docs&style=flat)](https://scaron.info/doc/pymanoid/)
 ![Status](https://img.shields.io/badge/status-archive-lightgrey.svg)
 
-Humanoid robotics controller prototyping environment based on [OpenRAVE](https://github.com/rdiankov/openrave). Includes:
+Humanoid robotics controller prototyping environment based on [OpenRAVE](https://github.com/rdiankov/openrave).
 
-- Whole-body inverse kinematics (IK) based on the [weight-prioritized multi-task framework](https://scaron.info/robot-locomotion/inverse-kinematics.html)
+## Features
 
-    > Check out 🟣 [Pink](https://github.com/tasts-robots/pink) for a more recent and actively maintained whole-body inverse kinematics.
+### Whole-body inverse kinematics
 
-- Contact-stability areas and volumes: [multi-contact ZMP support areas](https://scaron.info/publications/tro-2016.html), [CoM acceleration cones](https://scaron.info/publications/humanoids-2016.html), etc.
-- [Linear](https://scaron.info/publications/humanoids-2016.html) and [Nonlinear Model Predictive Control](https://scaron.info/publications/iros-2017.html) (NMPC) for locomotion
-- Jacobians and Hessians for center of mass (CoM) and angular momentum
+<a href="https://github.com/tasts-robots/pink">
+    <img src="https://user-images.githubusercontent.com/1189580/172797197-9aa46561-cfaa-4046-bd60-f681d85b055d.png" align="right" height=100>
+</a>
+
+- Check out **🟣 [Pink](https://github.com/tasts-robots/pink)** for a next-generation implementation of this IK as a library 📚
+- Based on a [weight-prioritized multi-task formulation](https://scaron.info/robot-locomotion/inverse-kinematics.html) of differential IK
+- Jacobians and Hessians for center of mass (CoM) and angular momentum tasks
+
+### Contact stability
+
+- [Wrench friction cones](http://www.roboticsproceedings.org/rss11/p28.pdf) for general multi-contact motions
+- [Multi-contact ZMP support areas](https://hal.archives-ouvertes.fr/hal-02108589/document) for locomotion
+- [CoM acceleration cones](https://hal.archives-ouvertes.fr/hal-01349880/document) for locomotion (conservative)
+- [Robust CoM static-equilibrium polytope](https://hal-lirmm.ccsd.cnrs.fr/lirmm-01477362/document) for posture generation (conservative)
+
+### Model predictive control
+
+- [Linear model predictive control](https://scaron.info/publications/humanoids-2016.html) (LMPC) for locomotion
+- [Nonlinear model predictive control](https://scaron.info/publications/iros-2017.html) (NMPC) for locomotion
 - Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
 
 ## Use cases
