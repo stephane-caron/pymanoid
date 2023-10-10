@@ -6,17 +6,22 @@
 
 Humanoid robotics controller prototyping environment based on [OpenRAVE](https://github.com/rdiankov/openrave).
 
-## Features
+> ⚠️ This project is **archived**. Feel free to look at the code, but don't expect support to install and run it.
 
-### Whole-body inverse kinematics
+Most of the project's functionality has been ported to [follow-up libraries](#follow-up-libraries) that you can ``pip install`` and run.
+
+## Follow-up libraries
 
 <a href="https://github.com/tasts-robots/pink">
     <img src="https://user-images.githubusercontent.com/1189580/172797197-9aa46561-cfaa-4046-bd60-f681d85b055d.png" align="right" height=100>
 </a>
 
-- Check out **🟣 [Pink](https://github.com/tasts-robots/pink)** for a next-generation implementation of this IK as a library 📚
-- Based on a [weight-prioritized multi-task formulation](https://scaron.info/robot-locomotion/inverse-kinematics.html) of differential IK
-- Jacobians and Hessians for center of mass (CoM) and angular momentum tasks
+- [ltv-mpc](https://github.com/stephane-caron/ltv-mpc): linear model predictive control in Python
+- [pink](https://github.com/tasts-robots/pink): inverse kinematics in Python based on [Pinocchio](https://github.com/stack-of-tasks/pinocchio/)
+- [pypoman](https://github.com/stephane-caron/pypoman): polyhedral projection functions used to compute contact inequality constraints
+- [qpsolvers](https://github.com/qpsolvers/qpsolvers): interfaces to quadratic programming solvers in Python
+
+## Features
 
 ### Contact stability
 
@@ -29,7 +34,18 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 
 - [Linear model predictive control](https://hal.archives-ouvertes.fr/hal-01349880/document) (LMPC) for locomotion
 - [Nonlinear model predictive control](https://hal.archives-ouvertes.fr/hal-01481052/document) (NMPC) for locomotion
+
+### Whole-body inverse kinematics
+
+- Whole-body IK based on the [weight-prioritized multi-task formulation](https://scaron.info/robot-locomotion/inverse-kinematics.html)
+- Jacobians and Hessians for center of mass (CoM) and angular momentum tasks
+- Check out **[Pink](https://github.com/tasts-robots/pink)** for a next-generation implementation of this IK as a standalone library
+
+### Geometry and optimization toolbox
+
 - Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
+- Check out **[pypoman](https://github.com/stephane-caron/pypoman)** for a standalone library of these polyhedral geometry functions
+- Check out **[qpsolvers](https://github.com/qpsolvers/qpsolvers)** for a standalone library of these quadratic programming interfaces
 
 ## Use cases
 
