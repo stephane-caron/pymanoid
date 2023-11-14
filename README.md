@@ -12,11 +12,11 @@ Most of the project's functionality has been ported to [follow-up libraries](#fo
 
 ## Follow-up libraries
 
-<a href="https://github.com/tasts-robots/pink">
+<a href="https://github.com/stephane-caron/pink">
     <img src="https://user-images.githubusercontent.com/1189580/172797197-9aa46561-cfaa-4046-bd60-f681d85b055d.png" align="right" height=100>
 </a>
 
-- [pink](https://github.com/tasts-robots/pink): inverse kinematics in Python based on [Pinocchio](https://github.com/stack-of-tasks/pinocchio/)
+- [pink](https://github.com/stephane-caron/pink): inverse kinematics in Python based on [Pinocchio](https://github.com/stack-of-tasks/pinocchio/)
 - [pypoman](https://github.com/stephane-caron/pypoman): polyhedral projection functions used to compute contact inequality constraints
 - [qpmpc](https://github.com/stephane-caron/qpmpc): linear model predictive control in Python
 - [qpsolvers](https://github.com/qpsolvers/qpsolvers): interfaces to quadratic programming solvers in Python
@@ -39,7 +39,7 @@ Most of the project's functionality has been ported to [follow-up libraries](#fo
 
 - Whole-body IK based on the [weight-prioritized multi-task formulation](https://scaron.info/robot-locomotion/inverse-kinematics.html)
 - Jacobians and Hessians for center of mass (CoM) and angular momentum tasks
-- Check out **[Pink](https://github.com/tasts-robots/pink)** for a next-generation implementation of this IK as a standalone library
+- Check out **[Pink](https://github.com/stephane-caron/pink)** for a next-generation implementation of this IK as a standalone library
 
 ### Geometry and optimization toolbox
 
