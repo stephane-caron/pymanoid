@@ -10,7 +10,7 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 
 Most of the project's functionality has been ported to [follow-up libraries](#follow-up-libraries) that you can ``pip install`` and run.
 
-## Follow-up libraries
+## Follow-up software
 
 <a href="https://github.com/stephane-caron/pink">
     <img src="https://user-images.githubusercontent.com/1189580/172797197-9aa46561-cfaa-4046-bd60-f681d85b055d.png" align="right" height=100>
@@ -20,6 +20,7 @@ Most of the project's functionality has been ported to [follow-up libraries](#fo
 - [pypoman](https://github.com/stephane-caron/pypoman): polyhedral projection functions used to compute contact inequality constraints
 - [qpmpc](https://github.com/stephane-caron/qpmpc): linear model predictive control in Python
 - [qpsolvers](https://github.com/qpsolvers/qpsolvers): interfaces to quadratic programming solvers in Python
+- [vhip\_light](https://github.com/stephane-caron/vhip_light): variable-height inverted pendulum balancing in Python
 
 ## Features
 

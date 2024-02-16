@@ -22,6 +22,10 @@ This example compares two stabilizers for the inverted pendulum model. The
 first one (baseline) is based on proportional feedback of the 3D DCM
 [Englsberger15]_. The second one (proposed) performs proportional feedback of a
 4D DCM of the same model [Caron20]_.
+
+Update (2024-02-16):
+    A simpler version of this example that does not depend on pymanoid nor
+    OpenRAVE is available at: https://github.com/stephane-caron/vhip_light
 """
 
 import IPython
