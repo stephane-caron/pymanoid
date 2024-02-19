@@ -8,7 +8,7 @@ Humanoid robotics controller prototyping environment based on [OpenRAVE](https:/
 
 > ⚠️ This project is **archived**. Feel free to look at the code, but don't expect support to install and run it.
 
-Most of the project's functionality has been ported to [follow-up libraries](#follow-up-libraries) that you can ``pip install`` and run.
+Most of the project's functionality has been ported to follow-up libraries that are maintained and easier to install.
 
 ## Follow-up software
 
@@ -36,71 +36,36 @@ Most of the project's functionality has been ported to [follow-up libraries](#fo
 - [Linear model predictive control](https://hal.archives-ouvertes.fr/hal-01349880/document) (LMPC) for locomotion
 - [Nonlinear model predictive control](https://hal.archives-ouvertes.fr/hal-01481052/document) (NMPC) for locomotion
 
-### Whole-body inverse kinematics
+### Inverse kinematics
 
 - Whole-body IK based on the [weight-prioritized multi-task formulation](https://scaron.info/robot-locomotion/inverse-kinematics.html)
 - Jacobians and Hessians for center of mass (CoM) and angular momentum tasks
-- Check out **[Pink](https://github.com/stephane-caron/pink)** for a next-generation implementation of this IK as a standalone library
 
 ### Geometry and optimization toolbox
 
-- Interfaces to polyhedral geometry and numerical optimization (LP, QP and NLP) solvers
-- Check out **[pypoman](https://github.com/stephane-caron/pypoman)** for a standalone library of these polyhedral geometry functions
-- Check out **[qpsolvers](https://github.com/qpsolvers/qpsolvers)** for a standalone library of these quadratic programming interfaces
+- Interfaces to polyhedral geometry: double description, polytope projection
+- Interfaces for numerical optimization solvers: LP, QP and NLP
 
 ## Use cases
 
 <img src="doc/src/images/logo.png" width="350" align="right" />
 
-- [Walking pattern generation over uneven terrains](https://github.com/stephane-caron/capture-walkgen)
-  based on capturability of the variable-height inverted pendulum model
-- [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walkgen)
-  using a direct transcription of centroidal dynamics
-- [Linearized model predictive control](https://github.com/stephane-caron/multi-contact-walkgen)
-  using a conservative linearization of CoM acceleration cones
-- [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp)
-  for locomotion in multi-contact scenarios (including hand contacts)
-- [Humanoid stair climbing](https://github.com/stephane-caron/quasistatic-stair-climbing)
-  demonstrated on the HRP-4 robot
+- [Walking pattern generation over uneven terrains](https://github.com/stephane-caron/capture-walkgen) based on capturability of the variable-height inverted pendulum model
+- [Nonlinear model predictive control](https://github.com/stephane-caron/fip-walkgen) using a direct transcription of centroidal dynamics
+- [Linearized model predictive control](https://github.com/stephane-caron/multi-contact-walkgen) using a conservative linearization of CoM acceleration cones
+- [Multi-contact ZMP support areas](https://github.com/stephane-caron/multi-contact-zmp) for locomotion in multi-contact scenarios (including hand contacts)
+- [Humanoid stair climbing](https://github.com/stephane-caron/quasistatic-stair-climbing) demonstrated on the HRP-4 robot
 
 ## Getting started
 
-- [Installation instructions](#installation)
-- [Documentation](https://scaron.info/doc/pymanoid/) ([PDF](https://scaron.info/doc/pymanoid/pymanoid.pdf))
+- [Documentation](https://scaron.info/doc/pymanoid/)
 - [FAQ](https://github.com/stephane-caron/pymanoid/wiki/Frequently-Asked-Questions)
-- [Examples](/examples)
+- [Examples](https://github.com/stephane-caron/pymanoid/tree/master/examples)
 - Tutorial: [Prototyping a walking pattern generator](https://scaron.info/robot-locomotion/prototyping-a-walking-pattern-generator.html)
-
-## Installation
-
-The following instructions were verified on Ubuntu 14.04:
-
-- Install OpenRAVE: here are [instructions for Ubuntu 14.04](https://scaron.info/robot-locomotion/installing-openrave-on-ubuntu-14.04.html) as well as [for Ubuntu 16.04](https://scaron.info/robot-locomotion/installing-openrave-on-ubuntu-16.04.html)
-- Install Python dependencies:
-```
-sudo apt-get install cython libglpk-dev python python-dev python-pip python-scipy python-simplejson
-```
-- Install the LP solver: ``CVXOPT_BUILD_GLPK=1 pip install cvxopt --user``
-- Install the QP solver: ``pip install quadprog --user``
-- For polyhedral computations (optional): ``pip install pycddlib --user``
-
-Finally, clone this repository and run the setup script:
-```
-git clone --recursive https://github.com/stephane-caron/pymanoid.git
-cd pymanoid
-python setup.py build
-python setup.py install --user
-```
-
-### Optional
-
-For nonlinear numerical optimization, you will need to [install
-CasADi](https://github.com/casadi/casadi/wiki/InstallationLinux), preferably
-from source with the MA27 linear solver.
 
 ## Citing pymanoid
 
-I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, please use the following BibTeX template to cite it in scientific discourse:
+I developed pymanoid during my PhD studies and share it in the hope it can be useful to others. If it helped you in your research, please cite it *e.g.* as follows:
 
 ```bibtex
 @phdthesis{caron2016thesis,
@@ -113,3 +78,7 @@ I developed pymanoid during my PhD studies and share it in the hope it can be us
     doi = {10.15083/00074003},
 }
 ```
+
+## Installation
+
+It is not recommended to try to install this library as it is not maintained and relies on deprecated software. Yet, If you are digging into the archives, you can find instructions for Ubuntu 14.04 in [the wiki](https://github.com/stephane-caron/pymanoid/wiki/Installation-instructions).
